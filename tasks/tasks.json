@@ -512,7 +512,7 @@
     {
       "num": "038",
       "title": "Render barriers",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],
@@ -666,7 +666,7 @@
     {
       "num": "050",
       "title": "Best-lap ghost recording and replay",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

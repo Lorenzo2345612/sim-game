@@ -41,7 +41,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | done | 022, 031, 035 |
-| 038 | Render barriers | in progress | 022 |
+| 038 | Render barriers | done | 022 |
 | 039 | Instanced procedural trees with LOD | done | 022, 035 |
 | 040 | Procedural grandstands with crowd | done | 022 |
 | 041 | Pit building, start gantry and start lights | done | 022 |
@@ -53,7 +53,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | done | - |
 | 049 | Minimap | in progress | - |
-| 050 | Best-lap ghost recording and replay | pending | - |
+| 050 | Best-lap ghost recording and replay | in progress | - |
 | 051 | Engine and tyre audio | pending | - |
 | 052 | Graphics presets and FPS overlay | pending | - |
 | 053 | F4 car model pipeline (offline asset build) | pending | - |
