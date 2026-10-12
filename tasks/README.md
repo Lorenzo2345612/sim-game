@@ -26,7 +26,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 020 | Fix invisible track and off-screen HUD in the browser game | done | 019 | - |
 | 021 | Local progress dashboard for the AI pipeline | done | - | 020 |
 | 022 | Add TrackData v2 types and Phase 1 constants | in progress | - | 023, 024, 035, 042, 047, 048, 049, 050, 051, 052 |
-| 023 | Add inverse projection unprojectXZ | in progress | - | 022, 026, 027, 029, 031, 032, 033, 034, 036, 038, 040, 041, 042, 045, 046, 047, 048, 049, 050, 051, 052 |
+| 023 | Add inverse projection unprojectXZ | done | - | 022, 026, 027, 029, 031, 032, 033, 034, 036, 038, 040, 041, 042, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 024 | Fetch DEM windows for the three tracks | pending | 023 | 022, 026, 027, 029, 031, 032, 033, 034, 036, 038, 040, 041, 042, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 025 | DEM sampling and centerline elevation profile | pending | 022, 023, 024 | 026, 027, 029, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 026 | Detect radii, kerbs and run-offs | pending | 022 | 023, 024, 025, 027, 028, 029, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 045, 046, 047, 048, 049, 050, 051, 052 |
@@ -50,7 +50,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 044 | Track selection and pause menu | pending | 043 | 045, 046, 047, 048, 049, 050, 051, 052 |
 | 045 | Six-speed gearbox with rpm and limiter | pending | 033 | 023, 024, 025, 026, 027, 028, 029, 030, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 046, 047, 048, 049, 050, 051, 052 |
 | 046 | Gamepad input and input merging | pending | 022 | 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 047, 048, 049, 050, 051, 052 |
-| 047 | T-cam and cockpit cameras with switching | pending | - | 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 048, 049, 050, 051, 052 |
+| 047 | T-cam and cockpit cameras with switching | in progress | - | 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 048, 049, 050, 051, 052 |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | pending | - | 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 049, 050, 051, 052 |
 | 049 | Minimap | pending | - | 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 050, 051, 052 |
 | 050 | Best-lap ghost recording and replay | pending | - | 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 051, 052 |

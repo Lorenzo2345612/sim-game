@@ -29,6 +29,13 @@ export function projectLonLat(coords: LonLat[], origin: LonLat): Point2[] {
   ]);
 }
 
+export function unprojectXZ(point: Point2, origin: LonLat): LonLat {
+  const [lon0, lat0] = origin;
+  const k = (EARTH_RADIUS_M * Math.PI) / 180;
+  const cosLat0 = Math.cos((lat0 * Math.PI) / 180);
+  return [lon0 + point[0] / (cosLat0 * k), lat0 - point[1] / k];
+}
+
 export function polylineLength(points: Point2[], closed: boolean): number {
   if (points.length < 2) {
     return 0;
