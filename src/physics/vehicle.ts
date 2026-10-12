@@ -1,11 +1,14 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { VehicleConfig } from './vehicleConfig';
-import { DriverInput, SpawnPose, VehicleState } from '../core/types';
-import { AIR_DENSITY } from '../core/constants';
+import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
+import { AIR_DENSITY, GRAVITY, SURFACE_DRAG, SURFACE_GRIP } from '../core/constants';
+import { surfaceOf } from './trackColliders';
 
 const STEER_FULL_SPEED = 60; // m/s where maxSteer reaches maxSteerHighSpeed
 
 const tmpForward: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+const tmpImpulse: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+const tmpSurfaces: Surface[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
 
 function forwardOf(q: RAPIER.Rotation): RAPIER.Vector {
   tmpForward.x = -2 * (q.x * q.z + q.w * q.y);
@@ -104,7 +107,39 @@ export class Vehicle {
       this.controller.setWheelBrake(i, brake);
     }
 
+    this.getWheelSurfaces();
+    for (let i = 0; i < 4; i++) {
+      this.controller.setWheelFrictionSlip(i, config.frictionSlip * SURFACE_GRIP[tmpSurfaces[i]]);
+    }
+    const hSpeed = Math.hypot(v.x, v.z);
+    if (hSpeed >= 0.01) {
+      const maxPerWheel = config.massKg * hSpeed / 4;
+      for (let i = 0; i < 4; i++) {
+        const drag = SURFACE_DRAG[tmpSurfaces[i]];
+        if (drag > 0) {
+          // Clamp so the 4-wheel total can at most cancel the horizontal velocity.
+          const mag = Math.min(drag * config.massKg * Math.abs(GRAVITY) * dt / 4, maxPerWheel);
+          tmpImpulse.x = (-v.x / hSpeed) * mag;
+          tmpImpulse.y = 0;
+          tmpImpulse.z = (-v.z / hSpeed) * mag;
+          this.body.applyImpulse(tmpImpulse, true);
+        }
+      }
+    }
+
     this.controller.updateVehicle(dt);
+  }
+
+  getWheelSurfaces(): Surface[] {
+    for (let i = 0; i < 4; i++) {
+      // wheelGroundObject holds an uninitialized collider for wheels that never
+      // touched ground; only trust it while the wheel is in contact.
+      const ground = this.controller.wheelIsInContact(i)
+        ? this.controller.wheelGroundObject(i)
+        : null;
+      tmpSurfaces[i] = ground === null ? 'asphalt' : (surfaceOf(ground) ?? 'asphalt');
+    }
+    return tmpSurfaces;
   }
 
   getState(out?: VehicleState): VehicleState {
