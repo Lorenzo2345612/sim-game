@@ -23,6 +23,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 017 | Create the game core (Game) and interpolation | done | 002, 005, 008, 010, 011 | 003, 006, 007, 009, 012, 013, 014, 015, 016 |
 | 018 | Integrate everything in main.ts (browser game) | done | 002, 003, 006, 007, 009, 012, 013, 014, 015, 016, 017 | - |
 | 019 | Add the Playwright e2e test | done | 018 | - |
+| 020 | Fix invisible track and off-screen HUD in the browser game | pending | 019 | - |
 
 ## Waves
 
