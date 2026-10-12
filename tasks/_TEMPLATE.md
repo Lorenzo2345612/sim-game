@@ -4,6 +4,7 @@ Status: pending | in progress | done | blocked
 Phase: 0 | 1 | 2 | 3
 Depends on: NNN, NNN (or "nothing")
 Complexity: simple | complex
+Type: feature | bugfix   (bugfix = heavy models from the first coder run)
 Roles: acceptance, coder, reviewer (complex adds tester-pre and tester)
 
 ## Goal

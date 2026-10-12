@@ -4,6 +4,7 @@ Status: pending
 Phase: 0
 Depends on: 019
 Complexity: simple
+Type: bugfix
 Roles: acceptance, coder, reviewer
 
 ## Goal

@@ -76,6 +76,8 @@ def spec_info(spec):
     has_acc = bool(acc and re.search(r"^\|\s*AT\d+", acc.group(1), re.M))
     return {
         "complex": bool(re.search(r"^Complexity:\s*complex\b", text, re.M)),
+        # bugfix/debug tasks use the heavy models from the first coder run
+        "heavy": bool(re.search(r"^Type:\s*bugfix\b", text, re.M)),
         "acceptance": has_acc,
         "files": re.findall(r"`([^`\s]+)`", files_section.group(1)) if files_section else [],
     }
@@ -190,12 +192,12 @@ def decision(num, title, stage, question, report, st):
     return "decision"
 
 
-def fix_call(spec, round_no, note):
+def fix_call(spec, round_no, note, heavy=False):
     if round_no <= 2:
-        return call_worker("coder", spec, resume=True, note=note)
+        return call_worker("coder", spec, resume=True, heavy=heavy, note=note)
     if round_no == 3:
         return call_worker("coder", spec, resume=True, heavy=True, note=note)
-    return call_worker("fixer", spec, note=note)
+    return call_worker("fixer", spec, heavy=heavy, note=note)
 
 
 def run_task(task):
@@ -248,7 +250,7 @@ def run_task(task):
             advance("coder")
 
         elif stage == "coder":
-            r = call_worker("coder", spec)
+            r = call_worker("coder", spec, heavy=info["heavy"])
             if r["status"] == "BLOCKED":
                 return decision(num, title, stage, "coder blocked", r["out"], st)
             if r["status"] != "OK":
@@ -273,7 +275,7 @@ def run_task(task):
             if st["fixRounds"] > MAX_FIX_ROUNDS:
                 return decision(num, title, stage, "escalation exhausted", r["out"], st)
             save_task_state(num, st)
-            fr = fix_call(spec, st["fixRounds"], note)
+            fr = fix_call(spec, st["fixRounds"], note, heavy=info["heavy"])
             if fr["status"] == "BLOCKED":
                 return decision(num, title, stage, "fix round blocked", fr["out"], st)
 
