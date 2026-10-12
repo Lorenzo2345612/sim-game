@@ -10,7 +10,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 ## In flight (planner side)
 
-- 2026-10-12: Bailian/Qwen workers stalled repeatedly; acceptance, tester-pre, tester and fixer moved to MiMo in `ai/providers.json`. Move them back when Qwen is healthy.
+- Test roles A/B: even task numbers on Qwen, odd on MiMo (`testerSplit` in `ai/experiments.json`); Qwen capped at 2 concurrent. Early 'stalls' were the old watchdog killing long single-message generations (fixed in c5c6853).
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
