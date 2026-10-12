@@ -1,0 +1,84 @@
+.hud2-panel {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.hud2-speed {
+  font-size: 28px;
+}
+
+.hud2-gear {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.hud2-label {
+  display: inline-block;
+  width: 4.5em;
+  opacity: 0.7;
+}
+
+.hud2-rpm-track {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hud2-rpm-bar {
+  height: 100%;
+  width: 0;
+  background: #3af;
+}
+
+.hud2-rpm-bar.shift {
+  background: #f33;
+}
+
+.hud2-sectors {
+  display: flex;
+  gap: 8px;
+}
+
+.hud2-sector-label {
+  opacity: 0.7;
+}
+
+.sector {
+  min-width: 5em;
+  opacity: 0.5;
+}
+
+.sector-purple {
+  color: #c6f;
+  opacity: 1;
+}
+
+.sector-yellow {
+  color: #fc0;
+  opacity: 1;
+}
+
+.delta {
+  font-size: 20px;
+}
+
+.delta-neg {
+  color: #3f6;
+}
+
+.delta-pos {
+  color: #f44;
+}
+
+.invalid-badge {
+  display: inline-block;
+  background: #f22;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
