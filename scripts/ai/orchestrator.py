@@ -243,7 +243,7 @@ def run_task(task):
             advance("commit-tests")
 
         elif stage == "commit-tests":
-            paths = [str(p.relative_to(ROOT)) for d in ("tests/unit/acceptance", "tests/unit/edge")
+            paths = [str(p.relative_to(ROOT)) for d in ("tests/unit/acceptance", "tests/unit/edge", "tests/e2e/acceptance")
                      for p in (ROOT / d).glob(f"{num}-*")]
             if info["acceptance"] or info["complex"]:
                 commit(paths, f"test: acceptance tests (task {num})")
