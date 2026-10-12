@@ -13,7 +13,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 007 | Build the track ribbon geometry | pending | 004 | 003, 005, 006, 008, 009, 010, 011, 012, 014, 015, 016, 017 |
 | 008 | Track progress and lap timer | pending | 002, 004, 005 | 003, 006, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
 | 009 | Implement keyboard input | done | 002 | 003, 004, 005, 006, 007, 008, 010, 011, 012, 013, 014, 015, 016, 017 |
-| 010 | Create the Rapier physics world and car config | in progress | 002 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
+| 010 | Create the Rapier physics world and car config | done | 002 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
 | 011 | Implement the physics vehicle (Rapier raycast vehicle) | pending | 002, 010 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
 | 012 | Create the base Three.js scene | in progress | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 014, 015, 016, 017 |
 | 013 | Render the track (asphalt and start line) | pending | 002, 007, 012 | 003, 005, 006, 008, 009, 010, 011, 014, 015, 016, 017 |

@@ -1,6 +1,6 @@
 # 010 — Create the Rapier physics world and car config
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
