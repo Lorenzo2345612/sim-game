@@ -1,6 +1,6 @@
 # 012 — Create the base Three.js scene
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
