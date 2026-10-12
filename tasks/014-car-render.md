@@ -1,6 +1,6 @@
 # 014 — Render the car (Kenney model)
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
