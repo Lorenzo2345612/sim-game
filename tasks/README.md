@@ -28,17 +28,17 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 022 | Add TrackData v2 types and Phase 1 constants | done | - |
 | 023 | Add inverse projection unprojectXZ | done | - |
 | 024 | Fetch DEM windows for the three tracks | done | 023 |
-| 025 | DEM sampling and centerline elevation profile | pending | 022, 023, 024 |
+| 025 | DEM sampling and centerline elevation profile | in progress | 022, 023, 024 |
 | 026 | Detect radii, kerbs and run-offs | in progress | 022 |
 | 027 | Lay out barriers | in progress | 022 |
 | 028 | Build the terrain heightfield | pending | 022, 023, 024, 025 |
-| 029 | Place trees deterministically | pending | 022 |
+| 029 | Place trees deterministically | in progress | 022 |
 | 030 | Generate TrackData v2 for Monza, Spa and Silverstone | pending | 022, 024, 025, 026, 027, 028, 029 |
-| 031 | Build track surface geometry from TrackData v2 | pending | 022 |
+| 031 | Build track surface geometry from TrackData v2 | in progress | 022 |
 | 032 | Terrain, surface and barrier colliders | pending | 022, 031 |
 | 033 | Per-wheel surface grip and drag | pending | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
-| 035 | Fetch CC0 track textures | pending | 024 |
+| 035 | Fetch CC0 track textures | in progress | 024 |
 | 036 | Render the terrain mesh | pending | 022 |
 | 037 | Render track surfaces with textures | pending | 022, 031, 035 |
 | 038 | Render barriers | pending | 022 |
@@ -46,7 +46,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 040 | Procedural grandstands with crowd | pending | 022 |
 | 041 | Pit building, start gantry and start lights | pending | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
-| 043 | Load a TrackData v2 world into the game | pending | 022, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042 |
+| 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | pending | 033 |
 | 046 | Gamepad input and input merging | pending | 022 |
@@ -59,3 +59,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 053 | Integrate the F4 car model | blocked | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
+| 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | pending | 030, 032, 033, 034, 035, 036, 037 |

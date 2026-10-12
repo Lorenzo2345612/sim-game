@@ -79,6 +79,8 @@ def status():
         "decisions": decisions,
         "tokens": {k: {"tasks": len(v["tasks"]), "total": v["total"]} for k, v in tokens.items()},
         "commits": commits,
+        "milestones": [{**m, "built": (ROOT / "builds" / m["id"] / "index.html").exists()}
+                       for m in orch.read_milestones()],
         "orchestratorRunning": bool(orchestrator_pids()),
         "worktrees": orch.list_worktrees(),
         "providers": orch.provider_status(),
@@ -126,6 +128,23 @@ def action(body):
             return 400, {"error": "invalid decision file"}
         src.rename(src.with_name(file[:-3] + ".resolved.md"))
         return 200, {"ok": True}
+    if name in ("play", "approve"):
+        mid = str(body.get("milestone") or "")
+        if mid not in {m["id"] for m in orch.read_milestones()}:
+            return 400, {"error": "unknown milestone"}
+        if name == "approve":
+            code = orch.approve(mid)
+            if code != 0:
+                return 409, {"error": f"{mid} is not built"}
+            if not orchestrator_pids():
+                return action({"action": "run"})
+            return 200, {"ok": True}
+        port = 5300 + [m["id"] for m in orch.read_milestones()].index(mid)
+        if not (ROOT / "builds" / mid / "index.html").exists():
+            return 409, {"error": "not built yet"}
+        subprocess.Popen(["python3", "scripts/ai/play.py", mid, "--port", str(port)], cwd=ROOT,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return 200, {"ok": True, "url": f"http://localhost:{port}"}
     if name == "tests":
         p = subprocess.run(["npm", "test"], cwd=ROOT, capture_output=True, text=True)
         return 200, {"ok": p.returncode == 0, "tail": "\n".join((p.stdout + p.stderr).splitlines()[-40:])}

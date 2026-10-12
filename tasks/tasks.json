@@ -304,7 +304,7 @@
     {
       "num": "025",
       "title": "DEM sampling and centerline elevation profile",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "023",
@@ -357,7 +357,7 @@
     {
       "num": "029",
       "title": "Place trees deterministically",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],
@@ -387,7 +387,7 @@
     {
       "num": "031",
       "title": "Build track surface geometry from TrackData v2",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],
@@ -437,7 +437,7 @@
     {
       "num": "035",
       "title": "Fetch CC0 track textures",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "024"
       ],
@@ -536,15 +536,7 @@
       "title": "Load a TrackData v2 world into the game",
       "status": "pending",
       "deps": [
-        "022",
-        "030",
-        "031",
-        "032",
-        "033",
-        "034",
-        "035",
-        "036",
-        "037",
+        "056",
         "038",
         "039",
         "040",
@@ -696,6 +688,24 @@
       "type": "feature",
       "phase": 1,
       "spec": "tasks/055-phase1-e2e.md"
+    },
+    {
+      "num": "056",
+      "title": "Load TrackData v2 tracks into the game (terrain, surfaces, physics)",
+      "status": "pending",
+      "deps": [
+        "030",
+        "032",
+        "033",
+        "034",
+        "035",
+        "036",
+        "037"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/056-track-integration.md"
     }
   ]
 }

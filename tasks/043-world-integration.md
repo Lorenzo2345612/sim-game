@@ -2,12 +2,14 @@
 
 Status: pending
 Phase: 1
-Depends on: 022, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042
+Depends on: 056, 038, 039, 040, 041, 042
 Complexity: complex
 Type: feature
 Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Goal
+
+Task 056 already loads terrain, surfaces and physics. This task adds the scenery on top: barriers (038), trees (039), grandstands (040), pit building and start gantry/lights (041), sky/fog/shadows (042), and the debug getters `sceneStats()` and `drawCalls()`.
 
 `/?track=<id>` loads `public/tracks/<id>.json` (v2) and shows terrain, textured surfaces, barriers, trees, grandstands, pit, gantry and environment, with the car driving on the track physics.
 
@@ -41,10 +43,10 @@ Executable contract. The `acceptance` worker turns each row into `tests/e2e/acce
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | e2e: `/?track=monza` | ready | `__SIMGAME__.trackId()` = 'monza'; no console errors |
-| AT2 | e2e: same, screenshot at start | pixel under the car (640, 690) | asphalt (R, G, B < 90, G − R < 25) |
-| AT3 | e2e: `/?track=spa` after 3 s throttle | car y | follows elevation: \|car y − (terrain/track y under car)\| < 0.6 m |
-| AT4 | e2e: Monza | `__SIMGAME__.surfaceUnderCar()` at start | 'asphalt' |
+| AT1 | e2e: `/?track=monza` | ready | `__SIMGAME__.sceneStats()` reports barriers > 0, tree instances = trees in monza.json, grandstands = grandstands in monza.json, pit building 1, start gantry 1; no console errors |
+| AT2 | e2e: same, screenshot from the start line, 1280×720 | pixels in the band y 200–280, x < 300 | ≥ 30 % have G > R and luminance < 0.5 (trees visible) |
+| AT3 | e2e: same | `__SIMGAME__.drawCalls()` | ≤ 300 |
+| AT4 | e2e: `/?track=spa` | ready | sky present (`sceneStats().sky` true), shadows enabled, no console errors |
 
 ## Acceptance criteria
 

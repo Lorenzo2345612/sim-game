@@ -52,6 +52,7 @@
       </div>
       <pre id="out" style="margin-top:8px"></pre>
     </section>
+    <section><h2>Deliverables</h2><table id="milestones"></table></section>
     <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
     <section><h2>Running processes</h2><pre id="running"></pre></section>
     <section><h2>Coder tokens</h2><table id="tokens"></table></section>
@@ -70,6 +71,10 @@ const cls = s => s === 'done' ? 's-done' : s === 'in progress' ? 's-in' : s.star
 async function refresh() {
   try {
     const d = await (await fetch('/api/status')).json();
+    $('milestones').innerHTML = (d.milestones || []).map(m => `<tr><td>${esc(m.id)}</td><td class="t">${esc(m.title)}</td>
+      <td class="${m.status === 'approved' ? 's-done' : m.status === 'built' ? 's-wait' : ''}">${esc(m.status || 'open')}</td>
+      <td>${m.built ? `<button onclick="play('${esc(m.id)}')">Play</button>` : ''}
+      ${m.status === 'built' ? `<button onclick="act({action:'approve', milestone:'${esc(m.id)}'})">Approve &amp; continue</button>` : ''}</td></tr>`).join('');
     $('bar').style.width = (d.total ? 100 * d.done / d.total : 0) + '%';
     $('count').textContent = `${d.done} / ${d.total} done`;
     $('orch').textContent = d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle';
@@ -102,6 +107,12 @@ async function act(body) {
   const j = await r.json();
   $('out').textContent = `${r.status} ${j.error || (j.tail ?? 'ok')}`;
   refresh();
+}
+
+async function play(id) {
+  const r = await (await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'play', milestone: id }) })).json();
+  if (r.url) setTimeout(() => window.open(r.url, '_blank'), 800); else $('out').textContent = r.error;
 }
 
 refresh();

@@ -66,6 +66,76 @@ class QuotaError(Exception):
 
 # -- registry, README, state, events -----------------------------------------
 
+MILESTONES = ROOT / "tasks/milestones.json"
+BUILDS = ROOT / "builds"
+
+
+def read_milestones():
+    return json.loads(MILESTONES.read_text())["milestones"] if MILESTONES.exists() else []
+
+
+def write_milestones(ms):
+    with lock:
+        tmp = MILESTONES.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"milestones": ms}, indent=2) + "\n")
+        tmp.replace(MILESTONES)
+
+
+def active_milestone():
+    """First milestone not approved; None when there are no milestones or all are approved."""
+    return next((m for m in read_milestones() if m.get("status") != "approved"), None)
+
+
+def milestone_scope():
+    """Task numbers allowed to run now: the active milestone's tasks plus tasks in no milestone."""
+    ms = read_milestones()
+    if not ms:
+        return None
+    assigned = {n for m in ms for n in m["tasks"]}
+    active = active_milestone()
+    allowed = set(active["tasks"]) if active and active.get("status") == "open" else set()
+    return allowed | {t["num"] for t in read_tasks() if t["num"] not in assigned}
+
+
+def build_milestone(m):
+    """Build a playable bundle into builds/<id>/, tag the commit and stop for user approval."""
+    out = BUILDS / m["id"]
+    build = subprocess.run(["npm", "run", "build", "--", "--outDir", str(out), "--emptyOutDir"], cwd=ROOT,
+                           capture_output=True, text=True)
+    tests = subprocess.run(["npm", "test"], cwd=ROOT, capture_output=True, text=True)
+    head = git("rev-parse", "--short", "HEAD").stdout.strip()
+    ok = build.returncode == 0
+    if ok:
+        git("tag", "-f", m["id"].lower())
+    ms = read_milestones()
+    for x in ms:
+        if x["id"] == m["id"]:
+            x.update(status="built" if ok else "open", builtAt=datetime.datetime.now().isoformat(timespec="seconds"),
+                     commit=head, buildOk=ok, testsOk=tests.returncode == 0)
+    write_milestones(ms)
+    detail = f"{m['id']} build {'ok' if ok else 'FAILED'}, tests {'ok' if tests.returncode == 0 else 'FAILED'} @ {head}"
+    event(None, "milestone", detail)
+    notify(f"Milestone {m['id']} ({m['title']}) ready to play: python3 scripts/ai/play.py {m['id']} — then approve it."
+           if ok else f"Milestone {m['id']} build failed: {build.stderr[-300:]}")
+    return ok
+
+
+def approve(mid):
+    ms = read_milestones()
+    for m in ms:
+        if m["id"] == mid:
+            if m.get("status") != "built":
+                print(f"{mid} is {m.get('status')}, not built")
+                return 1
+            m["status"] = "approved"
+            write_milestones(ms)
+            event(None, "approved", mid)
+            print(f"{mid} approved")
+            return 0
+    print(f"unknown milestone {mid}")
+    return 1
+
+
 def read_tasks():
     return json.loads(REGISTRY.read_text())["tasks"] if REGISTRY.exists() else []
 
@@ -531,7 +601,10 @@ def _run_task(task, slot):
 
 def ready_tasks(tasks, done, running, waiting, only):
     out = []
+    scope = milestone_scope()
     for t in sorted(tasks, key=lambda t: t["num"]):
+        if scope is not None and t["num"] not in scope:
+            continue
         if t["num"] in done or t["num"] in running or t["num"] in waiting:
             continue
         if only and t["num"] not in only:
@@ -591,6 +664,9 @@ def run(max_parallel, only, dry_run):
     done = {t["num"] for t in tasks if t["status"] == "done"}
 
     if dry_run:
+        m = active_milestone()
+        if m:
+            print(f"active milestone: {m['id']} {m['title']} ({m.get('status', 'open')})")
         state = load_state()
         for t in ready_tasks(tasks, done, set(), set(), only):
             print(f"{t['num']} {t['title']} — stage: {state.get(t['num'], {}).get('stage', 'acceptance')}")
@@ -637,6 +713,10 @@ def run(max_parallel, only, dry_run):
     if quota_hit:
         notify("Orchestrator stopped: provider quota exhausted.")
         return 3
+    m = active_milestone()
+    if m and m.get("status") == "open" and all(n in done for n in m["tasks"]):
+        build_milestone(m)
+        return 0
     summary = f"done: {sorted(done)}; waiting decision: {sorted(waiting)}"
     event(None, "finished", summary)
     notify(f"Orchestrator finished. {summary}")
@@ -678,6 +758,10 @@ def main():
     m = sub.add_parser("migrate")
     m.add_argument("--force", action="store_true")
     sub.add_parser("readme")
+    a = sub.add_parser("approve")
+    a.add_argument("milestone")
+    b = sub.add_parser("build")
+    b.add_argument("milestone")
     c = sub.add_parser("cleanup")
     c.add_argument("--all", action="store_true")
     c.add_argument("--sessions", type=int, metavar="DAYS")
@@ -689,6 +773,11 @@ def main():
     if args.cmd == "readme":
         write_readme(read_tasks())
         return 0
+    if args.cmd == "approve":
+        return approve(args.milestone)
+    if args.cmd == "build":
+        m = next((x for x in read_milestones() if x["id"] == args.milestone), None)
+        return 0 if m and build_milestone(m) else 1
     if args.cmd == "cleanup":
         return cleanup(args.all, args.sessions)
     only = set(args.only.split(",")) if args.only else None

@@ -1,0 +1,95 @@
+{
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Phase 0 prototype: Monza centerline, car, chase camera, HUD, lap timer",
+      "tasks": [
+        "001",
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017",
+        "018",
+        "019",
+        "020",
+        "021"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M1.1",
+      "title": "Real tracks: Monza, Spa, Silverstone with elevation, kerbs, run-offs, textures, surface grip, track limits",
+      "tasks": [
+        "022",
+        "023",
+        "024",
+        "025",
+        "026",
+        "027",
+        "028",
+        "029",
+        "030",
+        "031",
+        "032",
+        "033",
+        "034",
+        "035",
+        "036",
+        "037",
+        "056"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M1.2",
+      "title": "Scenery and menu: barriers, forests, grandstands, pits, sky and shadows, track menu",
+      "tasks": [
+        "038",
+        "039",
+        "040",
+        "041",
+        "042",
+        "043",
+        "044"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M1.3",
+      "title": "Gameplay: gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets",
+      "tasks": [
+        "045",
+        "046",
+        "047",
+        "048",
+        "049",
+        "050",
+        "051",
+        "052",
+        "054",
+        "055"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M1.4",
+      "title": "F4 car model",
+      "tasks": [
+        "053"
+      ],
+      "status": "open"
+    }
+  ]
+}
