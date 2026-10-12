@@ -1,6 +1,6 @@
 # 042 — Sky, fog per track and car-following shadows
 
-Status: pending
+Status: done
 Phase: 1
 Depends on: nothing
 Complexity: simple
