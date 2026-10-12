@@ -126,6 +126,9 @@ def commit(paths, message):
         if git("diff", "--cached", "--quiet", "--", *paths).returncode == 0:
             return False
         result = git("commit", "-q", "-m", message, "-m", TRAILER, "--", *paths)
+        if result.returncode != 0:
+            event(None, "commit-failed", f"{message}: {(result.stderr or result.stdout).strip()[:300]}")
+            notify(f"Commit failed: {message}")
         return result.returncode == 0
 
 
@@ -278,6 +281,8 @@ def run_task(task):
             set_spec_status(spec, "done")
             set_readme_status(num, "done")
             paths = [str(spec.relative_to(ROOT)), "tasks/README.md", *info["files"]]
+            if "package.json" in info["files"]:
+                paths.append("package-lock.json")
             commit(paths, f"feat: {title} (task {num})")
             event(num, "done")
             return "done"
