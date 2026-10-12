@@ -677,7 +677,7 @@
     {
       "num": "051",
       "title": "Engine and tyre audio",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -699,7 +699,7 @@
     {
       "num": "053",
       "title": "F4 car model pipeline (offline asset build)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
