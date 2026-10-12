@@ -1,6 +1,6 @@
 # 006 — Generate public/tracks/monza.json with the track-builder
 
-Status: pending
+Status: in progress
 Phase: 0
 Depends on: 002, 004, 005
 Roles: coder, tester, reviewer
@@ -81,7 +81,7 @@ Tests in `tests/unit/track/buildTrackData.test.ts` (real geojson read with `node
 - [ ] `monza start line is preserved`: `centerline[0]` within 3 m of the projected first geojson point (origin = `bboxCenter` of the coords without the duplicate last point); also with `reverse:true`.
 - [ ] `monza source fields`: `source` equals `{ dataset: 'bacinger/f1-circuits', license: 'MIT', url: 'https://github.com/bacinger/f1-circuits' }`.
 - [ ] `monza coordinates are rounded to 2 decimals`: first 10 points, `Math.abs(v*100 - Math.round(v*100)) < 1e-6`.
-- [ ] `square fixture builds without throwing` (`reverse:false`, `widthMeters: 12`); `lengthMeters` within ±2% of 4448.
+- [ ] `square fixture builds without throwing` (`reverse:false`, `widthMeters: 12`); no length assertion on the square (planner decision: Catmull-Rom rounds the 90° corners by design, +5% vs the polygon; real length accuracy is covered by the Monza test AT2).
 - [ ] `reverse flips the winding`: signed area (shoelace over `[x,z]`) of the centerline has opposite signs for `reverse:false` and `reverse:true`.
 - [ ] `npm run build:tracks` exits 0 and `public/tracks/monza.json` exists.
 
