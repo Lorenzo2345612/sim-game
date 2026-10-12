@@ -140,10 +140,10 @@ Verified candidates (2026-10-11, zero budget, licenses taken from their pages):
 
 Discarded: models with real liveries (Alpine, McLaren-Marlboro, Firestone), rips from other games (Asphalt, GP4 mods) and all paid ones (zero budget; also, marketplace "Standard"/"Royalty Free" licenses forbid distributing the raw file, which is unavoidable on the web).
 
-Plan:
-1. Phase 0: Kenney `race.glb` (CC0) as a placeholder.
-2. Phase 1: CarlosCG31 "2010 Indycar" or "Generic F1 Car" → Blender: separate wheels and steering wheel if they aren't already, clean up topology, new UVs, own PBR materials with livery masks, LODs, compressed `.glb` export. CC-BY credit on the credits screen.
-3. If neither convinces after cleanup: AI-assisted generation as a base (see 7.4) + own modeling.
+Plan (user decision 2026-10-12):
+1. Phase 0: Kenney `race.glb` (CC0) as a temporary placeholder only. All Kenney assets are too toy-like for the final look and will be removed.
+2. Phase 1: **chosen car = "F4 Tatuus T014 chassis" by Oriol-Plazas** (Sketchfab, CC-BY, 326k tris, untextured, no logos): https://sketchfab.com/3d-models/f4-tatuus-t014-chasis-d61ce2f877fb4bf29da381cfa4f0f3d7. Work needed: download (Sketchfab account), decimate to < 80k tris (LOD0) + LOD1/LOD2, separate wheels and steering wheel, UVs, own PBR materials with livery masks, compressed `.glb`. Never use the "Tatuus" name in game; CC-BY credit on the credits screen.
+3. Fallback: CarlosCG31 "2010 Indycar" / "Generic F1 Car", or AI-assisted base (see 7.4) + own modeling.
 
 ### 7.2 Environment
 
