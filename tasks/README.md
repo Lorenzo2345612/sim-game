@@ -51,8 +51,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 045 | Six-speed gearbox with rpm and limiter | pending | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
-| 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | in progress | - |
-| 049 | Minimap | pending | - |
+| 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | done | - |
+| 049 | Minimap | in progress | - |
 | 050 | Best-lap ghost recording and replay | pending | - |
 | 051 | Engine and tyre audio | pending | - |
 | 052 | Graphics presets and FPS overlay | pending | - |
