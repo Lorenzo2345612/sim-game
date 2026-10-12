@@ -398,7 +398,7 @@
     {
       "num": "030",
       "title": "Generate TrackData v2 for Monza, Spa and Silverstone",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "024",
@@ -417,7 +417,7 @@
     {
       "num": "031",
       "title": "Build track surface geometry from TrackData v2",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],

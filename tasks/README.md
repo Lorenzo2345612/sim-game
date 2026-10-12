@@ -33,8 +33,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 027 | Lay out barriers | done | 022 |
 | 028 | Build the terrain heightfield | done | 022, 023, 024, 025 |
 | 029 | Place trees deterministically | done | 022 |
-| 030 | Generate TrackData v2 for Monza, Spa and Silverstone | pending | 022, 024, 025, 026, 027, 028, 029 |
-| 031 | Build track surface geometry from TrackData v2 | in progress | 022 |
+| 030 | Generate TrackData v2 for Monza, Spa and Silverstone | in progress | 022, 024, 025, 026, 027, 028, 029 |
+| 031 | Build track surface geometry from TrackData v2 | done | 022 |
 | 032 | Terrain, surface and barrier colliders | pending | 022, 031 |
 | 033 | Per-wheel surface grip and drag | pending | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
