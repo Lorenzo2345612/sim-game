@@ -72,11 +72,11 @@ describe('008 track progress and lap timer acceptance', () => {
   it('AT3: radius 105 vs 95 at the same angle give opposite-sign lateral of magnitude 5', () => {
     const tp = new TrackProgress(TRACK);
     const a = 1;
-    const outer = tp.update(105 * Math.cos(a), 105 * Math.sin(a));
-    const inner = tp.update(95 * Math.cos(a), 95 * Math.sin(a));
-    within(Math.abs(outer.lateral), 5, 0.2);
-    within(Math.abs(inner.lateral), 5, 0.2);
-    expect(outer.lateral * inner.lateral).toBeLessThan(0);
+    const outerLateral = tp.update(105 * Math.cos(a), 105 * Math.sin(a)).lateral;
+    const innerLateral = tp.update(95 * Math.cos(a), 95 * Math.sin(a)).lateral;
+    within(Math.abs(outerLateral), 5, 0.2);
+    within(Math.abs(innerLateral), 5, 0.2);
+    expect(outerLateral * innerLateral).toBeLessThan(0);
   });
 
   it('AT4: the first forward wrap emits lapStarted lap 1', () => {
