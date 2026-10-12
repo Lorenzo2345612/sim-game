@@ -1,5 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { FIXED_DT, GRAVITY } from '../core/constants';
+import type { TrackDataV2 } from '../core/types';
+import { addTrackColliders, PHASE0_GROUND_HALF_EXTENTS } from './trackColliders';
 
 let initPromise: Promise<void> | null = null;
 
@@ -10,12 +12,20 @@ export function initPhysics(): Promise<void> {
   return initPromise;
 }
 
-export function createPhysicsWorld(): RAPIER.World {
+export function createPhysicsWorld(track?: TrackDataV2): RAPIER.World {
   const world = new RAPIER.World({ x: 0, y: GRAVITY, z: 0 });
   world.timestep = FIXED_DT;
-  world.createCollider(
-    RAPIER.ColliderDesc.cuboid(5000, 0.5, 5000).setTranslation(0, -0.5, 0),
-  );
+  if (track === undefined) {
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(
+        PHASE0_GROUND_HALF_EXTENTS.x,
+        PHASE0_GROUND_HALF_EXTENTS.y,
+        PHASE0_GROUND_HALF_EXTENTS.z,
+      ).setTranslation(0, -PHASE0_GROUND_HALF_EXTENTS.y, 0),
+    );
+  } else {
+    addTrackColliders(world, track);
+  }
   return world;
 }
 
