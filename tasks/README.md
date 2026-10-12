@@ -17,9 +17,9 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 011 | Implement the physics vehicle (Rapier raycast vehicle) | pending | 002, 010 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
 | 012 | Create the base Three.js scene | done | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 014, 015, 016, 017 |
 | 013 | Render the track (asphalt and start line) | pending | 002, 007, 012 | 003, 005, 006, 008, 009, 010, 011, 014, 015, 016, 017 |
-| 014 | Render the car (Kenney model) | pending | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 015, 016, 017 |
-| 015 | Chase camera | pending | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016, 017 |
-| 016 | Create the speed and lap-time HUD | pending | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 017 |
+| 014 | Render the car (Kenney model) | in progress | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 015, 016, 017 |
+| 015 | Chase camera | in progress | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016, 017 |
+| 016 | Create the speed and lap-time HUD | done | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 017 |
 | 017 | Create the game core (Game) and interpolation | pending | 002, 005, 008, 010, 011 | 003, 006, 007, 009, 012, 013, 014, 015, 016 |
 | 018 | Integrate everything in main.ts (browser game) | pending | 002, 003, 006, 007, 009, 012, 013, 014, 015, 016, 017 | - |
 | 019 | Add the Playwright e2e test | pending | 018 | - |
