@@ -55,6 +55,9 @@
     <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
     <section><h2>Running processes</h2><pre id="running"></pre></section>
     <section><h2>Coder tokens</h2><table id="tokens"></table></section>
+    <section><h2>Providers</h2><table id="providers"></table></section>
+    <section><h2>Quota</h2><table id="quota"></table></section>
+    <section><h2>Worktrees</h2><pre id="worktrees"></pre></section>
   </div>
   <section><h2>Events</h2><pre id="events"></pre></section>
   <section><h2>Commits</h2><pre id="commits"></pre></section>
@@ -79,6 +82,13 @@ async function refresh() {
     $('running').textContent = d.running.join('\n') || 'none';
     $('tokens').innerHTML = '<tr><th>Provider</th><th>Tasks</th><th>Tokens</th></tr>' + Object.entries(d.tokens)
       .map(([p, v]) => `<tr><td>${p}</td><td>${v.tasks}</td><td>${(v.total / 1e6).toFixed(2)} M</td></tr>`).join('');
+    $('providers').innerHTML = '<tr><th>Provider</th><th>Running</th><th>Max</th></tr>' + Object.entries(d.providers || {})
+      .map(([p, v]) => `<tr><td>${p}</td><td>${v.running}</td><td>${v.max ?? '-'}</td></tr>`).join('');
+    $('quota').innerHTML = '<tr><th>Provider</th><th>Window</th><th>Used</th><th>Left</th><th>Resets (UTC)</th></tr>' +
+      Object.entries(d.quota || {}).flatMap(([p, ws]) => Array.isArray(ws)
+        ? ws.map(w => `<tr><td>${p}</td><td>${w.window}</td><td>${w.used}/${w.limit}</td><td>${w.remaining}</td><td>${w.resetAt.slice(5, 16)}</td></tr>`)
+        : [`<tr><td>${p}</td><td colspan="4" style="color:var(--dim)">${ws.unsupported ? 'n/a' : esc(ws.error || '')}</td></tr>`]).join('');
+    $('worktrees').textContent = (d.worktrees || []).map(w => `${w.num}  ${w.branch}  ${w.path}`).join('\n') || 'none';
     $('events').textContent = d.events.slice().reverse().map(e =>
       `${(e.ts || '').slice(11)}  ${e.task || '-'}  ${e.event}  ${e.detail || ''}`).join('\n');
     $('commits').textContent = d.commits.join('\n');

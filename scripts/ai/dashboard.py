@@ -18,11 +18,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import orchestrator as orch  # noqa: E402  (respects ORCH_ROOT)
 import metrics  # noqa: E402
+import quota  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
 
 ROOT = orch.ROOT
 HTML = Path(__file__).resolve().parent / "dashboard.html"
 ORCH_CMD = shlex.split(os.environ.get("DASH_ORCH_CMD") or "python3 scripts/ai/orchestrator.py")
 LOG = ROOT / ".ai/orchestrator-run.log"
+QUOTA = {}  # provider -> windows, refreshed every 60 s by refresh_quota()
 started = []  # Popen objects launched by this dashboard
 
 
@@ -43,7 +47,7 @@ def orchestrator_pids():
 
 
 def status():
-    tasks = orch.read_tasks() if orch.README.exists() else []
+    tasks = orch.read_tasks() if orch.REGISTRY.exists() else []
     state = orch.load_state()
     rows = [{"num": t["num"], "title": t["title"], "status": t["status"],
              "stage": state.get(t["num"], {}).get("stage", ""),
@@ -76,7 +80,17 @@ def status():
         "tokens": {k: {"tasks": len(v["tasks"]), "total": v["total"]} for k, v in tokens.items()},
         "commits": commits,
         "orchestratorRunning": bool(orchestrator_pids()),
+        "worktrees": orch.list_worktrees(),
+        "providers": orch.provider_status(),
+        "quota": QUOTA,
     }
+
+
+def refresh_quota():
+    while True:
+        for name in orch.provider_caps():
+            QUOTA[name] = quota.cached(name, 0)
+        time.sleep(60)
 
 
 def action(body):
@@ -157,6 +171,7 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     server = make_server(args.port)
+    threading.Thread(target=refresh_quota, daemon=True).start()
     print(f"Dashboard: http://127.0.0.1:{args.port}", flush=True)
     server.serve_forever()
 

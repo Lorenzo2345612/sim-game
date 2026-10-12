@@ -12,7 +12,7 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 ## Brevity (mandatory)
 
 - No comments except non-obvious setup. No text between steps.
-- Final output: only the report block.
+- Final output: only the JSON report required by the schema.
 
 ## Rules
 
@@ -21,11 +21,6 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 - If a row is not testable as written (ambiguous input, missing signature), mark it in the report; do not guess.
 - Deterministic tests only. No git commits.
 
-## Final report (your last message, exactly this format)
+## Final report
 
-```
-STATUS: READY | BLOCKED
-FILE: path of the acceptance test file
-ROWS: AT1..ATn written (n = table rows)
-UNTESTABLE: rows that could not be written and why (or "none")
-```
+Your last message is the JSON object required by the output schema, nothing else. Fields: `status` READY|BLOCKED, `file` (acceptance test file), `rows` (AT rows written), `untestable` (rows that could not be written and why; empty list if none).

@@ -2,18 +2,21 @@
 """Test double for scripts/ai/worker.py, driven by a JSON script file.
 
 Env:
-  FAKE_SCRIPT  path to a JSON list of {"role", "task", "stdout", "exit"} entries.
+  FAKE_SCRIPT  path to a JSON list of {"role", "task", "stdout", "exit", "writes", "sleep"} entries.
                Entries are consumed in list order per (role, task); the last entry
                of a key repeats once exhausted. "task" matches the spec file basename
                (path-independent); null matches any task.
-  FAKE_CALLS   path to a JSON-lines log; each call appends {"argv": [...]}.
-               The existing lines are the consumption counter for (role, task).
+               "writes": {relative path: content} written inside SIMGAME_WORKDIR ("{num}" is the
+               task number); "sleep": seconds to wait before printing.
+  FAKE_CALLS   path to a JSON-lines log. At start each call appends {"argv", "workdir", "e2e_port", "start"};
+               at exit {"end": {"argv", "ts"}}. Start lines are the consumption counter for (role, task).
 
-Prints the entry's stdout and exits with its code. Writes no files.
+Prints the entry's stdout and exits with its code.
 """
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 
@@ -47,6 +50,11 @@ def pick(entries, role, task, log_path):
     return matches[min(used(role, task, log_path), len(matches) - 1)]
 
 
+def log(log_path, record):
+    with open(log_path, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
 def main():
     argv = sys.argv[1:]
     log_path = os.environ["FAKE_CALLS"]
@@ -54,10 +62,18 @@ def main():
     task = task_of(argv)
     entries = json.loads(Path(os.environ["FAKE_SCRIPT"]).read_text())
     entry = pick(entries, role, task, log_path)
-    with open(log_path, "a") as f:
-        f.write(json.dumps({"argv": argv}) + "\n")
+    log(log_path, {"argv": argv, "workdir": os.environ.get("SIMGAME_WORKDIR"),
+                   "e2e_port": os.environ.get("E2E_PORT"), "start": time.time()})
+    workdir = Path(os.environ.get("SIMGAME_WORKDIR") or ".")
+    num = (task or "")[:3]
+    for rel, content in (entry.get("writes") or {}).items():
+        target = workdir / rel.replace("{num}", num)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content.replace("{num}", num))
+    time.sleep(entry.get("sleep", 0))
     sys.stdout.write(entry.get("stdout", ""))
     sys.stdout.flush()
+    log(log_path, {"end": {"argv": argv, "ts": time.time()}})
     raise SystemExit(entry.get("exit", 0))
 
 
