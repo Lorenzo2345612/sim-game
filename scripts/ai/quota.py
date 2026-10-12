@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provider quota windows (GLM, Kimi). Usage: quota.py [--json] [provider]
+"""Provider quota windows (GLM, Kimi, Claude subscription). Usage: quota.py [--json] [provider]
 
 Exit 1 if any window has < 10 % remaining. QUOTA_MOCK=<file.json> replaces HTTP
 ({provider: [windows] | {"unsupported": true}}); used by tests.
@@ -15,6 +15,8 @@ from pathlib import Path
 
 GLM_URL = "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
 KIMI_URL = "https://api.kimi.com/coding/v1/usages"
+CLAUDE_URL = "https://api.anthropic.com/api/oauth/usage"
+CLAUDE_CREDS = Path(os.environ.get("CLAUDE_CONFIG_DIR_PLANNER") or Path.home() / ".claude") / ".credentials.json"
 CONSOLES = {"qwen": "https://bailian.console.aliyun.com", "mimo": "https://platform.xiaomimimo.com"}
 KEYS = {"glm": "GLM_API_KEY", "kimi": "KIMI_API_KEY"}
 LOW = 0.10
@@ -79,6 +81,21 @@ def kimi():
     return out
 
 
+def claude():
+    tok = json.loads(CLAUDE_CREDS.read_text())["claudeAiOauth"]["accessToken"]
+    req = urllib.request.Request(CLAUDE_URL, headers={"Authorization": "Bearer " + tok,
+                                                      "anthropic-beta": "oauth-2025-04-20"})
+    data = json.loads(urllib.request.urlopen(req, timeout=20).read())
+    out = []
+    for name, field in (("5h", "five_hour"), ("week", "seven_day"), ("week opus", "seven_day_opus"),
+                        ("week sonnet", "seven_day_sonnet")):
+        w = data.get(field)
+        if w and w.get("utilization") is not None:
+            used = round(w["utilization"])
+            out.append(window(name, used, 100, 100 - used, iso(w["resets_at"]), "percent"))
+    return out
+
+
 def get(provider):
     if os.environ.get("QUOTA_MOCK"):
         return json.loads(Path(os.environ["QUOTA_MOCK"]).read_text()).get(provider, {"unsupported": True})
@@ -86,6 +103,8 @@ def get(provider):
         return glm()
     if provider == "kimi":
         return kimi()
+    if provider == "claude":
+        return claude()
     return {"unsupported": True, "url": CONSOLES.get(provider, "")}
 
 
@@ -113,7 +132,7 @@ def low_5h(provider):
 
 def main():
     args = [a for a in sys.argv[1:] if a != "--json"]
-    names = args or ["glm", "kimi", "qwen", "mimo"]
+    names = args or ["glm", "kimi", "qwen", "mimo", "claude"]
     result = {n: cached(n, 0) for n in names}
     low = any(isinstance(v, list) and any(w["limit"] and w["remaining"] / w["limit"] < LOW for w in v)
               for v in result.values())

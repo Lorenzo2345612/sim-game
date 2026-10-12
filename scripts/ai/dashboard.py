@@ -333,8 +333,12 @@ def task_detail(num):
             "totals": finish(tot), "runs": out, "events": events[-40:]}
 
 
+def quota_providers():
+    return [*orch.provider_caps(), "claude"]
+
+
 def quota_view():
-    return {n: QUOTA.get(n) or quota.cached(n, 60) for n in orch.provider_caps()}
+    return {n: QUOTA.get(n) or quota.cached(n, 60) for n in quota_providers()}
 
 
 def decision_text(file):
@@ -347,7 +351,7 @@ def decision_text(file):
 
 def refresh_quota():
     while True:
-        for name in orch.provider_caps():
+        for name in quota_providers():
             QUOTA[name] = quota.cached(name, 0)
         time.sleep(60)
 

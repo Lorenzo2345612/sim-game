@@ -125,7 +125,7 @@ $('board').addEventListener('toggle', e => {
 
 function quotaMini(d) {
   const out = [];
-  for (const p of ['glm', 'kimi']) {
+  for (const p of ['glm', 'kimi', 'claude']) {
     const w = Array.isArray(d.quota?.[p]) ? d.quota[p].find(x => x.window === '5h') : null;
     if (!w) { out.push(`<span class="quota" title="${p}: no data">${provDot(p)}${p} –</span>`); continue; }
     const used = w.limit ? 100 * (1 - w.remaining / w.limit) : 0, c = used > 90 ? 'low' : used > 70 ? 'mid' : '';
