@@ -21,6 +21,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -29,10 +30,12 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+WORKDIR = Path(os.environ.get("SIMGAME_WORKDIR") or ROOT)
 CONFIG = json.loads((ROOT / "ai/providers.json").read_text())
 EXPERIMENTS_PATH = ROOT / "ai/experiments.json"
 RUNS = ROOT / ".ai/runs"
 SESSIONS = ROOT / ".ai/sessions"
+SCHEMAS = ROOT / "ai/schemas"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
 REPORT_LIMIT = 4000
 DEFAULT_STALL_MIN = 8  # kill a worker whose session transcript has not changed for this long
@@ -61,7 +64,7 @@ def get_key(env_name):
 
 
 def changed_files():
-    out = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
+    out = subprocess.run(["git", "status", "--porcelain"], cwd=WORKDIR, capture_output=True, text=True)
     return set(out.stdout.splitlines())
 
 
@@ -89,10 +92,9 @@ def ping():
 def build_prompt(args):
     parts = []
     if args.task:
-        task_path = (ROOT / args.task).resolve()
-        if not task_path.exists():
+        if not (WORKDIR / args.task).exists() and not (ROOT / args.task).exists():
             sys.exit(f"Task not found: {args.task}")
-        parts.append(f"Your task is specified in `{task_path.relative_to(ROOT)}`. Read it fully before starting.")
+        parts.append(f"Your task is specified in `{args.task}`. Read it fully before starting.")
     if args.prompt:
         parts.append(args.prompt)
     if args.note:
@@ -214,13 +216,16 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
         "--disable-slash-commands",
         "--output-format", "json",
     ]
+    schema = SCHEMAS / f"{'coder' if args.role == 'fixer' else args.role}.json"
+    if schema.exists():
+        cmd += ["--json-schema", json.dumps(json.loads(schema.read_text()), separators=(",", ":"))]
     if resume_id:
         cmd += ["--resume", resume_id]
         session_id = resume_id
     else:
         session_id = str(uuid.uuid4())
         cmd += ["--session-id", session_id]
-    transcript = WORKER_CONFIG_DIR / "projects" / str(ROOT).replace("/", "-") / f"{session_id}.jsonl"
+    transcript = WORKER_CONFIG_DIR / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(WORKDIR)) / f"{session_id}.jsonl"
 
     RUNS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -233,7 +238,7 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
           f"{'resume=' + resume_id[:8] + ' ' if resume_id else ''}log={log_path.relative_to(ROOT)}", flush=True)
     stall_s = role.get("stallMin", DEFAULT_STALL_MIN) * 60
     deadline = time.time() + role["timeoutMin"] * 60
-    proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(cmd, cwd=WORKDIR, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     started = time.time()
     while True:
         try:
@@ -281,6 +286,8 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     for line in sorted(after - before) or ["(none new)"]:
         print("  " + line)
     print("[worker] report:\n" + result)
+    if data.get("structured_output") is not None:
+        print("[worker] report-json: " + json.dumps(data["structured_output"], separators=(",", ":")), flush=True)
     return (1 if data.get("is_error") else 0), False
 
 

@@ -25,7 +25,7 @@ Dashboard: `setsid nohup python3 scripts/ai/dashboard.py > .ai/dashboard.log 2>&
 setsid nohup python3 scripts/ai/orchestrator.py run [--max-parallel 3] [--only 020,021] >> .ai/orchestrator-run.log 2>&1 < /dev/null &
 setsid nohup scripts/ai/run-after.sh 021 >> .ai/orchestrator-run.log 2>&1 < /dev/null &   # queue after the running one (script waits for it)
 ```
-Never run two orchestrators at once (shared `.ai/state.json` and README). To stop: kill its process group (`kill -TERM -- -<pgid>`), never `pkill -f` with a pattern that matches your own shell. A restarted orchestrator resumes each task from its saved stage. Restart it after changing `orchestrator.py`/`worker.py` rules (running processes keep the old code).
+Only one orchestrator runs at a time (`.ai/orchestrator.lock`; a second `run` exits 4). Tasks run in worktrees `.ai/wt/<num>`; `orchestrator.py cleanup [--all] [--sessions DAYS]` removes leftovers. To stop: kill its process group (`kill -TERM -- -<pgid>`), never `pkill -f` with a pattern that matches your own shell. A restarted orchestrator resumes each task from its saved stage. Restart it after changing `orchestrator.py`/`worker.py` rules (running processes keep the old code).
 
 ## Decisions
 

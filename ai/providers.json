@@ -2,19 +2,23 @@
   "providers": {
     "glm": {
       "baseUrl": "https://open.bigmodel.cn/api/anthropic",
-      "keyEnv": "GLM_API_KEY"
+      "keyEnv": "GLM_API_KEY",
+      "maxConcurrent": 2
     },
     "kimi": {
       "baseUrl": "https://api.kimi.com/coding",
-      "keyEnv": "KIMI_API_KEY"
+      "keyEnv": "KIMI_API_KEY",
+      "maxConcurrent": 2
     },
     "qwen": {
       "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
-      "keyEnv": "DASHSCOPE_API_KEY"
+      "keyEnv": "DASHSCOPE_API_KEY",
+      "maxConcurrent": 4
     },
     "mimo": {
       "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",
-      "keyEnv": "MIMO_TOKEN_PLAN_KEY"
+      "keyEnv": "MIMO_TOKEN_PLAN_KEY",
+      "maxConcurrent": 4
     }
   },
   "roles": {

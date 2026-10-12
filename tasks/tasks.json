@@ -1,0 +1,701 @@
+{
+  "tasks": [
+    {
+      "num": "001",
+      "title": "Create the project scaffold",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/001-project-scaffold.md"
+    },
+    {
+      "num": "002",
+      "title": "Create shared types and constants",
+      "status": "done",
+      "deps": [
+        "001"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/002-types-and-constants.md"
+    },
+    {
+      "num": "003",
+      "title": "Implement the fixed-step loop",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/003-fixed-step-loop.md"
+    },
+    {
+      "num": "004",
+      "title": "Project lon/lat coordinates to local metres",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/004-geo-projection.md"
+    },
+    {
+      "num": "005",
+      "title": "Smooth and resample the centerline",
+      "status": "done",
+      "deps": [
+        "004"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/005-centerline-smoothing.md"
+    },
+    {
+      "num": "006",
+      "title": "Generate public/tracks/monza.json with the track-builder",
+      "status": "done",
+      "deps": [
+        "002",
+        "004",
+        "005"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/006-track-builder.md"
+    },
+    {
+      "num": "007",
+      "title": "Build the track ribbon geometry",
+      "status": "done",
+      "deps": [
+        "004"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/007-track-ribbon.md"
+    },
+    {
+      "num": "008",
+      "title": "Track progress and lap timer",
+      "status": "done",
+      "deps": [
+        "002",
+        "004",
+        "005"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/008-track-progress-lap-timer.md"
+    },
+    {
+      "num": "009",
+      "title": "Implement keyboard input",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/009-keyboard-input.md"
+    },
+    {
+      "num": "010",
+      "title": "Create the Rapier physics world and car config",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/010-physics-world-config.md"
+    },
+    {
+      "num": "011",
+      "title": "Implement the physics vehicle (Rapier raycast vehicle)",
+      "status": "done",
+      "deps": [
+        "002",
+        "010"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/011-vehicle-physics.md"
+    },
+    {
+      "num": "012",
+      "title": "Create the base Three.js scene",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/012-base-scene.md"
+    },
+    {
+      "num": "013",
+      "title": "Render the track (asphalt and start line)",
+      "status": "done",
+      "deps": [
+        "002",
+        "007",
+        "012"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/013-track-render.md"
+    },
+    {
+      "num": "014",
+      "title": "Render the car (Kenney model)",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/014-car-render.md"
+    },
+    {
+      "num": "015",
+      "title": "Chase camera",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/015-chase-camera.md"
+    },
+    {
+      "num": "016",
+      "title": "Create the speed and lap-time HUD",
+      "status": "done",
+      "deps": [
+        "002"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/016-hud.md"
+    },
+    {
+      "num": "017",
+      "title": "Create the game core (Game) and interpolation",
+      "status": "done",
+      "deps": [
+        "002",
+        "005",
+        "008",
+        "010",
+        "011"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/017-game-core.md"
+    },
+    {
+      "num": "018",
+      "title": "Integrate everything in main.ts (browser game)",
+      "status": "done",
+      "deps": [
+        "002",
+        "003",
+        "006",
+        "007",
+        "009",
+        "012",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/018-main-integration.md"
+    },
+    {
+      "num": "019",
+      "title": "Add the Playwright e2e test",
+      "status": "done",
+      "deps": [
+        "018"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/019-e2e-playwright.md"
+    },
+    {
+      "num": "020",
+      "title": "Fix invisible track and off-screen HUD in the browser game",
+      "status": "done",
+      "deps": [
+        "019"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "phase": 0,
+      "spec": "tasks/020-fix-track-visibility-and-hud.md"
+    },
+    {
+      "num": "021",
+      "title": "Local progress dashboard for the AI pipeline",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 0,
+      "spec": "tasks/021-progress-dashboard.md"
+    },
+    {
+      "num": "022",
+      "title": "Add TrackData v2 types and Phase 1 constants",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/022-types-and-constants-v2.md"
+    },
+    {
+      "num": "023",
+      "title": "Add inverse projection unprojectXZ",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/023-geo-unproject.md"
+    },
+    {
+      "num": "024",
+      "title": "Fetch DEM windows for the three tracks",
+      "status": "done",
+      "deps": [
+        "023"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/024-dem-fetch.md"
+    },
+    {
+      "num": "025",
+      "title": "DEM sampling and centerline elevation profile",
+      "status": "pending",
+      "deps": [
+        "022",
+        "023",
+        "024"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/025-dem-elevation-profile.md"
+    },
+    {
+      "num": "026",
+      "title": "Detect radii, kerbs and run-offs",
+      "status": "in progress",
+      "deps": [
+        "022"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/026-corner-analysis.md"
+    },
+    {
+      "num": "027",
+      "title": "Lay out barriers",
+      "status": "in progress",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/027-barrier-layout.md"
+    },
+    {
+      "num": "028",
+      "title": "Build the terrain heightfield",
+      "status": "pending",
+      "deps": [
+        "022",
+        "023",
+        "024",
+        "025"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/028-terrain-builder.md"
+    },
+    {
+      "num": "029",
+      "title": "Place trees deterministically",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/029-tree-placement.md"
+    },
+    {
+      "num": "030",
+      "title": "Generate TrackData v2 for Monza, Spa and Silverstone",
+      "status": "pending",
+      "deps": [
+        "022",
+        "024",
+        "025",
+        "026",
+        "027",
+        "028",
+        "029"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/030-track-builder-v2.md"
+    },
+    {
+      "num": "031",
+      "title": "Build track surface geometry from TrackData v2",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/031-track-surfaces-geometry.md"
+    },
+    {
+      "num": "032",
+      "title": "Terrain, surface and barrier colliders",
+      "status": "pending",
+      "deps": [
+        "022",
+        "031"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/032-physics-track-colliders.md"
+    },
+    {
+      "num": "033",
+      "title": "Per-wheel surface grip and drag",
+      "status": "pending",
+      "deps": [
+        "022",
+        "032"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/033-surface-grip.md"
+    },
+    {
+      "num": "034",
+      "title": "Invalidate laps when all wheels leave the track",
+      "status": "pending",
+      "deps": [
+        "033"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/034-track-limits.md"
+    },
+    {
+      "num": "035",
+      "title": "Fetch CC0 track textures",
+      "status": "pending",
+      "deps": [
+        "024"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/035-textures-fetch.md"
+    },
+    {
+      "num": "036",
+      "title": "Render the terrain mesh",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/036-terrain-render.md"
+    },
+    {
+      "num": "037",
+      "title": "Render track surfaces with textures",
+      "status": "pending",
+      "deps": [
+        "022",
+        "031",
+        "035"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/037-track-surface-render.md"
+    },
+    {
+      "num": "038",
+      "title": "Render barriers",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/038-barrier-render.md"
+    },
+    {
+      "num": "039",
+      "title": "Instanced procedural trees with LOD",
+      "status": "pending",
+      "deps": [
+        "022",
+        "035"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/039-trees-render.md"
+    },
+    {
+      "num": "040",
+      "title": "Procedural grandstands with crowd",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/040-grandstands-crowd.md"
+    },
+    {
+      "num": "041",
+      "title": "Pit building, start gantry and start lights",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/041-pit-gantry-lights.md"
+    },
+    {
+      "num": "042",
+      "title": "Sky, fog per track and car-following shadows",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/042-lighting-sky-shadows.md"
+    },
+    {
+      "num": "043",
+      "title": "Load a TrackData v2 world into the game",
+      "status": "pending",
+      "deps": [
+        "022",
+        "030",
+        "031",
+        "032",
+        "033",
+        "034",
+        "035",
+        "036",
+        "037",
+        "038",
+        "039",
+        "040",
+        "041",
+        "042"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/043-world-integration.md"
+    },
+    {
+      "num": "044",
+      "title": "Track selection and pause menu",
+      "status": "pending",
+      "deps": [
+        "043"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/044-track-menu.md"
+    },
+    {
+      "num": "045",
+      "title": "Six-speed gearbox with rpm and limiter",
+      "status": "pending",
+      "deps": [
+        "033"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/045-gearbox.md"
+    },
+    {
+      "num": "046",
+      "title": "Gamepad input and input merging",
+      "status": "pending",
+      "deps": [
+        "022"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/046-gamepad.md"
+    },
+    {
+      "num": "047",
+      "title": "T-cam and cockpit cameras with switching",
+      "status": "done",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/047-cameras.md"
+    },
+    {
+      "num": "048",
+      "title": "HUD v2 with gear, rpm, sectors, delta and invalid lap",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/048-hud-v2.md"
+    },
+    {
+      "num": "049",
+      "title": "Minimap",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/049-minimap.md"
+    },
+    {
+      "num": "050",
+      "title": "Best-lap ghost recording and replay",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/050-ghost.md"
+    },
+    {
+      "num": "051",
+      "title": "Engine and tyre audio",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/051-engine-audio.md"
+    },
+    {
+      "num": "052",
+      "title": "Graphics presets and FPS overlay",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/052-graphics-presets.md"
+    },
+    {
+      "num": "053",
+      "title": "Integrate the F4 car model",
+      "status": "blocked",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/053-f4-car.md"
+    },
+    {
+      "num": "054",
+      "title": "Wire gameplay features into the game",
+      "status": "pending",
+      "deps": [
+        "034",
+        "042",
+        "043",
+        "044",
+        "045",
+        "046",
+        "047",
+        "048",
+        "049",
+        "050",
+        "051",
+        "052"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/054-gameplay-integration.md"
+    },
+    {
+      "num": "055",
+      "title": "Phase 1 end-to-end checks on three tracks",
+      "status": "pending",
+      "deps": [
+        "054"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "phase": 1,
+      "spec": "tasks/055-phase1-e2e.md"
+    }
+  ]
+}

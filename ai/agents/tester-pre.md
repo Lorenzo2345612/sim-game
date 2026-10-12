@@ -13,7 +13,7 @@ Complex task, before any code exists. The acceptance tests (`tests/unit/acceptan
 ## Brevity (mandatory)
 
 - No comments except non-obvious setup. No text between steps.
-- Final output: only the report block.
+- Final output: only the JSON report required by the schema.
 
 ## Rules
 
@@ -21,11 +21,6 @@ Complex task, before any code exists. The acceptance tests (`tests/unit/acceptan
 - Do not duplicate acceptance tests. Maximum 10 edge tests; pick the riskiest.
 - Deterministic tests only. No git commits.
 
-## Final report (your last message, exactly this format)
+## Final report
 
-```
-STATUS: READY | BLOCKED
-FILE: path of the edge test file
-GAPS: EDGE1..EDGEn, one line each (what it checks)
-SPEC_SILENT: behaviours the spec does not define and that the planner should decide (or "none")
-```
+Your last message is the JSON object required by the output schema, nothing else. Fields: `status` READY|BLOCKED, `file` (edge test file), `gaps` (EDGE1..EDGEn, one line each), `specSilent` (behaviours the spec does not define and the planner should decide; empty list if none).
