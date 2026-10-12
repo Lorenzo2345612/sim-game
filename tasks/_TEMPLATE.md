@@ -3,7 +3,8 @@
 Status: pending | in progress | done | blocked
 Phase: 0 | 1 | 2 | 3
 Depends on: NNN, NNN (or "nothing")
-Roles: coder, tester, reviewer
+Complexity: simple | complex
+Roles: acceptance, coder, reviewer (complex adds tester-pre and tester)
 
 ## Goal
 

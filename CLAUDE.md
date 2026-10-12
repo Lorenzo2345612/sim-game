@@ -10,7 +10,7 @@ Web simulator of single-seaters on real circuits. Requirements and decisions in 
 | Planning subagents | Claude Sonnet | Simple feature analysis, spec writing/review, dispatch orchestration, research | Edit acceptance tables |
 | acceptance | Qwen `qwen3.8-flash` | Turns the acceptance table into failing tests in `tests/unit/acceptance/` before coding | Edit `src/` |
 | coder | GLM `glm-5.3-flash` (heavy: `glm-5.3`) | Implements a spec | Design or expand scope |
-| tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Tests for the acceptance criteria | Edit `src/` |
+| tester-pre / tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Complex tasks only: edge tests before coding, gap tests after | Edit `src/` or acceptance tests |
 | reviewer | Kimi `k3-256k` (heavy: `k3`, 1M ctx, ~2× quota) | Validates against the spec, runs checks | Edit files |
 | fixer | DeepSeek `deepseek-v4.1-flash` via Bailian | Second opinion when the coder gets stuck | — |
 | fallback | Xiaomi MiMo `mimo-v2.6-flash` (heavy: `mimo-v2.6-pro`) | Replaces any role when its provider runs out of quota (automatic) | — |

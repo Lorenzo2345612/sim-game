@@ -12,6 +12,7 @@ Claude does not edit `src/`, `tests/` or `tools/` (a hook blocks it). All code i
 ```
 python3 scripts/ai/worker.py ping                                  # check providers
 python3 scripts/ai/worker.py acceptance --task tasks/NNN-x.md      # Qwen flash, test-first
+python3 scripts/ai/worker.py tester-pre --task tasks/NNN-x.md      # complex tasks only, before coding
 python3 scripts/ai/worker.py coder    --task tasks/NNN-x.md        # GLM flash
 python3 scripts/ai/worker.py tester   --task tasks/NNN-x.md        # Qwen flash
 python3 scripts/ai/worker.py reviewer --task tasks/NNN-x.md        # Kimi
@@ -32,13 +33,17 @@ Workers take minutes: launch them with Bash `run_in_background` and wait for the
 
 ## Pipeline per task
 
+Spec header `Complexity: simple | complex` (missing = simple).
+
 1. Check that the task's dependencies are `done` in `tasks/README.md`. Mark the task `in progress`.
-2. `acceptance` (Qwen flash): writes `tests/unit/acceptance/NNN-*.test.ts` from the spec's "Acceptance tests" table; expect `STATUS: READY` with failing tests. If `UNTESTABLE` rows: fix the table (planner, Opus) and rerun. Commit the acceptance tests before the coder starts (`test: acceptance tests (task NNN)`), so any later change shows in `git diff`. Specs without the table (Phase 0) skip this step.
-3. `coder`. If `STATUS: BLOCKED`, read the reason: it is almost always an ambiguous or incomplete spec → fix the spec (not the code) and relaunch.
-4. `tester`. If `FAIL`, pass the failures to the coder: `coder --task ... --note "<tester FAILURES>"`.
-5. `reviewer`. If `CHANGES` or `REJECTED`, pass only the BLOCKER findings to the coder with `--note`. Ignore MINOR unless cheap; DOUBT items you decide by reading the cited code.
-6. Repeat 4-5 until `APPROVED` with tests passing.
-7. Mark the task `done` in the spec and in `tasks/README.md`. Summarize to the user in 2-3 lines.
+2. `acceptance` (Qwen flash): writes `tests/unit/acceptance/NNN-*.test.ts` from the spec's "Acceptance tests" table; expect `STATUS: READY` with failing tests. If `UNTESTABLE` rows: report to the planner (Opus fixes the table) and rerun.
+3. Complex only — `tester-pre` (Qwen flash): adds `tests/unit/edge/NNN-*.test.ts` for gaps the acceptance tests miss. `SPEC_SILENT` items go to the planner before coding.
+4. Commit the acceptance (and edge) tests before the coder starts (`test: acceptance tests (task NNN)`), so any later change shows in `git diff`.
+5. `coder`. If `STATUS: BLOCKED`, it is almost always the spec → fix the spec (not the code) and relaunch.
+6. Complex only — `tester` (post-code pass, Qwen flash). If `FAIL`, pass the failures to the coder (`--resume --note`).
+7. `reviewer` (Kimi K3). If `CHANGES` or `REJECTED`, pass only BLOCKER findings to the coder (`--resume --note`). Ignore MINOR unless cheap; decide DOUBT items by reading the cited code.
+8. Repeat 6-7 (complex) or 7 (simple) until `APPROVED` with tests passing.
+9. Mark the task `done` in the spec and in `tasks/README.md`, commit. Summarize to the user in 2-3 lines.
 
 Task statuses: pending | in progress | done | blocked.
 

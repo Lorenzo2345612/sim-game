@@ -25,6 +25,7 @@ Claude plans; it does not write production code. Tasks are executed by cheap fla
 - Shared types and interfaces go in their own earlier task, so later ones import them instead of inventing them.
 - Give exact signatures (`export function stepVehicle(state: VehicleState, input: DriverInput, dt: number): VehicleState`), constants with units and formulas. Not "implement a reasonable tire model".
 - Acceptance criteria checkable with Vitest or a command. If a criterion is visual, define how to check it (Playwright screenshot, value in the HUD, etc.).
+- Mark `Complexity: complex` only for tasks with tricky edge cases or numerics (physics, timing, state machines, interpolation); everything else `simple`. Complex tasks get a tester before and after coding.
 - Explicit "Out of scope" list: flash models tend to add things.
 - Tasks with no dependencies between them and no shared files can run in parallel; mark it in `tasks/README.md`.
 

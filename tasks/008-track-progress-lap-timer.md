@@ -3,7 +3,8 @@
 Status: pending
 Phase: 0
 Depends on: 002, 004, 005
-Roles: coder, tester, reviewer
+Complexity: complex
+Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
 
