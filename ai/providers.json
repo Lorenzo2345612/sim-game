@@ -1,0 +1,55 @@
+{
+  "providers": {
+    "glm": {
+      "baseUrl": "https://open.bigmodel.cn/api/anthropic",
+      "keyEnv": "GLM_API_KEY"
+    },
+    "kimi": {
+      "baseUrl": "https://api.kimi.com/coding",
+      "keyEnv": "KIMI_API_KEY"
+    },
+    "qwen": {
+      "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
+      "keyEnv": "DASHSCOPE_API_KEY"
+    },
+    "mimo": {
+      "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",
+      "keyEnv": "MIMO_TOKEN_PLAN_KEY"
+    }
+  },
+  "roles": {
+    "coder": {
+      "provider": "glm",
+      "model": "glm-5.3-flash",
+      "heavyModel": "glm-5.3",
+      "prompt": "ai/agents/coder.md",
+      "timeoutMin": 40
+    },
+    "tester": {
+      "provider": "qwen",
+      "model": "qwen3.8-flash",
+      "heavyModel": "qwen3.8-max",
+      "prompt": "ai/agents/tester.md",
+      "timeoutMin": 30
+    },
+    "reviewer": {
+      "provider": "kimi",
+      "model": "kimi-for-coding",
+      "heavyModel": "k3-256k",
+      "prompt": "ai/agents/reviewer.md",
+      "timeoutMin": 20
+    },
+    "fixer": {
+      "provider": "qwen",
+      "model": "deepseek-v4.1-flash",
+      "heavyModel": "deepseek-v4-pro",
+      "prompt": "ai/agents/coder.md",
+      "timeoutMin": 40
+    }
+  },
+  "fallback": {
+    "provider": "mimo",
+    "model": "mimo-v2.6-flash",
+    "heavyModel": "mimo-v2.6-pro"
+  }
+}

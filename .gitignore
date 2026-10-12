@@ -1,0 +1,4 @@
+.ai/
+node_modules/
+dist/
+__pycache__/
