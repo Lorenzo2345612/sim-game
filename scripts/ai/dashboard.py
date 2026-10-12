@@ -48,9 +48,31 @@ def proc_table():
     return rows
 
 
+def ours(pid):
+    """False when the process belongs to another tree (cwd outside ROOT, or ORCH_ROOT elsewhere). Unreadable -> True."""
+    root = os.path.realpath(ROOT)
+    try:
+        cwd = os.path.realpath(f"/proc/{pid}/cwd")
+        if not os.path.exists(f"/proc/{pid}/cwd"):
+            return True
+        if cwd != root and not cwd.startswith(root + os.sep):
+            return False
+    except OSError:
+        return True
+    try:
+        env = Path(f"/proc/{pid}/environ").read_bytes().split(b"\0")
+    except OSError:
+        return True
+    for item in env:
+        if item.startswith(b"ORCH_ROOT=") and os.path.realpath(item[10:].decode(errors="replace")) != root:
+            return False
+    return True
+
+
 def processes():
     return [{k: p[k] for k in ("pid", "etime", "args")} for p in proc_table()
-            if ("orchestrator.py run" in p["args"] or "worker.py " in p["args"]) and "grep" not in p["args"]]
+            if ("orchestrator.py run" in p["args"] or "worker.py " in p["args"]) and "grep" not in p["args"]
+            and ours(p["pid"])]
 
 
 def orchestrator_pids():
