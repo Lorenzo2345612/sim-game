@@ -644,7 +644,7 @@
     {
       "num": "048",
       "title": "HUD v2 with gear, rpm, sectors, delta and invalid lap",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -698,7 +698,7 @@
     },
     {
       "num": "053",
-      "title": "Integrate the F4 car model",
+      "title": "F4 car model pipeline (offline asset build)",
       "status": "pending",
       "deps": [],
       "complexity": "complex",
@@ -762,6 +762,20 @@
       "phase": 1,
       "spec": "tasks/056-track-integration.md",
       "models": "heavy"
+    },
+    {
+      "num": "057",
+      "title": "Use the F4 car in the game and remove the Kenney placeholder",
+      "status": "pending",
+      "deps": [
+        "053",
+        "056"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/057-f4-car-integration.md"
     }
   ]
 }

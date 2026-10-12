@@ -106,9 +106,13 @@
       "id": "M1.4",
       "title": "F4 car model",
       "tasks": [
-        "053"
+        "053",
+        "057"
       ],
-      "status": "open"
+      "status": "open",
+      "prefetch": [
+        "053"
+      ]
     }
   ]
 }
