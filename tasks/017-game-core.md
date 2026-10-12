@@ -1,6 +1,6 @@
 # 017 — Create the game core (Game) and interpolation
 
-Status: in progress
+Status: done
 Phase: 0
 Depends on: 002, 005, 008, 010, 011
 Complexity: complex

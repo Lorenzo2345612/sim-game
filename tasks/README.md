@@ -20,7 +20,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 014 | Render the car (Kenney model) | done | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 015, 016, 017 |
 | 015 | Chase camera | done | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016, 017 |
 | 016 | Create the speed and lap-time HUD | done | 002 | 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 017 |
-| 017 | Create the game core (Game) and interpolation | pending | 002, 005, 008, 010, 011 | 003, 006, 007, 009, 012, 013, 014, 015, 016 |
+| 017 | Create the game core (Game) and interpolation | done | 002, 005, 008, 010, 011 | 003, 006, 007, 009, 012, 013, 014, 015, 016 |
 | 018 | Integrate everything in main.ts (browser game) | pending | 002, 003, 006, 007, 009, 012, 013, 014, 015, 016, 017 | - |
 | 019 | Add the Playwright e2e test | pending | 018 | - |
 
