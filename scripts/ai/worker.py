@@ -23,7 +23,9 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.request
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,6 +35,7 @@ RUNS = ROOT / ".ai/runs"
 SESSIONS = ROOT / ".ai/sessions"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
 REPORT_LIMIT = 4000
+DEFAULT_STALL_MIN = 8  # kill a worker whose session transcript has not changed for this long
 QUOTA_PATTERNS = ("429", "402", "quota", "insufficient", "balance", "rate limit", "rate_limit",
                   "usage limit", "exceeded", "余额", "限额", "额度")
 
@@ -213,6 +216,11 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     ]
     if resume_id:
         cmd += ["--resume", resume_id]
+        session_id = resume_id
+    else:
+        session_id = str(uuid.uuid4())
+        cmd += ["--session-id", session_id]
+    transcript = WORKER_CONFIG_DIR / "projects" / str(ROOT).replace("/", "-") / f"{session_id}.jsonl"
 
     RUNS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -223,14 +231,28 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     before = changed_files()
     print(f"[worker] role={args.role} model={model} provider={provider_name} "
           f"{'resume=' + resume_id[:8] + ' ' if resume_id else ''}log={log_path.relative_to(ROOT)}", flush=True)
-    try:
-        proc = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True,
-                              timeout=role["timeoutMin"] * 60)
-    except subprocess.TimeoutExpired:
-        print(f"[worker] TIMEOUT after {role['timeoutMin']} min")
-        log_path.write_text(json.dumps({"timeout": True, "is_error": True, "model": model,
-                                        "duration_ms": role["timeoutMin"] * 60000}))
-        return 124, False
+    stall_s = role.get("stallMin", DEFAULT_STALL_MIN) * 60
+    deadline = time.time() + role["timeoutMin"] * 60
+    proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    started = time.time()
+    while True:
+        try:
+            stdout, stderr = proc.communicate(timeout=15)
+            break
+        except subprocess.TimeoutExpired:
+            now = time.time()
+            last = transcript.stat().st_mtime if transcript.exists() else started
+            reason = "TIMEOUT" if now > deadline else "STALLED" if now - max(last, started) > stall_s else None
+            if reason:
+                proc.kill()
+                proc.communicate()
+                minutes = round((now - started) / 60, 1)
+                print(f"[worker] {reason} after {minutes} min (no transcript activity for "
+                      f"{round((now - max(last, started)) / 60, 1)} min)")
+                log_path.write_text(json.dumps({"timeout": True, "is_error": True, "reason": reason,
+                                                "model": model, "duration_ms": int((now - started) * 1000)}))
+                return 124, False
+    proc = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
     log_path.write_text(proc.stdout or proc.stderr)
     try:

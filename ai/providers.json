@@ -37,14 +37,14 @@
       "model": "glm-5.3-flash",
       "heavyModel": "glm-5.3",
       "prompt": "ai/agents/coder.md",
-      "timeoutMin": 40
+      "timeoutMin": 25
     },
     "tester": {
       "provider": "qwen",
       "model": "qwen3.8-flash",
       "heavyModel": "qwen3.8-max",
       "prompt": "ai/agents/tester.md",
-      "timeoutMin": 30
+      "timeoutMin": 25
     },
     "reviewer": {
       "provider": "kimi",
@@ -58,7 +58,7 @@
       "model": "deepseek-v4.1-flash",
       "heavyModel": "deepseek-v4-pro",
       "prompt": "ai/agents/coder.md",
-      "timeoutMin": 40
+      "timeoutMin": 25
     }
   },
   "fallback": {
