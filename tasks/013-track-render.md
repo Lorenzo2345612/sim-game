@@ -1,6 +1,6 @@
 # 013 — Render the track (asphalt and start line)
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002, 007, 012
 Roles: coder, tester, reviewer
