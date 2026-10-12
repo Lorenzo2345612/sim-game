@@ -1,6 +1,6 @@
 # 019 — Add the Playwright e2e test
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 018
 Roles: coder, tester, reviewer
