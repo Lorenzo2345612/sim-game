@@ -2,118 +2,239 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>sim-game · pipeline</title>
 <style>
-  :root { --bg:#14161b; --panel:#1d2027; --line:#2c313b; --text:#d8dbe2; --dim:#8a90a0; --ok:#4cc38a; --run:#5aa9ff; --warn:#f2b84b; --bad:#ef6b6b; }
+  :root { --bg:#14161b; --panel:#1b1e25; --line:#2c313b; --text:#dde0e7; --dim:#9aa1b1; --ok:#4cc38a; --run:#5aa9ff; --warn:#f2b84b; --bad:#ef6b6b; --chip:#262b34; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 system-ui, sans-serif; }
-  header { display: flex; align-items: center; gap: 16px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
-  h1 { font-size: 16px; margin: 0; }
-  .bar { flex: 1; height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; max-width: 420px; }
-  .bar > div { height: 100%; background: var(--ok); transition: width .4s; }
-  .pill { padding: 2px 8px; border-radius: 10px; font-size: 12px; background: var(--line); }
-  .pill.on { background: var(--run); color: #001; }
-  main { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; padding: 14px 18px; }
+  a { color: var(--run); }
+  :focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
+  .dim { color: var(--dim); }
+  .top { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .top h1 { font-size: 15px; margin: 0; white-space: nowrap; }
+  .grow { flex: 1; }
+  .prog { display: flex; align-items: center; gap: 8px; min-width: 200px; max-width: 300px; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; flex: 1; }
+  .bar > i { display: block; height: 100%; background: var(--ok); transition: width .4s; }
+  .pill { padding: 2px 9px; border-radius: 10px; font-size: 12px; background: var(--chip); border: 1px solid var(--line); white-space: nowrap; }
+  .pill.on { background: #1e3a5c; border-color: var(--run); color: #cfe5ff; }
+  .pill.ok { color: var(--ok); } .pill.bad { color: var(--bad); } .pill.warn { color: var(--warn); }
+  .qm { display: flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
+  .qm .bar { width: 54px; flex: none; } .qm .bar.mid > i { background: var(--warn); } .qm .bar.low > i { background: var(--bad); }
+  main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 14px; padding: 14px 18px 24px; align-items: start; }
+  .col { display: grid; gap: 14px; min-width: 0; }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
-  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin: 0 0 8px; }
-  table { width: 100%; border-collapse: collapse; }
-  td, th { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  td.t { white-space: normal; }
-  .s-done { color: var(--ok); } .s-in { color: var(--run); } .s-wait { color: var(--warn); } .s-blocked { color: var(--bad); }
-  pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: 12px/1.4 ui-monospace, monospace; color: var(--dim); max-height: 300px; overflow: auto; }
-  button { background: var(--line); color: var(--text); border: 1px solid #3a404c; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
-  button:hover { background: #343a46; }
-  input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 110px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  h2 .sp { flex: 1; }
+  button { background: #262b34; color: var(--text); border: 1px solid #3a404c; border-radius: 6px; padding: 5px 11px; cursor: pointer; font: inherit; }
+  button:hover { background: #313845; }
+  button.primary { background: #1f5f3f; border-color: var(--ok); } button.primary:hover { background: #26744d; }
+  button.danger { border-color: #7a3a3a; color: #ffb4b4; } button.danger:hover { background: #4a2626; }
+  input[type=text], input:not([type]) { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .full { grid-column: 1 / -1; }
+  .ms { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; background: #181b21; }
+  .ms > summary { cursor: pointer; padding: 6px 10px; display: flex; align-items: center; gap: 10px; list-style: none; }
+  .ms > summary::-webkit-details-marker { display: none; }
+  .ms > summary::before { content: '▸'; color: var(--dim); width: 10px; }
+  .ms[open] > summary::before { content: '▾'; }
+  .ms .bar { width: 90px; flex: none; }
+  .t { display: grid; grid-template-columns: 38px minmax(120px, 1fr) auto 44px 62px; gap: 8px; align-items: center; padding: 3px 10px; border-top: 1px solid var(--line); }
+  .t .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stages { display: flex; gap: 2px; }
+  .stages i { font-style: normal; font-size: 10px; padding: 0 4px; border-radius: 3px; background: var(--chip); color: #7c8393; line-height: 16px; }
+  .stages i.past { background: #1f3b2f; color: #7fd4a8; } .stages i.cur { background: var(--run); color: #001; font-weight: 600; }
+  .stages i.cur.wait { background: var(--warn); } .stages i.cur.blocked { background: var(--bad); } .stages i.all { background: #1f3b2f; color: #7fd4a8; }
+  .badge { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #4a3a1a; color: var(--warn); }
+  .num { font-variant-numeric: tabular-nums; text-align: right; color: var(--dim); }
+  .s-done { color: var(--ok); } .s-in { color: var(--run); } .s-wait { color: var(--warn); } .s-blocked { color: var(--bad); }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, monospace; color: var(--dim); max-height: 280px; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+  .dec { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; background: #181b21; }
+  .dec pre { margin-top: 6px; max-height: 200px; color: var(--text); }
+  .ev { display: grid; grid-template-columns: 62px 38px 100px 1fr; gap: 8px; font: 12px/1.5 ui-monospace, monospace; }
+  .ev b { font-weight: 500; } .ev .e-decision, .ev .e-blocked { color: var(--bad); } .ev .e-done, .ev .e-merged, .ev .e-approved { color: var(--ok); } .ev .e-start, .ev .e-step { color: var(--run); }
+  #events { height: 260px; overflow: auto; }
+  #toast { min-height: 18px; margin-top: 8px; font: 12px ui-monospace, monospace; color: var(--dim); white-space: pre-wrap; max-height: 160px; overflow: auto; }
+  .big { height: 330px; overflow: auto; }
 </style>
 </head>
 <body>
-<header>
-  <h1>sim-game · AI pipeline</h1>
-  <div class="bar"><div id="bar" style="width:0"></div></div>
-  <span id="count">–</span>
+<div class="top">
+  <h1>AI pipeline</h1>
+  <div class="prog"><span id="msName" class="pill">–</span><div class="bar"><i id="bar" style="width:0"></i></div><span id="msCount" class="dim">–</span></div>
   <span id="orch" class="pill">orchestrator idle</span>
-  <span id="updated" style="color:var(--dim)"></span>
-</header>
+  <span id="wk" class="pill">0 workers</span>
+  <span class="grow"></span>
+  <span id="qm" class="qm"></span>
+  <a href="/stats" style="white-space:nowrap">Token stats &rarr;</a>
+  <span id="updated" class="dim" style="white-space:nowrap;font-size:11px"></span>
+</div>
 <main>
-  <section>
-    <h2>Tasks</h2>
-    <table><thead><tr><th>#</th><th>Title</th><th>Status</th><th>Stage</th><th>Fix</th></tr></thead><tbody id="tasks"></tbody></table>
-  </section>
-  <div style="display:grid;gap:14px;align-content:start">
+  <div class="col">
+    <section><h2>Task board <span class="sp"></span><span id="allCount" class="dim" style="text-transform:none;letter-spacing:0"></span></h2><div id="board"></div></section>
+    <section><h2>Events <span class="sp"></span><input id="evf" placeholder="filter (task, event, text)" aria-label="Filter events"></h2><div id="events" class="big" style="height:260px"></div></section>
+  </div>
+  <div class="col">
+    <section><h2>Deliverables</h2><div id="deliv"></div></section>
+    <section><h2>Running workers</h2><div id="workers"></div></section>
+    <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
     <section>
       <h2>Actions</h2>
       <div class="row">
-        <button onclick="act({action:'run', only: document.getElementById('only').value})">Run orchestrator</button>
-        <input id="only" placeholder="only: 020,021">
-        <button onclick="act({action:'stop'})">Stop</button>
-        <button onclick="act({action:'tests'})">npm test</button>
+        <button class="primary" id="bRun">Run orchestrator</button>
+        <input id="only" placeholder="only: 020,021" size="14" aria-label="Only tasks">
+        <button class="danger" id="bStop">Stop</button>
+        <button id="bTest">npm test</button>
       </div>
-      <pre id="out" style="margin-top:8px"></pre>
+      <div id="toast" role="status" aria-live="polite"></div>
     </section>
-    <section><h2>Deliverables</h2><table id="milestones"></table></section>
-    <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
-    <section><h2>Running processes</h2><pre id="running"></pre></section>
-    <section><h2>Coder tokens</h2><table id="tokens"></table></section>
-    <section><h2>Providers</h2><table id="providers"></table></section>
-    <section><h2>Quota</h2><table id="quota"></table></section>
-    <section><h2>Worktrees</h2><pre id="worktrees"></pre></section>
+    <section><h2>Commits</h2><pre id="commits"></pre></section>
   </div>
-  <section><h2>Events</h2><pre id="events"></pre></section>
-  <section><h2>Commits</h2><pre id="commits"></pre></section>
 </main>
 <script>
 const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'k' : n ? String(n) : '';
+const STAGES = ['acceptance','tester-pre','coder','tester','reviewer','merge','done'];
+const STAGE_ALIAS = {'commit-tests':'coder','cleanup':'merge'};
 const cls = s => s === 'done' ? 's-done' : s === 'in progress' ? 's-in' : s.startsWith('waiting') ? 's-wait' : s === 'blocked' ? 's-blocked' : '';
+const open = new Set(JSON.parse(localStorage.getItem('openMs') || 'null') || []);
+let seenMs = new Set(JSON.parse(localStorage.getItem('seenMs') || '[]'));
+const last = {};
+let D = null, decisions = {};
+
+function set(id, html) { if (last[id] !== html) { last[id] = html; $(id).innerHTML = html; } }
+function setText(id, t) { if (last[id] !== t) { last[id] = t; $(id).textContent = t; } }
+
+function stageChips(t) {
+  if (t.status === 'done') return `<span class="stages" title="done">${STAGES.map(s => `<i class="all">${s === 'tester-pre' ? 'pre' : s.slice(0, 3)}</i>`).join('')}</span>`;
+  const cur = STAGES.indexOf(STAGE_ALIAS[t.stage] || t.stage), state = t.status.startsWith('waiting') ? 'wait' : t.status === 'blocked' ? 'blocked' : '';
+  return `<span class="stages" title="stage: ${esc(t.stage || 'not started')}">${STAGES.map((s, i) =>
+    `<i class="${cur < 0 ? '' : i < cur ? 'past' : i === cur ? 'cur ' + state : ''}">${s === 'tester-pre' ? 'pre' : s.slice(0, 3)}</i>`).join('')}</span>`;
+}
+
+function board(d) {
+  const groups = new Map();
+  for (const m of d.milestones) groups.set(m.id, {m, tasks: []});
+  groups.set('', {m: {id: '', title: 'Not in a milestone', status: ''}, tasks: []});
+  for (const t of d.tasks) (groups.get(t.milestone) || groups.get('')).tasks.push(t);
+  let html = '';
+  for (const [id, {m, tasks}] of groups) {
+    if (!tasks.length) continue;
+    const done = tasks.filter(t => t.status === 'done').length, tok = tasks.reduce((a, t) => a + t.tokens, 0);
+    if (!seenMs.has(id)) { seenMs.add(id); if (id === d.activeMilestone || id === '' || (done < tasks.length && done > 0)) open.add(id); }
+    const stc = m.status === 'approved' ? 'ok' : m.status === 'built' ? 'warn' : '';
+    html += `<details class="ms" data-id="${esc(id)}" ${open.has(id) ? 'open' : ''}><summary>
+      <b>${esc(id || '–')}</b><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.title)}</span>
+      ${m.status ? `<span class="pill ${stc}">${esc(m.status)}</span>` : ''}
+      <span class="bar"><i style="width:${100 * done / tasks.length}%"></i></span><span class="dim" style="min-width:42px;text-align:right">${done}/${tasks.length}</span>
+      <span class="dim" style="min-width:48px;text-align:right">${fmt(tok)}</span></summary>` +
+      tasks.map(t => `<div class="t"><span class="dim">${t.num}</span><span class="title ${cls(t.status)}" title="${esc(t.title)} — ${esc(t.status)}">${esc(t.title)}</span>
+        ${stageChips(t)}<span>${t.fixRounds ? `<span class="badge" title="fix rounds">fix ${t.fixRounds}</span>` : ''}</span><span class="num" title="tokens">${fmt(t.tokens)}</span></div>`).join('') + '</details>';
+  }
+  set('board', html);
+}
+$('board').addEventListener('toggle', e => {
+  const el = e.target; if (!el.dataset || el.dataset.id === undefined) return;
+  el.open ? open.add(el.dataset.id) : open.delete(el.dataset.id);
+  localStorage.setItem('openMs', JSON.stringify([...open])); localStorage.setItem('seenMs', JSON.stringify([...seenMs]));
+}, true);
+
+function quotaMini(d) {
+  const out = [];
+  for (const p of ['glm', 'kimi']) {
+    const w = Array.isArray(d.quota?.[p]) ? d.quota[p].find(x => x.window === '5h') : null;
+    if (!w) { out.push(`<span class="qm dim" title="${p}: no data">${p.toUpperCase()} –</span>`); continue; }
+    const used = w.limit ? 100 * (1 - w.remaining / w.limit) : 0, c = used > 90 ? 'low' : used > 70 ? 'mid' : '';
+    out.push(`<span class="qm" title="${p} 5h window: ${w.used}/${w.limit}, resets ${esc(w.resetAt)}">${p.toUpperCase()}<span class="bar ${c}"><i style="width:${used.toFixed(0)}%"></i></span>${used.toFixed(0)}%</span>`);
+  }
+  set('qm', out.join(''));
+}
+
+function deliverables(d) {
+  const list = d.milestones.filter(m => m.status === 'built' || m.id === d.activeMilestone || m.builtAt);
+  set('deliv', list.length ? list.map(m => {
+    const ok = v => v === undefined ? '' : `<span class="pill ${v ? 'ok' : 'bad'}">${v ? 'ok' : 'FAILED'}</span>`;
+    return `<div class="dec"><div class="row"><b>${esc(m.id)}</b><span style="flex:1">${esc(m.title)}</span>
+      <span class="pill ${m.status === 'approved' ? 'ok' : m.status === 'built' ? 'warn' : ''}">${esc(m.status || 'open')}</span></div>
+      <div class="row dim" style="margin:4px 0">${m.builtAt ? `built ${esc(m.builtAt.replace('T', ' '))} @ ${esc(m.commit || '')}` : 'not built yet'}
+        ${m.builtAt ? `<span>build ${ok(m.buildOk)}</span><span>tests ${ok(m.testsOk)}</span>` : ''}</div>
+      <div class="row">${m.built ? `<button data-play="${esc(m.id)}">Play</button>` : ''}
+        ${m.status === 'built' ? `<button class="primary" data-approve="${esc(m.id)}">Approve &amp; continue</button>` : ''}</div></div>`;
+  }).join('') : '<span class="dim">no milestone built yet</span>');
+}
+
+function workers(d) {
+  set('workers', d.workers.length ? '<table><tbody>' + d.workers.map(w =>
+    `<tr><td><b>${w.task}</b></td><td>${esc(w.role)}${w.heavy ? ' <span class="badge">heavy</span>' : ''}${w.resume ? ' <span class="badge">resume</span>' : ''}</td><td>${esc(w.provider || '–')}</td><td class="num" title="pid ${w.pid}">${esc(w.etime)}</td></tr>`).join('') + '</tbody></table>'
+    : '<span class="dim">no workers running</span>');
+}
+
+async function decisionsCard(d) {
+  for (const f of d.decisions) if (!(f in decisions)) {
+    decisions[f] = 'loading…';
+    fetch('/api/decision?file=' + encodeURIComponent(f)).then(r => r.json()).then(j => { decisions[f] = j.content ?? j.error; renderDecisions(); });
+  }
+  renderDecisions();
+}
+function renderDecisions() {
+  if (!D) return;
+  set('decisions', D.decisions.length ? D.decisions.map(f => `<div class="dec"><div class="row"><b style="flex:1">${esc(f)}</b>
+    <button data-resolve="${esc(f)}">Resolved</button></div><pre>${esc(decisions[f] || '')}</pre></div>`).join('') : '<span class="dim">none</span>');
+}
+
+function events(d) {
+  const q = $('evf').value.toLowerCase();
+  set('events', d.events.slice().reverse().filter(e => !q || JSON.stringify(e).toLowerCase().includes(q)).map(e =>
+    `<div class="ev"><span class="dim">${esc((e.ts || '').slice(11))}</span><span>${esc(e.task || '-')}</span><b class="e-${esc(e.event)}">${esc(e.event)}</b><span class="dim">${esc(e.detail || '')}</span></div>`).join('')
+    || '<span class="dim">no events</span>');
+}
 
 async function refresh() {
   try {
-    const d = await (await fetch('/api/status')).json();
-    $('milestones').innerHTML = (d.milestones || []).map(m => `<tr><td>${esc(m.id)}</td><td class="t">${esc(m.title)}</td>
-      <td class="${m.status === 'approved' ? 's-done' : m.status === 'built' ? 's-wait' : ''}">${esc(m.status || 'open')}</td>
-      <td>${m.built ? `<button onclick="play('${esc(m.id)}')">Play</button>` : ''}
-      ${m.status === 'built' ? `<button onclick="act({action:'approve', milestone:'${esc(m.id)}'})">Approve &amp; continue</button>` : ''}</td></tr>`).join('');
-    $('bar').style.width = (d.total ? 100 * d.done / d.total : 0) + '%';
-    $('count').textContent = `${d.done} / ${d.total} done`;
+    D = await (await fetch('/api/status')).json();
+    const d = D, am = d.milestones.find(m => m.id === d.activeMilestone);
+    const scope = am ? d.tasks.filter(t => t.milestone === am.id) : d.tasks;
+    const done = scope.filter(t => t.status === 'done').length;
+    setText('msName', am ? `${am.id} · ${am.status || 'open'}` : 'all milestones');
+    $('msName').title = am ? am.title : '';
+    $('bar').style.width = (scope.length ? 100 * done / scope.length : 0) + '%';
+    setText('msCount', `${done}/${scope.length} tasks`);
+    setText('allCount', `${d.done}/${d.total} done overall`);
     $('orch').textContent = d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle';
     $('orch').className = 'pill' + (d.orchestratorRunning ? ' on' : '');
-    $('tasks').innerHTML = d.tasks.map(t => `<tr><td>${t.num}</td><td class="t">${esc(t.title)}</td>
-      <td class="${cls(t.status)}">${esc(t.status)}</td><td>${esc(t.stage)}</td><td>${t.fixRounds || ''}</td></tr>`).join('');
-    $('decisions').innerHTML = d.decisions.length ? d.decisions.map(f =>
-      `<div class="row">${esc(f)} <button onclick="act({action:'resolve', file:'${esc(f)}'})">Resolved</button></div>`).join('')
-      : '<span style="color:var(--dim)">none</span>';
-    $('running').textContent = d.running.join('\n') || 'none';
-    $('tokens').innerHTML = '<tr><th>Provider</th><th>Tasks</th><th>Tokens</th></tr>' + Object.entries(d.tokens)
-      .map(([p, v]) => `<tr><td>${p}</td><td>${v.tasks}</td><td>${(v.total / 1e6).toFixed(2)} M</td></tr>`).join('');
-    $('providers').innerHTML = '<tr><th>Provider</th><th>Running</th><th>Max</th></tr>' + Object.entries(d.providers || {})
-      .map(([p, v]) => `<tr><td>${p}</td><td>${v.running}</td><td>${v.max ?? '-'}</td></tr>`).join('');
-    $('quota').innerHTML = '<tr><th>Provider</th><th>Window</th><th>Used</th><th>Left</th><th>Resets (UTC)</th></tr>' +
-      Object.entries(d.quota || {}).flatMap(([p, ws]) => Array.isArray(ws)
-        ? ws.map(w => `<tr><td>${p}</td><td>${w.window}</td><td>${w.used}/${w.limit}</td><td>${w.remaining}</td><td>${w.resetAt.slice(5, 16)}</td></tr>`)
-        : [`<tr><td>${p}</td><td colspan="4" style="color:var(--dim)">${ws.unsupported ? 'n/a' : esc(ws.error || '')}</td></tr>`]).join('');
-    $('worktrees').textContent = (d.worktrees || []).map(w => `${w.num}  ${w.branch}  ${w.path}`).join('\n') || 'none';
-    $('events').textContent = d.events.slice().reverse().map(e =>
-      `${(e.ts || '').slice(11)}  ${e.task || '-'}  ${e.event}  ${e.detail || ''}`).join('\n');
-    $('commits').textContent = d.commits.join('\n');
-    $('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
-  } catch (e) { $('updated').textContent = 'offline'; }
+    setText('wk', `${d.workers.length} worker${d.workers.length === 1 ? '' : 's'}`);
+    quotaMini(d); board(d); deliverables(d); workers(d); decisionsCard(d); events(d);
+    setText('commits', d.commits.join('\n'));
+    setText('updated', new Date().toLocaleTimeString([], {hour12: false}));
+  } catch (e) { setText('updated', 'offline'); }
 }
 
-async function act(body) {
-  $('out').textContent = body.action + '…';
+async function post(body) {
   const r = await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-  const j = await r.json();
-  $('out').textContent = `${r.status} ${j.error || (j.tail ?? 'ok')}`;
+  return [r.status, await r.json()];
+}
+async function act(body) {
+  setText('toast', body.action + '…');
+  const [code, j] = await post(body);
+  setText('toast', `${code} ${j.error || (j.tail ?? 'ok')}`);
   refresh();
 }
-
-async function play(id) {
-  const r = await (await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ action: 'play', milestone: id }) })).json();
-  if (r.url) setTimeout(() => window.open(r.url, '_blank'), 800); else $('out').textContent = r.error;
-}
+$('bRun').onclick = () => act({action: 'run', only: $('only').value});
+$('bStop').onclick = () => { if (confirm('Stop the orchestrator and its workers?')) act({action: 'stop'}); };
+$('bTest').onclick = () => act({action: 'tests'});
+$('evf').oninput = () => D && events(D);
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.resolve) { delete decisions[b.dataset.resolve]; act({action: 'resolve', file: b.dataset.resolve}); }
+  else if (b.dataset.approve) { if (confirm('Approve ' + b.dataset.approve + ' and continue?')) act({action: 'approve', milestone: b.dataset.approve}); }
+  else if (b.dataset.play) {
+    const [, j] = await post({action: 'play', milestone: b.dataset.play});
+    if (j.url) setTimeout(() => window.open(j.url, '_blank'), 800); else setText('toast', j.error);
+  }
+});
 
 refresh();
 setInterval(refresh, 3000);

@@ -19,11 +19,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import orchestrator as orch  # noqa: E402  (respects ORCH_ROOT)
 import metrics  # noqa: E402
 import quota  # noqa: E402
+import re  # noqa: E402
 import threading  # noqa: E402
 import time  # noqa: E402
+from urllib.parse import parse_qs, urlparse  # noqa: E402
 
 ROOT = orch.ROOT
 HTML = Path(__file__).resolve().parent / "dashboard.html"
+STATS_HTML = Path(__file__).resolve().parent / "stats.html"
 ORCH_CMD = shlex.split(os.environ.get("DASH_ORCH_CMD") or "python3 scripts/ai/orchestrator.py")
 LOG = ROOT / ".ai/orchestrator-run.log"
 QUOTA = {}  # provider -> windows, refreshed every 60 s by refresh_quota()
@@ -46,15 +49,42 @@ def orchestrator_pids():
     return pids
 
 
+def workers():
+    out = []
+    for p in processes():
+        m = re.search(r"worker\.py (\S+) .*?--task tasks/(\d{3})", p["args"])
+        if not m:
+            continue
+        pm = re.search(r"--provider (\S+)", p["args"])
+        out.append({"pid": p["pid"], "etime": p["etime"], "role": m.group(1), "task": m.group(2),
+                    "provider": pm.group(1) if pm else orch.provider_of(m.group(1), m.group(2)),
+                    "heavy": "--heavy" in p["args"], "resume": "--resume" in p["args"]})
+    return out
+
+
+def task_tokens():
+    totals = defaultdict(int)
+    metrics.RUNS = ROOT / ".ai/runs"
+    try:
+        for r in metrics.load_runs():
+            totals[r["task"]] += r["total"]
+    except Exception:  # best-effort
+        pass
+    return totals
+
+
 def status():
     tasks = orch.read_tasks() if orch.REGISTRY.exists() else []
     state = orch.load_state()
+    mile_of = {n: m["id"] for m in orch.read_milestones() for n in m["tasks"]}
+    toks = task_tokens()
     rows = [{"num": t["num"], "title": t["title"], "status": t["status"],
              "stage": state.get(t["num"], {}).get("stage", ""),
-             "fixRounds": state.get(t["num"], {}).get("fixRounds", 0)} for t in tasks]
+             "fixRounds": state.get(t["num"], {}).get("fixRounds", 0),
+             "milestone": mile_of.get(t["num"], ""), "tokens": toks.get(t["num"], 0)} for t in tasks]
     events = []
     if orch.EVENTS.exists():
-        for line in orch.EVENTS.read_text().splitlines()[-30:]:
+        for line in orch.EVENTS.read_text().splitlines()[-100:]:
             try:
                 events.append(json.loads(line))
             except ValueError:
@@ -75,6 +105,8 @@ def status():
         "done": sum(r["status"] == "done" for r in rows),
         "total": len(rows),
         "running": [f"{p['pid']} {p['etime']} {p['args'][:140]}" for p in processes()],
+        "workers": workers(),
+        "activeMilestone": (orch.active_milestone() or {}).get("id"),
         "events": events,
         "decisions": decisions,
         "tokens": {k: {"tasks": len(v["tasks"]), "total": v["total"]} for k, v in tokens.items()},
@@ -86,6 +118,153 @@ def status():
         "providers": orch.provider_status(),
         "quota": QUOTA,
     }
+
+
+# -- token accounting -----------------------------------------------------------
+
+# USD per 1M tokens: (input, cached input, output). Estimates only (pay-as-you-go list prices).
+PRICES = {
+    "glm-5.3-flash": (0.15, 0.03, 0.50),
+    "glm-5.3": (1.40, 0.26, 4.40),
+    "k3": (3.00, 0.30, 15.00),
+    "k3-256k": (3.00, 0.30, 15.00),
+    "kimi-for-coding": (0.95, 0.19, 4.00),
+    "qwen3.8-flash": (0.15, 0.019, 0.47),
+    "deepseek-v4.1-flash": (0.15, 0.019, 0.47),
+    "mimo-v2.6-flash": (0.145, 0.0145, 0.29),
+    "mimo-v2.6-pro": (0.435, 0.0435, 0.87),
+}
+SUM = ("runs", "turns", "input", "output", "cacheRead", "cacheWrite", "total", "seconds", "costUsd")
+
+
+def run_cost(r):
+    p = PRICES.get(r["model"])
+    if not p:
+        return 0.0
+    return (r["input"] * p[0] + r["cache_write"] * p[0] + r["cache_read"] * p[1] + r["output"] * p[2]) / 1e6
+
+
+def blank():
+    return {k: 0 for k in SUM} | {"tasks": set()}
+
+
+def add(g, r):
+    g["runs"] += 1
+    g["turns"] += r["turns"]
+    g["input"] += r["input"]
+    g["output"] += r["output"]
+    g["cacheRead"] += r["cache_read"]
+    g["cacheWrite"] += r["cache_write"]
+    g["total"] += r["total"]
+    g["seconds"] += r["seconds"]
+    g["costUsd"] += run_cost(r)
+    g["tasks"].add(r["task"])
+
+
+def finish(g):
+    n, t = max(g["runs"], 1), max(len(g["tasks"]), 1)
+    g["tasks"] = len(g["tasks"])
+    g["costUsd"] = round(g["costUsd"], 4)
+    g["avgPerRun"] = {"total": g["total"] / n, "output": g["output"] / n, "seconds": g["seconds"] / n,
+                      "turns": g["turns"] / n}
+    g["avgPerTask"] = {"total": g["total"] / t, "output": g["output"] / t, "seconds": g["seconds"] / t,
+                       "runs": g["runs"] / t}
+    return g
+
+
+def group(runs, keyf):
+    out = defaultdict(blank)
+    for r in runs:
+        add(out[keyf(r)], r)
+    return {k: finish(v) for k, v in sorted(out.items())}
+
+
+def compute_stats(runs, tasks, milestones, state, assignments, flt=None):
+    flt = flt or {}
+    mile_of = {n: m["id"] for m in milestones for n in m["tasks"]}
+    info = {t["num"]: t for t in tasks}
+    coder_prov = defaultdict(set)
+    for r in runs:
+        if r["role"] == "coder":
+            coder_prov[r["task"]].add(r["provider"])
+    for prov, nums in assignments.items():
+        if isinstance(nums, list):
+            for n in nums:
+                if n not in coder_prov:
+                    coder_prov[n].add(prov)
+
+    def coder_of(num):
+        return "+".join(sorted(coder_prov.get(num, ())))
+
+    sel = [r for r in runs
+           if (not flt.get("milestone") or mile_of.get(r["task"], "") == flt["milestone"])
+           and (not flt.get("provider") or r["provider"] == flt["provider"])
+           and (not flt.get("role") or r["role"] == flt["role"])]
+
+    by_role_task = defaultdict(lambda: defaultdict(int))
+    for r in sel:
+        by_role_task[r["task"]][r["role"]] += r["total"]
+    task_rows = []
+    for num, g in group(sel, lambda r: r["task"]).items():
+        st = state.get(num, {})
+        task_rows.append({"task": num, "title": info.get(num, {}).get("title", ""),
+                          "status": info.get(num, {}).get("status", ""), "milestone": mile_of.get(num, ""),
+                          "coderProvider": coder_of(num), "fixRounds": st.get("fixRounds"),
+                          "byRole": dict(by_role_task[num]), **{k: v for k, v in g.items() if k != "tasks"}})
+
+    ab = {}
+    seen = {r["task"] for r in sel}
+    for prov in sorted({coder_of(t) for t in seen if coder_of(t) and "+" not in coder_of(t)}):
+        nums = {t for t in seen if coder_of(t) == prov}
+        cr = [r for r in sel if r["task"] in nums and r["role"] in ("coder", "fixer")]
+        rounds = [state[t].get("fixRounds", 0) for t in nums if t in state]
+        ab[prov] = {"tasks": len(nums), "avgRounds": sum(rounds) / len(rounds) if rounds else None,
+                    "avgTokens": sum(r["total"] for r in cr) / len(nums),
+                    "avgMinutes": sum(r["seconds"] for r in cr) / len(nums) / 60,
+                    "approvedFirstPassPct": 100 * sum(x == 0 for x in rounds) / len(rounds) if rounds else None}
+
+    days = defaultdict(lambda: defaultdict(int))
+    for r in sel:
+        d = r["stamp"][:8]
+        days[f"{d[:4]}-{d[4:6]}-{d[6:]}"][r["provider"]] += r["total"]
+    tot = blank()
+    for r in sel:
+        add(tot, r)
+    return {
+        "filters": {k: v for k, v in flt.items() if v},
+        "totals": finish(tot),
+        "byModel": group(sel, lambda r: r["model"]),
+        "byProvider": group(sel, lambda r: r["provider"]),
+        "byRole": group(sel, lambda r: r["role"]),
+        "byMilestone": group(sel, lambda r: mile_of.get(r["task"], "(none)")),
+        "byTask": task_rows,
+        "abCoder": ab,
+        "timeline": [{"day": d, "byProvider": dict(v), "total": sum(v.values())} for d, v in sorted(days.items())],
+        "prices": {k: {"input": v[0], "cached": v[1], "output": v[2]} for k, v in PRICES.items()},
+        "unpricedModels": sorted({r["model"] for r in sel if r["model"] not in PRICES}),
+        "estimate": True,
+        "options": {"milestones": [m["id"] for m in milestones], "providers": sorted({r["provider"] for r in runs}),
+                    "roles": sorted({r["role"] for r in runs})},
+    }
+
+
+def stats(flt=None):
+    metrics.RUNS = ROOT / ".ai/runs"
+    exp = orch.load_json(orch.EXPERIMENTS).get("coderAssignments", {})
+    return compute_stats(metrics.load_runs(), orch.read_tasks() if orch.REGISTRY.exists() else [],
+                         orch.read_milestones(), orch.load_state(), exp, flt)
+
+
+def quota_view():
+    return {n: QUOTA.get(n) or quota.cached(n, 60) for n in orch.provider_caps()}
+
+
+def decision_text(file):
+    file = str(file or "")
+    src = orch.DECISIONS / file
+    if not file.endswith(".md") or "/" in file or "\\" in file or ".." in file or not src.is_file():
+        return None
+    return src.read_text()[:20000]
 
 
 def refresh_quota():
@@ -124,7 +303,7 @@ def action(body):
     if name == "resolve":
         file = str(body.get("file") or "")
         src = orch.DECISIONS / file
-        if not file.endswith(".md") or "/" in file or ".." in file or not src.is_file():
+        if decision_text(file) is None:
             return 400, {"error": "invalid decision file"}
         src.rename(src.with_name(file[:-3] + ".resolved.md"))
         return 200, {"ok": True}
@@ -161,10 +340,24 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path == "/":
+        u = urlparse(self.path)
+        q = {k: v[0] for k, v in parse_qs(u.query).items()}
+        if u.path == "/":
             self.send(200, HTML.read_bytes(), "text/html; charset=utf-8")
-        elif self.path == "/api/status":
+        elif u.path == "/stats":
+            self.send(200, STATS_HTML.read_bytes(), "text/html; charset=utf-8")
+        elif u.path == "/api/status":
             self.send(200, status())
+        elif u.path == "/api/stats":
+            data = stats({k: q.get(k, "") for k in ("milestone", "provider", "role")})
+            data["quota"] = quota_view()
+            self.send(200, data)
+        elif u.path == "/api/decision":
+            text = decision_text(q.get("file"))
+            if text is None:
+                self.send(400, {"error": "invalid decision file"})
+            else:
+                self.send(200, {"file": q["file"], "content": text})
         else:
             self.send(404, {"error": "not found"})
 
@@ -191,7 +384,7 @@ def main():
     args = parser.parse_args()
     server = make_server(args.port)
     threading.Thread(target=refresh_quota, daemon=True).start()
-    print(f"Dashboard: http://127.0.0.1:{args.port}", flush=True)
+    print(f"Dashboard: http://127.0.0.1:{server.server_address[1]}", flush=True)
     server.serve_forever()
 
 
