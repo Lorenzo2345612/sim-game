@@ -1,6 +1,6 @@
 # 009 — Implement keyboard input
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
