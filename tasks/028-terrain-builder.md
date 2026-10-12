@@ -38,6 +38,13 @@ export function buildTerrain(
 5. Corridor: `d` = distance to the nearest centerline point; `c = widthMeters/2 + maxBarrierOffset + 5`. If `d ≤ c`: `elevation[nearest] − 0.15`. For `c < d < c + 30`: linear blend from that value to the base height. Beyond: base height.
 6. Use a uniform spatial grid for nearest-point lookup (brute force is too slow for ~100k nodes). Round heights to 0.01.
 
+## Edge decisions (planner)
+
+- Inputs come from the track builder and are valid: centerline has ≥ 2 points, `elevation.length === centerline.length`, `widthMeters > 0`, `maxBarrierOffset ≥ 0`. Throw `Error` otherwise; do not test other invalid inputs.
+- Equidistant nearest points: the lowest index wins.
+- cols/rows use `Math.round`.
+- Input arrays are not mutated.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Acceptance tests for this task are Vitest in `tests/unit/acceptance/`. Rows are copied verbatim; do not change them.
