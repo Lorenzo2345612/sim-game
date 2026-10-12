@@ -29,5 +29,7 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 
 ## Known follow-ups
 
+- Handling: M0 car spins too easily under brake + steer (equal brake on 4 wheels, no ABS, fast keyboard steer, equal rear side grip). Planned fix after M1.x as a bugfix task with heavy models: brake bias ~62/38, light ABS, more rear side grip, optional stability assist; ATs: no spin (rear slip < 25°) at 150 km/h full brake + full steer 2 s, realistic 200–0 distance, car still turns while braking. Calibrate first with skill `physics-lab`.
+
 - Task 021 (dashboard) was written by the planner; its acceptance table has no automated test yet.
 - Phase 0 visual polish noted: Kenney wheel pivot offset, no shadows (Phase 1 task 042 adds them), all Kenney assets to be removed with the F4 car.
