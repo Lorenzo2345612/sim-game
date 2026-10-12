@@ -59,3 +59,9 @@ The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABL
 
 - Game: `setsid nohup npx vite --port 5173 --strictPort --host 127.0.0.1 > .ai/vite-dev.log 2>&1 < /dev/null &` → http://localhost:5173 (`?track=spa` once task 043 lands). On WSL open URLs in Windows with `cmd.exe /c start "" <url>`, files with `explorer.exe "$(wslpath -w <file>)"`.
 - Renders/screenshots: skill `render-preview`.
+
+## Infra guards (no fix round wasted)
+
+- Runs with no report (drain, kill, stall) rerun the same stage; drains count nothing, others one auto-retry.
+- Empty diff before tester/reviewer → back to coder (retry, not fix round); 3rd time → `infra` decision.
+- `commit-tests` lints new acceptance tests (eslint + tsc on those files; missing modules listed in the spec's Files and implicit-any cascades ignored); failures resume the acceptance worker once. Override with `ORCH_LINT_CMD` / `ORCH_TSC_CMD` (`off` to skip).
