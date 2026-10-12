@@ -41,10 +41,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | done | 022, 031, 035 |
-| 038 | Render barriers | pending | 022 |
-| 039 | Instanced procedural trees with LOD | pending | 022, 035 |
-| 040 | Procedural grandstands with crowd | pending | 022 |
-| 041 | Pit building, start gantry and start lights | pending | 022 |
+| 038 | Render barriers | in progress | 022 |
+| 039 | Instanced procedural trees with LOD | in progress | 022, 035 |
+| 040 | Procedural grandstands with crowd | done | 022 |
+| 041 | Pit building, start gantry and start lights | in progress | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
 | 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |

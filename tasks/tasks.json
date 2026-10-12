@@ -512,7 +512,7 @@
     {
       "num": "038",
       "title": "Render barriers",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],
@@ -525,7 +525,7 @@
     {
       "num": "039",
       "title": "Instanced procedural trees with LOD",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "035"
@@ -539,7 +539,7 @@
     {
       "num": "040",
       "title": "Procedural grandstands with crowd",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "022"
       ],
@@ -552,7 +552,7 @@
     {
       "num": "041",
       "title": "Pit building, start gantry and start lights",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],
