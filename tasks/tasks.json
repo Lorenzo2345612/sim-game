@@ -343,7 +343,7 @@
     {
       "num": "026",
       "title": "Detect radii, kerbs and run-offs",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],

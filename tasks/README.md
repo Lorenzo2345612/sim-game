@@ -29,7 +29,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 023 | Add inverse projection unprojectXZ | done | - |
 | 024 | Fetch DEM windows for the three tracks | done | 023 |
 | 025 | DEM sampling and centerline elevation profile | done | 022, 023, 024 |
-| 026 | Detect radii, kerbs and run-offs | in progress | 022 |
+| 026 | Detect radii, kerbs and run-offs | done | 022 |
 | 027 | Lay out barriers | done | 022 |
 | 028 | Build the terrain heightfield | done | 022, 023, 024, 025 |
 | 029 | Place trees deterministically | done | 022 |
