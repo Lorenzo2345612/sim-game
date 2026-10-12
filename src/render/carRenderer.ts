@@ -93,6 +93,22 @@ export class CarRenderer {
     }
   }
 
+  /** Turns every mesh into a translucent tinted clone of its material (best-lap ghost car). */
+  makeGhost(color = 0x66ccff, opacity = 0.35): void {
+    this.root.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      const apply = (m: THREE.Material): THREE.Material => {
+        const c = m.clone();
+        c.transparent = true;
+        c.opacity = opacity;
+        c.depthWrite = false;
+        if (c instanceof THREE.MeshStandardMaterial || c instanceof THREE.MeshBasicMaterial) c.color.set(color);
+        return c;
+      };
+      obj.material = Array.isArray(obj.material) ? obj.material.map(apply) : apply(obj.material);
+    });
+  }
+
   dispose(): void {
     this.root.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return;
