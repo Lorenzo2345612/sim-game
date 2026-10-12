@@ -5,4 +5,8 @@ export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'public', 'assets', '.ai', 'ai'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { document: 'readonly', fetch: 'readonly' } },
+  },
 );
