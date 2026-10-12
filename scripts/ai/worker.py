@@ -39,6 +39,7 @@ SESSIONS = ROOT / ".ai/sessions"
 SCHEMAS = ROOT / "ai/schemas"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
 REPORT_LIMIT = 4000
+HEAVY_TIMEOUT_MIN = 40  # heavy runs (hard tasks, stall retries) may generate for longer
 DEFAULT_STALL_MIN = 8  # kill a worker whose session transcript has not changed for this long
 QUOTA_PATTERNS = ("429", "402", "quota", "insufficient", "balance", "rate limit", "rate_limit",
                   "usage limit", "exceeded", "余额", "限额", "额度")
@@ -104,6 +105,9 @@ def build_prompt(args):
 
 
 def resume_prompt(args):
+    if args.note == "INTERRUPTED":
+        return ("Your previous run was interrupted (timeout or stall) before you finished. Continue the same task "
+                "from where you stopped, without redoing finished work, and end with the required report.")
     note = args.note or "Re-check your work."
     return (f"Continue the same task. New findings from the planner:\n{note}\n\n"
             "Fix only what they point to, re-run the Verification commands and reply with the report block.")
@@ -252,7 +256,8 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     print(f"[worker] role={args.role} model={model} provider={provider_name} "
           f"{'resume=' + resume_id[:8] + ' ' if resume_id else ''}log={log_path.relative_to(ROOT)}", flush=True)
     stall_s = role.get("stallMin", DEFAULT_STALL_MIN) * 60
-    deadline = time.time() + role["timeoutMin"] * 60
+    limit = role.get("heavyTimeoutMin", HEAVY_TIMEOUT_MIN) if args.heavy else role["timeoutMin"]
+    deadline = time.time() + limit * 60
     proc = subprocess.Popen(cmd, cwd=WORKDIR, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     started = time.time()
     activity = [started]
@@ -278,7 +283,10 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
             minutes = round((now - started) / 60, 1)
             print(f"[worker] {reason} after {minutes} min (no model output for "
                   f"{round((now - last) / 60, 1)} min)")
-            log_path.write_text(json.dumps({"timeout": True, "is_error": True, "reason": reason,
+            if transcript.exists():
+                SESSIONS.mkdir(parents=True, exist_ok=True)
+                sess_path.write_text(session_id)
+            log_path.write_text(json.dumps({"timeout": True, "is_error": True, "reason": reason, "session": session_id,
                                             "model": model, "duration_ms": int((now - started) * 1000)}))
             return 124, False
     for t in readers:

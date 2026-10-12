@@ -649,6 +649,8 @@ def call_retry(st, role, spec, num, **kw):
     reason = retry_reason(r)
     event(num, "retry", f"{st.get('stage')} {role}: {reason}")
     kw = {**kw, "resume": False}
+    if reason in ("STALLED", "TIMEOUT"):
+        kw.update(resume=True, note="INTERRUPTED")  # keep the session: continue, do not restart
     if reason == "STALLED":
         kw["heavy"] = True
     return call_worker(role, spec, num, **kw)

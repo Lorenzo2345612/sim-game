@@ -54,6 +54,17 @@ class ResilienceTest(Harness):
         calls = self.acceptance_calls()
         self.assertNotIn("--heavy", calls[0]["argv"])
         self.assertIn("--heavy", calls[1]["argv"], self.diag())
+        self.assertIn("--resume", calls[1]["argv"], self.diag())
+        self.assertIn("INTERRUPTED", calls[1]["argv"], self.diag())
+
+    def test_timeout_retry_resumes_session(self):
+        self.setup_task()
+        timeout = entry("acceptance", "[worker] TIMEOUT after 20.0 min\n", 124)
+        self.write_script(script_with([timeout], "acceptance"))
+        self.run_orch(["run"])
+        calls = self.acceptance_calls()
+        self.assertIn("--resume", calls[1]["argv"], self.diag())
+        self.assertNotIn("--heavy", calls[1]["argv"], self.diag())
 
     def test_models_heavy_applies_to_test_roles_not_reviewer(self):
         self.setup_task(complexity="complex")
