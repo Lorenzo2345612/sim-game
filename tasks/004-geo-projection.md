@@ -1,6 +1,6 @@
 # 004 — Project lon/lat coordinates to local metres
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
