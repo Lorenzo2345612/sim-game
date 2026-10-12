@@ -1,6 +1,6 @@
 # infra-001 — Deterministic task orchestrator
 
-Status: pending
+Status: done
 Complexity: complex
 Depends on: nothing
 Roles: acceptance, coder, reviewer
