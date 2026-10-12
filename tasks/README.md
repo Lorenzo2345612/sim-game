@@ -36,7 +36,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 030 | Generate TrackData v2 for Monza, Spa and Silverstone | done | 022, 024, 025, 026, 027, 028, 029 |
 | 031 | Build track surface geometry from TrackData v2 | done | 022 |
 | 032 | Terrain, surface and barrier colliders | done | 022, 031 |
-| 033 | Per-wheel surface grip and drag | pending | 022, 032 |
+| 033 | Per-wheel surface grip and drag | in progress | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
@@ -55,7 +55,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 049 | Minimap | done | - |
 | 050 | Best-lap ghost recording and replay | in progress | - |
 | 051 | Engine and tyre audio | in progress | - |
-| 052 | Graphics presets and FPS overlay | in progress | - |
+| 052 | Graphics presets and FPS overlay | done | - |
 | 053 | F4 car model pipeline (offline asset build) | pending | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |

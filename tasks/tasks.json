@@ -444,7 +444,7 @@
     {
       "num": "033",
       "title": "Per-wheel surface grip and drag",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "032"
@@ -688,7 +688,7 @@
     {
       "num": "052",
       "title": "Graphics presets and FPS overlay",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
