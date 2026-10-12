@@ -39,7 +39,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 033 | Per-wheel surface grip and drag | pending | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
 | 035 | Fetch CC0 track textures | done | 024 |
-| 036 | Render the terrain mesh | in progress | 022 |
+| 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | pending | 022, 031, 035 |
 | 038 | Render barriers | pending | 022 |
 | 039 | Instanced procedural trees with LOD | pending | 022, 035 |

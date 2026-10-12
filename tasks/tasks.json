@@ -449,7 +449,7 @@
     {
       "num": "036",
       "title": "Render the terrain mesh",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],
