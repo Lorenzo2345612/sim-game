@@ -1,6 +1,6 @@
 # 005 — Smooth and resample the centerline
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 004
 Roles: coder, tester, reviewer
