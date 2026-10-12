@@ -1,0 +1,7 @@
+{
+  "coderAssignments": {
+    "description": "A/B test: which provider codes each task (coder role, incl. --heavy and --resume rounds). Tasks not listed use ai/providers.json.",
+    "mimo": ["005", "008", "010", "012", "014", "016", "017"],
+    "glm": ["003", "004", "006", "007", "009", "011", "013", "015", "018", "019"]
+  }
+}

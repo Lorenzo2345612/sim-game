@@ -17,7 +17,7 @@ Web simulator of single-seaters on real circuits. Requirements and decisions in 
 
 To move all roles to MiMo: `SIMGAME_PROVIDER=mimo`. For a single run: `--provider mimo`.
 
-Configuration in `ai/providers.json`; launcher in `scripts/ai/worker.py`. Flow: skill `plan-feature` → skill `dispatch`.
+Configuration in `ai/providers.json`; launcher in `scripts/ai/worker.py`; coder A/B (GLM vs MiMo) in `ai/experiments.json`; token metrics: `python3 scripts/ai/metrics.py`. Flow: skill `plan-feature` → skill `dispatch`.
 
 ## Stack
 

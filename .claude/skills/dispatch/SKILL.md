@@ -25,6 +25,11 @@ If a provider answers with a quota or balance error (429/402), `worker.py` retri
 
 Workers take minutes: launch them with Bash `run_in_background` and wait for the notification. Bash timeout: 600000 ms.
 
+## Coder A/B and metrics
+
+- `ai/experiments.json` assigns the coder provider per task (GLM vs MiMo). `worker.py` applies it automatically to every coder run of that task (incl. `--heavy`, `--resume`); do not pass `--provider` for coder runs.
+- Token metrics come from `.ai/runs/` logs: `python3 scripts/ai/metrics.py` (per task, per coder provider, per role/model; `--csv FILE` to export). Include its coder-provider summary in the final report of each wave.
+
 ## Pipeline per task
 
 1. Check that the task's dependencies are `done` in `tasks/README.md`. Mark the task `in progress`.

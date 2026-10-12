@@ -28,6 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = json.loads((ROOT / "ai/providers.json").read_text())
+EXPERIMENTS_PATH = ROOT / "ai/experiments.json"
 RUNS = ROOT / ".ai/runs"
 SESSIONS = ROOT / ".ai/sessions"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
@@ -102,6 +103,32 @@ def resume_prompt(args):
             "Fix only what they point to, re-run the Verification commands and reply with the report block.")
 
 
+def task_number(args):
+    return Path(args.task).name[:3] if args.task else None
+
+
+def assigned_provider(args):
+    """Provider forced for this coder task by the A/B experiment, if any."""
+    if args.role != "coder" or not EXPERIMENTS_PATH.exists():
+        return None
+    assignments = json.loads(EXPERIMENTS_PATH.read_text()).get("coderAssignments", {})
+    num = task_number(args)
+    for provider, tasks in assignments.items():
+        if isinstance(tasks, list) and num in tasks:
+            return provider
+    return None
+
+
+def target_for(provider_name, role):
+    """Model pair to use for a provider: the role's own pair or the fallback pair."""
+    if provider_name == role["provider"]:
+        return role
+    fallback = CONFIG.get("fallback")
+    if fallback and fallback["provider"] == provider_name:
+        return fallback
+    sys.exit(f"Provider {provider_name} has no models for role")
+
+
 def session_file(args):
     label = Path(args.task).stem if args.task else "adhoc"
     return SESSIONS / f"{args.role}-{label}.txt"
@@ -133,10 +160,12 @@ def main():
     role = CONFIG["roles"][args.role]
     forced = args.provider or os.environ.get("SIMGAME_PROVIDER")
     fallback = CONFIG.get("fallback")
+    assigned = None if forced else assigned_provider(args)
     if forced and forced != role["provider"]:
-        if not fallback or fallback["provider"] != forced:
-            sys.exit(f"Forced provider unknown or has no models: {forced}")
-        targets = [fallback]
+        targets = [target_for(forced, role)]
+    elif assigned and assigned != role["provider"]:
+        # A/B experiment: assigned provider first, role's default provider on quota errors
+        targets = [target_for(assigned, role), role]
     else:
         targets = [role] + ([fallback] if fallback else [])
 
@@ -188,7 +217,8 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     RUNS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     label = Path(args.task).stem if args.task else "adhoc"
-    log_path = RUNS / f"{stamp}-{args.role}-{provider_name}-{label}.json"
+    suffix = "-resume" if resume_id else ""
+    log_path = RUNS / f"{stamp}-{args.role}-{provider_name}-{label}{suffix}.json"
 
     before = changed_files()
     print(f"[worker] role={args.role} model={model} provider={provider_name} "
@@ -198,6 +228,8 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
                               timeout=role["timeoutMin"] * 60)
     except subprocess.TimeoutExpired:
         print(f"[worker] TIMEOUT after {role['timeoutMin']} min")
+        log_path.write_text(json.dumps({"timeout": True, "is_error": True, "model": model,
+                                        "duration_ms": role["timeoutMin"] * 60000}))
         return 124, False
 
     log_path.write_text(proc.stdout or proc.stderr)
