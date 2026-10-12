@@ -1,6 +1,6 @@
 # 008 — Track progress and lap timer
 
-Status: in progress
+Status: done
 Phase: 0
 Depends on: 002, 004, 005
 Complexity: complex

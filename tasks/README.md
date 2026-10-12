@@ -11,7 +11,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 005 | Smooth and resample the centerline | done | 004 | 003, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
 | 006 | Generate public/tracks/monza.json with the track-builder | done | 002, 004, 005 | 003, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017 |
 | 007 | Build the track ribbon geometry | done | 004 | 003, 005, 006, 008, 009, 010, 011, 012, 014, 015, 016, 017 |
-| 008 | Track progress and lap timer | in progress | 002, 004, 005 | 003, 006, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
+| 008 | Track progress and lap timer | done | 002, 004, 005 | 003, 006, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
 | 009 | Implement keyboard input | done | 002 | 003, 004, 005, 006, 007, 008, 010, 011, 012, 013, 014, 015, 016, 017 |
 | 010 | Create the Rapier physics world and car config | done | 002 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
 | 011 | Implement the physics vehicle (Rapier raycast vehicle) | done | 002, 010 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
