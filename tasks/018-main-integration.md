@@ -1,6 +1,6 @@
 # 018 — Integrate everything in main.ts (browser game)
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002, 003, 006, 007, 009, 012, 013, 014, 015, 016, 017
 Roles: coder, reviewer
