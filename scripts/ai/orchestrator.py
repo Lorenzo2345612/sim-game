@@ -267,6 +267,11 @@ def ensure_worktree(num):
             r = git(*args)
             if r.returncode != 0:
                 raise RuntimeError(f"worktree add failed: {r.stderr.strip()}")
+        else:
+            head = git("rev-parse", "HEAD").stdout.strip()
+            if git("merge-base", "--is-ancestor", head, "HEAD", cwd=path).returncode != 0:
+                if git("rebase", "--autostash", head, cwd=path).returncode != 0:
+                    git("rebase", "--abort", cwd=path)
         modules = ROOT / "node_modules"
         if modules.exists() and not (path / "node_modules").exists():
             (path / "node_modules").symlink_to(modules)
