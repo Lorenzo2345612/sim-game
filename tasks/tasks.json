@@ -398,7 +398,7 @@
     {
       "num": "030",
       "title": "Generate TrackData v2 for Monza, Spa and Silverstone",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022",
         "024",
@@ -430,7 +430,7 @@
     {
       "num": "032",
       "title": "Terrain, surface and barrier colliders",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "031"
@@ -497,7 +497,7 @@
     {
       "num": "037",
       "title": "Render track surfaces with textures",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "031",
