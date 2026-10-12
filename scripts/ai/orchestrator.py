@@ -654,6 +654,79 @@ def call_retry(st, role, spec, num, **kw):
     return call_worker(role, spec, num, **kw)
 
 
+MAX_EMPTY_RETRIES = 2
+MODULE_ERRORS = ("TS2307", "TS2305", "TS2724", "TS2614")
+
+
+def base_commit(num):
+    """Commit that added the acceptance tests, else the merge-base with the main checkout's HEAD."""
+    path = wt_path(num)
+    found = git("log", "--fixed-strings", f"--grep=test: acceptance tests (task {num})", "--format=%H", "-n1",
+                    cwd=path).stdout.strip()
+    return found or git("merge-base", f"task/{num}", "HEAD").stdout.strip()
+
+
+def changed_files(num, base):
+    path = wt_path(num)
+    tracked = git("diff", "--name-only", base, cwd=path).stdout.splitlines()
+    new = git("ls-files", "--others", "--exclude-standard", cwd=path).stdout.splitlines()
+    return [f for f in dict.fromkeys([*tracked, *new]) if f]
+
+
+def has_impl_changes(num):
+    files = changed_files(num, base_commit(num))
+    return any(not f.startswith(("tests/", ".ai/", "node_modules")) for f in files)
+
+
+def new_test_files(num):
+    out = git("status", "--porcelain", "--untracked-files=all", "--", "tests", cwd=wt_path(num)).stdout
+    return [line[3:].strip() for line in out.splitlines()
+            if line[3:].strip().endswith((".ts", ".tsx")) and "D" not in line[:2]]
+
+
+def check_cmd(var, default):
+    cmd = os.environ.get(var)
+    if cmd is None and not os.environ.get("ORCH_ROOT"):
+        cmd = default
+    return None if not cmd or cmd == "off" else shlex.split(cmd)
+
+
+def spec_stems(spec):
+    m = re.search(r"^## Files(.*?)(?=^## |\Z)", spec.read_text(), re.M | re.S)
+    paths = re.findall(r"`([^`\s]+\.\w+)`", m.group(1)) if m else []
+    return [re.sub(r"\.\w+$", "", p) for p in paths]
+
+
+def expected_missing(line, stems):
+    m = re.search(r"['\"]([^'\"]+)['\"]", line)
+    if not m:
+        return False
+    mod = re.sub(r"\.\w+$", "", re.sub(r"^[./@~]+", "", m.group(1)))
+    return bool(mod) and any(s.endswith(mod) or mod.endswith(s) for s in stems)
+
+
+def lint_tests(num, spec):
+    """Errors in the new acceptance test files (eslint + tsc), or ''. Missing modules the spec will create are fine."""
+    files = new_test_files(num)
+    lint, tsc = check_cmd("ORCH_LINT_CMD", "npx eslint"), check_cmd("ORCH_TSC_CMD", "npx tsc --noEmit -p .")
+    if not files or not (lint or tsc):
+        return ""
+    cwd, errors = wt_path(num), []
+    if lint:
+        p = subprocess.run([*lint, *files], cwd=cwd, capture_output=True, text=True, timeout=600)
+        if p.returncode != 0:
+            errors.append(f"eslint:\n{(p.stdout + p.stderr).strip()[-2000:]}")
+    if tsc:
+        p = subprocess.run(tsc, cwd=cwd, capture_output=True, text=True, timeout=600)
+        stems = spec_stems(spec)
+        bad = [ln for ln in (p.stdout + p.stderr).splitlines()
+               if re.search(r"error TS\d+", ln) and any(ln.startswith(f) for f in files)
+               and not (any(c in ln for c in MODULE_ERRORS) and expected_missing(ln, stems))]
+        if bad:
+            errors.append("tsc:\n" + "\n".join(bad)[-2000:])
+    return "\n".join(errors)
+
+
 def fix_call(spec, num, round_no, note, st, heavy=False):
     if round_no <= 2:
         return call_retry(st, "coder", spec, num, resume=True, heavy=heavy, note=note)
@@ -749,18 +822,41 @@ def _run_task(task, slot):
 
         elif stage == "commit-tests":
             if info["acceptance"] or complex_:
+                errs = lint_tests(num, spec)
+                if errs:
+                    event(num, "tests-lint", errs[:300])
+                    call_worker("acceptance", spec, num, resume=True, heavy=models_heavy,
+                                note=f"Your test files fail lint/typecheck. Fix only your own test files:\n{errs}")
+                    errs = lint_tests(num, spec)
+                if errs:
+                    return decision(num, title, stage, "acceptance tests fail lint/typecheck", "", st, "tests",
+                                    {"failures": errs})
                 wt_commit(num, f"test: acceptance tests (task {num})")
             advance("coder")
 
         elif stage == "coder":
-            r = call_retry(st, "coder", spec, num, heavy=heavy)
+            note = "Previous run left no implementation outside tests/. Implement the spec." \
+                if st.get("emptyRetries") else None
+            r = call_retry(st, "coder", spec, num, heavy=heavy, note=note)
             if r["status"] == "BLOCKED":
                 return decision(num, title, stage, "coder blocked", r["out"], st, "spec", r)
+            if not r["status"]:
+                if DRAIN.is_set():
+                    continue
+                return decision(num, title, stage, "coder produced no report", r["out"], st, "infra", r)
             if r["status"] != "OK":
                 st["fixRounds"] = st.get("fixRounds", 0) + 1
             advance("tester" if complex_ else "reviewer")
 
         elif stage in ("tester", "reviewer"):
+            if not has_impl_changes(num):
+                if st.get("emptyRetries", 0) >= MAX_EMPTY_RETRIES:
+                    return decision(num, title, stage, "coder delivered no changes outside tests/", "", st, "infra")
+                st["emptyRetries"] = st.get("emptyRetries", 0) + 1
+                st["retries"] = st.get("retries", 0) + 1
+                event(num, "empty-diff", f"{stage}: no changes outside tests/ -> coder")
+                advance("coder")
+                continue
             if stage == "tester":
                 r = call_retry(st, "tester", spec, num, heavy=models_heavy)
                 failed = r["status"] != "PASS"
@@ -774,6 +870,8 @@ def _run_task(task, slot):
             if not failed:
                 advance("reviewer" if stage == "tester" else "merge")
                 continue
+            if not r["status"] and DRAIN.is_set():
+                continue
             st["fixRounds"] = st.get("fixRounds", 0) + 1
             if st["fixRounds"] > MAX_FIX_ROUNDS:
                 return decision(num, title, stage, "escalation exhausted", r["out"], st,
@@ -782,6 +880,12 @@ def _run_task(task, slot):
             fr = fix_call(spec, num, st["fixRounds"], note, st, heavy=heavy)
             if fr["status"] == "BLOCKED":
                 return decision(num, title, stage, "fix round blocked", fr["out"], st, "spec", fr)
+            if not fr["status"]:
+                st["fixRounds"] -= 1
+                save_task_state(num, st)
+                if DRAIN.is_set():
+                    continue
+                return decision(num, title, stage, "fix run produced no report", fr["out"], st, "infra", fr)
 
         elif stage == "merge":
             err = merge_task(num, title)

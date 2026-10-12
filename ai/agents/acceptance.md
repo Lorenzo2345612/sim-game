@@ -19,6 +19,8 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 - Only create files in `tests/unit/acceptance/`. Never edit `src/`.
 - Do not add cases that are not in the table, and do not weaken any expected value or tolerance.
 - If a row is not testable as written (ambiguous input, missing signature), mark it in the report; do not guess.
+- No unused imports, parameters or variables. The tests must pass `npm run lint` (run `npx eslint` on your file) and type-check.
+- Use only signatures, names and paths stated in the spec; do not invent APIs.
 - Deterministic tests only. No git commits.
 
 ## Final report

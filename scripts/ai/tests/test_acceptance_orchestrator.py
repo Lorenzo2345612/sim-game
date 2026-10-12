@@ -113,13 +113,14 @@ class OrchestratorAcceptanceTest(Harness):
         self.assertEqual(self.task_status("003"), "done", self.diag())
 
     def test_AT7_resumes_from_saved_stage(self):
+        # empty-diff guard sends a reviewer-stage resume without an implementation back to the coder
         self.add_task("007", "Golf")
         self.write_script(success_script())
         (self.repo / ".ai").mkdir()
         (self.repo / ".ai/state.json").write_text(
             json.dumps({"007": {"stage": "reviewer", "fixRounds": 0}}))
         self.run_orch(["run"])
-        self.assertEqual([c["role"] for c in self.calls_for("007")], ["reviewer"],
+        self.assertEqual([c["role"] for c in self.calls_for("007")], ["coder", "reviewer"],
                          self.diag())
 
     def test_AT8_quota_error_stops_with_exit_3(self):
