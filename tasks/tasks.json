@@ -343,7 +343,7 @@
     {
       "num": "026",
       "title": "Detect radii, kerbs and run-offs",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "022"
       ],
@@ -369,7 +369,7 @@
     {
       "num": "028",
       "title": "Build the terrain heightfield",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022",
         "023",
