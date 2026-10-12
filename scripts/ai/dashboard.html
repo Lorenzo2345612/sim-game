@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sim-game · pipeline</title>
+<style>
+  :root { --bg:#14161b; --panel:#1d2027; --line:#2c313b; --text:#d8dbe2; --dim:#8a90a0; --ok:#4cc38a; --run:#5aa9ff; --warn:#f2b84b; --bad:#ef6b6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 16px; margin: 0; }
+  .bar { flex: 1; height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; max-width: 420px; }
+  .bar > div { height: 100%; background: var(--ok); transition: width .4s; }
+  .pill { padding: 2px 8px; border-radius: 10px; font-size: 12px; background: var(--line); }
+  .pill.on { background: var(--run); color: #001; }
+  main { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; padding: 14px 18px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td.t { white-space: normal; }
+  .s-done { color: var(--ok); } .s-in { color: var(--run); } .s-wait { color: var(--warn); } .s-blocked { color: var(--bad); }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: 12px/1.4 ui-monospace, monospace; color: var(--dim); max-height: 300px; overflow: auto; }
+  button { background: var(--line); color: var(--text); border: 1px solid #3a404c; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover { background: #343a46; }
+  input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 110px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .full { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>sim-game · AI pipeline</h1>
+  <div class="bar"><div id="bar" style="width:0"></div></div>
+  <span id="count">–</span>
+  <span id="orch" class="pill">orchestrator idle</span>
+  <span id="updated" style="color:var(--dim)"></span>
+</header>
+<main>
+  <section>
+    <h2>Tasks</h2>
+    <table><thead><tr><th>#</th><th>Title</th><th>Status</th><th>Stage</th><th>Fix</th></tr></thead><tbody id="tasks"></tbody></table>
+  </section>
+  <div style="display:grid;gap:14px;align-content:start">
+    <section>
+      <h2>Actions</h2>
+      <div class="row">
+        <button onclick="act({action:'run', only: document.getElementById('only').value})">Run orchestrator</button>
+        <input id="only" placeholder="only: 020,021">
+        <button onclick="act({action:'stop'})">Stop</button>
+        <button onclick="act({action:'tests'})">npm test</button>
+      </div>
+      <pre id="out" style="margin-top:8px"></pre>
+    </section>
+    <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
+    <section><h2>Running processes</h2><pre id="running"></pre></section>
+    <section><h2>Coder tokens</h2><table id="tokens"></table></section>
+  </div>
+  <section><h2>Events</h2><pre id="events"></pre></section>
+  <section><h2>Commits</h2><pre id="commits"></pre></section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const cls = s => s === 'done' ? 's-done' : s === 'in progress' ? 's-in' : s.startsWith('waiting') ? 's-wait' : s === 'blocked' ? 's-blocked' : '';
+
+async function refresh() {
+  try {
+    const d = await (await fetch('/api/status')).json();
+    $('bar').style.width = (d.total ? 100 * d.done / d.total : 0) + '%';
+    $('count').textContent = `${d.done} / ${d.total} done`;
+    $('orch').textContent = d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle';
+    $('orch').className = 'pill' + (d.orchestratorRunning ? ' on' : '');
+    $('tasks').innerHTML = d.tasks.map(t => `<tr><td>${t.num}</td><td class="t">${esc(t.title)}</td>
+      <td class="${cls(t.status)}">${esc(t.status)}</td><td>${esc(t.stage)}</td><td>${t.fixRounds || ''}</td></tr>`).join('');
+    $('decisions').innerHTML = d.decisions.length ? d.decisions.map(f =>
+      `<div class="row">${esc(f)} <button onclick="act({action:'resolve', file:'${esc(f)}'})">Resolved</button></div>`).join('')
+      : '<span style="color:var(--dim)">none</span>';
+    $('running').textContent = d.running.join('\n') || 'none';
+    $('tokens').innerHTML = '<tr><th>Provider</th><th>Tasks</th><th>Tokens</th></tr>' + Object.entries(d.tokens)
+      .map(([p, v]) => `<tr><td>${p}</td><td>${v.tasks}</td><td>${(v.total / 1e6).toFixed(2)} M</td></tr>`).join('');
+    $('events').textContent = d.events.slice().reverse().map(e =>
+      `${(e.ts || '').slice(11)}  ${e.task || '-'}  ${e.event}  ${e.detail || ''}`).join('\n');
+    $('commits').textContent = d.commits.join('\n');
+    $('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+  } catch (e) { $('updated').textContent = 'offline'; }
+}
+
+async function act(body) {
+  $('out').textContent = body.action + '…';
+  const r = await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+  const j = await r.json();
+  $('out').textContent = `${r.status} ${j.error || (j.tail ?? 'ok')}`;
+  refresh();
+}
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

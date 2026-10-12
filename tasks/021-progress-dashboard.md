@@ -1,6 +1,6 @@
 # 021 — Local progress dashboard for the AI pipeline
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: nothing
 Complexity: simple
