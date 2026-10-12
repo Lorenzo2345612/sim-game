@@ -28,9 +28,11 @@ Behaviour and rules, not implementation: signatures, verified constants with uni
 1. ...
 2. ...
 
+Conventions (mandatory for numeric/geometric code, one line each): rounding mode, boundary inclusivity (`<` vs `<=`), out-of-range and empty/invalid input (throw or clamp), tie-breaks, whether inputs are mutated.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
-Executable contract. The `acceptance` worker turns each row into `tests/unit/acceptance/NNN-<slug>.test.ts` before the coder starts. Nobody else may change these rows or tests.
+Executable contract. Every row must be producible through the signatures in Steps (inputs a row omits must be optional there). The `acceptance` worker turns each row into `tests/unit/acceptance/NNN-<slug>.test.ts` before the coder starts. Nobody else may change these rows or tests.
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|

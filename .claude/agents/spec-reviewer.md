@@ -16,7 +16,8 @@ Check and FIX directly in the specs (never touch src/, tests/, tools/ or archite
 6. Each spec is atomic (≤ ~3 src files), has exact signatures, measurable acceptance criteria, Verification commands, Out of scope.
 7. No two specs that could run in parallel create or modify the same file.
 8. Contract, not implementation: ≤ 60 lines, no function bodies, no step-by-step code for standard algorithms, pseudocode ≤ 5 lines. Trim violations.
-9. The "Acceptance tests" table exists and was not altered from what the planner provided (never edit its rows; report problems instead).
+9. Every acceptance row can be produced through the spec's signatures (no row needs an input the signature makes mandatory but the row omits); numeric/geometric specs have the Conventions line (rounding, boundaries, invalid input, tie-breaks, mutation). Report row problems to the planner, fix only the Steps side.
+10. The "Acceptance tests" table exists and was not altered from what the planner provided (never edit its rows; report problems instead).
 
 Then rewrite the table in `tasks/README.md`: `| # | Title | Status | Depends on | Parallel with |`, one row per spec; "Parallel with" lists specs with no dependency path between them and no shared files. Add below the table a short "Waves" list (wave 1, wave 2, …: sets of specs runnable together).
 

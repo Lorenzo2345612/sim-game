@@ -13,6 +13,7 @@ Rules for each spec:
 - Everything in English. Follow `tasks/_TEMPLATE.md`. File name `tasks/NNN-english-slug.md` with the number the planner assigns.
 - EXACT TypeScript signatures of everything exported, and where types are imported from. Never redefine types that already exist in architecture.md: import them.
 - Behaviour rules, verified constants with units and edge cases. Name standard algorithms; do not spell them out.
+- Numeric/geometric specs: fill the template's Conventions line (rounding, boundary inclusivity, invalid input, tie-breaks, mutation).
 - Exact list of files to create/modify (max ~3 in src/ per task) and of tests (file + case name + expected values with tolerance).
 - Acceptance criteria verifiable with Vitest or commands. Verification section with the commands.
 - Explicit, concrete "Out of scope".
