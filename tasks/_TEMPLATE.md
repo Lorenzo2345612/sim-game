@@ -1,38 +1,38 @@
-# NNN — Título corto en infinitivo
+# NNN — Short title in imperative form
 
-Estado: pendiente | en curso | hecha | bloqueada
-Fase: 0 | 1 | 2 | 3
-Depende de: NNN, NNN (o "nada")
+Status: pending | in progress | done | blocked
+Phase: 0 | 1 | 2 | 3
+Depends on: NNN, NNN (or "nothing")
 Roles: coder, tester, reviewer
 
-## Objetivo
+## Goal
 
-Una o dos frases: qué comportamiento existe al terminar que hoy no existe.
+One or two sentences: what behavior exists at the end that does not exist today.
 
-## Contexto
+## Context
 
-Lo mínimo que el worker necesita saber y no puede deducir del código: decisiones del PRD (cita la sección), convenciones, por qué se hace así. Guías a leer: `ai/guides/...`.
+The minimum the worker needs to know and cannot deduce from the code: PRD decisions (cite the section), conventions, why it is done this way. Guides to read: `ai/guides/...`.
 
-## Archivos
+## Files
 
-- `src/...` — crear | modificar — qué va en él
-- `tests/...` — crear — qué prueba
+- `src/...` — create | modify — what goes in it
+- `tests/...` — create — what it tests
 
-## Qué hacer
+## Steps
 
-Pasos numerados y concretos. Nombres de funciones, tipos y firmas cuando importen. Valores numéricos con unidades.
+Numbered, concrete steps. Function names, types and signatures when they matter. Numeric values with units.
 
 1. ...
 2. ...
 
-## Criterios de aceptación
+## Acceptance criteria
 
-Verificables por un test o un comando. Nada de "funciona bien".
+Verifiable by a test or a command. No "works well".
 
 - [ ] ...
 - [ ] ...
 
-## Verificación
+## Verification
 
 ```
 npm run typecheck
@@ -40,6 +40,6 @@ npm run lint
 npm test
 ```
 
-## Fuera de alcance
+## Out of scope
 
-- Cosas que el worker NO debe hacer aunque parezcan relacionadas.
+- Things the worker must NOT do even if they seem related.

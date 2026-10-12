@@ -3,27 +3,33 @@ name: plan-feature
 description: Break a feature or PRD phase of the racing sim into small task specs in tasks/ that cheap worker models (GLM/Kimi/Qwen flash) can implement without asking questions. Use when the user asks to plan, design, break down or start a feature, phase or milestone.
 ---
 
-# plan-feature (solo para Claude, el planificador)
+# plan-feature (Claude only, the planner)
 
-Claude planifica; no escribe código de producción. Las tareas las ejecutan modelos flash baratos, que siguen instrucciones literalmente, tienen poco criterio de diseño y se pierden con tareas grandes o ambiguas. Cada spec debe compensar eso.
+Claude plans; it does not write production code. Tasks are executed by cheap flash models, which follow instructions literally, have little design judgment and get lost with large or ambiguous tasks. Each spec must compensate for that.
 
-## Proceso
+## Process
 
-1. Lee `PRD.md` (secciones relevantes), `CLAUDE.md` y lo que ya exista en `src/` y `tasks/`.
-2. Si hay decisiones de producto abiertas que cambian el diseño, pregunta al usuario antes de escribir tareas.
-3. Diseña tú la solución: módulos, tipos públicos, flujo de datos, fórmulas físicas con unidades. Las decisiones de arquitectura se toman aquí, no en el worker.
-4. Divide en tareas siguiendo las reglas de tamaño. Numera con el siguiente número libre en `tasks/` (`001-`, `002-`…).
-5. Escribe cada tarea copiando `tasks/_TEMPLATE.md`.
-6. Si una tarea necesita conocimiento reutilizable (convenciones de Three.js, cómo usar Rapier, formato de `track.json`), escríbelo una vez en `ai/guides/<tema>.md` y cítalo desde las tareas.
-7. Actualiza `tasks/README.md` (tabla: número, título, estado, depende de).
-8. Resume al usuario el plan: lista de tareas, orden y qué se podrá ver/probar al terminar.
+1. Read `PRD.md` (relevant sections), `CLAUDE.md` and whatever already exists in `src/` and `tasks/`.
+2. If open product decisions change the design, ask the user before writing tasks.
+3. Design the solution yourself: modules, public types, data flow, physics formulas with units. Architecture decisions are made here, not by the worker.
+4. Split into tasks following the size rules. Decisions and experiments are done by you (or a `model: sonnet` subagent); spec writing is split among Agent subagents with `model: "sonnet"` in parallel (groups of non-overlapping tasks), never Opus. Give them the closed design and review their specs. Number with the next free number in `tasks/` (`001-`, `002-`…).
+5. Write each task by copying `tasks/_TEMPLATE.md`.
+6. If a task needs reusable knowledge (Three.js conventions, how to use Rapier, `track.json` format), write it once in `ai/guides/<topic>.md` and cite it from the tasks.
+7. Update `tasks/README.md` (table: #, title, status, depends on, parallel with).
+8. Summarize the plan to the user: task list, order and what will be viewable/testable at the end.
 
-## Reglas de tamaño para modelos flash
+## Size rules for flash models
 
-- Una tarea = un comportamiento verificable. Máximo ~3 archivos de `src/` y ~300 líneas nuevas.
-- Si necesitas la palabra "y" para describir el objetivo, probablemente son dos tareas.
-- Los tipos e interfaces compartidos van en una tarea previa propia, para que las siguientes los importen y no los inventen.
-- Da firmas exactas (`export function stepVehicle(state: VehicleState, input: DriverInput, dt: number): VehicleState`), constantes con unidades y fórmulas. No "implementa un modelo de neumático razonable".
-- Criterios de aceptación comprobables con Vitest o un comando. Si un criterio es visual, define cómo comprobarlo (captura con Playwright, valor en el HUD, etc.).
-- Lista explícita de "Fuera de alcance": los modelos flash tienden a añadir cosas.
-- Tareas sin dependencias entre sí y sin archivos en común pueden ejecutarse en paralelo; márcalo en `tasks/README.md`.
+- One task = one verifiable behavior. At most ~3 `src/` files and ~300 new lines.
+- If you need the word "and" to describe the goal, it is probably two tasks.
+- Shared types and interfaces go in their own earlier task, so later ones import them instead of inventing them.
+- Give exact signatures (`export function stepVehicle(state: VehicleState, input: DriverInput, dt: number): VehicleState`), constants with units and formulas. Not "implement a reasonable tire model".
+- Acceptance criteria checkable with Vitest or a command. If a criterion is visual, define how to check it (Playwright screenshot, value in the HUD, etc.).
+- Explicit "Out of scope" list: flash models tend to add things.
+- Tasks with no dependencies between them and no shared files can run in parallel; mark it in `tasks/README.md`.
+
+## Brevity (mandatory)
+
+- Specs, guides and messages to the user: concise and to the point. No introductions, no repeating what is already in `ai/guides/`, no justifying the obvious.
+- To the user: result in a few lines (what was done, what fails, what is next). No long summaries.
+- When requesting work from workers or subagents: require minimal output (the report block, no extra text).

@@ -52,7 +52,7 @@ def get_key(env_name):
         value = json.loads(qwen.read_text()).get("env", {}).get(env_name)
         if value:
             return value
-    sys.exit(f"Falta la key {env_name} (ni en el entorno ni en ~/.qwen/settings.json)")
+    sys.exit(f"Missing key {env_name} (not in the environment nor in ~/.qwen/settings.json)")
 
 
 def changed_files():
@@ -78,7 +78,7 @@ def ping():
                 urllib.request.urlopen(req, timeout=60).read()
                 print(f"OK    {name:5} {model}")
             except Exception as e:  # noqa: BLE001
-                print(f"FALLO {name:5} {model}: {str(e)[:120]}")
+                print(f"FAIL  {name:5} {model}: {str(e)[:120]}")
 
 
 def build_prompt(args):
@@ -86,41 +86,41 @@ def build_prompt(args):
     if args.task:
         task_path = (ROOT / args.task).resolve()
         if not task_path.exists():
-            sys.exit(f"No existe la tarea {args.task}")
-        parts.append(f"Tu tarea está especificada en `{task_path.relative_to(ROOT)}`. Léela completa antes de empezar.")
+            sys.exit(f"Task not found: {args.task}")
+        parts.append(f"Your task is specified in `{task_path.relative_to(ROOT)}`. Read it fully before starting.")
     if args.prompt:
         parts.append(args.prompt)
     if args.note:
-        parts.append(f"Contexto adicional del planificador:\n{args.note}")
+        parts.append(f"Additional context from the planner:\n{args.note}")
     return "\n\n".join(parts)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("role", help="coder | tester | reviewer | fixer | ping")
-    parser.add_argument("--task", help="ruta a la especificación de tarea (tasks/NNN-*.md)")
-    parser.add_argument("--prompt", help="instrucción libre")
-    parser.add_argument("--note", help="contexto extra (p. ej. hallazgos del reviewer)")
-    parser.add_argument("--heavy", action="store_true", help="usar el modelo pesado del rol")
-    parser.add_argument("--model", help="forzar modelo")
-    parser.add_argument("--provider", help="forzar proveedor (p. ej. mimo); usa el modelo de fallback")
+    parser.add_argument("--task", help="path to the task spec (tasks/NNN-*.md)")
+    parser.add_argument("--prompt", help="free-text instruction")
+    parser.add_argument("--note", help="extra context (e.g. reviewer findings)")
+    parser.add_argument("--heavy", action="store_true", help="use the role's heavy model")
+    parser.add_argument("--model", help="force model")
+    parser.add_argument("--provider", help="force provider (e.g. mimo); uses the fallback model")
     args = parser.parse_args()
 
     if os.environ.get("SIMGAME_WORKER"):
-        sys.exit("Un worker no puede lanzar otros workers.")
+        sys.exit("A worker cannot launch other workers.")
     if args.role == "ping":
         return ping()
     if args.role not in CONFIG["roles"]:
-        sys.exit(f"Rol desconocido: {args.role}")
+        sys.exit(f"Unknown role: {args.role}")
     if not (args.task or args.prompt):
-        sys.exit("Indica --task o --prompt")
+        sys.exit("Provide --task or --prompt")
 
     role = CONFIG["roles"][args.role]
     forced = args.provider or os.environ.get("SIMGAME_PROVIDER")
     fallback = CONFIG.get("fallback")
     if forced and forced != role["provider"]:
         if not fallback or fallback["provider"] != forced:
-            sys.exit(f"Proveedor forzado desconocido o sin modelos: {forced}")
+            sys.exit(f"Forced provider unknown or has no models: {forced}")
         targets = [fallback]
     else:
         targets = [role] + ([fallback] if fallback else [])
@@ -130,7 +130,7 @@ def main():
         code, quota_error = run_worker(args, role, target["provider"], model)
         if not quota_error or i == len(targets) - 1:
             sys.exit(code)
-        print(f"[worker] {target['provider']} sin cuota/saldo; reintentando con {targets[i + 1]['provider']}",
+        print(f"[worker] {target['provider']} out of quota/balance; retrying with {targets[i + 1]['provider']}",
               flush=True)
 
 
@@ -148,6 +148,7 @@ def run_worker(args, role, provider_name, model):
         "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
         "CLAUDE_CODE_SUBAGENT_MODEL": model,
+        "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
         "DISABLE_TELEMETRY": "1",
         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     })
@@ -169,13 +170,13 @@ def run_worker(args, role, provider_name, model):
     log_path = RUNS / f"{stamp}-{args.role}-{provider_name}-{label}.json"
 
     before = changed_files()
-    print(f"[worker] rol={args.role} modelo={model} proveedor={provider_name} log={log_path.relative_to(ROOT)}",
+    print(f"[worker] role={args.role} model={model} provider={provider_name} log={log_path.relative_to(ROOT)}",
           flush=True)
     try:
         proc = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True,
                               timeout=role["timeoutMin"] * 60)
     except subprocess.TimeoutExpired:
-        print(f"[worker] TIMEOUT tras {role['timeoutMin']} min")
+        print(f"[worker] TIMEOUT after {role['timeoutMin']} min")
         return 124, False
 
     log_path.write_text(proc.stdout or proc.stderr)
@@ -183,22 +184,22 @@ def run_worker(args, role, provider_name, model):
         data = json.loads(proc.stdout)
     except json.JSONDecodeError:
         raw = proc.stderr or proc.stdout
-        print(f"[worker] salida no JSON (exit {proc.returncode}):\n{raw[-1500:]}")
+        print(f"[worker] non-JSON output (exit {proc.returncode}):\n{raw[-1500:]}")
         return proc.returncode or 1, looks_like_quota(raw)
 
     result = (data.get("result") or "").strip()
     if data.get("is_error") and looks_like_quota(result):
-        print(f"[worker] error de cuota: {result[:200]}")
+        print(f"[worker] quota error: {result[:200]}")
         return 1, True
     if len(result) > REPORT_LIMIT:
         result = "…" + result[-REPORT_LIMIT:]
     after = changed_files()
-    print(f"[worker] error={data.get('is_error')} turnos={data.get('num_turns')} "
-          f"duración={round((data.get('duration_ms') or 0) / 1000)}s")
-    print("[worker] cambios en git:")
-    for line in sorted(after - before) or ["(ninguno nuevo)"]:
+    print(f"[worker] error={data.get('is_error')} turns={data.get('num_turns')} "
+          f"duration={round((data.get('duration_ms') or 0) / 1000)}s")
+    print("[worker] git changes:")
+    for line in sorted(after - before) or ["(none new)"]:
         print("  " + line)
-    print("[worker] reporte:\n" + result)
+    print("[worker] report:\n" + result)
     return (1 if data.get("is_error") else 0), False
 
 

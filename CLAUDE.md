@@ -1,60 +1,79 @@
 # sim-game
 
-Simulador web de monoplazas en circuitos reales. Requisitos y decisiones en `PRD.md` (la tabla de decisiones está en la sección 14).
+Web simulator of single-seaters on real circuits. Requirements and decisions in `PRD.md` (the decisions table is in section 14).
 
-## Roles de modelos
+## Model roles
 
-| Quién | Modelo | Hace | No hace |
+| Who | Model | Does | Does not |
 |---|---|---|---|
-| Planificador | Claude (sesión principal) | Diseño, specs en `tasks/`, guías en `ai/guides/`, orquestación, decisiones | Escribir código en `src/`, `tests/`, `tools/` (bloqueado por hook) |
-| coder | GLM `glm-5.3-flash` (pesado: `glm-5.3`) | Implementa una spec | Diseñar o ampliar alcance |
-| tester | Qwen `qwen3.8-flash` (pesado: `qwen3.8-max`) | Tests de los criterios de aceptación | Editar `src/` |
-| reviewer | Kimi `kimi-for-coding` (pesado: `k3-256k`) | Valida contra la spec, ejecuta checks | Editar archivos |
-| fixer | DeepSeek `deepseek-v4.1-flash` vía Bailian | Segunda opinión cuando el coder se atasca | — |
-| respaldo | Xiaomi MiMo `mimo-v2.6-flash` (pesado: `mimo-v2.6-pro`) | Sustituye a cualquier rol cuando su proveedor se queda sin cuota (automático) | — |
+| Planner | Claude (main session) | Design, specs in `tasks/`, guides in `ai/guides/`, orchestration, decisions | Write code in `src/`, `tests/`, `tools/` (blocked by hook) |
+| coder | GLM `glm-5.3-flash` (heavy: `glm-5.3`) | Implements a spec | Design or expand scope |
+| tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Tests for the acceptance criteria | Edit `src/` |
+| reviewer | Kimi `kimi-for-coding` (heavy: `k3-256k`) | Validates against the spec, runs checks | Edit files |
+| fixer | DeepSeek `deepseek-v4.1-flash` via Bailian | Second opinion when the coder gets stuck | — |
+| fallback | Xiaomi MiMo `mimo-v2.6-flash` (heavy: `mimo-v2.6-pro`) | Replaces any role when its provider runs out of quota (automatic) | — |
 
-Para pasar todos los roles a MiMo: `SIMGAME_PROVIDER=mimo`. Para una sola ejecución: `--provider mimo`.
+To move all roles to MiMo: `SIMGAME_PROVIDER=mimo`. For a single run: `--provider mimo`.
 
-Configuración en `ai/providers.json`; lanzador en `scripts/ai/worker.py`. Flujo: skill `plan-feature` → skill `dispatch`.
+Configuration in `ai/providers.json`; launcher in `scripts/ai/worker.py`. Flow: skill `plan-feature` → skill `dispatch`.
 
 ## Stack
 
-TypeScript estricto, Vite, Three.js, Rapier (`@dimforge/rapier3d-compat`), Vitest, Playwright. UI en HTML/CSS sin React. Gestor de paquetes: npm.
+Strict TypeScript, Vite, Three.js, Rapier (`@dimforge/rapier3d-compat`), Vitest, Playwright. UI in HTML/CSS without React. Package manager: npm.
 
-## Comandos
+## Commands
 
 ```
-npm run dev         # servidor de desarrollo
+npm run dev         # dev server
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint
 npm test            # vitest run
 npm run test:e2e    # playwright
 ```
 
-## Estructura
+## Structure
 
 ```
-src/core      loop de juego con paso fijo, eventos, estado
-src/physics   Rapier, modelo de vehículo, neumáticos, aero
-src/render    escena, cámaras, materiales, post-procesado, LOD
-src/track     carga de track.json + .glb, checkpoints, superficies
-src/input     teclado, gamepad
-src/audio     motor y efectos
-src/ui        HUD y menús (DOM)
-tools/        pipelines offline (track-builder, asset-optimize)
+src/core      fixed-step game loop, events, state
+src/physics   Rapier, vehicle model, tires, aero
+src/render    scene, cameras, materials, post-processing, LOD
+src/track     track.json + .glb loading, checkpoints, surfaces
+src/input     keyboard, gamepad
+src/audio     engine and effects
+src/ui        HUD and menus (DOM)
+tools/        offline pipelines (track-builder, asset-optimize)
 tests/unit    Vitest
 tests/e2e     Playwright
-assets/       modelos y texturas; licencia de cada uno en ASSETS_LICENSES.md
-tasks/        specs de tareas para workers
-ai/           configuración de workers, prompts de rol y guías
+assets/       models and textures; each one's license in ASSETS_LICENSES.md
+tasks/        task specs for workers
+ai/           worker configuration, role prompts and guides
 ```
 
-## Convenciones
+## Conventions
 
-- Unidades SI en todo el código: metros, segundos, kilogramos, radianes, newtons. Conversión a km/h solo en la UI.
-- Sistema de coordenadas: Y arriba, el coche mira hacia -Z en su espacio local.
-- La simulación avanza con paso fijo (`FIXED_DT = 1/120` s) y no depende del framerate. El render interpola.
-- La lógica de simulación no importa nada de `three` (debe poder ejecutarse en tests sin WebGL).
-- Liberar con `dispose()` geometrías, materiales y texturas que se descarten. No crear objetos (`new Vector3`, arrays) dentro del loop por frame: reutilizar temporales.
-- Código, identificadores y comentarios en inglés. Documentación y specs en español.
-- Ningún asset entra en `assets/` sin su línea en `ASSETS_LICENSES.md`.
+- SI units everywhere in the code: meters, seconds, kilograms, radians, newtons. Conversion to km/h only in the UI.
+- Coordinate system: Y up, the car faces -Z in its local space.
+- The simulation advances with a fixed step (`FIXED_DT = 1/120` s) and does not depend on framerate. Render interpolates.
+- Simulation logic imports nothing from `three` (it must run in tests without WebGL).
+- Release discarded geometries, materials and textures with `dispose()`. Do not create objects (`new Vector3`, arrays) inside the per-frame loop: reuse temporaries.
+- No asset enters `assets/` without its line in `ASSETS_LICENSES.md`.
+
+## Language
+
+All files, code, comments, specs, docs, commits and prompts to subagents/workers in English. Only messages to the user are in Spanish.
+
+## Brevity
+
+No verbose output; minimal comments; reports and replies short and to the point.
+
+## Reuse
+
+Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.claude/agents/`) instead of being rediscovered. Current ones: skills `plan-feature`, `dispatch`, `physics-lab`; agents `spec-writer` (sonnet), `asset-scout` (sonnet); workers via `scripts/ai/worker.py`.
+
+## Planning subagents
+
+Planning subagents run on Sonnet (`model: sonnet`), never Opus.
+
+## Memory
+
+Save only non-derivable facts, one or two lines each; never read or rely on other projects' memory.

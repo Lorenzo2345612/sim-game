@@ -1,9 +1,9 @@
-# Guía de tests
+# Testing guide
 
-- Runner unitario: Vitest. Archivos `tests/unit/**/*.test.ts`.
-- E2E: Playwright. Archivos `tests/e2e/**/*.spec.ts`. Solo para flujos que necesitan navegador (carga de escena, input, HUD).
-- La física se prueba sin render: crear el mundo Rapier, avanzar N pasos fijos y comprobar estado (posición, velocidad, ángulo). Inicializar Rapier con `await RAPIER.init()` en `beforeAll`.
-- Comparar floats con `toBeCloseTo(valor, decimales)`, nunca con `toBe`.
-- Nada de `setTimeout` ni tiempo real: el loop de juego acepta un `dt` explícito.
-- Datos de circuito de prueba: usar fixtures pequeños en `tests/fixtures/`, no los circuitos completos.
-- Un test = un comportamiento. Nombre del test en inglés, describe el comportamiento esperado.
+- Unit runner: Vitest. Files `tests/unit/**/*.test.ts`.
+- E2E: Playwright. Files `tests/e2e/**/*.spec.ts`. Only for flows that need a browser (scene load, input, HUD).
+- Physics is tested without render: create the Rapier world, advance N fixed steps and check state (position, velocity, angle). Initialize Rapier with `await RAPIER.init()` in `beforeAll`.
+- Compare floats with `toBeCloseTo(value, digits)`, never with `toBe`.
+- No `setTimeout` or real time: the game loop accepts an explicit `dt`.
+- Test track data: use small fixtures in `tests/fixtures/`, not the full tracks.
+- One test = one behavior. Test name in English, describes the expected behavior.

@@ -8,7 +8,7 @@ rel=${path#"$CLAUDE_PROJECT_DIR"/}
 
 case "$rel" in
   src/*|tests/*|tools/*|public/*|index.html|vite.config.*|package.json|tsconfig*.json)
-    echo "Claude es el planificador: no edita código ($rel). Escribe o corrige la spec en tasks/ y delega con la skill dispatch (scripts/ai/worker.py)." >&2
+    echo "Claude is the planner: it does not edit code ($rel). Write or fix the spec in tasks/ and delegate with the dispatch skill (scripts/ai/worker.py)." >&2
     exit 2
     ;;
 esac
