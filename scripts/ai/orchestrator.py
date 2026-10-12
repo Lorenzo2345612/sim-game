@@ -8,7 +8,8 @@ quota routing and planner decisions queued in .ai/decisions/.
 
 Usage:
   orchestrator.py run [--max-parallel N] [--only 018,019] [--dry-run]
-  orchestrator.py status | migrate [--force] | readme
+  orchestrator.py status | brief [--no-quota] | migrate [--force] | readme
+  orchestrator.py restart | stop [--graceful]   (signals the running orchestrator; restart drains, then re-execs)
   orchestrator.py cleanup [--all] [--sessions DAYS]
 Exit codes: 0 ok, 3 quota exhausted, 4 another orchestrator is running.
 """
@@ -30,11 +31,11 @@ from contextlib import contextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import notify as notifier  # noqa: E402
 import quota  # noqa: E402
 
 ROOT = Path(os.environ.get("ORCH_ROOT") or Path(__file__).resolve().parents[2])
 WORKER_CMD = shlex.split(os.environ.get("ORCH_WORKER_CMD") or "python3 scripts/ai/worker.py")
-NOTIFY_CMD = os.environ.get("ORCH_NOTIFY_CMD")
 DECIDE_CMD = os.environ.get("ORCH_DECIDE_CMD")
 AI = ROOT / ".ai"
 STATE = AI / "state.json"
@@ -48,6 +49,7 @@ README = ROOT / "tasks/README.md"
 PROVIDERS = ROOT / "ai/providers.json"
 EXPERIMENTS = ROOT / "ai/experiments.json"
 WORKER_HOME = Path(os.environ.get("CLAUDE_WORKERS_DIR") or Path.home() / ".claude-workers")
+TRIAGE_TIMEOUT = 300
 TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 MAX_FIX_ROUNDS = 4
 FINISHED = {"done", "blocked"}
@@ -55,6 +57,9 @@ E2E_BASE_PORT = 4200
 EXCLUDES = (":!.ai", ":!node_modules")
 
 lock = threading.RLock()
+DRAIN = threading.Event()
+drain_mode = {"mode": None}  # "restart" | "stop"
+live = {}  # (task, role) -> running worker info, mirrored to .ai/running.json
 slots = {}  # task num -> slot index
 running_by_provider = {}
 sems = {}
@@ -225,8 +230,7 @@ def event(task, name, detail=""):
 
 
 def notify(message):
-    if NOTIFY_CMD:
-        subprocess.run([*shlex.split(NOTIFY_CMD), message], cwd=ROOT)
+    notifier.send(message, cwd=ROOT)
 
 
 # -- git: main repo, worktrees -------------------------------------------------
@@ -385,6 +389,16 @@ def alloc_slot(num):
 
 # -- worker calls and report parsing -----------------------------------------
 
+def track(num, role, add=None):
+    with lock:
+        if add:
+            live[(num, role)] = {"task": num, "role": role, **add}
+        else:
+            live.pop((num, role), None)
+        AI.mkdir(parents=True, exist_ok=True)
+        (AI / "running.json").write_text(json.dumps({"pid": os.getpid(), "running": list(live.values())}))
+
+
 def call_worker(role, spec, num, resume=False, heavy=False, note=None):
     argv = [*WORKER_CMD, role, "--task", str(spec.relative_to(ROOT))]
     if resume:
@@ -400,8 +414,17 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         argv += ["--provider", fallback]
         prov = fallback
     env = {**os.environ, "SIMGAME_WORKDIR": str(wt_path(num)), "E2E_PORT": str(E2E_BASE_PORT + slots.get(num, 0))}
-    with provider_slot(prov):
-        proc = subprocess.run(argv, cwd=ROOT, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    cfg = load_json(PROVIDERS)
+    role_cfg = cfg.get("roles", {}).get(role, {})
+    model = role_cfg.get("heavyModel" if heavy else "model", "")
+    if prov and prov != role_cfg.get("provider"):
+        model = cfg.get("fallback", {}).get("heavyModel" if heavy else "model", model)
+    track(num, role, add={"provider": prov, "model": model, "start": time.time()})
+    try:
+        with provider_slot(prov):
+            proc = subprocess.run(argv, cwd=ROOT, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    finally:
+        track(num, role)
     out = proc.stdout or ""
     if proc.returncode != 0 and "quota error" in out:
         raise QuotaError(role)
@@ -418,15 +441,21 @@ def parse_report(out):
     return parse_text_report(out)
 
 
+def listed(v):
+    return v if isinstance(v, list) else [v] if v else []
+
+
 def from_json(obj):
     def join(v):
         return "; ".join(v) if isinstance(v, list) else str(v or "")
 
     blockers = [f"[BLOCKER] {f.get('location', '')} — {f.get('problem', '')} — {f.get('fix', '')}"
                 for f in obj.get("findings", []) if f.get("severity") == "BLOCKER"]
+    questions = [str(q) for k in ("specSilent", "untestable", "pending", "decisions") for q in listed(obj.get(k))
+                 if not is_none(str(q))]
     return {"status": obj.get("status") or obj.get("verdict") or "", "spec_silent": join(obj.get("specSilent")),
             "untestable": join(obj.get("untestable")), "failures": "\n".join(obj.get("failures", [])),
-            "blockers": blockers}
+            "blockers": blockers, "questions": questions}
 
 
 def parse_text_report(out):
@@ -444,6 +473,7 @@ def parse_text_report(out):
         "untestable": field("UNTESTABLE"),
         "failures": failures.group(1).strip().strip("`").strip() if failures else "",
         "blockers": blockers,
+        "questions": [q for q in (field("SPEC_SILENT"), field("UNTESTABLE")) if not is_none(q)],
     }
 
 
@@ -453,29 +483,179 @@ def is_none(value):
 
 # -- per-task pipeline ---------------------------------------------------------
 
-def decision(num, title, stage, question, report, st):
+OPTIONS = {
+    "infra": ["Retry the stage (rename the decision to .resolved.md and rerun the orchestrator)",
+              "Check provider quota/keys and the run log"],
+    "spec": ["Clarify the spec section named in the questions and commit",
+             "Adjust the acceptance table (planner only) if a row is untestable"],
+    "product": ["Ask the user for the product choice, then record it in the spec"],
+    "tests": ["Fix the spec or acceptance rows if the tests contradict it",
+              "Otherwise rerun so the coder gets another round"],
+}
+
+
+def spec_excerpt(spec, questions):
+    if not spec:
+        return ""
+    text = " ".join(questions).lower()
+    out = []
+    for sec in re.split(r"(?m)^(?=## )", spec.read_text()):
+        if not sec.startswith("## "):
+            continue
+        head = sec.splitlines()[0][3:].strip().lower()
+        if head.startswith("acceptance tests") or (len(head) >= 4 and re.search(rf"\b{re.escape(head)}\b", text)):
+            out.append(sec.strip())
+    return "\n\n".join(out)[:4000]
+
+
+def last_log(report):
+    found = re.findall(r"\blog=(\S+)", report or "")
+    return found[-1] if found else ""
+
+
+def render_decision(d):
+    bullets = "\n".join(f"- {q}" for q in d["questions"])
+    options = "\n".join(f"- {o}" for o in d["options"])
+    parts = [f"# Decision needed: task {d['num']} — {d['title']}", "",
+             f"Stage: {d['stage']}", f"Category: {d['category']}", "", "## Questions", "", bullets, ""]
+    if d["specExcerpt"]:
+        parts += ["## Spec excerpt", "", d["specExcerpt"], ""]
+    if d["failures"]:
+        parts += ["## Failing tests / summary", "", "```", d["failures"], "```", ""]
+    parts += ["## Suggested options", "", options, "", f"Full run log: {d['log'] or '(none)'}", ""]
+    if d.get("triage"):
+        parts += ["## Triage", "", f"Action: {d['triage'].get('action')} — {d['triage'].get('note', '')}", ""]
+    parts.append(f"Resolve the spec/tests, then rename this file to `{d['num']}-{d['stage']}.resolved.md`.")
+    return "\n".join(parts) + "\n"
+
+
+def write_decision(d):
     with lock:
         DECISIONS.mkdir(parents=True, exist_ok=True)
-        path = DECISIONS / f"{num}-{stage}.md"
-        path.write_text(f"# Decision needed: task {num} — {title}\n\nStage: {stage}\n\n"
-                        f"Question: {question}\n\n## Last report\n\n```\n{report.strip()}\n```\n\n"
-                        f"Resolve the spec/tests, then rename this file to `{num}-{stage}.resolved.md`.\n")
+        (DECISIONS / f"{d['num']}-{d['stage']}.md").write_text(render_decision(d))
+        (DECISIONS / f"{d['num']}-{d['stage']}.json").write_text(json.dumps(d, indent=2) + "\n")
+
+
+def triage_argv():
+    cmd = os.environ.get("ORCH_TRIAGE_CMD")
+    if cmd is None and not os.environ.get("ORCH_ROOT"):
+        cmd = "default"
+    if not cmd or cmd == "off":
+        return None
+    if cmd != "default":
+        return shlex.split(cmd)
+    schema = json.dumps(json.loads((ROOT / "ai/schemas/triage.json").read_text()), separators=(",", ":"))
+    return ["claude", "-p", "--model", "sonnet", "--output-format", "json", "--permission-mode", "plan",
+            "--disallowedTools", "Edit,Write,NotebookEdit,Bash",
+            "--append-system-prompt", (ROOT / "ai/agents/triage.md").read_text(), "--json-schema", schema]
+
+
+def parse_triage(out):
+    try:
+        data = json.loads(out)
+    except ValueError:
+        m = re.search(r"\{.*\}", out, re.S)
+        data = json.loads(m.group(0)) if m else {}
+    if isinstance(data, dict) and isinstance(data.get("structured_output"), dict):
+        data = data["structured_output"]
+    elif isinstance(data, dict) and isinstance(data.get("result"), str) and "action" not in data:
+        return parse_triage(data["result"])
+    if not isinstance(data, dict) or data.get("action") not in ("retry", "rebase_retry", "escalate"):
+        raise ValueError("no valid action")
+    return {"action": data["action"], "category": data.get("category"), "note": str(data.get("note", ""))}
+
+
+def run_triage(d, spec):
+    """Headless triage; any failure degrades to escalate. Never edits specs (read-only tools, no write access)."""
+    argv = triage_argv()
+    if not argv:
+        return None
+    payload = json.dumps({**d, "spec": spec.read_text()[:12000] if spec else ""})
+    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "SIMGAME_WORKER")}
+    try:
+        p = subprocess.run(argv, cwd=ROOT, env=env, input=payload, capture_output=True, text=True, timeout=TRIAGE_TIMEOUT)
+        return parse_triage(p.stdout)
+    except Exception as e:  # noqa: BLE001
+        return {"action": "escalate", "category": None, "note": f"triage failed: {type(e).__name__}: {e}"[:300]}
+
+
+def decision(num, title, stage, question, report, st, category="spec", r=None):
+    spec = spec_path(num)
+    r = r or {}
+    questions = list(dict.fromkeys([*r.get("questions", []), *r.get("blockers", [])])) or [question]
+    d = {"num": num, "title": title, "stage": stage, "category": category, "question": question,
+         "questions": questions, "specExcerpt": spec_excerpt(spec, questions),
+         "failures": (r.get("failures") or "").strip()[:3000], "options": OPTIONS[category],
+         "log": last_log(report), "triage": None,
+         "createdAt": datetime.datetime.now().isoformat(timespec="seconds")}
+    write_decision(d)
+    path = DECISIONS / f"{num}-{stage}.md"
     st["decision"] = path.name
     save_task_state(num, st)
     set_status(num, "waiting decision")
     event(num, "decision", f"{stage}: {question}")
     if DECIDE_CMD:
         subprocess.run([*shlex.split(DECIDE_CMD), str(path)], cwd=ROOT)
-    notify(f"Task {num} waits for a planner decision at {stage}: {question}")
+    t = run_triage(d, spec)
+    if t:
+        d["triage"] = t
+        tried = st.setdefault("triaged", {})
+        if t["action"] != "escalate" and tried.get(stage, 0) >= 2:
+            t = d["triage"] = {"action": "escalate", "category": category,
+                               "note": f"triage already retried {stage} twice: {t['note']}"}
+        if t["action"] != "escalate":
+            tried[stage] = tried.get(stage, 0) + 1
+            if t["action"] == "rebase_retry":
+                try:
+                    ensure_worktree(num)
+                except Exception as e:  # noqa: BLE001
+                    event(num, "error", f"rebase_retry: {e}"[:300])
+            write_decision(d)
+            path.replace(DECISIONS / f"{num}-{stage}.resolved.md")
+            event(num, "triaged", f"{stage}: {t['action']} — {t['note']}"[:300])
+            save_task_state(num, st)
+            return "triaged"
+        if t.get("category") in OPTIONS:
+            d["category"] = t["category"]
+            d["options"] = OPTIONS[d["category"]]
+        event(num, "triaged", f"{stage}: escalate — {t['note']}"[:300])
+        write_decision(d)
+    notify(f"Task {num} needs the planner at {stage} [{d['category']}]: {question}")
     return "decision"
 
 
-def fix_call(spec, num, round_no, note, heavy=False):
+def retry_reason(r):
+    out = r.get("out", "")
+    for word in ("STALLED", "TIMEOUT"):
+        if f"[worker] {word}" in out:
+            return word
+    return f"no report (exit {r.get('exit')})"
+
+
+def call_retry(st, role, spec, num, **kw):
+    """Worker call; retried once fresh when the run produced no report (stall, kill, transport error)."""
+    r = call_worker(role, spec, num, **kw)
+    key = f"{st.get('stage')}:{role}:{st.get('fixRounds', 0)}"
+    tried = st.setdefault("retried", {})
+    if r["status"] or tried.get(key) or DRAIN.is_set():
+        return r
+    tried[key] = 1
+    st["retries"] = st.get("retries", 0) + 1
+    save_task_state(num, st)
+    reason = retry_reason(r)
+    event(num, "retry", f"{st.get('stage')} {role}: {reason}")
+    kw = {**kw, "resume": False}
+    if reason == "STALLED":
+        kw["heavy"] = True
+    return call_worker(role, spec, num, **kw)
+
+
+def fix_call(spec, num, round_no, note, st, heavy=False):
     if round_no <= 2:
-        return call_worker("coder", spec, num, resume=True, heavy=heavy, note=note)
+        return call_retry(st, "coder", spec, num, resume=True, heavy=heavy, note=note)
     if round_no == 3:
-        return call_worker("coder", spec, num, resume=True, heavy=True, note=note)
-    return call_worker("fixer", spec, num, heavy=heavy, note=note)
+        return call_retry(st, "coder", spec, num, resume=True, heavy=True, note=note)
+    return call_retry(st, "fixer", spec, num, heavy=heavy, note=note)
 
 
 def merge_task(num, title):
@@ -500,7 +680,10 @@ def run_task(task):
     num = task["num"]
     slot = alloc_slot(num)
     try:
-        return _run_task(task, slot)
+        while True:
+            result = _run_task(task, slot)
+            if result != "triaged":
+                return result
     finally:
         with lock:
             slots.pop(num, None)
@@ -511,7 +694,8 @@ def _run_task(task, slot):
     spec = spec_path(num)
     info = spec_info(spec)
     complex_ = task.get("complexity") == "complex"
-    heavy = task.get("type") == "bugfix" or task.get("models") == "heavy"
+    models_heavy = task.get("models") == "heavy"
+    heavy = task.get("type") == "bugfix" or models_heavy
     st = load_state().get(num, {"stage": "acceptance", "fixRounds": 0})
 
     if st.get("decision"):
@@ -531,6 +715,9 @@ def _run_task(task, slot):
         save_task_state(num, st)
 
     while True:
+        if DRAIN.is_set():
+            event(num, "drained", st["stage"])
+            return "drained"
         stage = st["stage"]
         event(num, "step", stage)
 
@@ -538,18 +725,20 @@ def _run_task(task, slot):
             if not info["acceptance"]:
                 advance("tester-pre")
                 continue
-            r = call_worker("acceptance", spec, num)
+            r = call_retry(st, "acceptance", spec, num, heavy=models_heavy)
             if r["status"] != "READY" or not is_none(r["untestable"]):
                 return decision(num, title, stage, f"acceptance {r['status'] or 'failed'}; "
-                                f"untestable: {r['untestable'] or '?'}", r["out"], st)
+                                f"untestable: {r['untestable'] or '?'}", r["out"], st,
+                                "spec" if r["status"] else "infra", r)
             advance("tester-pre")
 
         elif stage == "tester-pre":
             if complex_:
-                r = call_worker("tester-pre", spec, num)
+                r = call_retry(st, "tester-pre", spec, num, heavy=models_heavy)
                 if r["status"] != "READY":
                     return decision(num, title, stage, f"tester-pre {r['status'] or 'failed'}: "
-                                    f"{r['spec_silent'] or '?'}", r["out"], st)
+                                    f"{r['spec_silent'] or '?'}", r["out"], st,
+                                    "spec" if r["status"] else "infra", r)
                 if not is_none(r["spec_silent"]):
                     event(num, "spec-silent", str(r["spec_silent"])[:500])
             advance("commit-tests")
@@ -560,20 +749,20 @@ def _run_task(task, slot):
             advance("coder")
 
         elif stage == "coder":
-            r = call_worker("coder", spec, num, heavy=heavy)
+            r = call_retry(st, "coder", spec, num, heavy=heavy)
             if r["status"] == "BLOCKED":
-                return decision(num, title, stage, "coder blocked", r["out"], st)
+                return decision(num, title, stage, "coder blocked", r["out"], st, "spec", r)
             if r["status"] != "OK":
                 st["fixRounds"] = st.get("fixRounds", 0) + 1
             advance("tester" if complex_ else "reviewer")
 
         elif stage in ("tester", "reviewer"):
             if stage == "tester":
-                r = call_worker("tester", spec, num)
+                r = call_retry(st, "tester", spec, num, heavy=models_heavy)
                 failed = r["status"] != "PASS"
                 note = f"Tester failures to fix:\n{r['failures'] or r['out'][-1500:]}"
             else:
-                r = call_worker("reviewer", spec, num)
+                r = call_retry(st, "reviewer", spec, num)
                 failed = r["status"] in ("CHANGES", "REJECTED") and bool(r["blockers"]) or \
                     r["status"] not in ("APPROVED", "CHANGES", "REJECTED")
                 note = "Reviewer BLOCKER findings to fix:\n" + "\n".join(r["blockers"]) if r["blockers"] \
@@ -583,16 +772,17 @@ def _run_task(task, slot):
                 continue
             st["fixRounds"] = st.get("fixRounds", 0) + 1
             if st["fixRounds"] > MAX_FIX_ROUNDS:
-                return decision(num, title, stage, "escalation exhausted", r["out"], st)
+                return decision(num, title, stage, "escalation exhausted", r["out"], st,
+                                "tests" if r["status"] else "infra", r)
             save_task_state(num, st)
-            fr = fix_call(spec, num, st["fixRounds"], note, heavy=heavy)
+            fr = fix_call(spec, num, st["fixRounds"], note, st, heavy=heavy)
             if fr["status"] == "BLOCKED":
-                return decision(num, title, stage, "fix round blocked", fr["out"], st)
+                return decision(num, title, stage, "fix round blocked", fr["out"], st, "spec", fr)
 
         elif stage == "merge":
             err = merge_task(num, title)
             if err:
-                return decision(num, title, stage, "merge into the main branch failed", err, st)
+                return decision(num, title, stage, "merge into the main branch failed", err, st, "infra")
             advance("cleanup")
 
         elif stage == "cleanup":
@@ -673,6 +863,43 @@ def release_lock():
     SLOTS_FILE.unlink(missing_ok=True)
 
 
+def reexec():
+    release_lock()
+    argv = [sys.executable, *sys.argv]
+    if os.environ.get("ORCH_NO_EXEC"):
+        print(f"[orch] restart exec: {shlex.join(argv)}", flush=True)
+        return 75
+    print("[orch] restarting", flush=True)
+    sys.stdout.flush()
+    os.execv(sys.executable, argv)
+
+
+def signal_running(sig, what):
+    pid = lock_holder()
+    if not pid:
+        print("orchestrator not running")
+        return 1
+    os.kill(pid, sig)
+    print(f"{what} requested (pid {pid})")
+    return 0
+
+
+def stop(graceful):
+    if graceful:
+        return signal_running(signal.SIGUSR2, "graceful stop")
+    pid = lock_holder()
+    if not pid:
+        print("orchestrator not running")
+        return 1
+    try:
+        pgid = os.getpgid(pid)
+        os.killpg(pgid, signal.SIGTERM) if pgid == pid else os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    print(f"stopped (pid {pid})")
+    return 0
+
+
 def run(max_parallel, only, dry_run):
     if not REGISTRY.exists():
         print("tasks/tasks.json missing: run `orchestrator.py migrate` first")
@@ -694,6 +921,13 @@ def run(max_parallel, only, dry_run):
         return 4
     atexit.register(release_lock)
     signal.signal(signal.SIGTERM, lambda *_: (release_lock(), os._exit(143)))
+
+    def start_drain(mode):
+        drain_mode["mode"] = drain_mode["mode"] or mode
+        DRAIN.set()
+
+    for sig, mode in ((signal.SIGHUP, "restart"), (signal.SIGUSR1, "restart"), (signal.SIGUSR2, "stop")):
+        signal.signal(sig, lambda *_, m=mode: start_drain(m))
     for name, cap in provider_caps().items():
         if cap:
             sems[name] = threading.BoundedSemaphore(cap)
@@ -705,13 +939,13 @@ def run(max_parallel, only, dry_run):
     with ThreadPoolExecutor(max_workers=max_parallel) as pool:
         while True:
             waiting -= {n for n in waiting if decision_resolved(n)}
-            if not quota_hit:
+            if not quota_hit and not DRAIN.is_set():
                 for t in ready_tasks(tasks, done, running, waiting, only)[:max_parallel - len(running)]:
                     running[t["num"]] = pool.submit(run_task, t)
             if not running:
                 if quota_hit or DECISION_POLL <= 0 or not any(load_state().get(n, {}).get("decision") for n in waiting):
                     break
-                time.sleep(DECISION_POLL)
+                DRAIN.wait(DECISION_POLL)
                 tasks = read_tasks()
                 continue
             finished, _ = wait(running.values(), timeout=DECISION_POLL if DECISION_POLL > 0 else None, return_when=FIRST_COMPLETED)
@@ -729,8 +963,15 @@ def run(max_parallel, only, dry_run):
                     event(num, "error", f"{type(e).__name__}: {e}"[:300])
                     waiting.add(num)
                     continue
-                (done.add if result == "done" else waiting.add)(num)
+                if result != "drained":
+                    (done.add if result == "done" else waiting.add)(num)
             tasks = read_tasks()
+
+    if DRAIN.is_set():
+        event(None, "drained", drain_mode["mode"])
+        if drain_mode["mode"] == "restart":
+            return reexec()
+        return 0
 
     if quota_hit:
         notify("Orchestrator stopped: provider quota exhausted.")
@@ -751,6 +992,98 @@ def status():
         s = state.get(t["num"], {})
         print(f"{t['num']} {t['status']:<16} stage={s.get('stage', '-'):<12} fixRounds={s.get('fixRounds', 0)}"
               f"{'  decision=' + s['decision'] if s.get('decision') else ''}")
+    return 0
+
+
+def human(seconds):
+    m = int(seconds // 60)
+    return f"{m // 60}h{m % 60:02d}m" if m >= 60 else f"{m}m"
+
+
+def quota_warnings(timeout=1.5):
+    """Low-window warnings from a 5 min disk cache; fetches missing providers in threads, bounded by timeout."""
+    cache_file = AI / "quota-cache.json"
+    try:
+        cache = json.loads(cache_file.read_text())
+    except (OSError, ValueError):
+        cache = {}
+    now = time.time()
+    names = [n for n in load_json(PROVIDERS).get("providers", {})]
+    stale = [n for n in names if now - cache.get(n, {}).get("ts", 0) > 300]
+
+    def fetch(n):
+        cache[n] = {"ts": time.time(), "value": quota.cached(n, 0)}
+
+    threads = [threading.Thread(target=fetch, args=(n,), daemon=True) for n in stale]
+    for t in threads:
+        t.start()
+    end = time.time() + timeout
+    for t in threads:
+        t.join(max(0, end - time.time()))
+    if stale:
+        try:
+            AI.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(json.dumps({n: dict(v) for n, v in list(cache.items())}))
+        except OSError:
+            pass
+    out = []
+    for n in names:
+        value = cache.get(n, {}).get("value")
+        for w in value if isinstance(value, list) else []:
+            if w.get("limit") and w["remaining"] / w["limit"] < quota.LOW:
+                out.append(f"{n} {w['window']} {w['remaining']}/{w['limit']} left")
+    return out
+
+
+def brief(use_quota=True):
+    lines = []
+    tasks = read_tasks()
+    state = load_state()
+    done = {t["num"] for t in tasks if t["status"] == "done"}
+    holder = lock_holder()
+    m = active_milestone()
+    if m:
+        ntasks = [n for n in m["tasks"]]
+        lines.append(f"milestone {m['id']} {m['title']} [{m.get('status', 'open')}]: "
+                     f"{sum(n in done for n in ntasks)}/{len(ntasks)} tasks done")
+    lines.append(f"orchestrator: {'running pid ' + str(holder) if holder else 'NOT running'}")
+    try:
+        live_now = json.loads((AI / "running.json").read_text()).get("running", []) if holder else []
+    except (OSError, ValueError):
+        live_now = []
+    for w in sorted(live_now, key=lambda w: w["task"]):
+        lines.append(f"  running {w['task']} {w['role']} {w.get('provider')}/{w.get('model')} "
+                     f"{human(time.time() - w['start'])}")
+    waiting = {n for n, s in state.items() if s.get("decision") and not decision_resolved(n)}
+    scope = milestone_scope()
+    todo = [t for t in tasks if t["status"] not in FINISHED and t["num"] not in done
+            and (scope is None or t["num"] in scope) and t["num"] not in waiting
+            and t["num"] not in {w["task"] for w in live_now}]
+    queued = sum(all(d in done for d in t["deps"]) for t in todo)
+    lines.append(f"queued {queued}, blocked by deps {len(todo) - queued}, waiting decision {len(waiting)}, "
+                 f"done {len(done)}/{len(tasks)}")
+    for f in sorted(DECISIONS.glob("*.md")) if DECISIONS.exists() else []:
+        if f.name.endswith(".resolved.md"):
+            continue
+        try:
+            d = json.loads(f.with_suffix(".json").read_text())
+        except (OSError, ValueError):
+            d = {"category": "?", "questions": [f.read_text().split("Question:")[-1].strip().splitlines()[0]]}
+        lines.append(f"  decision {f.stem} [{d.get('category')}] {str(d['questions'][0])[:140] if d.get('questions') else ''}")
+    bad = [e for e in (json.loads(x) for x in EVENTS.read_text().splitlines() if x.strip())
+           if e["event"] in ("error", "retry", "commit-failed", "quota", "decision")] if EVENTS.exists() else []
+    for e in bad[-3:]:
+        lines.append(f"  recent {e['ts'][5:16]} {e['task'] or '-'} {e['event']} {str(e['detail'])[:90]}")
+    if use_quota:
+        warn = quota_warnings()
+        if warn:
+            lines.append("QUOTA LOW: " + "; ".join(warn))
+    ready = [x for x in read_milestones() if x.get("status") == "built"]
+    for x in ready:
+        lines.append(f"BUILD READY {x['id']} (build {'ok' if x.get('buildOk') else 'FAILED'}, "
+                     f"tests {'ok' if x.get('testsOk') else 'FAILED'}): python3 scripts/ai/play.py {x['id']} "
+                     f"then orchestrator.py approve {x['id']}")
+    print("\n".join(lines[:20]))
     return 0
 
 
@@ -777,6 +1110,11 @@ def main():
     r.add_argument("--only", help="comma-separated task numbers")
     r.add_argument("--dry-run", action="store_true")
     sub.add_parser("status")
+    br = sub.add_parser("brief")
+    br.add_argument("--no-quota", action="store_true")
+    sub.add_parser("restart")
+    sp = sub.add_parser("stop")
+    sp.add_argument("--graceful", action="store_true")
     m = sub.add_parser("migrate")
     m.add_argument("--force", action="store_true")
     sub.add_parser("readme")
@@ -790,6 +1128,12 @@ def main():
     args = parser.parse_args()
     if args.cmd == "status":
         return status()
+    if args.cmd == "brief":
+        return brief(not args.no_quota)
+    if args.cmd == "restart":
+        return signal_running(signal.SIGUSR1, "graceful restart")
+    if args.cmd == "stop":
+        return stop(args.graceful)
     if args.cmd == "migrate":
         return migrate(args.force)
     if args.cmd == "readme":

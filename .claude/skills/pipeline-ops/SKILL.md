@@ -10,6 +10,7 @@ Everything runs detached from Claude Code (`setsid nohup`), so it survives sessi
 ## Status (cheap, check first)
 
 ```
+python3 scripts/ai/orchestrator.py brief [--no-quota]   # <=20 lines: milestone, running, queue, open decisions, failures, quota, builds
 python3 scripts/ai/orchestrator.py status          # one line per task: status, saved stage, fix rounds
 tail -20 .ai/orchestrator-run.log                  # live steps
 ls .ai/decisions/                                  # open planner decisions (*.md without .resolved)
@@ -34,6 +35,18 @@ Only one orchestrator runs at a time (`.ai/orchestrator.lock`; a second `run` ex
 ## Decisions
 
 The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABLE, BLOCKED, escalation exhausted) and continues with other tasks. Planner: read it, fix the spec (or the acceptance table — Opus only) and commit, then rename the file to `<NNN>-<stage>.resolved.md` and start/restart the orchestrator; the stage reruns. Only product-level questions go to the user.
+
+## Restart, triage, notifications
+
+- `orchestrator.py restart` (or SIGHUP/SIGUSR1 to the orchestrator pid): stops scheduling, lets running stages finish and save state, then re-execs itself (new code, workers untouched). `stop --graceful` (SIGUSR2) = drain then exit. `stop` and the dashboard Stop are hard stops.
+- Infra noise is handled automatically: a stage with no report (stall, kill, transport error) is retried once fresh (a STALLED retry uses `--heavy`); event `retry`. Tasks with `Models: heavy` also run acceptance, tester-pre and tester heavy.
+- Decisions are structured: `.ai/decisions/<num>-<stage>.md` (+ `.json` sidecar) with category `infra|spec|product|tests`, questions, spec excerpt, failures, options, run log path. Rename the `.md` to `.resolved.md` to resolve.
+- Triage: on each decision `ORCH_TRIAGE_CMD` (default in production: headless `claude -p --model sonnet` with `ai/agents/triage.md`; `off` disables) answers `retry | rebase_retry | escalate`. Retries are applied and resolved by the orchestrator (event `triaged`, max 2 per stage); `escalate` stays open for the planner.
+- Notifications are off unless `ORCH_NOTIFY_CMD` is set (message appended as last arg); alerts live in the dashboard.
+
+## Short orchestration session
+
+`brief` -> handle open escalated decisions (fix spec, rename to `.resolved.md`) -> check `BUILD READY` lines (play, approve) -> `restart` if code changed -> exit.
 
 ## Failure patterns seen
 
