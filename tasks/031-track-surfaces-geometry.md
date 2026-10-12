@@ -42,13 +42,17 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[];
 
 Executable contract. The `acceptance` worker turns each row into `tests/unit/acceptance/031-track-surfaces-geometry.test.ts` before the coder starts. Nobody else may change these rows or tests.
 
+Fixture (build it in the test, no other inputs): `circleV2(elevation, kerbs, runoffs)` = `{ ...fixture }` from `tests/unit/acceptance/022-fixture-trackdatav2.ts` with `centerline`, `widthMeters` (12) and `lengthMeters` from `tests/fixtures/circleTrack.ts` (R = 100, N = 120, counter-clockwise, so **right = towards the centre**), `version: 2` and the given `elevation` (length 120), `kerbs`, `runoffs`. Radial distance of a vertex = `hypot(x, z)`. Chord between consecutive points `c = 200·sin(π/120)` ≈ 5.2353 m. Triangle (a, b, c) faces up when `((b−a)×(c−a)).y > 0`. Tolerances: positions ±1e-3, y ±1e-4.
+
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | straight fixture track width 12, elevation 0 | `buildTrackSurfaces` | asphalt strip 12 m wide at y 0.02; triangles face up |
-| AT2 | fixture elevation rising 0→10 m | asphalt vertices | y = elevation + 0.02 at each point ±1e-6 |
-| AT3 | one kerb on the left of indices 10–30 | kerb strip | lies between 6 and 7.2 m left of the centerline, y elevation + 0.04; uv.v advances 1 per 1.5 m |
-| AT4 | gravel runoff 18 m right | strip | from 6 m (or 7.2 with kerb) to 24 m (or 25.2) right, tagged `gravel`, y + 0.01 |
-| AT5 | wrapped segment (end < start) | strips | continuous across index 0, no NaN |
+| AT1 | elevation all 0, no kerbs, no runoffs | `buildTrackSurfaces` | exactly 1 strip, `surface` 'asphalt'; 240 vertices, radial distances: one of each pair 94 and the other 106; every y = 0.02; `indices.length` = 720; every triangle faces up |
+| AT2 | elevation[i] = 10·i/119, no kerbs/runoffs | asphalt strip | both vertices of point i (vertices 2i, 2i+1) have y = elevation[i] + 0.02 |
+| AT3 | elevation 0, kerbs `[{start: 10, end: 30, side: 'left'}]` | strips | 2 strips; strip 1 `surface` 'kerb', 42 vertices, radial distances in {106, 107.2}, y = 0.04; uv of pair j (j = 0…20): u = 0 on the 106 vertex and 1 on the 107.2 vertex, v = j·c/1.5 ±1e-3; triangles face up |
+| AT4 | elevation 0, runoffs `[{start: 50, end: 60, side: 'right', surface: 'gravel', widthMeters: 18}]`, no kerbs | strips | strip 1 `surface` 'gravel', 22 vertices, radial distances in {94, 76}, y = 0.01; triangles face up |
+| AT5 | same runoff plus kerbs `[{start: 50, end: 60, side: 'right'}]` | strips | order: asphalt, kerb, gravel; kerb radial distances in {94, 92.8}; gravel radial distances in {92.8, 74.8} |
+| AT6 | elevation 0, kerbs `[{start: 115, end: 5, side: 'right'}]` | kerb strip | 22 vertices (k = 11), all finite; its first pair is at point 115 (inner vertex within 1e-3 of 94·(cos, sin)(2π·115/120)); distance between inner vertices of consecutive pairs = 94/100·c ±1e-2 (continuous across index 0) |
+| AT7 | kerbs `[{start: 7, end: 7, side: 'left'}]` | strips | only the asphalt strip (k = 1 produces nothing) |
 
 ## Acceptance criteria
 
