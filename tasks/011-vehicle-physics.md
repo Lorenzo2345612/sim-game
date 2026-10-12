@@ -1,6 +1,6 @@
 # 011 — Implement the physics vehicle (Rapier raycast vehicle)
 
-Status: in progress
+Status: done
 Phase: 0
 Depends on: 002, 010
 Complexity: complex
