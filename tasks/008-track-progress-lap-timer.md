@@ -1,6 +1,6 @@
 # 008 — Track progress and lap timer
 
-Status: pending
+Status: in progress
 Phase: 0
 Depends on: 002, 004, 005
 Complexity: complex
@@ -73,6 +73,12 @@ Constant `WRAP = 50` (m). State: `prevDistance: number | null = null`, `lap = 0`
 - Return `events`.
 
 `currentLapTime(time)`: `lap >= 1 ? time - lapStart : null`. `reset()`: back to initial state (`lastLapTime`, `bestLapTime`, `prevDistance` all `null`, `lap = 0`).
+
+Planner decisions (edge cases):
+- If N ≤ 121 the ±60 window covers the whole track: always use the global search. Ties: the lowest segment index wins.
+- Segments shorter than 1e-9 m are skipped by the search (no NaN from zero-length segments).
+- `TrackProgress.update` with non-finite x or z returns the previous sample unchanged (zeros if none yet).
+- `LapTimer.update` expects `distance` in [0, L) as returned by `TrackProgress` (the caller does not wrap; the timer does not wrap). Non-finite `distance`/`time` or `distance` outside [0, L): return [] and change no state.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
