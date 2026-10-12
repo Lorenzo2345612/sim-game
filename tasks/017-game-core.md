@@ -1,6 +1,6 @@
 # 017 — Create the game core (Game) and interpolation
 
-Status: pending
+Status: in progress
 Phase: 0
 Depends on: 002, 005, 008, 010, 011
 Complexity: complex
@@ -80,6 +80,13 @@ export class Game {
 - `getPrevState equals the previous current state`: after step k, `getPrevState()` deep-equals the `getCurrentState()` copy taken after step k-1.
 - `reset input returns the car to spawn and lap 0`: 120 accelerating steps, then one step with `reset: true`, throttle 0: position ≈ spawn (±0.05) and `getLapInfo().lap === 0`.
 - `drainEvents empties the queue`: two consecutive calls; the second returns `[]`.
+
+Planner decisions (edge cases):
+- `spawnFromTrack` with fewer than 5 centerline points throws `Error('Track too short')`.
+- `lerpVec3` / `slerpQuat` / `interpolateVehicleState` clamp `t` to [0, 1]; non-finite `t` behaves as 1. Quaternions are assumed unit (from Rapier); zero quaternions are not handled.
+- `step` with `input.reset` does not clear already-queued events.
+- `dispose()` twice is a no-op; `step()` after `dispose()` throws `Error('Game disposed')`.
+- Not specified, do not test: invalid wheel counts in `createVehicleState`/`copyVehicleState`, malformed `TrackData` in `Game.create` (the track-builder guarantees valid data).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
