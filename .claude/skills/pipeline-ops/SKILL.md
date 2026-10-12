@@ -50,6 +50,7 @@ The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABL
 
 ## Failure patterns seen
 
+- To kill one worker, kill its PID (and its `claude` child) only: workers share the orchestrator's process group, so `kill -- -PGID` kills the orchestrator too.
 - Worker silent for minutes after reading context → stalled (watchdog kills at 8 min, `STALLED`). Large single-file tasks: split them or mark `Type: bugfix` (heavy models).
 - Contradictory spec criteria → coder/reviewer ask for a planner decision; fix the spec, never let the coder weaken tests.
 - Visual bugs pass unit tests: render tasks need a Playwright acceptance row with pixel checks.
