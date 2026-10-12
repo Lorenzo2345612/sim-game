@@ -44,12 +44,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 038 | Render barriers | in progress | 022 |
 | 039 | Instanced procedural trees with LOD | in progress | 022, 035 |
 | 040 | Procedural grandstands with crowd | done | 022 |
-| 041 | Pit building, start gantry and start lights | in progress | 022 |
+| 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
 | 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | pending | 033 |
-| 046 | Gamepad input and input merging | pending | 022 |
+| 046 | Gamepad input and input merging | in progress | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | pending | - |
 | 049 | Minimap | pending | - |

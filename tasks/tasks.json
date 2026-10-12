@@ -552,7 +552,7 @@
     {
       "num": "041",
       "title": "Pit building, start gantry and start lights",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],
@@ -620,7 +620,7 @@
     {
       "num": "046",
       "title": "Gamepad input and input merging",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],
