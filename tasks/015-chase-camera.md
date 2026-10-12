@@ -1,6 +1,6 @@
 # 015 — Chase camera
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
