@@ -56,7 +56,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 050 | Best-lap ghost recording and replay | pending | - |
 | 051 | Engine and tyre audio | pending | - |
 | 052 | Graphics presets and FPS overlay | pending | - |
-| 053 | Integrate the F4 car model | blocked | - |
+| 053 | Integrate the F4 car model | pending | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | pending | 030, 032, 033, 034, 035, 036, 037 |

@@ -6,7 +6,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 - **Phase 0: done** (tasks 001–021). Playable prototype: Monza centerline, Rapier car (Kenney placeholder), chase camera, HUD, lap timer. `npm run dev`.
 - **Phase 1: running unattended** (tasks 022–056) via orchestrator v2 (worktrees, JSON reports, max 6 parallel), gated by deliverables in `tasks/milestones.json`: M0 (approved, build in `builds/M0`), M1.1 real tracks (active), M1.2 scenery + menu, M1.3 gameplay, M1.4 F4 car. Design: `ai/guides/phase1.md`. Goal: Monza, Spa, Silverstone with elevation, kerbs, run-offs, barriers, forests, grandstands, pits; surface grip, track limits, gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets, track menu.
-- **Blocked:** 053 F4 car — waiting for the user to download https://sketchfab.com/3d-models/f4-tatuus-t014-chasis-d61ce2f877fb4bf29da381cfa4f0f3d7 into `assets/vendor/f4/`; then the planner details the spec (inspect nodes, gltf-transform simplify < 80k tris, separate wheels, livery materials). Never use the "Tatuus" name in game.
+- 053 F4 car: source GLB in `assets/vendor/f4/` (CC-BY, licensed), spec written (heavy, complex); also removes all Kenney assets. Runs in milestone M1.4.
 
 ## In flight (planner side)
 
