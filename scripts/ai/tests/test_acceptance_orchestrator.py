@@ -95,15 +95,22 @@ class OrchestratorAcceptanceTest(Harness):
         self.assertTrue((self.repo / ".ai/decisions/005-tester.md").exists(), self.diag())
         self.assertEqual(self.task_status("005"), "waiting decision", self.diag())
 
-    def test_AT6_spec_silent_decision_does_not_block_independent_task(self):
+    def test_AT6_blocked_tester_pre_decision_does_not_block_independent_task(self):
         self.add_task("003", "Echo", complexity="complex")
         self.add_task("004", "Foxtrot")
-        self.write_script(success_script(overrides={"tester-pre": "STATUS: READY\nSPEC_SILENT: x\n"}))
+        self.write_script(success_script(overrides={"tester-pre": "STATUS: BLOCKED\nSPEC_SILENT: x\n"}))
         self.run_orch(["run"])
         self.assertTrue((self.repo / ".ai/decisions/003-tester-pre.md").exists(), self.diag())
         self.assertEqual([c for c in self.calls_for("003") if c["role"] == "coder"],
                          [], self.diag())
         self.assertEqual(self.task_status("004"), "done", self.diag())
+
+    def test_AT6b_spec_silent_with_ready_continues(self):
+        self.add_task("003", "Echo", complexity="complex")
+        self.write_script(success_script(overrides={"tester-pre": "STATUS: READY\nSPEC_SILENT: x\n"}))
+        self.run_orch(["run"])
+        self.assertFalse((self.repo / ".ai/decisions/003-tester-pre.md").exists(), self.diag())
+        self.assertEqual(self.task_status("003"), "done", self.diag())
 
     def test_AT7_resumes_from_saved_stage(self):
         self.add_task("007", "Golf")

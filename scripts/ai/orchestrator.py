@@ -547,9 +547,11 @@ def _run_task(task, slot):
         elif stage == "tester-pre":
             if complex_:
                 r = call_worker("tester-pre", spec, num)
-                if r["status"] != "READY" or not is_none(r["spec_silent"]):
-                    return decision(num, title, stage, f"spec silent: {r['spec_silent'] or r['status']}",
-                                    r["out"], st)
+                if r["status"] != "READY":
+                    return decision(num, title, stage, f"tester-pre {r['status'] or 'failed'}: "
+                                    f"{r['spec_silent'] or '?'}", r["out"], st)
+                if not is_none(r["spec_silent"]):
+                    event(num, "spec-silent", str(r["spec_silent"])[:500])
             advance("commit-tests")
 
         elif stage == "commit-tests":
