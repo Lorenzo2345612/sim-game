@@ -6,3 +6,4 @@
 | Monza layout (`it-1922.geojson`) | `assets/source/tracks/it-1922.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
 | Spa layout (`be-1925.geojson`) | `assets/source/tracks/be-1925.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
 | Silverstone layout (`gb-1948.geojson`) | `assets/source/tracks/gb-1948.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
+| Copernicus DEM GLO-30 elevation windows (`assets/source/dem/{monza,spa,silverstone}.json`) | `assets/source/dem/` | Copernicus programme, European Union | UNRESTRICTED (Copernicus DEM licence, worldwide free use) | https://spacedata.copernicus.eu/web/cscda/data-access | no |
