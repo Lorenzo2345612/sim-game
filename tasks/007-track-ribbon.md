@@ -38,6 +38,18 @@ Indices: for each `i` in `0..N-1`, `j = (i+1)%N` (segment `N-1 → 0` included),
 
 Output sizes: `positions.length = N*6`, `uvs.length = N*4`, `indices.length = N*6`, `vertexCount = 2N`.
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/007-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | circle r = 100, N = 100 points | `buildRibbon(c, 12, 0.02)` | vertexCount 200; positions.length 600; indices.length 600; uvs.length 400 |
+| AT2 | same | every triangle | normal (cross product) y > 0 |
+| AT3 | same | for each i | distance(L_i, R_i) = 12 ±1e-4; every vertex y = 0.02 |
+| AT4 | loop [[0,0],[0,−100],[10,−100],[10,0]] (index 0 heads ≈ −Z) | `buildRibbon(loop, 12, 0)` | vertex 0 (left) x < vertex 1 (right) x (right = +X when facing −Z) |
+| AT5 | same | indices | every index < vertexCount; closing segment (N−1 → 0) present |
+
 ## Acceptance criteria
 
 Tests in `tests/unit/track/ribbon.test.ts` with a square `[[0,0],[0,-100],[100,-100],[100,0]]` and a circle r=100, 64 points (`[100cos a, -100 sin a]`, `a = 2πk/64`):
@@ -47,6 +59,7 @@ Tests in `tests/unit/track/ribbon.test.ts` with a square `[[0,0],[0,-100],[100,-
 - [ ] `left and right vertices are width apart`: 3D distance between vertices `2i` and `2i+1` equals `width` (12) ±1e-6.
 - [ ] `all vertices have the requested y`: `y = 0.05` → `toBeCloseTo(0.05, 6)`.
 - [ ] `right vertex is east of left on the first square segment`: vertex 1 x > vertex 0 x.
+- [ ] `indices are valid and close the loop`: every index < `vertexCount`; the triangles of the closing segment (`N-1 -> 0`) are present.
 - [ ] `uv u is 0 on left and 1 on right, v starts at 0 and increases` (pair 1 v > pair 0 v).
 
 ## Verification

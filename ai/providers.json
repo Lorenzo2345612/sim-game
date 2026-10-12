@@ -18,6 +18,13 @@
     }
   },
   "roles": {
+    "acceptance": {
+      "provider": "qwen",
+      "model": "qwen3.8-flash",
+      "heavyModel": "qwen3.8-max",
+      "prompt": "ai/agents/acceptance.md",
+      "timeoutMin": 20
+    },
     "coder": {
       "provider": "glm",
       "model": "glm-5.3-flash",

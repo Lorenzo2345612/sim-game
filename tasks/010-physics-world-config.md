@@ -59,9 +59,20 @@ export { RAPIER };
 
 `beforeAll(async () => { await initPhysics(); })`; `afterEach` calls `world.free()`.
 - `initPhysics can be called twice without failing`.
-- `world timestep equals FIXED_DT`: `world.timestep` `toBeCloseTo(1/120, 6)`.
+- `world gravity and timestep`: `world.gravity` equals `(0, -9.81, 0)`; `world.timestep` `toBeCloseTo(1/120, 9)`.
 - `dynamic cube dropped from y=5 rests at y≈0.5`: dynamic body at (0,5,0), `cuboid(0.5,0.5,0.5)` collider, 360 `world.step()` calls (3 s); `Math.abs(y - 0.5) < 0.05`.
-- `PLACEHOLDER_CAR matches architecture values`: `massKg === 650`, `wheelPositions.length === 4`, `enginePowerW === 130000`.
+- `PLACEHOLDER_CAR matches architecture values`: `massKg === 650`, `wheelRadius === 0.33`, `enginePowerW === 130000`, `brakeMax === 20`, `wheelPositions.length === 4`, front `z === -1.3` (indices 0, 1) and rear `z === 1.25` (indices 2, 3).
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/010-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | — | `initPhysics()` twice | both resolve, no error |
+| AT2 | `createPhysicsWorld()` | read gravity and timestep | gravity (0, −9.81, 0); timestep 1/120 ±1e-9 |
+| AT3 | world + dynamic cube 1×1×1 m dropped at y = 5 | 360 `world.step()` | cube y 0.5 ±0.05 (rests on ground at y = 0) |
+| AT4 | `PLACEHOLDER_CAR` | read fields | equals architecture.md values: mass 650, wheelRadius 0.33, enginePowerW 130000, brakeMax 20, 4 wheelPositions with front z −1.3 and rear z 1.25 |
 
 ## Acceptance criteria
 

@@ -50,6 +50,10 @@ export default defineConfig({
    - `await page.screenshot({ path: 'test-results/phase0-accelerating.png' })`.
    - `expect(errors).toEqual([])`.
 
+## Acceptance tests
+
+This task's own e2e spec is the acceptance test; the `acceptance` step is skipped.
+
 ## Acceptance criteria
 
 - [ ] `npm run test:e2e` passes (1 test) and writes both screenshots to `test-results/`.

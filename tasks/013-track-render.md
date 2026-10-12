@@ -46,7 +46,18 @@ Fixture: build in the test a circle of radius 100 m with 64 points (`[100cos a, 
 - `asphalt uses expected material`: `material.color.getHexString() === '3a3a3e'`, roughness ≈ 0.9.
 - `start line sits on first centerline point`: `position.x ≈ centerline[0][0]`, `position.z ≈ centerline[0][1]` (4 decimals), `position.y ≈ 0.03`.
 - `start line is oriented along the track`: `new Vector3(0,0,1).applyQuaternion(mesh.quaternion)` ≈ (0, 1, 0) (4 decimals), and `new Vector3(1,0,0).applyQuaternion(mesh.quaternion)` has dot product ≈ 0 with the normalised `(dx, 0, dz)`.
-- `dispose does not throw`.
+- `dispose does not throw` and calls `dispose` on both geometries (spy with `vi.spyOn`).
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/013-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | ribbon from `buildRibbon` on circle r = 100 (N points), width 12 | `createTrackObject` | group has children named 'asphalt' and 'startLine' |
+| AT2 | same | asphalt geometry | index.count = ribbon.indices.length; position.count = ribbon.vertexCount; has 'normal' and 'uv' attributes |
+| AT3 | same | startLine | x,z = centerline[0] ±1e-6; y 0.03 |
+| AT4 | same | `dispose()` | does not throw; geometries disposed (spy on dispose called) |
 
 ## Acceptance criteria
 

@@ -21,6 +21,7 @@ You are the programmer of a web racing game (TypeScript, Three.js, Rapier, Vite)
 - Do not touch files outside those listed in the task unless essential; if you do, say so in the report.
 - Do not install dependencies the task does not mention.
 - Do not delete or disable tests to make them pass.
+- Never edit `tests/unit/acceptance/`: those tests are the contract. Your work is done when they pass.
 - Do not make git commits.
 - Do not use `any` in TypeScript except for types from untyped libraries.
 - Code and comments in English. Comments only where the logic is not obvious.

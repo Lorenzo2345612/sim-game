@@ -50,10 +50,12 @@ export class KeyboardInput {
 
 Helper: `const key = (type: string, code: string, repeat = false) => Object.assign(new Event(type), { code, repeat })`; `target = new EventTarget()`; `target.dispatchEvent(key('keydown','KeyW'))`.
 
-- `approach does not overshoot` → `approach(0.9, 1, 4, 1)` = 1; `approach(0, 1, 4, 0.1)` `toBeCloseTo(0.4, 10)`; `approach(0.2, 0, 6, 1)` = 0.
+- `approach does not overshoot` → `approach(0.9, 1, 4, 1)` = 1; `approach(0, 1, 4, 0.1)` `toBeCloseTo(0.4, 10)`; `approach(0.2, 0, 6, 1)` = 0; `approach(1, 0, 6, 0.1)` `toBeCloseTo(0.4, 10)`.
 - `throttle reaches 1 after 0.25 s holding W` → update(0.25) → throttle `toBeCloseTo(1, 6)`.
 - `throttle returns to 0 after releasing W` → hold W 0.25 s, keyup, update(1/6) → throttle `toBeCloseTo(0, 6)`.
 - `ArrowUp also drives throttle` → keydown ArrowUp, update(0.25) → throttle ≈1.
+- `arrow keys mirror WASD` → ArrowDown, update(1/6) → brake ≈1; ArrowLeft / ArrowRight give steer < 0 / > 0.
+- `steer rises at 3 per second` → D, update(0.1) → steer `toBeCloseTo(0.3, 9)`.
 - `brake rises at 6 per second` → S, update(1/6) → brake ≈1.
 - `steer right reaches 1` → D, update(1/3) → steer ≈1.
 - `left and right together give zero steer target` → A+D, update(1) → steer 0.
@@ -63,9 +65,25 @@ Helper: `const key = (type: string, code: string, repeat = false) => Object.assi
 - `blur releases all keys` → W+D, update(1), blur, update(1) → throttle 0, steer 0.
 - `dispose removes listeners` → dispose, keydown W, update(1) → throttle 0.
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/009-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | — | `approach(0, 1, 4, 0.1)`, `approach(0.9, 1, 4, 0.1)`, `approach(1, 0, 6, 0.1)` | 0.4, 1 (no overshoot), 0.4 (±1e-9) |
+| AT2 | `KeyboardInput` on a `new EventTarget()` | keydown KeyW, then `update(0.25)` | throttle 1 ±1e-9; brake 0; steer 0 |
+| AT3 | throttle at 1 | keyup KeyW, `update(1/6)` | throttle 0 ±1e-9 |
+| AT4 | — | keydown ArrowUp / ArrowDown / ArrowLeft / ArrowRight | same effect as W / S / A / D |
+| AT5 | A and D both held | `update(1)` | steer 0 |
+| AT6 | D held | `update(0.1)` | steer 0.3 ±1e-9 (3/s) |
+| AT7 | KeyR pressed and held | `update` ×3 | reset true, false, false; after keyup + keydown: true again; keydown with repeat true does not retrigger |
+| AT8 | W and D held | dispatch `blur`, `update(1)` | throttle 0 and steer 0 |
+| AT9 | `dispose()` called | keydown KeyW, `update(1)` | throttle 0 |
+
 ## Acceptance criteria
 
-- [ ] The 12 tests pass; typecheck and lint without errors.
+- [ ] The 14 tests pass; typecheck and lint without errors.
 - [ ] `keyboard.ts` does not reference `window` or `document`.
 
 ## Verification

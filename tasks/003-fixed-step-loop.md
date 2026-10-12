@@ -47,9 +47,21 @@ Use `new FixedStepLoop(fn, 1/120)` with an `fn` that counts calls and stores the
 - `partial frames accumulate` → `advance(0.5/120)` gives steps 0, alpha `toBeCloseTo(0.5, 6)`; another `advance(0.5/120)` gives steps 1.
 - `huge frame is clamped to 8 steps and drops remainder` → `advance(1)` gives steps 8, alpha 0 (`toBeCloseTo(0, 10)`).
 - `negative frame time adds nothing` → `advance(-1)` steps 0.
-- `NaN frame time adds nothing` → `advance(NaN)` steps 0.
+- `NaN and Infinity frame time add nothing` → `advance(NaN)` and `advance(Infinity)` steps 0 and `step` never called.
 - `step always receives fixedDt` → all stored `dt`s `toBeCloseTo(1/120, 12)`.
 - `reset clears the accumulator` → `advance(0.5/120)`, `reset()`, `advance(0)` returns alpha `toBeCloseTo(0, 10)`.
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/003-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | `FixedStepLoop` with fixedDt 1/120, maxSteps 8, step counter | `advance(1/60)` | 2 step calls, each with dt = 1/120; alpha ∈ [0, 1] |
+| AT2 | fresh loop | `advance(0.5/120)` then `advance(0.5/120)` | first returns steps 0, alpha 0.5 ±1e-9; second returns steps 1 |
+| AT3 | fresh loop | `advance(1.0)` | steps 8; alpha 0 (excess dropped) |
+| AT4 | fresh loop | `advance(-1)`, `advance(NaN)`, `advance(Infinity)` | each returns steps 0; step never called |
+| AT5 | loop after `advance(0.5/120)` | `reset()` then `advance(0)` | alpha 0 |
 
 ## Acceptance criteria
 

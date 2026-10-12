@@ -35,6 +35,19 @@ export function polylineLength(points: Point2[], closed: boolean): number;
 2. `projectLonLat`: with `[lon0, lat0] = origin`, `k = EARTH_RADIUS_M * Math.PI / 180`: `x = (lon - lon0) * Math.cos(lat0 * Math.PI / 180) * k`; `z = -(lat - lat0) * k`. Returns a new array, same order/length.
 3. `polylineLength`: sum of 2D Euclidean distances between consecutive points; if `closed` and ≥ 2 points, also add last→first. Fewer than 2 points: 0.
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/004-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | origin [0, 0] | `projectLonLat([[0, 1]], [0, 0])` | x 0 ±1e-6; z −111195 ±1 m (north = −Z) |
+| AT2 | origin [0, 0] | `projectLonLat([[1, 0]], [0, 0])` | x +111195 ±1 m; z 0 ±1e-6 |
+| AT3 | origin [9.28, 45.62] | project [9.281, 45.62] | x 77.77 ±0.01 m; z 0 ±1e-6 |
+| AT4 | coords [[0,0],[2,4],[−2,1]] | `bboxCenter` | [0, 2] |
+| AT5 | square 10×10 m `[[0,0],[10,0],[10,10],[0,10]]` | `polylineLength(sq, true)` / `(sq, false)` | 40 / 30 (±1e-9) |
+| AT6 | `assets/source/tracks/it-1922.geojson`, last duplicate point removed, origin = bboxCenter | closed `polylineLength` of projection | 5786.6 ±1 m |
+
 ## Acceptance criteria
 
 Tests in `tests/unit/track/geo.test.ts`:

@@ -6,7 +6,9 @@ Web simulator of single-seaters on real circuits. Requirements and decisions in 
 
 | Who | Model | Does | Does not |
 |---|---|---|---|
-| Planner | Claude (main session) | Design, specs in `tasks/`, guides in `ai/guides/`, orchestration, decisions | Write code in `src/`, `tests/`, `tools/` (blocked by hook) |
+| Planner | Claude Opus (main session) | Complex feature analysis and the acceptance tests table of every spec; nothing else | Write code in `src/`, `tests/`, `tools/` (blocked by hook) |
+| Planning subagents | Claude Sonnet | Simple feature analysis, spec writing/review, dispatch orchestration, research | Edit acceptance tables |
+| acceptance | Qwen `qwen3.8-flash` | Turns the acceptance table into failing tests in `tests/unit/acceptance/` before coding | Edit `src/` |
 | coder | GLM `glm-5.3-flash` (heavy: `glm-5.3`) | Implements a spec | Design or expand scope |
 | tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Tests for the acceptance criteria | Edit `src/` |
 | reviewer | Kimi `kimi-for-coding` (heavy: `k3-256k`) | Validates against the spec, runs checks | Edit files |
@@ -72,7 +74,7 @@ Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.
 
 ## Planning subagents
 
-Planning subagents run on Sonnet (`model: sonnet`), never Opus.
+Planning subagents run on Sonnet (`model: sonnet`), never Opus. Opus is reserved for acceptance tests and complex feature analysis.
 
 ## Memory
 

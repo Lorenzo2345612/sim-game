@@ -54,6 +54,20 @@ const TRACKS = [{ id: 'monza', name: 'Monza', widthMeters: 12, reverse: false, f
 
 4. Run `npm run build:tracks` and leave `public/tracks/monza.json` generated.
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/006-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | real Monza geojson, config {id 'monza', name 'Monza', width 12, reverse false} | `buildTrackData` | id 'monza'; name 'Monza'; widthMeters 12; officialLengthMeters 5793 |
+| AT2 | same | `buildTrackData` | \|lengthMeters − 5793\| / 5793 ≤ 0.01 |
+| AT3 | same | `buildTrackData` | centerline.length between 2800 and 3000; last point ≠ first point; consecutive spacing within 2 ±0.1 m |
+| AT4 | same | `buildTrackData` | sectors[0] = 0 and 0 < sectors[1] < sectors[2] < centerline.length |
+| AT5 | same | `buildTrackData` | centerline[0] within 3 m of the projected first geojson point (start line preserved) |
+| AT6 | same with reverse true | `buildTrackData` | signed area sign opposite to reverse false; centerline[0] still the start point (±3 m) |
+| AT7 | source fields | `buildTrackData` | source = { dataset 'bacinger/f1-circuits', license 'MIT', url 'https://github.com/bacinger/f1-circuits' } |
+
 ## Acceptance criteria
 
 Tests in `tests/unit/track/buildTrackData.test.ts` (real geojson read with `node:fs`, plus the fixture):
@@ -63,6 +77,9 @@ Tests in `tests/unit/track/buildTrackData.test.ts` (real geojson read with `node
 - [ ] `monza length is within 1% of 5793`: `lengthMeters` in [5735, 5851]; `officialLengthMeters === 5793`.
 - [ ] `monza sectors are increasing and start at 0`: `sectors[0] === 0 < sectors[1] < sectors[2] < centerline.length`.
 - [ ] `monza centerline last point differs from the first`.
+- [ ] `monza spacing is uniform`: every consecutive distance (including last to first) within 2 ±0.1 m.
+- [ ] `monza start line is preserved`: `centerline[0]` within 3 m of the projected first geojson point (origin = `bboxCenter` of the coords without the duplicate last point); also with `reverse:true`.
+- [ ] `monza source fields`: `source` equals `{ dataset: 'bacinger/f1-circuits', license: 'MIT', url: 'https://github.com/bacinger/f1-circuits' }`.
 - [ ] `monza coordinates are rounded to 2 decimals`: first 10 points, `Math.abs(v*100 - Math.round(v*100)) < 1e-6`.
 - [ ] `square fixture builds without throwing` (`reverse:false`, `widthMeters: 12`); `lengthMeters` within ±2% of 4448.
 - [ ] `reverse flips the winding`: signed area (shoelace over `[x,z]`) of the centerline has opposite signs for `reverse:false` and `reverse:true`.

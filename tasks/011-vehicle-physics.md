@@ -54,9 +54,26 @@ Per-test timeout 20000 ms. `beforeAll(initPhysics)`; each test: `world = createP
 - `top speed after 30 s is 55-66 m/s`: throttle 1 for 30 s → forwardSpeed in [55, 66].
 - `braking from ~50 m/s decelerates 12-20 m/s²`: throttle 1 until forwardSpeed >= 50; record v0; `brake=1, throttle=0` for 1 s; `(v0 - v1)/1` in [12, 20].
 - `steer +1 at ~20 m/s turns right`: throttle 1 until forwardSpeed >= 20, then `steer=1, throttle=0.3` for 1 s: `body.angvel().y < 0` and final `x` > initial `x`.
-- `yaw pi/2 spawn accelerates towards -X`: spawn yaw `Math.PI/2`, throttle 1 for 2 s → `x < 0`.
-- `reset restores spawn pose and zero velocity`: accelerate 2 s, `reset(spawn)`: position ≈ spawn (±0.01 per axis) and `|linvel| < 0.01`.
-- `getState returns the same out object`: `const out = vehicle.getState(); expect(vehicle.getState(out)).toBe(out)`.
+- `yaw pi/2 spawn accelerates towards -X`: spawn yaw `Math.PI/2`, throttle 1 for 2 s → `x < 0` and `|z| < 1`.
+- `reset restores spawn pose and zero velocity`: accelerate 2 s, `reset(spawn)`: position ≈ spawn (±0.01 per axis), `|linvel| < 0.01` and `getState().forwardSpeed` within ±0.01 of 0.
+- `getState returns the same out object`: `const out = vehicle.getState(); expect(vehicle.getState(out)).toBe(out)`; `out.wheels.length === 4`.
+- `does not flip`: throttle 1 for 20 s, then `steer=1` (throttle 1) for 8 s; at every step the body up-vector y component (`1 - 2*(q.x² + q.z²)`) > 0.5.
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/011-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | world from 010, `Vehicle(PLACEHOLDER_CAR)` spawned at (0, 0.6, 0) yaw 0, no input | 2 s of steps | body y 0.33–0.45; 4 wheels inContact |
+| AT2 | same | full throttle | reaches 27.78 m/s forwardSpeed in 3.0–4.0 s; position z decreasing (moves −Z) |
+| AT3 | same | full throttle 30 s | forwardSpeed 55–66 m/s |
+| AT4 | at ~50 m/s | brake 1, throttle 0 for 1 s | mean deceleration 12–20 m/s² |
+| AT5 | at ~20 m/s | steer +1 for 1 s | angvel.y < 0 and x increased (turns right) |
+| AT6 | spawn yaw π/2 | full throttle 2 s | x decreasing, \|z\| < 1 (moves −X) |
+| AT7 | moving car | `reset(spawn)` | position = spawn ±0.01; linvel ≈ 0; forwardSpeed 0 ±0.01 |
+| AT8 | any | `getState(out)` | returns the same object `out`; wheels length 4 |
+| AT9 | full throttle 20 s then steer +1 for 8 s | each step | never flips (body up-vector y > 0.5) |
 
 ## Acceptance criteria
 

@@ -33,3 +33,17 @@ Claude plans; it does not write production code. Tasks are executed by cheap fla
 - Specs, guides and messages to the user: concise and to the point. No introductions, no repeating what is already in `ai/guides/`, no justifying the obvious.
 - To the user: result in a few lines (what was done, what fails, what is next). No long summaries.
 - When requesting work from workers or subagents: require minimal output (the report block, no extra text).
+
+## Contract, not implementation (mandatory)
+
+Specs say WHAT, not HOW. If the spec contains the code, the planner already paid for writing it.
+- Allowed: goal, files, exported signatures and types (the contract), verified domain facts and non-standard formulas/constants, behaviour rules and edge cases as bullets, acceptance tests with expected values, out of scope.
+- Forbidden: function bodies, literal file contents (except shared contract files like types/config), step-by-step implementations of standard algorithms (name the algorithm instead: "centripetal Catmull-Rom, alpha 0.5"), pseudocode longer than 5 lines.
+- Budget: ≤ 60 lines per spec; code blocks only for signatures/types.
+- Progressive detail: start lean. Add detail (pseudocode, hints) only to the part a worker actually failed on, after a failed round.
+
+## Model split (mandatory)
+
+- Opus (this session) only for: (a) feature analysis when the feature is complex or cross-cutting (physics, architecture, data pipeline, anything with unknowns → run experiments with physics-lab or similar first); (b) the "Acceptance tests" table of every spec. Simple features: delegate the analysis to a Sonnet subagent too.
+- Acceptance tests are written FIRST, before the rest of the spec: concrete rows (given / when / then with numbers and tolerances), covering the goal, edge cases and failure modes. They are the contract; workers turn them into `tests/unit/acceptance/` before coding.
+- Sonnet `spec-writer` writes the rest of the spec around the Opus design and copies the acceptance table verbatim (never edits it). `spec-reviewer` checks the table is present and unchanged.

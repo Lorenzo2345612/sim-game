@@ -62,6 +62,19 @@ Test helper: root `Object3D` with children `body` (Mesh with `BoxGeometry` + `Me
 - `computeWheelQuaternion returns out`: returns the same object passed in.
 - `dispose does not throw` and calls `geometry.dispose` (spy with `vi.spyOn`).
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/014-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | fake scene: Object3D 'body' + 4 Mesh wheels named per `WHEEL_NODE_NAMES` | `CarRenderer.fromGltfScene` | returns instance; root has 5 children: car body group (containing the body pivot) + 4 wheel groups |
+| AT2 | fake scene without 'wheel-back-right' | `fromGltfScene` | throws Error('Missing node: wheel-back-right') |
+| AT3 | instance | `update(state)` with wheel positions p0..p3 | each wheel group world position = p_i ±1e-6; body follows state.position |
+| AT4 | identity chassis | `computeWheelQuaternion(id, 0, 0, out)` | equals Ry(π) (angleTo < 1e-6) |
+| AT5 | identity chassis | steering 0.3 vs 0 | yaw difference 0.3 ±1e-6 |
+| AT6 | files | — | `public/models/race.glb` and `public/models/Textures/colormap.png` exist |
+
 ## Acceptance criteria
 
 - [ ] Tests pass in Node. `public/models/race.glb` and `public/models/Textures/colormap.png` exist.

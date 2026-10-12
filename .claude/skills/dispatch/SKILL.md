@@ -11,6 +11,7 @@ Claude does not edit `src/`, `tests/` or `tools/` (a hook blocks it). All code i
 
 ```
 python3 scripts/ai/worker.py ping                                  # check providers
+python3 scripts/ai/worker.py acceptance --task tasks/NNN-x.md      # Qwen flash, test-first
 python3 scripts/ai/worker.py coder    --task tasks/NNN-x.md        # GLM flash
 python3 scripts/ai/worker.py tester   --task tasks/NNN-x.md        # Qwen flash
 python3 scripts/ai/worker.py reviewer --task tasks/NNN-x.md        # Kimi
@@ -26,11 +27,12 @@ Workers take minutes: launch them with Bash `run_in_background` and wait for the
 ## Pipeline per task
 
 1. Check that the task's dependencies are `done` in `tasks/README.md`. Mark the task `in progress`.
-2. `coder`. If `STATUS: BLOCKED`, read the reason: it is almost always an ambiguous or incomplete spec → fix the spec (not the code) and relaunch.
-3. `tester`. If `FAIL`, pass the failures to the coder: `coder --task ... --note "<tester FAILURES>"`.
-4. `reviewer`. If `CHANGES` or `REJECTED`, pass only the BLOCKER findings to the coder with `--note`. Ignore MINOR unless cheap; DOUBT items you decide by reading the cited code.
-5. Repeat 3-4 until `APPROVED` with tests passing.
-6. Mark the task `done` in the spec and in `tasks/README.md`. Summarize to the user in 2-3 lines.
+2. `acceptance` (Qwen flash): writes `tests/unit/acceptance/NNN-*.test.ts` from the spec's "Acceptance tests" table; expect `STATUS: READY` with failing tests. If `UNTESTABLE` rows: fix the table (planner, Opus) and rerun. Commit the acceptance tests before the coder starts (`test: acceptance tests (task NNN)`), so any later change shows in `git diff`. Specs without the table (Phase 0) skip this step.
+3. `coder`. If `STATUS: BLOCKED`, read the reason: it is almost always an ambiguous or incomplete spec → fix the spec (not the code) and relaunch.
+4. `tester`. If `FAIL`, pass the failures to the coder: `coder --task ... --note "<tester FAILURES>"`.
+5. `reviewer`. If `CHANGES` or `REJECTED`, pass only the BLOCKER findings to the coder with `--note`. Ignore MINOR unless cheap; DOUBT items you decide by reading the cited code.
+6. Repeat 4-5 until `APPROVED` with tests passing.
+7. Mark the task `done` in the spec and in `tasks/README.md`. Summarize to the user in 2-3 lines.
 
 Task statuses: pending | in progress | done | blocked.
 
@@ -38,7 +40,7 @@ Task statuses: pending | in progress | done | blocked.
 
 - 2 failed rounds with the flash model → same round with `--heavy`.
 - 1 failed round with `--heavy` → `fixer` (other provider and model family) with all findings in `--note`.
-- If it still fails: the problem is the spec. Re-split the task or rewrite it in more detail (signatures, pseudocode). Tell the user.
+- If it still fails: the problem is the spec. Re-split the task, or add detail (pseudocode, hints) ONLY for the part that failed. Tell the user.
 - Never write the code yourself to unblock.
 
 ## Parallel

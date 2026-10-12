@@ -42,10 +42,21 @@ declare global {
    10. `requestAnimationFrame(frameFn)` with `last` (ms) set on the first frame: `frame = Math.min((now - last) / 1000, 0.25); last = now; const { alpha } = loop.advance(frame); interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp); car.update(interp); chase.update(interp, frame); hud.update({ speedKmh: Math.abs(interp.forwardSpeed) * MS_TO_KMH, ...game.getLapInfo() }); handle.renderer.render(scene, camera); requestAnimationFrame(frameFn)`. No per-frame allocations.
    11. When loading finishes: hide `#status` (`status.style.display = 'none'`) and set `window.__SIMGAME__ = { ready: true, getSpeedKmh: () => Math.abs(game.getCurrentState().forwardSpeed) * MS_TO_KMH, getLap: () => game.getLapInfo().lap, getSimTime: () => game.simTime }`.
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/018-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | repo after the task | read `public/tracks/monza.json` | parses; id 'monza'; centerline length > 2000 |
+| AT2 | `index.html` | parse text | contains elements `#game` (canvas), `#hud`, `#status` and script `/src/main.ts` |
+| AT3 | `src/main.ts` text | read | references `__SIMGAME__`, `getSpeedKmh`, `getLap`, `getSimTime` and imports `./ui/hud.css` |
+
 ## Acceptance criteria
 
 - [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` pass.
 - [ ] Manual check (`npm run dev`, open the URL): the car is visible on Monza; W/ArrowUp accelerates; left/right arrows steer; R resets to the start point; the HUD shows km/h and times.
+- [ ] The acceptance tests AT1-AT3 pass (`public/tracks/monza.json` parses with `id === 'monza'` and `centerline.length > 2000`; `index.html` has `#game`, `#hud`, `#status` and `/src/main.ts`; `main.ts` references `__SIMGAME__`, `getSpeedKmh`, `getLap`, `getSimTime` and imports `./ui/hud.css`).
 - [ ] `window.__SIMGAME__.ready === true` after load; `#status` hidden.
 - [ ] If the fetch fails, `#status` shows "Error: ...".
 

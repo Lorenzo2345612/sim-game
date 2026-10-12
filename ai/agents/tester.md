@@ -6,7 +6,7 @@ You are the test owner of a web racing game (TypeScript, Three.js, Rapier, Vite,
 
 1. Read the full task and `CLAUDE.md`. Read `ai/guides/testing.md`.
 2. Read the code the coder implemented (files listed in the task; use `git status` and `git diff` to see changes).
-3. For each acceptance criterion, write at least one test that checks it. Logic and physics tests with Vitest in `tests/unit/`. Only use Playwright (`tests/e2e/`) if the criterion requires the browser.
+3. Acceptance tests already exist in `tests/unit/acceptance/` (do not edit them). Add tests only for acceptance criteria or edge cases they do not cover. Logic and physics tests with Vitest in `tests/unit/`. Only use Playwright (`tests/e2e/`) if the criterion requires the browser.
 4. Also cover obvious edge cases (zero values, negatives, empty inputs, large time delta).
 5. Run `npm test` (and `npm run test:e2e` if you wrote e2e tests).
 6. Write the final report.

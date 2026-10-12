@@ -65,19 +65,35 @@ export class Game {
 ## Tests
 
 `tests/unit/core/interpolation.test.ts`:
-- `interpolateVehicleState returns prev at t=0` and `returns curr at t=1` (distinct states, 4 wheels; compare position, forwardSpeed, wheel position/steering/rotation with `toBeCloseTo`).
+- `interpolateVehicleState returns prev at t=0` and `returns curr at t=1` (distinct states, 4 wheels; compare position, forwardSpeed, wheel position/steering/rotation with `toBeCloseTo`); at `t=0.5` position is the midpoint (9 decimals).
 - `interpolateVehicleState takes inContact from curr`.
 - `slerpQuat output is normalized` (t=0.3 between identity and a 90° Y rotation; norm ≈ 1, 6 decimals).
-- `slerpQuat takes the short path for opposite quaternions`: `a` = identity, `b = {0,0,0,-1}`; result at t=0.5 has `|w| ≈ 1`.
+- `slerpQuat takes the short path for opposite quaternions`: `a` = identity, `b = {0,0,0,-1}`; result at t=0.5 has `|w| ≈ 1`; with `a = q` and `b = -q` (q a non-identity rotation) the result equals `q` up to global sign and has length 1 (±1e-9).
 - `lerpVec3 returns the midpoint at t=0.5`.
 
 `tests/unit/game/game.test.ts` (`afterEach` `game.dispose()`; timeout 20 s; use `circleTrack`):
 - `spawnFromTrack positions at centerline[N-5]`: x,z ≈ centerline[N-5], y = 0.6.
 - `spawnFromTrack yaw points towards centerline[N-4]`: forward `(-sin yaw, -cos yaw)` ≈ normalized direction to N-4 (4 decimals).
-- `step advances simTime by FIXED_DT`: after 1 step `simTime` ≈ 1/120 (8 decimals).
-- `full throttle for 120 steps gives positive forwardSpeed`.
+- `step advances simTime by FIXED_DT`: after 1 step `simTime` ≈ 1/120 (12 decimals).
+- `full throttle for 240 steps gives forwardSpeed > 5`.
+- `getPrevState equals the previous current state`: after step k, `getPrevState()` deep-equals the `getCurrentState()` copy taken after step k-1.
 - `reset input returns the car to spawn and lap 0`: 120 accelerating steps, then one step with `reset: true`, throttle 0: position ≈ spawn (±0.05) and `getLapInfo().lap === 0`.
 - `drainEvents empties the queue`: two consecutive calls; the second returns `[]`.
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/017-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | states prev/curr | `interpolateVehicleState(prev, curr, 0 / 1 / 0.5, out)` | equals prev / curr / midpoint position (±1e-9) |
+| AT2 | quaternions q and −q (same rotation) | `slerpQuat(a, b, 0.5, out)` | result normalized (length 1 ±1e-9) and equals a's rotation (shortest path) |
+| AT3 | fixture TrackData: circle r = 200 resampled at 2 m | `spawnFromTrack` | position = centerline[N−5] (x,z ±1e-9), y 0.6; forward from yaw points toward centerline[N−4] (angle error < 1e-6) |
+| AT4 | `Game.create(fixture)` | one `step(idle input)` | simTime = 1/120 ±1e-12 |
+| AT5 | same | 240 steps throttle 1 | current forwardSpeed > 5 |
+| AT6 | moved car | `step` with reset true | current position at spawn ±0.05; `getLapInfo().lap` 0 |
+| AT7 | any | `drainEvents()` twice | second call returns [] |
+| AT8 | any | `getPrevState()` after a step | equals current state of the previous step |
 
 ## Acceptance criteria
 

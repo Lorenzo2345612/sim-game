@@ -43,9 +43,20 @@ export function createRenderer(canvas: HTMLCanvasElement): RendererHandle;
 ## Tests (`tests/unit/render/sceneSetup.test.ts`, Node, `createScene` only)
 
 - `scene has fog and sky-blue background`: `scene.fog` is `THREE.Fog` with near 300 and far 2500; `scene.background` is a `Color` with `getHexString() === '9ec9f0'`.
-- `scene has at least two lights`: children with `isLight === true` count >= 2; `sun.position` = (300, 500, 200); `sun.castShadow === false`.
+- `scene has at least two lights`: children with `isLight === true` count >= 2, including one `THREE.HemisphereLight`; `sun.position` = (300, 500, 200); `sun.castShadow === false`.
 - `ground is rotated and named`: `ground.name === 'ground'`, `ground.rotation.x` ≈ -π/2 (5 decimals), `ground.position.y === 0`, child of `scene`.
 - `camera has expected projection`: fov 60, near 0.1, far 5000, aspect ≈ 16/9, position (0, 5, 10).
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/012-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | — | `createScene()` (Node, no WebGL) | scene.fog is Fog; background is Color 0x9ec9f0 |
+| AT2 | same | inspect lights | contains a HemisphereLight and the returned `sun` DirectionalLight at (300, 500, 200) |
+| AT3 | same | inspect ground | name 'ground'; rotation.x −π/2 ±1e-9; position.y 0 |
+| AT4 | same | inspect camera | fov 60; near 0.1; far 5000 |
 
 ## Acceptance criteria
 

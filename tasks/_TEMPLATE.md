@@ -20,10 +20,18 @@ The minimum the worker needs to know and cannot deduce from the code: PRD decisi
 
 ## Steps
 
-Numbered, concrete steps. Function names, types and signatures when they matter. Numeric values with units.
+Behaviour and rules, not implementation: signatures, verified constants with units, edge cases. No function bodies; name standard algorithms instead of spelling them out. Whole spec ≤ 60 lines.
 
 1. ...
 2. ...
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract. The `acceptance` worker turns each row into `tests/unit/acceptance/NNN-<slug>.test.ts` before the coder starts. Nobody else may change these rows or tests.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | ... | ... | ... |
 
 ## Acceptance criteria
 

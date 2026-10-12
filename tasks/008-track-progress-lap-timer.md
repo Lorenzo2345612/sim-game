@@ -73,11 +73,28 @@ Constant `WRAP = 50` (m). State: `prevDistance: number | null = null`, `lap = 0`
 
 `currentLapTime(time)`: `lap >= 1 ? time - lapStart : null`. `reset()`: back to initial state (`lastLapTime`, `bestLapTime`, `prevDistance` all `null`, `lap = 0`).
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/008-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | `TrackProgress` on circle r = 100 resampled at 2 m (index 0 at (100, 0)) | `update(100, 0)` | index 0; distance 0 ±0.5; lateral 0 ±0.1 |
+| AT2 | same | points along the circle every 10 m of arc in order | distance increases monotonically, matches arc length ±1 m |
+| AT3 | same | `update` at radius 105 vs 95 at the same angle | lateral has opposite signs, magnitude 5 ±0.2 |
+| AT4 | `LapTimer(1000, [0, 333, 666])`, distance from 990 rising 1 m per update, time += 0.01 per update, wrapping at 1000 | first wrap | emits `lapStarted` lap 1; `lap` = 1 |
+| AT5 | continue one full lap to the next wrap | second wrap | emits `sectorCompleted` 1, 2, 3 (in that order over the lap) then `lapCompleted` lapTime 10.00 ±0.02, isBest true, then `lapStarted` lap 2 |
+| AT6 | lap 2 started | distance jumps 300 → 700 in one update | sectors 1 and 2 both emitted in that update |
+| AT7 | lap 2 started, prev distance 20 | update with distance 990 (backward wrap), then forward across the line again | no `lapCompleted` for lap 2; `lapStarted` lap 3 |
+| AT8 | two completed laps, second slower | after second | lastLapTime = second, bestLapTime = first |
+| AT9 | any state | `reset()` | lap 0; currentLapTime(t) null; next forward crossing emits `lapStarted` lap 1 |
+
 ## Acceptance criteria
 
 `trackProgress.test.ts` (circle r=100: 64 points `[100cos a, 100 sin a]`, `a = 2πk/64`, then `resampleClosed(..., 2)`; travel direction at `(100,0)` is `(0,+1)`, so `right = (-1,0)`, towards the centre):
 - [ ] `start point gives distance ~0 and lateral ~0`: `update(100,0)` → `index 0`, `distance` ±0.01, `lateral` ±0.05.
 - [ ] `outside the circle gives negative lateral`: `update(110,0)` → lateral ≈ -10 (±0.1); after `reset()`, `update(90,0)` → ≈ +10 (±0.1).
+- [ ] `arc length and lateral sign`: `update` at 10 m arc steps gives `distance` matching arc length ±1 m; radius 105 vs 95 at the same angle give opposite lateral signs, magnitude 5 ±0.2.
 - [ ] `quarter turn gives a quarter of the length`: `update(0,100)` → `distance` ≈ `length/4` (±1).
 - [ ] `continuous travel increases distance monotonically`: one `TrackProgress`, no reset, 1000 circle points for angle 0 → `2π*0.99`; each `distance` ≥ previous − 1e-6; the last > `0.97 * length`.
 - [ ] `wraps across the start line`: after that sequence, `update(100·cos(0.01), 100·sin(0.01))` returns `distance` < 10.
@@ -90,6 +107,7 @@ Constant `WRAP = 50` (m). State: `prevDistance: number | null = null`, `lap = 0`
 - [ ] `sector times add up to lap time`: sum of the 3 `sectorTime` ≈ `lapTime` (±0.02).
 - [ ] `best only updates with a faster lap`: laps at 0.01, 0.02, 0.005 s/m → `isBest` true, false, true; `bestLapTime` ≈ 10, 10, 5.
 - [ ] `crossing the line backwards invalidates the lap`: just after lap 2 starts: `update(10)`, `update(995)` (backward), `update(5)` (forward) → events only `[lapStarted lap 3]`; `lastLapTime` unchanged.
+- [ ] `lastLapTime and bestLapTime`: two completed laps, the second slower (0.01 then 0.02 s/m) → `lastLapTime` ≈ 20, `bestLapTime` ≈ 10.
 - [ ] `a jump over several sectors counts them`: in lap 1, one update from 300 to 700 emits `sectorCompleted` 1 then 2.
 - [ ] `reset returns to lap 0`: after `reset()`: `lap === 0`, `lastLapTime` and `bestLapTime` null; next update returns `[]`.
 

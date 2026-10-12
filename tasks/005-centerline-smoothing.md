@@ -47,6 +47,19 @@ Output: `n * samplesPerSegment` points, first point NOT repeated at the end; `k=
 
 **cumulativeLengths(points, closed)**: `Float64Array`; `[0]=0`, `[i]` = length up to point `i`. If `closed`: length `n+1`, last value = total length including closure; else length `n`. Empty input: length 0 (open) or `[0]` (closed).
 
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+Executable contract: the `acceptance` worker writes these rows as `tests/unit/acceptance/005-*.test.ts` before the coder starts. Coder, tester and spec writers must not change them.
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| AT1 | circle r = 100 m, 64 points | `catmullRomClosed(c, 20)` | output length 64·20; first point equals c[0] (±1e-9); closed polyline length 628.32 ±0.5 % |
+| AT2 | square 100×100 m, 4 points | `catmullRomClosed(sq, 10)` | no NaN; every output point within 20 m of the square's perimeter |
+| AT3 | circle r = 100, 64 points | `resampleClosed(c, 2)` | N = round(L/2); every consecutive distance incl. closing one within ±2 % of L/N; first point = c[0] |
+| AT4 | circle r = 3 (L ≈ 18.8) | `resampleClosed(c, 10)` | at least 3 points |
+| AT5 | square 10×10 | `cumulativeLengths(sq, true)` / `(sq, false)` | [0,10,20,30,40] / [0,10,20,30] |
+| AT6 | any input with duplicate consecutive points | `catmullRomClosed` | no NaN in output |
+
 ## Acceptance criteria
 
 Tests in `tests/unit/track/centerline.test.ts`:
@@ -55,6 +68,9 @@ Tests in `tests/unit/track/centerline.test.ts`:
 - [ ] `catmullRomClosed length of circle is close to 2*pi*r`: closed length (last value of `cumulativeLengths`) = 628.3 ±0.5%.
 - [ ] `resampleClosed produces uniform spacing`: smoothed circle resampled at 2 m; `step = L/N`, `L` from closed `cumulativeLengths` of the input; all consecutive distances including closure within ±2% of `step`; `N` = `round(L/2)`.
 - [ ] `resampleClosed preserves the first point`.
+- [ ] `catmullRomClosed square stays near its perimeter`: 100x100 square, 4 points, `samplesPerSegment=10` → no NaN, every point within 20 m of the perimeter.
+- [ ] `catmullRomClosed tolerates duplicate consecutive points`: no NaN in output.
+- [ ] `resampleClosed tiny circle`: circle r=3, spacing 10 → at least 3 points.
 - [ ] `cumulativeLengths of a square`: `[[0,0],[10,0],[10,10],[0,10]]` closed → `[0,10,20,30,40]`; open → `[0,10,20,30]`.
 
 ## Verification

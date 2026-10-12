@@ -12,7 +12,7 @@ Read first: `CLAUDE.md`, `ai/guides/architecture.md` (source of truth for versio
 Rules for each spec:
 - Everything in English. Follow `tasks/_TEMPLATE.md`. File name `tasks/NNN-english-slug.md` with the number the planner assigns.
 - EXACT TypeScript signatures of everything exported, and where types are imported from. Never redefine types that already exist in architecture.md: import them.
-- Algorithms step by step with formulas, constants with units and edge cases. Pseudocode when it helps.
+- Behaviour rules, verified constants with units and edge cases. Name standard algorithms; do not spell them out.
 - Exact list of files to create/modify (max ~3 in src/ per task) and of tests (file + case name + expected values with tolerance).
 - Acceptance criteria verifiable with Vitest or commands. Verification section with the commands.
 - Explicit, concrete "Out of scope".
@@ -22,4 +22,14 @@ Rules for each spec:
 - Concise: no intros, no filler; cite architecture.md sections instead of repeating them.
 - Only create/edit your assigned `tasks/NNN-*.md` files. If architecture.md has a gap or inconsistency, do not change it: report it.
 
+- The planner gives you the "Acceptance tests" table for each task (written with Opus). Copy it verbatim into the spec; never add, remove or edit rows. If a row conflicts with the design, report it.
+
 Final reply (max 10 lines): files created, inconsistencies found (or "none").
+
+## Contract, not implementation (mandatory)
+
+Specs say WHAT, not HOW. If the spec contains the code, the planner already paid for writing it.
+- Allowed: goal, files, exported signatures and types (the contract), verified domain facts and non-standard formulas/constants, behaviour rules and edge cases as bullets, acceptance tests with expected values, out of scope.
+- Forbidden: function bodies, literal file contents (except shared contract files like types/config), step-by-step implementations of standard algorithms (name the algorithm instead: "centripetal Catmull-Rom, alpha 0.5"), pseudocode longer than 5 lines.
+- Budget: ≤ 60 lines per spec; code blocks only for signatures/types.
+- Progressive detail: start lean. Add detail (pseudocode, hints) only to the part a worker actually failed on, after a failed round.
