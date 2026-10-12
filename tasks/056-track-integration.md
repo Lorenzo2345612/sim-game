@@ -5,6 +5,7 @@ Phase: 1
 Depends on: 030, 032, 033, 034, 035, 036, 037
 Complexity: complex
 Type: feature
+Models: heavy
 Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal

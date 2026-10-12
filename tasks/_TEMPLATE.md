@@ -5,6 +5,7 @@ Phase: 0 | 1 | 2 | 3
 Depends on: NNN, NNN (or "nothing")
 Complexity: simple | complex
 Type: feature | bugfix   (bugfix = heavy models from the first coder run)
+Models: standard | heavy   (heavy = heavy coder/fixer from the first run; only for tasks known to be hard)
 Roles: acceptance, coder, reviewer (complex adds tester-pre and tester)
 
 ## Goal

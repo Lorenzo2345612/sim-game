@@ -189,6 +189,7 @@ def migrate(force):
                           "deps": re.findall(r"\d{3}", cells[3]),
                           "complexity": spec_header(text, "Complexity", "simple"),
                           "type": spec_header(text, "Type", "feature"),
+                          "models": spec_header(text, "Models", "standard"),
                           "phase": int(phase) if phase.isdigit() else None,
                           "spec": str(spec.relative_to(ROOT)) if spec else ""})
     write_tasks(tasks)
@@ -509,7 +510,8 @@ def _run_task(task, slot):
     num, title = task["num"], task["title"]
     spec = spec_path(num)
     info = spec_info(spec)
-    complex_, heavy = task.get("complexity") == "complex", task.get("type") == "bugfix"
+    complex_ = task.get("complexity") == "complex"
+    heavy = task.get("type") == "bugfix" or task.get("models") == "heavy"
     st = load_state().get(num, {"stage": "acceptance", "fixRounds": 0})
 
     if st.get("decision"):

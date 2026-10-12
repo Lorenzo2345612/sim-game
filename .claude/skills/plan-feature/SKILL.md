@@ -27,6 +27,7 @@ Claude plans; it does not write production code. Tasks are executed by cheap fla
 - Acceptance criteria checkable with Vitest or a command. If a criterion is visual, define how to check it (Playwright screenshot, value in the HUD, etc.).
 - Mark `Complexity: complex` only for tasks with tricky edge cases or numerics (physics, timing, state machines, interpolation); everything else `simple`. Complex tasks get a tester before and after coding.
 - Mark `Type: bugfix` for bug hunts and visual/integration debugging: the orchestrator uses heavy models (glm-5.3, deepseek-v4-pro) from the first coder run.
+- Mark `Models: heavy` only for tasks known in advance to be hard (cross-module integration, tricky geometry or physics APIs); heavy coder/fixer from the first run. Be selective: most complex tasks stay standard and escalate on fix round 3.
 - Explicit "Out of scope" list: flash models tend to add things.
 - Tasks with no dependencies between them and no shared files can run in parallel; mark it in `tasks/README.md`.
 
