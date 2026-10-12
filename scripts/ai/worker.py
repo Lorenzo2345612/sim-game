@@ -24,6 +24,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 import urllib.request
 import uuid
@@ -183,6 +184,13 @@ def main():
               flush=True)
 
 
+def result_line(line):
+    try:
+        return json.loads(line).get("type") == "result"
+    except ValueError:
+        return False
+
+
 def run_worker(args, role, provider_name, model, allow_resume=True):
     """Run one headless worker. Returns (exit_code, looks_like_quota_error)."""
     sess_path = session_file(args)
@@ -214,7 +222,7 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
         "--setting-sources", "project",
         "--permission-mode", "bypassPermissions",
         "--disable-slash-commands",
-        "--output-format", "json",
+        "--output-format", "stream-json", "--verbose", "--include-partial-messages",
     ]
     schema = SCHEMAS / f"{'coder' if args.role == 'fixer' else args.role}.json"
     if schema.exists():
@@ -240,23 +248,36 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     deadline = time.time() + role["timeoutMin"] * 60
     proc = subprocess.Popen(cmd, cwd=WORKDIR, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     started = time.time()
-    while True:
-        try:
-            stdout, stderr = proc.communicate(timeout=15)
-            break
-        except subprocess.TimeoutExpired:
-            now = time.time()
-            last = transcript.stat().st_mtime if transcript.exists() else started
-            reason = "TIMEOUT" if now > deadline else "STALLED" if now - max(last, started) > stall_s else None
-            if reason:
-                proc.kill()
-                proc.communicate()
-                minutes = round((now - started) / 60, 1)
-                print(f"[worker] {reason} after {minutes} min (no transcript activity for "
-                      f"{round((now - max(last, started)) / 60, 1)} min)")
-                log_path.write_text(json.dumps({"timeout": True, "is_error": True, "reason": reason,
-                                                "model": model, "duration_ms": int((now - started) * 1000)}))
-                return 124, False
+    activity = [started]
+    lines, err = [], []
+
+    def pump(stream, sink):
+        for line in stream:
+            activity[0] = time.time()
+            sink.append(line)
+
+    readers = [threading.Thread(target=pump, args=(proc.stdout, lines), daemon=True),
+               threading.Thread(target=pump, args=(proc.stderr, err), daemon=True)]
+    for t in readers:
+        t.start()
+    while proc.poll() is None:
+        time.sleep(5)
+        now = time.time()
+        last = max(activity[0], transcript.stat().st_mtime if transcript.exists() else started)
+        reason = "TIMEOUT" if now > deadline else "STALLED" if now - last > stall_s else None
+        if reason:
+            proc.kill()
+            proc.wait()
+            minutes = round((now - started) / 60, 1)
+            print(f"[worker] {reason} after {minutes} min (no model output for "
+                  f"{round((now - last) / 60, 1)} min)")
+            log_path.write_text(json.dumps({"timeout": True, "is_error": True, "reason": reason,
+                                            "model": model, "duration_ms": int((now - started) * 1000)}))
+            return 124, False
+    for t in readers:
+        t.join(timeout=10)
+    stdout = next((l for l in reversed(lines) if '"type":"result"' in l and result_line(l)), "".join(lines[-20:]))
+    stderr = "".join(err)
     proc = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
     log_path.write_text(proc.stdout or proc.stderr)
