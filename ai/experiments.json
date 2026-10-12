@@ -56,17 +56,5 @@
       "054",
       "055"
     ]
-  },
-  "testerSplit": {
-    "description": "A/B for test roles: provider = providers[task number % len]",
-    "roles": [
-      "acceptance",
-      "tester-pre",
-      "tester"
-    ],
-    "providers": [
-      "qwen",
-      "mimo"
-    ]
   }
 }

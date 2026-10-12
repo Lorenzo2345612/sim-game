@@ -13,7 +13,7 @@
     "qwen": {
       "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
       "keyEnv": "DASHSCOPE_API_KEY",
-      "maxConcurrent": 2
+      "maxConcurrent": 4
     },
     "mimo": {
       "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",

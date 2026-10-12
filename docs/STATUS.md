@@ -10,7 +10,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 ## In flight (planner side)
 
-- Test roles A/B: even task numbers on Qwen, odd on MiMo (`testerSplit` in `ai/experiments.json`); Qwen capped at 2 concurrent. Early 'stalls' were the old watchdog killing long single-message generations (fixed in c5c6853).
+- Test roles back on Qwen only (2026-10-12; tester A/B removed, Qwen cap 4). Early 'stalls' were the old watchdog killing long generations (fixed in c5c6853) and the ambiguous 031 table.
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
