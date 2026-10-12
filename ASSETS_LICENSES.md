@@ -4,3 +4,5 @@
 |---|---|---|---|---|---|
 | Car Kit 3.1 – `race.glb` | `assets/vendor/kenney-car-kit/race.glb` | Kenney | CC0 1.0 | https://kenney.nl/assets/car-kit | no |
 | Monza layout (`it-1922.geojson`) | `assets/source/tracks/it-1922.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
+| Spa layout (`be-1925.geojson`) | `assets/source/tracks/be-1925.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
+| Silverstone layout (`gb-1948.geojson`) | `assets/source/tracks/gb-1948.geojson` | Tomislav Bacinger, f1-circuits | MIT | https://github.com/bacinger/f1-circuits | no |
