@@ -1,17 +1,133 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
+import { centerlineHeights, elevationProfile } from './elevation';
+import { detectKerbs, detectRunoffs } from './corners';
+import { layoutBarriers } from './barriers';
+import { buildTerrain } from './terrain';
+import { placeTrees, type Biome } from './trees';
+import type { DemGrid } from '../dem/fetchDem';
+import { bboxCenter, polylineLength, type Point2 } from '../../src/track/geo';
+import type { Grandstand, PitLane, Side, TrackDataV2, TreeSpecies } from '../../src/core/types';
 
-interface TrackSource extends TrackSourceConfig { file: string }
+interface GrandstandConfig {
+  atMeters: number;
+  side: Side;
+  offsetMeters: number;
+  lengthMeters: number;
+  rows: number;
+  roof: boolean;
+}
 
-const TRACKS: TrackSource[] = [
-  { id: 'monza', name: 'Monza', widthMeters: 12, reverse: false, file: 'assets/source/tracks/it-1922.geojson' },
-];
+interface TrackConfig extends TrackSourceConfig {
+  geojson: string;
+  dem: string;
+  biome: Biome;
+  grandstands: GrandstandConfig[];
+  pit: { fromMeters: number; toMeters: number; side: Side };
+}
+
+const SPECIES_PRESETS: Record<string, { preset: string; heightMeters: number }> = {
+  oak: { preset: 'Oak Medium', heightMeters: 18 },
+  ash: { preset: 'Ash Medium', heightMeters: 20 },
+  aspen: { preset: 'Aspen Large', heightMeters: 25 },
+  pine: { preset: 'Pine Large', heightMeters: 26 },
+};
+
+function cumulativeLengths(centerline: Point2[]): number[] {
+  const cum = new Array<number>(centerline.length);
+  cum[0] = 0;
+  for (let i = 1; i < centerline.length; i++) {
+    cum[i] = cum[i - 1] + Math.hypot(centerline[i][0] - centerline[i - 1][0], centerline[i][1] - centerline[i - 1][1]);
+  }
+  return cum;
+}
+
+// metres along the lap (negative wraps backwards) -> centerline index
+function indexAtMeters(cum: number[], meters: number, lapLength: number): number {
+  const target = ((meters % lapLength) + lapLength) % lapLength;
+  for (let i = 0; i < cum.length; i++) {
+    if (cum[i] >= target) return i;
+  }
+  return cum.length - 1;
+}
+
+function placeGrandstands(
+  centerline: Point2[], cum: number[], lapLength: number, widthMeters: number,
+  stands: GrandstandConfig[],
+): Grandstand[] {
+  return stands.map((s) => {
+    const i = indexAtMeters(cum, s.atMeters, lapLength);
+    const [px, pz] = centerline[i];
+    const [nx, nz] = centerline[(i + 1) % centerline.length];
+    const dx = nx - px;
+    const dz = nz - pz;
+    const len = Math.hypot(dx, dz) || 1;
+    const sign = s.side === 'right' ? 1 : -1;
+    const dist = widthMeters / 2 + s.offsetMeters;
+    // right-hand normal of the track direction
+    const x = px + ((sign * -dz) / len) * dist;
+    const z = pz + ((sign * dx) / len) * dist;
+    const yaw = Math.atan2(-(px - x), -(pz - z));
+    return { x, z, yaw, lengthMeters: s.lengthMeters, rows: s.rows, roof: s.roof };
+  });
+}
+
+function buildTrackV2(config: TrackConfig): TrackDataV2 {
+  const geojson = JSON.parse(
+    readFileSync(join('assets/source/tracks', `${config.geojson}.geojson`), 'utf8'),
+  ) as GeoJsonLineFeatureCollection;
+  const grid = JSON.parse(readFileSync(config.dem, 'utf8')) as DemGrid;
+
+  const base = buildTrackData(geojson, config);
+  const centerline = base.centerline;
+  const origin = bboxCenter(geojson.features[0].geometry.coordinates);
+  const lapLength = polylineLength(centerline, true);
+  const cum = cumulativeLengths(centerline);
+
+  const elevation = elevationProfile(centerlineHeights(grid, centerline, origin));
+  const kerbs = detectKerbs(centerline);
+  const runoffs = detectRunoffs(centerline);
+  const pit: PitLane = {
+    start: indexAtMeters(cum, config.pit.fromMeters, lapLength),
+    end: indexAtMeters(cum, config.pit.toMeters, lapLength),
+    side: config.pit.side,
+  };
+  const barriers = layoutBarriers(centerline, config.widthMeters, kerbs, runoffs, pit);
+  const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
+  const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
+  const trees = placeTrees(config.id, centerline, terrain, barriers, config.biome);
+  const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
+  const treeSpecies: TreeSpecies[] = config.biome.species.map((sp) => ({
+    name: sp.name,
+    preset: SPECIES_PRESETS[sp.name].preset,
+    heightMeters: SPECIES_PRESETS[sp.name].heightMeters,
+  }));
+
+  return {
+    ...base,
+    version: 2,
+    elevation,
+    kerbs,
+    runoffs,
+    barriers,
+    terrain,
+    treeSpecies,
+    trees,
+    grandstands,
+    pit,
+    source: { ...base.source, dem: 'Copernicus GLO-30' },
+  };
+}
+
+const TRACKS = JSON.parse(
+  readFileSync('tools/track-builder/tracks.json', 'utf8'),
+) as TrackConfig[];
 
 mkdirSync('public/tracks', { recursive: true });
 for (const track of TRACKS) {
-  const geojson = JSON.parse(readFileSync(track.file, 'utf8')) as GeoJsonLineFeatureCollection;
-  const data = buildTrackData(geojson, track);
+  const data = buildTrackV2(track);
   const dev = Math.abs(data.lengthMeters - data.officialLengthMeters) / data.officialLengthMeters;
   if (dev > 0.01) {
     console.error(`${track.id}: length deviation ${(dev * 100).toFixed(2)}% exceeds 1%`);
@@ -19,6 +135,7 @@ for (const track of TRACKS) {
   }
   writeFileSync(`public/tracks/${track.id}.json`, JSON.stringify(data));
   console.log(
-    `${track.id}: ${data.centerline.length} points, ${data.lengthMeters} m (official ${data.officialLengthMeters} m, deviation ${(dev * 100).toFixed(2)}%)`,
+    `${track.id}: ${data.centerline.length} points, ${data.lengthMeters} m (official ${data.officialLengthMeters} m, deviation ${(dev * 100).toFixed(2)}%), ` +
+    `${data.trees.reduce((s, t) => s + t.data.length / 4, 0)} trees`,
   );
 }

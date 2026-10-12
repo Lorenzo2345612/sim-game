@@ -1,0 +1,66 @@
+[
+  {
+    "id": "monza",
+    "name": "Monza",
+    "geojson": "it-1922",
+    "dem": "assets/source/dem/monza.json",
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 0.4 },
+        { "name": "ash", "weight": 0.3 },
+        { "name": "aspen", "weight": 0.3 }
+      ],
+      "density": 0.55
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 60, "rows": 14, "roof": true },
+      { "atMeters": 5300, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false },
+      { "atMeters": 900, "side": "left", "offsetMeters": 30, "lengthMeters": 50, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -250, "toMeters": 150, "side": "right" }
+  },
+  {
+    "id": "spa",
+    "name": "Spa",
+    "geojson": "be-1925",
+    "dem": "assets/source/dem/spa.json",
+    "widthMeters": 14,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "pine", "weight": 0.6 },
+        { "name": "oak", "weight": 0.4 }
+      ],
+      "density": 0.65
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 50, "rows": 12, "roof": true },
+      { "atMeters": 350, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false },
+      { "atMeters": 1000, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 12, "roof": false }
+    ],
+    "pit": { "fromMeters": -300, "toMeters": 100, "side": "right" }
+  },
+  {
+    "id": "silverstone",
+    "name": "Silverstone",
+    "geojson": "gb-1948",
+    "dem": "assets/source/dem/silverstone.json",
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 0.5 },
+        { "name": "ash", "weight": 0.5 }
+      ],
+      "density": 0.08
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 14, "roof": true },
+      { "atMeters": 600, "side": "right", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false },
+      { "atMeters": 5200, "side": "right", "offsetMeters": 30, "lengthMeters": 50, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -250, "toMeters": 150, "side": "left" }
+  }
+]
