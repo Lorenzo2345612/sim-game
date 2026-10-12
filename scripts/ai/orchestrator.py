@@ -102,7 +102,20 @@ def milestone_scope():
     assigned = {n for m in ms for n in m["tasks"]}
     active = active_milestone()
     allowed = set(active["tasks"]) if active and active.get("status") == "open" else set()
-    return allowed | {t["num"] for t in read_tasks() if t["num"] not in assigned}
+    return allowed | prefetch_set() | {t["num"] for t in read_tasks() if t["num"] not in assigned}
+
+
+PREFETCH_RESERVE = 2  # slots kept free for the active milestone
+
+
+def prefetch_set():
+    """Independent tasks of later, unapproved milestones allowed to run early (milestone field `prefetch`)."""
+    active = active_milestone()
+    if not active:
+        return set()
+    ms = read_milestones()
+    later = ms[ms.index(next(m for m in ms if m["id"] == active["id"])) + 1:]
+    return {n for m in later if m.get("status") != "approved" for n in m.get("prefetch", [])}
 
 
 def build_milestone(m):
@@ -1044,7 +1057,8 @@ def decision_resolved(num):
 def ready_tasks(tasks, done, running, waiting, only):
     out = []
     scope = milestone_scope()
-    for t in sorted(tasks, key=lambda t: t["num"]):
+    early = prefetch_set() if scope is not None else set()
+    for t in sorted(tasks, key=lambda t: (t["num"] in early, t["num"])):
         if scope is not None and t["num"] not in scope:
             continue
         if t["num"] in done or t["num"] in running or t["num"] in waiting:
@@ -1175,7 +1189,12 @@ def run(max_parallel, only, dry_run):
         while True:
             waiting -= {n for n in waiting if decision_resolved(n)}
             if not quota_hit and not DRAIN.is_set():
-                for t in ready_tasks(tasks, done, running, waiting, only)[:max_parallel - len(running)]:
+                early = prefetch_set()
+                for t in ready_tasks(tasks, done, running, waiting, only):
+                    if len(running) >= max_parallel:
+                        break
+                    if t["num"] in early and sum(n in early for n in running) >= max_parallel - PREFETCH_RESERVE:
+                        continue
                     running[t["num"]] = pool.submit(run_task, t)
             if not running:
                 if quota_hit or DECISION_POLL <= 0 or not any(load_state().get(n, {}).get("decision") for n in waiting):
@@ -1201,6 +1220,9 @@ def run(max_parallel, only, dry_run):
                 if result != "drained":
                     (done.add if result == "done" else waiting.add)(num)
             tasks = read_tasks()
+            m = active_milestone()
+            if running and m and m.get("status") == "open" and all(n in done for n in m["tasks"]):
+                build_milestone(m)  # do not wait for prefetched tasks of later milestones
 
     if DRAIN.is_set():
         event(None, "drained", drain_mode["mode"])

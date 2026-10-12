@@ -220,3 +220,21 @@ class ResilienceTest(Harness):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PrefetchTest(Harness):
+    def test_prefetch_runs_listed_tasks_of_later_milestone_only(self):
+        self.add_task("001", "Alpha")
+        self.add_task("002", "Beta")
+        self.add_task("003", "Gamma")
+        (self.repo / "tasks/milestones.json").write_text(json.dumps({"milestones": [
+            {"id": "M1", "title": "First", "status": "open", "tasks": ["001"]},
+            {"id": "M2", "title": "Second", "status": "open", "tasks": ["002", "003"], "prefetch": ["002"]}]}))
+        self.tracked.append("tasks/milestones.json")
+        self.write_script(success_script())
+        self.run_orch(["run"])
+        ran = {c.get("task") for c in self.calls()}
+        self.assertEqual(self.task_status("001"), "done", self.diag())
+        self.assertEqual(self.task_status("002"), "done", self.diag())
+        self.assertNotEqual(self.task_status("003"), "done", self.diag())
+        self.assertNotIn("003", ran, self.diag())

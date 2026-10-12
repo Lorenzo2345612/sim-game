@@ -26,7 +26,11 @@
         "020",
         "021"
       ],
-      "status": "open"
+      "status": "approved",
+      "builtAt": "2026-10-12T12:50:26",
+      "commit": "bce0d76",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M1.1",
@@ -64,7 +68,13 @@
         "043",
         "044"
       ],
-      "status": "open"
+      "status": "open",
+      "prefetch": [
+        "038",
+        "039",
+        "040",
+        "041"
+      ]
     },
     {
       "id": "M1.3",
@@ -81,7 +91,16 @@
         "054",
         "055"
       ],
-      "status": "open"
+      "status": "open",
+      "prefetch": [
+        "045",
+        "046",
+        "048",
+        "049",
+        "050",
+        "051",
+        "052"
+      ]
     },
     {
       "id": "M1.4",
