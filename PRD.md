@@ -326,7 +326,14 @@ Principles:
 - Time trial with ghost, full HUD, cameras, engine audio, keyboard + gamepad.
 - Graphics presets and performance target met.
 
+### Phase 1.5 — Vehicle dynamics
+- Car definition files, in-house tyre/suspension/aero model calibrated on the F4, setups (6 parameters + presets), tyre wear/temperature, fuel, HUD for tyres and fuel.
+
+### Phase 1.6 — Car roster
+- 2–3 new cars (GT3 first) with calibrated data, car selection menu.
+
 ### Phase 2 — Race
+- Pit stops (limiter, box service, strategy), AI pit strategies.
 - AI, quick race, grid, start with lights.
 - More circuits (target 10), night circuits, replays.
 
@@ -368,13 +375,20 @@ Principles:
 | UI | Plain TypeScript + HTML/CSS |
 | MVP controls | Keyboard and gamepad |
 | Car category | Any open-wheel car (F4, F3, F2, Formula E, etc.), not necessarily F1 |
+| Car roster (2026-10-12) | Multi-category: open-wheel plus closed-wheel (GT3 first, then GT4/TCR/prototypes). Real-brand free models allowed during development; de-brand (names, logos) before any public release |
+| Vehicle model (2026-10-12) | Data-driven car definitions (one file per car) and an in-house vehicle model: tyre model with load, slip, temperature and wear; suspension with weight transfer; speed-dependent aero; engine torque curve, gearbox, differential; ABS/TC per car. Rapier only for collisions and ground rays |
+| MVP depth (2026-10-12) | Basic first, extensible schema: all parameters live in the car file; the setup screen exposes a small subset now and more later without code changes |
+| Setups MVP (2026-10-12) | 6 adjustable: front/rear wing, brake bias, final drive, front/rear anti-roll bar, ride height, tyre pressure; presets stable/balanced/aggressive; saved per car and track |
+| Tyre wear and fuel (2026-10-12) | Per-wheel wear and temperature, 3 compounds (soft/medium/hard); fuel consumption with mass effect; global wear/fuel multiplier (default 1x, race presets up to 5x) |
+| Pit stops (2026-10-12) | Pit lane speed limiter with penalty, pit box service (tyres, compound, fuel) with service time; damage repair out of MVP (data hooks only) |
+| Damage (2026-10-12) | Out of MVP; the car file reserves fields for aero/suspension damage |
 | Team location | Mexico (Hunyuan3D allowed for generation; published assets preferably made with MIT tools) |
 | AI compute | Laptop RTX 5060 (8 GB) + 10 USD on RunPod + free Spaces |
 
 ### Open questions
 
 1. Specific open-wheel car model: choose between CarlosCG31's "2010 Indycar" and "Generic F1 Car" (see 7.1) after testing them in the engine.
-2. A single car or several categories (e.g. slow F4 and fast F2-style car) with different physics?
+2. Which GT3/other models to use (research in `docs/research/car-models.md`).
 3. Hosting and domain?
 
 ## 15. References
