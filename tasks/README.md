@@ -36,7 +36,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 030 | Generate TrackData v2 for Monza, Spa and Silverstone | done | 022, 024, 025, 026, 027, 028, 029 |
 | 031 | Build track surface geometry from TrackData v2 | done | 022 |
 | 032 | Terrain, surface and barrier colliders | done | 022, 031 |
-| 033 | Per-wheel surface grip and drag | in progress | 022, 032 |
+| 033 | Per-wheel surface grip and drag | done | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
