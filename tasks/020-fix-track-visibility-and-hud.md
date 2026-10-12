@@ -1,6 +1,6 @@
 # 020 — Fix invisible track and off-screen HUD in the browser game
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 019
 Complexity: simple

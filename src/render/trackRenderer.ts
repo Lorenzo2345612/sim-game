@@ -24,10 +24,14 @@ export function createTrackObject(
   geometry.setIndex(new THREE.BufferAttribute(ribbon.indices, 1));
   geometry.computeVertexNormals();
 
+  // polygonOffset wins the depth test against the ground plane at grazing angles.
   const asphaltMaterial = new THREE.MeshStandardMaterial({
     color: '#3a3a3e',
     roughness: 0.9,
     metalness: 0,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -4,
   });
   const asphalt = new THREE.Mesh(geometry, asphaltMaterial);
   asphalt.name = 'asphalt';

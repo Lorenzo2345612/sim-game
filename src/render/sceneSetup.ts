@@ -27,8 +27,10 @@ export function createScene(): SceneParts {
   sun.castShadow = false;
   scene.add(sun);
 
+  // Subdivided: a single 6 km triangle loses depth-interpolation precision on
+  // software rasterizers and beats the 0.02 m asphalt in the depth test.
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(6000, 6000),
+    new THREE.PlaneGeometry(6000, 6000, 128, 128),
     new THREE.MeshStandardMaterial({ color: '#4f7a3a', roughness: 1 }),
   );
   ground.rotation.x = -Math.PI / 2;
