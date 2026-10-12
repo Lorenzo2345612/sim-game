@@ -18,6 +18,7 @@ python3 scripts/ai/worker.py reviewer --task tasks/NNN-x.md        # Kimi
 python3 scripts/ai/worker.py fixer    --task tasks/NNN-x.md --note "..."   # DeepSeek flash (second opinion)
 # add --heavy for the role's large model
 # --provider mimo (or SIMGAME_PROVIDER=mimo) forces Xiaomi MiMo
+# --resume continues that role's last session for the same task (keeps its context; only --note is sent)
 ```
 
 If a provider answers with a quota or balance error (429/402), `worker.py` retries on its own with MiMo (`fallback` in `ai/providers.json`). If the report says `quota error` on MiMo too, stop and tell the user: no more providers.
@@ -35,6 +36,10 @@ Workers take minutes: launch them with Bash `run_in_background` and wait for the
 7. Mark the task `done` in the spec and in `tasks/README.md`. Summarize to the user in 2-3 lines.
 
 Task statuses: pending | in progress | done | blocked.
+
+## Fix rounds
+
+Coder fix rounds (after tester FAIL or reviewer CHANGES) use `coder --task ... --resume --note "<findings>"`: the coder keeps what it already read. Also with `--heavy`. Tester, reviewer, acceptance and fixer always start fresh (independent judgement). If the resumed session cannot be found, `worker.py` starts a fresh one automatically.
 
 ## Escalation (to avoid spending on loops)
 

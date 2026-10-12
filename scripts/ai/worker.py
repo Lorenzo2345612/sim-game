@@ -29,6 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = json.loads((ROOT / "ai/providers.json").read_text())
 RUNS = ROOT / ".ai/runs"
+SESSIONS = ROOT / ".ai/sessions"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
 REPORT_LIMIT = 4000
 QUOTA_PATTERNS = ("429", "402", "quota", "insufficient", "balance", "rate limit", "rate_limit",
@@ -95,6 +96,17 @@ def build_prompt(args):
     return "\n\n".join(parts)
 
 
+def resume_prompt(args):
+    note = args.note or "Re-check your work."
+    return (f"Continue the same task. New findings from the planner:\n{note}\n\n"
+            "Fix only what they point to, re-run the Verification commands and reply with the report block.")
+
+
+def session_file(args):
+    label = Path(args.task).stem if args.task else "adhoc"
+    return SESSIONS / f"{args.role}-{label}.txt"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("role", help="coder | tester | reviewer | fixer | ping")
@@ -104,6 +116,9 @@ def main():
     parser.add_argument("--heavy", action="store_true", help="use the role's heavy model")
     parser.add_argument("--model", help="force model")
     parser.add_argument("--provider", help="force provider (e.g. mimo); uses the fallback model")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue this role's last session for the same task (keeps its context); "
+                             "only --note is sent. Falls back to a fresh run if no session exists")
     args = parser.parse_args()
 
     if os.environ.get("SIMGAME_WORKER"):
@@ -134,8 +149,12 @@ def main():
               flush=True)
 
 
-def run_worker(args, role, provider_name, model):
+def run_worker(args, role, provider_name, model, allow_resume=True):
     """Run one headless worker. Returns (exit_code, looks_like_quota_error)."""
+    sess_path = session_file(args)
+    resume_id = None
+    if allow_resume and args.resume and sess_path.exists():
+        resume_id = sess_path.read_text().strip() or None
     provider = CONFIG["providers"][provider_name]
     env = {k: v for k, v in os.environ.items() if k not in PARENT_VARS}
     env.update({
@@ -155,7 +174,7 @@ def run_worker(args, role, provider_name, model):
 
     system_prompt = (ROOT / role["prompt"]).read_text()
     cmd = [
-        "claude", "-p", build_prompt(args),
+        "claude", "-p", resume_prompt(args) if resume_id else build_prompt(args),
         "--model", model,
         "--append-system-prompt", system_prompt,
         "--setting-sources", "project",
@@ -163,6 +182,8 @@ def run_worker(args, role, provider_name, model):
         "--disable-slash-commands",
         "--output-format", "json",
     ]
+    if resume_id:
+        cmd += ["--resume", resume_id]
 
     RUNS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -170,8 +191,8 @@ def run_worker(args, role, provider_name, model):
     log_path = RUNS / f"{stamp}-{args.role}-{provider_name}-{label}.json"
 
     before = changed_files()
-    print(f"[worker] role={args.role} model={model} provider={provider_name} log={log_path.relative_to(ROOT)}",
-          flush=True)
+    print(f"[worker] role={args.role} model={model} provider={provider_name} "
+          f"{'resume=' + resume_id[:8] + ' ' if resume_id else ''}log={log_path.relative_to(ROOT)}", flush=True)
     try:
         proc = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True,
                               timeout=role["timeoutMin"] * 60)
@@ -184,10 +205,16 @@ def run_worker(args, role, provider_name, model):
         data = json.loads(proc.stdout)
     except json.JSONDecodeError:
         raw = proc.stderr or proc.stdout
+        if resume_id and not looks_like_quota(raw):
+            print("[worker] resume failed; starting a fresh session", flush=True)
+            return run_worker(args, role, provider_name, model, allow_resume=False)
         print(f"[worker] non-JSON output (exit {proc.returncode}):\n{raw[-1500:]}")
         return proc.returncode or 1, looks_like_quota(raw)
 
     result = (data.get("result") or "").strip()
+    if data.get("session_id"):
+        SESSIONS.mkdir(parents=True, exist_ok=True)
+        sess_path.write_text(data["session_id"])
     if data.get("is_error") and looks_like_quota(result):
         print(f"[worker] quota error: {result[:200]}")
         return 1, True
