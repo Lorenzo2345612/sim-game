@@ -1,7 +1,4 @@
 .hud-panel {
-  position: absolute;
-  top: 12px;
-  left: 12px;
   font-family: monospace;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
