@@ -26,7 +26,7 @@ Package manager: npm. `"type": "module"` in `package.json`.
 ```
 src/core     → nothing (pure TypeScript)
 src/track    → core
-src/physics  → core, @dimforge/rapier3d-compat
+src/physics  → core, track (surface geometry only), @dimforge/rapier3d-compat
 src/game     → core, track, physics (simulation orchestration, no three, no DOM)
 src/input    → core
 src/render   → core, three

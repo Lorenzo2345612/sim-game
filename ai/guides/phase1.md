@@ -29,6 +29,7 @@ export interface TreeSpecies { name: string; preset: string; heightMeters: numbe
 export interface TreeInstances { species: string; data: number[] } // flat [x, z, scale, rotY] * n
 export interface Grandstand { x: number; z: number; yaw: number; lengthMeters: number; rows: number; roof: boolean }
 export interface PitLane { start: number; end: number; side: Side }
+export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
   elevation: number[];      // metres, per centerline point, relative to the start line (start = 0)
