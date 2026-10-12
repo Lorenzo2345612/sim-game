@@ -114,11 +114,18 @@ def task_number(args):
 
 
 def assigned_provider(args):
-    """Provider forced for this coder task by the A/B experiment, if any."""
-    if args.role != "coder" or not EXPERIMENTS_PATH.exists():
+    """Provider forced for this task by an A/B experiment, if any."""
+    if not EXPERIMENTS_PATH.exists():
         return None
-    assignments = json.loads(EXPERIMENTS_PATH.read_text()).get("coderAssignments", {})
+    exp = json.loads(EXPERIMENTS_PATH.read_text())
     num = task_number(args)
+    split = exp.get("testerSplit", {})
+    if args.role in split.get("roles", []) and num and num.isdigit():
+        providers = split["providers"]
+        return providers[int(num) % len(providers)]
+    if args.role != "coder":
+        return None
+    assignments = exp.get("coderAssignments", {})
     for provider, tasks in assignments.items():
         if isinstance(tasks, list) and num in tasks:
             return provider

@@ -345,8 +345,12 @@ def provider_of(role, num):
     forced = os.environ.get("SIMGAME_PROVIDER")
     if forced:
         return forced
+    exp = load_json(EXPERIMENTS)
+    split = exp.get("testerSplit", {})
+    if role in split.get("roles", []) and str(num).isdigit():
+        return split["providers"][int(num) % len(split["providers"])]
     if role == "coder":
-        for prov, nums in load_json(EXPERIMENTS).get("coderAssignments", {}).items():
+        for prov, nums in exp.get("coderAssignments", {}).items():
             if isinstance(nums, list) and num in nums:
                 return prov
     return cfg.get("roles", {}).get(role, {}).get("provider")

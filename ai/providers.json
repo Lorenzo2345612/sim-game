@@ -13,7 +13,7 @@
     "qwen": {
       "baseUrl": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
       "keyEnv": "DASHSCOPE_API_KEY",
-      "maxConcurrent": 4
+      "maxConcurrent": 2
     },
     "mimo": {
       "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",
@@ -23,16 +23,16 @@
   },
   "roles": {
     "acceptance": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "qwen",
+      "model": "qwen3.8-flash",
+      "heavyModel": "qwen3.8-max",
       "prompt": "ai/agents/acceptance.md",
       "timeoutMin": 20
     },
     "tester-pre": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "qwen",
+      "model": "qwen3.8-flash",
+      "heavyModel": "qwen3.8-max",
       "prompt": "ai/agents/tester-pre.md",
       "timeoutMin": 20
     },
@@ -44,9 +44,9 @@
       "timeoutMin": 25
     },
     "tester": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "qwen",
+      "model": "qwen3.8-flash",
+      "heavyModel": "qwen3.8-max",
       "prompt": "ai/agents/tester.md",
       "timeoutMin": 25
     },
@@ -58,9 +58,9 @@
       "timeoutMin": 20
     },
     "fixer": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "qwen",
+      "model": "deepseek-v4.1-flash",
+      "heavyModel": "deepseek-v4-pro",
       "prompt": "ai/agents/coder.md",
       "timeoutMin": 25
     }
