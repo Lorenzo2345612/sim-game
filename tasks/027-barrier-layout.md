@@ -28,11 +28,11 @@ import type { Point2 } from '../../src/track/geo';
 import type { BarrierSegment, TrackSegment, RunoffSegment, PitLane } from '../../src/core/types';
 export function layoutBarriers(
   centerline: Point2[], widthMeters: number,
-  kerbs: TrackSegment[], runoffs: RunoffSegment[], pit: PitLane,
+  kerbs: TrackSegment[], runoffs: RunoffSegment[], pit?: PitLane,
 ): BarrierSegment[];
 ```
 2. Per point and side: offset = `width/2 + (kerb on that side covers point ? KERB_WIDTH : 0) + (runoff on that side covers point ? runoff.widthMeters : VERGE_WIDTH) + BARRIER_GAP`; if several cover, take the maximum width. Round offset to the nearest 0.5 m.
-3. Type per point and side: `wall` if the side equals `pit.side` and the index is in the pit range (wrap-aware); else `tyres` if a gravel runoff covers it; else `armco`.
+3. Type per point and side: `wall` if `pit` is given, the side equals `pit.side` and the index is in the pit range (wrap-aware); else `tyres` if a gravel runoff covers it; else `armco`.
 4. Merge consecutive indices with equal type and offset into one segment. Do not merge across the index N−1→0 boundary. Output covers every index of each side exactly once, sorted by side then start.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
