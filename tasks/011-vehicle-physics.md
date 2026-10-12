@@ -1,6 +1,6 @@
 # 011 — Implement the physics vehicle (Rapier raycast vehicle)
 
-Status: pending
+Status: in progress
 Phase: 0
 Depends on: 002, 010
 Complexity: complex
@@ -59,6 +59,12 @@ Per-test timeout 20000 ms. `beforeAll(initPhysics)`; each test: `world = createP
 - `reset restores spawn pose and zero velocity`: accelerate 2 s, `reset(spawn)`: position ≈ spawn (±0.01 per axis), `|linvel| < 0.01` and `getState().forwardSpeed` within ±0.01 of 0.
 - `getState returns the same out object`: `const out = vehicle.getState(); expect(vehicle.getState(out)).toBe(out)`; `out.wheels.length === 4`.
 - `does not flip`: throttle 1 for 20 s, then `steer=1` (throttle 1) for 8 s; at every step the body up-vector y component (`1 - 2*(q.x² + q.z²)`) > 0.5.
+
+Planner decisions (edge cases):
+- Before the first `setInput`, the stored input is all zeros (throttle 0, brake 0, steer 0).
+- `setInput` clamps: throttle and brake to [0, 1], steer to [-1, 1]; NaN → 0.
+- `prePhysicsStep(dt)` with `dt <= 0` or non-finite is a no-op. No special handling for large dt.
+- All 4 wheels' `rotation` grows while rolling forward, front included (verified: equal values on all wheels, `ai/lab/front-wheel-rotation.mjs`).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
