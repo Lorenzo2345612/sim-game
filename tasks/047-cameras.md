@@ -1,6 +1,6 @@
 # 047 — T-cam and cockpit cameras with switching
 
-Status: pending
+Status: done
 Phase: 1
 Depends on: nothing
 Complexity: simple
