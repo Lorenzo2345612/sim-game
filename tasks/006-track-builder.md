@@ -1,6 +1,6 @@
 # 006 — Generate public/tracks/monza.json with the track-builder
 
-Status: in progress
+Status: done
 Phase: 0
 Depends on: 002, 004, 005
 Roles: coder, tester, reviewer
