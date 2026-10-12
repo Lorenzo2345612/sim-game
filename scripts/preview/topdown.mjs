@@ -1,0 +1,20 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader'] });
+const p = await b.newPage({ viewport: { width: 900, height: 1100 } });
+await p.goto('http://127.0.0.1:5199/scripts/preview/car.html');
+await p.waitForFunction(() => document.title === 'READY', null, { timeout: 60000 });
+await p.evaluate(async () => {
+  const THREE = await import('/node_modules/.vite/deps/three.js');
+  const { buildRibbon } = await import('/src/track/ribbon.ts');
+  const { createTrackObject } = await import('/src/render/trackRenderer.ts');
+  const { createScene, createRenderer } = await import('/src/render/sceneSetup.ts');
+  const track = await (await fetch('/tracks/monza.json')).json();
+  document.body.innerHTML = ''; const c = document.createElement('canvas'); c.width = 900; c.height = 1100; document.body.append(c);
+  const { scene } = createScene(); scene.fog = null;
+  scene.add(createTrackObject(buildRibbon(track.centerline, 25, 0.02), track).group);
+  const cam = new THREE.OrthographicCamera(-700, 700, 1140, -1140, 1, 5000);
+  cam.position.set(0, 2000, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0);
+  const h = createRenderer(c); h.renderer.setSize(900, 1100, false); h.renderer.render(scene, cam);
+});
+await p.screenshot({ path: '.ai/shots/monza-topdown.png' });
+await b.close();

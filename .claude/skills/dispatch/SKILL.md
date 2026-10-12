@@ -5,6 +5,8 @@ description: Execute task specs from tasks/ with cheap worker models via scripts
 
 # dispatch (Claude only, the planner)
 
+**Default: do not dispatch by hand.** `scripts/ai/orchestrator.py` runs this whole pipeline unattended (see skill `pipeline-ops`). Use the manual commands below only to debug a single task or run an ad-hoc worker.
+
 Claude does not edit `src/`, `tests/` or `tools/` (a hook blocks it). All code is written by the workers. Claude only launches workers, reads their short reports, decides and fixes specs.
 
 ## Commands

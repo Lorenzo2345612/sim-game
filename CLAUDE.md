@@ -1,5 +1,7 @@
 # sim-game
 
+New session? Read `docs/STATUS.md` first (current phase, what is running, what is pending), then use skill `pipeline-ops`.
+
 Web simulator of single-seaters on real circuits. Requirements and decisions in `PRD.md` (the decisions table is in section 14).
 
 ## Model roles
@@ -70,7 +72,7 @@ No verbose output; minimal comments; reports and replies short and to the point.
 
 ## Reuse
 
-Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.claude/agents/`) instead of being rediscovered. Current ones: skills `plan-feature`, `dispatch`, `physics-lab`; agents `spec-writer` (sonnet), `asset-scout` (sonnet); workers via `scripts/ai/worker.py`.
+Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.claude/agents/`) instead of being rediscovered. Current ones: skills `plan-feature`, `pipeline-ops`, `dispatch`, `physics-lab`, `render-preview`; agents `spec-writer`, `spec-reviewer`, `asset-scout` (all sonnet); workers via `scripts/ai/worker.py`, unattended runs via `scripts/ai/orchestrator.py`, dashboard `scripts/ai/dashboard.py`.
 
 ## Planning subagents
 

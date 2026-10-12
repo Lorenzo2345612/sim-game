@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Asset gallery</title>
+<style>
+  html, body { margin: 0; height: 100%; font: 13px system-ui, sans-serif; background: #1b1d22; color: #ddd; }
+  #app { display: flex; height: 100%; }
+  #side { width: 290px; overflow-y: auto; border-right: 1px solid #333; padding: 8px; box-sizing: border-box; }
+  #side h3 { margin: 14px 4px 4px; font-size: 12px; text-transform: uppercase; color: #8ab4f8; }
+  #side h4 { margin: 8px 4px 2px; font-size: 11px; color: #999; }
+  #side button { display: block; width: 100%; text-align: left; background: none; color: #ddd; border: 0; padding: 3px 6px; cursor: pointer; border-radius: 4px; }
+  #side button:hover, #side button.on { background: #2f3540; }
+  #main { flex: 1; position: relative; }
+  #view, #embed { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  #info { position: absolute; left: 10px; bottom: 10px; background: rgba(0,0,0,.6); padding: 6px 10px; border-radius: 6px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://esm.sh/three@0.186.1",
+  "three/addons/": "https://esm.sh/three@0.186.1/examples/jsm/",
+  "@dgreenheck/ez-tree": "https://esm.sh/@dgreenheck/ez-tree@1.1.0?external=three"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="side"></div>
+  <div id="main"><canvas id="view"></canvas><iframe id="embed" hidden allow="autoplay; fullscreen; xr-spatial-tracking"></iframe><div id="info"></div></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Tree } from '@dgreenheck/ez-tree';
+
+const SKETCHFAB = {
+  'Single-seaters (CC-BY)': {
+    '2010 Indycar — CarlosCG31': '6d7384aab671492abc0da25359ff8f3a',
+    'Generic F1 Car — CarlosCG31': 'ae419541d43143fc80cf0c6e559e1bb2',
+    'Generic F1 1991 — CarlosCG31': 'cd6b956866ef48e1b32101100cb63da1',
+    'Generic 2022 F1 — mpdevteam': '885d67926c1f4397bebd4efd6b5a3f73',
+    'F1 Car Midpoly (logos) — LWDream': 'ca91852b29bb435d8d0278d9131aa775',
+    'Stylized Formula One — timmod': '1e3caa8d9f8f4f5287ed33e1267fac33',
+    'F4 Tatuus T014 chassis — Oriol-Plazas': 'd61ce2f877fb4bf29da381cfa4f0f3d7',
+  },
+  'Trees (CC-BY)': {
+    'Oak Trees — LadyLionStudios': '7a689370f9ec46cea2cbc94641c225e6',
+    'Beech Trees — LadyLionStudios': 'f59546058ee44e73920e79fa78614f21',
+    'Spruce Trees — LadyLionStudios': 'd9597ece22484ef2bc5b4d97b0b828d2',
+    'Oak Variations + low poly — RBG': 'a4c05606689d47b9b9ca56d563b27998',
+  },
+  'Trackside (CC-BY)': {
+    'Race Track Assets Pack — Cherk': '4a863e7005d647adb2f72775cf41e808',
+    'TECPRO Barriers — DylanJade3D': '03701e54c27b418e9e1dfda73d69dc76',
+    'Starting Lights — damianrovra379': '4f3bd911404a4952bedc5c9aa5f5d9e3',
+    'Low Poly Audience — alihasnain': 'c8cc901ed54b4fd0b24b88d8e0276947',
+  },
+};
+const TREE_PRESETS = ['Oak Small', 'Oak Medium', 'Oak Large', 'Ash Small', 'Ash Medium', 'Ash Large',
+  'Aspen Small', 'Aspen Medium', 'Aspen Large', 'Pine Small', 'Pine Medium', 'Pine Large', 'Bush 1', 'Bush 2', 'Bush 3'];
+
+const canvas = document.getElementById('view');
+const embed = document.getElementById('embed');
+const info = document.getElementById('info');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9ec9f0);
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x5a7a3a, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(30, 50, 20); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 200 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x4f7a3a, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 2000);
+const controls = new OrbitControls(camera, canvas);
+let current = null;
+
+function resize() {
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+
+function show(obj, label) {
+  embed.hidden = true; embed.src = 'about:blank'; canvas.hidden = false;
+  if (current) scene.remove(current);
+  current = obj;
+  obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  const box = new THREE.Box3().setFromObject(obj);
+  obj.position.y -= box.min.y;
+  scene.add(obj);
+  box.setFromObject(obj);
+  const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  const r = Math.max(size.x, size.y, size.z);
+  camera.position.set(center.x + r * 1.2, center.y + r * 0.6, center.z + r * 1.4);
+  controls.target.copy(center); controls.update();
+  let tris = 0;
+  obj.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+  info.textContent = `${label} — ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} units — ${Math.round(tris).toLocaleString()} tris`;
+}
+
+function showEmbed(id, label) {
+  canvas.hidden = true; embed.hidden = false;
+  embed.src = `https://sketchfab.com/models/${id}/embed?autostart=1&ui_infos=0&ui_watermark=0`;
+  info.textContent = `${label} — Sketchfab viewer (not downloaded)`;
+}
+
+const side = document.getElementById('side');
+function section(title) { const h = document.createElement('h3'); h.textContent = title; side.append(h); }
+function sub(title) { const h = document.createElement('h4'); h.textContent = title; side.append(h); }
+function item(label, fn) {
+  const b = document.createElement('button'); b.textContent = label;
+  b.onclick = () => { side.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on'); fn(); };
+  side.append(b); return b;
+}
+
+const loader = new GLTFLoader();
+try {
+  const manifest = await (await fetch('models/manifest.json')).json();
+  section('Local models (downloaded)');
+  let pack = null;
+  for (const m of manifest) {
+    if (m.pack !== pack) { pack = m.pack; sub(pack); }
+    item(m.name, () => loader.load('models/' + m.path, g => show(g.scene, `${m.pack} / ${m.name}`)));
+  }
+} catch { section('Local models: not available yet'); }
+
+section('EZ-Tree (procedural, MIT)');
+for (const p of TREE_PRESETS) item(p, () => { const t = new Tree(); t.loadPreset(p); t.generate(); show(t, `EZ-Tree / ${p}`); });
+
+for (const [group, models] of Object.entries(SKETCHFAB)) {
+  section('Sketchfab: ' + group);
+  for (const [label, id] of Object.entries(models)) item(label, () => showEmbed(id, label));
+}
+side.querySelector('button')?.click();
+</script>
+</body>
+</html>

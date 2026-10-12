@@ -1,0 +1,31 @@
+<!doctype html>
+<html><body style="margin:0"><canvas id="c" style="width:100vw;height:100vh;display:block"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createScene, createRenderer } from '/src/render/sceneSetup.ts';
+import { CarRenderer } from '/src/render/carRenderer.ts';
+const canvas = document.getElementById('c');
+const { scene, camera } = createScene();
+const handle = createRenderer(canvas);
+handle.resize(innerWidth, innerHeight, camera);
+addEventListener('resize', () => handle.resize(innerWidth, innerHeight, camera));
+const car = await CarRenderer.load('/models/race.glb');
+scene.add(car.root);
+const y = 0.39, wy = 0.33;
+const wp = [[-0.8, -1.3], [0.8, -1.3], [-0.8, 1.25], [0.8, 1.25]];
+car.update({
+  position: { x: 0, y, z: 0 }, rotation: { x: 0, y: 0, z: 0, w: 1 }, forwardSpeed: 0,
+  wheels: wp.map(([x, z], i) => ({ position: { x, y: wy, z }, steering: i < 2 ? 0.25 : 0, rotation: 0, inContact: true })),
+});
+const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(14, 40), new THREE.MeshStandardMaterial({ color: 0x3a3a3e, roughness: 0.9 }));
+asphalt.rotation.x = -Math.PI / 2; asphalt.position.y = 0.01; scene.add(asphalt);
+const views = { front34: [4.2, 1.8, -5.2], rear34: [-4.5, 2.2, 5.5], side: [7, 1.2, 0] };
+const v = views[new URLSearchParams(location.search).get('v') || 'front34'];
+camera.position.set(...v); camera.lookAt(0, 0.4, 0);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0.4, 0);
+controls.update();
+handle.renderer.setAnimationLoop(() => { controls.update(); handle.renderer.render(scene, camera); });
+document.title = 'READY';
+</script></body></html>
