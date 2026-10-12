@@ -8,7 +8,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/001-project-scaffold.md"
+      "spec": "tasks/001-project-scaffold.md",
+      "models": "standard"
     },
     {
       "num": "002",
@@ -20,7 +21,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/002-types-and-constants.md"
+      "spec": "tasks/002-types-and-constants.md",
+      "models": "standard"
     },
     {
       "num": "003",
@@ -32,7 +34,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/003-fixed-step-loop.md"
+      "spec": "tasks/003-fixed-step-loop.md",
+      "models": "standard"
     },
     {
       "num": "004",
@@ -44,7 +47,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/004-geo-projection.md"
+      "spec": "tasks/004-geo-projection.md",
+      "models": "standard"
     },
     {
       "num": "005",
@@ -56,7 +60,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/005-centerline-smoothing.md"
+      "spec": "tasks/005-centerline-smoothing.md",
+      "models": "standard"
     },
     {
       "num": "006",
@@ -70,7 +75,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/006-track-builder.md"
+      "spec": "tasks/006-track-builder.md",
+      "models": "standard"
     },
     {
       "num": "007",
@@ -82,7 +88,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/007-track-ribbon.md"
+      "spec": "tasks/007-track-ribbon.md",
+      "models": "standard"
     },
     {
       "num": "008",
@@ -96,7 +103,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/008-track-progress-lap-timer.md"
+      "spec": "tasks/008-track-progress-lap-timer.md",
+      "models": "standard"
     },
     {
       "num": "009",
@@ -108,7 +116,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/009-keyboard-input.md"
+      "spec": "tasks/009-keyboard-input.md",
+      "models": "standard"
     },
     {
       "num": "010",
@@ -120,7 +129,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/010-physics-world-config.md"
+      "spec": "tasks/010-physics-world-config.md",
+      "models": "standard"
     },
     {
       "num": "011",
@@ -133,7 +143,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/011-vehicle-physics.md"
+      "spec": "tasks/011-vehicle-physics.md",
+      "models": "standard"
     },
     {
       "num": "012",
@@ -145,7 +156,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/012-base-scene.md"
+      "spec": "tasks/012-base-scene.md",
+      "models": "standard"
     },
     {
       "num": "013",
@@ -159,7 +171,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/013-track-render.md"
+      "spec": "tasks/013-track-render.md",
+      "models": "standard"
     },
     {
       "num": "014",
@@ -171,7 +184,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/014-car-render.md"
+      "spec": "tasks/014-car-render.md",
+      "models": "standard"
     },
     {
       "num": "015",
@@ -183,7 +197,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/015-chase-camera.md"
+      "spec": "tasks/015-chase-camera.md",
+      "models": "standard"
     },
     {
       "num": "016",
@@ -195,7 +210,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/016-hud.md"
+      "spec": "tasks/016-hud.md",
+      "models": "standard"
     },
     {
       "num": "017",
@@ -211,7 +227,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/017-game-core.md"
+      "spec": "tasks/017-game-core.md",
+      "models": "standard"
     },
     {
       "num": "018",
@@ -233,7 +250,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/018-main-integration.md"
+      "spec": "tasks/018-main-integration.md",
+      "models": "standard"
     },
     {
       "num": "019",
@@ -245,7 +263,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/019-e2e-playwright.md"
+      "spec": "tasks/019-e2e-playwright.md",
+      "models": "standard"
     },
     {
       "num": "020",
@@ -257,7 +276,8 @@
       "complexity": "simple",
       "type": "bugfix",
       "phase": 0,
-      "spec": "tasks/020-fix-track-visibility-and-hud.md"
+      "spec": "tasks/020-fix-track-visibility-and-hud.md",
+      "models": "standard"
     },
     {
       "num": "021",
@@ -267,7 +287,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 0,
-      "spec": "tasks/021-progress-dashboard.md"
+      "spec": "tasks/021-progress-dashboard.md",
+      "models": "standard"
     },
     {
       "num": "022",
@@ -277,7 +298,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/022-types-and-constants-v2.md"
+      "spec": "tasks/022-types-and-constants-v2.md",
+      "models": "standard"
     },
     {
       "num": "023",
@@ -287,7 +309,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/023-geo-unproject.md"
+      "spec": "tasks/023-geo-unproject.md",
+      "models": "standard"
     },
     {
       "num": "024",
@@ -299,7 +322,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/024-dem-fetch.md"
+      "spec": "tasks/024-dem-fetch.md",
+      "models": "standard"
     },
     {
       "num": "025",
@@ -313,31 +337,34 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/025-dem-elevation-profile.md"
+      "spec": "tasks/025-dem-elevation-profile.md",
+      "models": "standard"
     },
     {
       "num": "026",
       "title": "Detect radii, kerbs and run-offs",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "022"
       ],
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/026-corner-analysis.md"
+      "spec": "tasks/026-corner-analysis.md",
+      "models": "standard"
     },
     {
       "num": "027",
       "title": "Lay out barriers",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "022"
       ],
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/027-barrier-layout.md"
+      "spec": "tasks/027-barrier-layout.md",
+      "models": "standard"
     },
     {
       "num": "028",
@@ -352,7 +379,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/028-terrain-builder.md"
+      "spec": "tasks/028-terrain-builder.md",
+      "models": "standard"
     },
     {
       "num": "029",
@@ -364,7 +392,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/029-tree-placement.md"
+      "spec": "tasks/029-tree-placement.md",
+      "models": "standard"
     },
     {
       "num": "030",
@@ -382,19 +411,21 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/030-track-builder-v2.md"
+      "spec": "tasks/030-track-builder-v2.md",
+      "models": "standard"
     },
     {
       "num": "031",
       "title": "Build track surface geometry from TrackData v2",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "022"
       ],
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/031-track-surfaces-geometry.md"
+      "spec": "tasks/031-track-surfaces-geometry.md",
+      "models": "heavy"
     },
     {
       "num": "032",
@@ -407,7 +438,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/032-physics-track-colliders.md"
+      "spec": "tasks/032-physics-track-colliders.md",
+      "models": "heavy"
     },
     {
       "num": "033",
@@ -420,7 +452,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/033-surface-grip.md"
+      "spec": "tasks/033-surface-grip.md",
+      "models": "standard"
     },
     {
       "num": "034",
@@ -432,7 +465,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/034-track-limits.md"
+      "spec": "tasks/034-track-limits.md",
+      "models": "standard"
     },
     {
       "num": "035",
@@ -444,7 +478,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/035-textures-fetch.md"
+      "spec": "tasks/035-textures-fetch.md",
+      "models": "standard"
     },
     {
       "num": "036",
@@ -456,7 +491,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/036-terrain-render.md"
+      "spec": "tasks/036-terrain-render.md",
+      "models": "standard"
     },
     {
       "num": "037",
@@ -470,7 +506,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/037-track-surface-render.md"
+      "spec": "tasks/037-track-surface-render.md",
+      "models": "standard"
     },
     {
       "num": "038",
@@ -482,7 +519,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/038-barrier-render.md"
+      "spec": "tasks/038-barrier-render.md",
+      "models": "standard"
     },
     {
       "num": "039",
@@ -495,7 +533,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/039-trees-render.md"
+      "spec": "tasks/039-trees-render.md",
+      "models": "standard"
     },
     {
       "num": "040",
@@ -507,7 +546,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/040-grandstands-crowd.md"
+      "spec": "tasks/040-grandstands-crowd.md",
+      "models": "standard"
     },
     {
       "num": "041",
@@ -519,7 +559,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/041-pit-gantry-lights.md"
+      "spec": "tasks/041-pit-gantry-lights.md",
+      "models": "standard"
     },
     {
       "num": "042",
@@ -529,7 +570,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/042-lighting-sky-shadows.md"
+      "spec": "tasks/042-lighting-sky-shadows.md",
+      "models": "standard"
     },
     {
       "num": "043",
@@ -546,7 +588,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/043-world-integration.md"
+      "spec": "tasks/043-world-integration.md",
+      "models": "heavy"
     },
     {
       "num": "044",
@@ -558,7 +601,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/044-track-menu.md"
+      "spec": "tasks/044-track-menu.md",
+      "models": "standard"
     },
     {
       "num": "045",
@@ -570,7 +614,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/045-gearbox.md"
+      "spec": "tasks/045-gearbox.md",
+      "models": "standard"
     },
     {
       "num": "046",
@@ -582,7 +627,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/046-gamepad.md"
+      "spec": "tasks/046-gamepad.md",
+      "models": "standard"
     },
     {
       "num": "047",
@@ -592,7 +638,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/047-cameras.md"
+      "spec": "tasks/047-cameras.md",
+      "models": "standard"
     },
     {
       "num": "048",
@@ -602,7 +649,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/048-hud-v2.md"
+      "spec": "tasks/048-hud-v2.md",
+      "models": "standard"
     },
     {
       "num": "049",
@@ -612,7 +660,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/049-minimap.md"
+      "spec": "tasks/049-minimap.md",
+      "models": "standard"
     },
     {
       "num": "050",
@@ -622,7 +671,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/050-ghost.md"
+      "spec": "tasks/050-ghost.md",
+      "models": "standard"
     },
     {
       "num": "051",
@@ -632,7 +682,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/051-engine-audio.md"
+      "spec": "tasks/051-engine-audio.md",
+      "models": "standard"
     },
     {
       "num": "052",
@@ -642,7 +693,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/052-graphics-presets.md"
+      "spec": "tasks/052-graphics-presets.md",
+      "models": "standard"
     },
     {
       "num": "053",
@@ -652,7 +704,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/053-f4-car.md"
+      "spec": "tasks/053-f4-car.md",
+      "models": "standard"
     },
     {
       "num": "054",
@@ -675,7 +728,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/054-gameplay-integration.md"
+      "spec": "tasks/054-gameplay-integration.md",
+      "models": "heavy"
     },
     {
       "num": "055",
@@ -687,7 +741,8 @@
       "complexity": "simple",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/055-phase1-e2e.md"
+      "spec": "tasks/055-phase1-e2e.md",
+      "models": "standard"
     },
     {
       "num": "056",
@@ -705,7 +760,8 @@
       "complexity": "complex",
       "type": "feature",
       "phase": 1,
-      "spec": "tasks/056-track-integration.md"
+      "spec": "tasks/056-track-integration.md",
+      "models": "heavy"
     }
   ]
 }
