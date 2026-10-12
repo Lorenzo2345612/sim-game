@@ -10,6 +10,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 ## In flight (planner side)
 
+- A Sonnet subagent (worktree branch `worktree-agent-…`) is adding Claude usage to stats, a per-task "who worked on it" detail (`/api/task`) and a visual redesign. When it reports: run `python3 -m unittest discover -s scripts/ai/tests -t .`, check `.ai/shots/` in its worktree, merge, restart dashboard, remove worktree.
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
