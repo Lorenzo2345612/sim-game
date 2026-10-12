@@ -330,7 +330,7 @@
     {
       "num": "027",
       "title": "Lay out barriers",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "022"
       ],
@@ -342,7 +342,7 @@
     {
       "num": "028",
       "title": "Build the terrain heightfield",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022",
         "023",
@@ -387,7 +387,7 @@
     {
       "num": "031",
       "title": "Build track surface geometry from TrackData v2",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "022"
       ],
@@ -437,7 +437,7 @@
     {
       "num": "035",
       "title": "Fetch CC0 track textures",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "024"
       ],
@@ -449,7 +449,7 @@
     {
       "num": "036",
       "title": "Render the terrain mesh",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "022"
       ],

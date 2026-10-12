@@ -30,16 +30,16 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 024 | Fetch DEM windows for the three tracks | done | 023 |
 | 025 | DEM sampling and centerline elevation profile | done | 022, 023, 024 |
 | 026 | Detect radii, kerbs and run-offs | in progress | 022 |
-| 027 | Lay out barriers | in progress | 022 |
-| 028 | Build the terrain heightfield | pending | 022, 023, 024, 025 |
+| 027 | Lay out barriers | waiting decision | 022 |
+| 028 | Build the terrain heightfield | in progress | 022, 023, 024, 025 |
 | 029 | Place trees deterministically | in progress | 022 |
 | 030 | Generate TrackData v2 for Monza, Spa and Silverstone | pending | 022, 024, 025, 026, 027, 028, 029 |
-| 031 | Build track surface geometry from TrackData v2 | in progress | 022 |
+| 031 | Build track surface geometry from TrackData v2 | waiting decision | 022 |
 | 032 | Terrain, surface and barrier colliders | pending | 022, 031 |
 | 033 | Per-wheel surface grip and drag | pending | 022, 032 |
 | 034 | Invalidate laps when all wheels leave the track | pending | 033 |
-| 035 | Fetch CC0 track textures | in progress | 024 |
-| 036 | Render the terrain mesh | pending | 022 |
+| 035 | Fetch CC0 track textures | done | 024 |
+| 036 | Render the terrain mesh | in progress | 022 |
 | 037 | Render track surfaces with textures | pending | 022, 031, 035 |
 | 038 | Render barriers | pending | 022 |
 | 039 | Instanced procedural trees with LOD | pending | 022, 035 |
