@@ -105,7 +105,7 @@ def milestone_scope():
     return allowed | prefetch_set() | {t["num"] for t in read_tasks() if t["num"] not in assigned}
 
 
-PREFETCH_RESERVE = 2  # slots kept free for the active milestone
+PREFETCH_MAX = 3  # max concurrent prefetched tasks; the rest of the slots belong to the active milestone
 
 
 def prefetch_set():
@@ -429,7 +429,10 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         argv += ["--note", note]
     prov = provider_of(role, num)
     fallback = load_json(PROVIDERS).get("fallback", {}).get("provider")
-    if prov and fallback and prov != fallback and quota.low_5h(prov):
+    if fallback and prov != fallback and num in prefetch_set():
+        argv += ["--provider", fallback]  # prefetched work stays off the active milestone's providers
+        prov = fallback
+    elif prov and fallback and prov != fallback and quota.low_5h(prov):
         event(num, "quota-route", f"{role}: {prov} < 10% left in 5h window -> {fallback}")
         argv += ["--provider", fallback]
         prov = fallback
@@ -1193,7 +1196,7 @@ def run(max_parallel, only, dry_run):
                 for t in ready_tasks(tasks, done, running, waiting, only):
                     if len(running) >= max_parallel:
                         break
-                    if t["num"] in early and sum(n in early for n in running) >= max_parallel - PREFETCH_RESERVE:
+                    if t["num"] in early and sum(n in early for n in running) >= PREFETCH_MAX:
                         continue
                     running[t["num"]] = pool.submit(run_task, t)
             if not running:

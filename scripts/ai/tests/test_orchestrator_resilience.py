@@ -238,3 +238,19 @@ class PrefetchTest(Harness):
         self.assertEqual(self.task_status("002"), "done", self.diag())
         self.assertNotEqual(self.task_status("003"), "done", self.diag())
         self.assertNotIn("003", ran, self.diag())
+
+    def test_prefetched_tasks_run_on_fallback_provider(self):
+        self.set_providers({"glm": 2, "qwen": 2, "kimi": 2, "mimo": 4})
+        self.add_task("001", "Alpha")
+        self.add_task("002", "Beta")
+        (self.repo / "tasks/milestones.json").write_text(json.dumps({"milestones": [
+            {"id": "M1", "title": "First", "status": "open", "tasks": ["001"]},
+            {"id": "M2", "title": "Second", "status": "open", "tasks": ["002"], "prefetch": ["002"]}]}))
+        self.tracked.append("tasks/milestones.json")
+        self.write_script(success_script())
+        self.run_orch(["run"])
+        for c in self.calls():
+            if "tasks/002" in " ".join(c["argv"]):
+                self.assertIn("--provider", c["argv"], self.diag())
+            if "tasks/001" in " ".join(c["argv"]):
+                self.assertNotIn("--provider", c["argv"], self.diag())
