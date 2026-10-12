@@ -4,7 +4,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 
 | # | Title | Status | Depends on | Parallel with |
 |---|---|---|---|---|
-| 001 | Create the project scaffold | pending | - | - |
+| 001 | Create the project scaffold | done | - | - |
 | 002 | Create shared types and constants | pending | 001 | - |
 | 003 | Implement the fixed-step loop | pending | 002 | 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017 |
 | 004 | Project lon/lat coordinates to local metres | pending | 002 | 003, 009, 010, 011, 012, 014, 015, 016 |

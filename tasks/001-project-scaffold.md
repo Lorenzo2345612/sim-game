@@ -1,6 +1,6 @@
 # 001 — Create the project scaffold
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: nothing
 Roles: coder, reviewer
