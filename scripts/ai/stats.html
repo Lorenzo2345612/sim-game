@@ -4,217 +4,192 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>sim-game · token stats</title>
+<link rel="stylesheet" href="/ui.css">
 <style>
-  :root { --bg:#14161b; --panel:#1b1e25; --line:#2c313b; --text:#dde0e7; --dim:#9aa1b1; --ok:#4cc38a; --run:#5aa9ff; --warn:#f2b84b; --bad:#ef6b6b;
-          --in:#8ab4f8; --out:#f6a04d; --cr:#3fb68b; --cw:#b48ead; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 system-ui, sans-serif; }
-  a { color: var(--run); }
-  :focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
-  header { display: flex; align-items: center; gap: 14px; padding: 10px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); z-index: 5; }
-  h1 { font-size: 16px; margin: 0; }
-  header .sp { flex: 1; }
-  label { color: var(--dim); display: inline-flex; gap: 6px; align-items: center; }
-  select, button { background: #232831; color: var(--text); border: 1px solid #3a404c; border-radius: 6px; padding: 4px 8px; font: inherit; }
-  select { cursor: pointer; } button { cursor: pointer; } button:hover { background: #2c323d; }
-  main { padding: 14px 18px 30px; display: grid; gap: 14px; max-width: 1500px; margin: 0 auto; }
-  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .tile, section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
-  .tile .v { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .tile .l { color: var(--dim); font-size: 12px; }
-  .tile .s { color: var(--dim); font-size: 11px; min-height: 16px; }
-  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin: 0 0 8px; display: flex; gap: 10px; align-items: center; }
-  h2 .note { text-transform: none; letter-spacing: 0; font-weight: 400; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .grid3 { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; }
-  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  td.n, th.n { text-align: right; }
-  td.t { max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
-  th[data-k] { cursor: pointer; user-select: none; color: var(--dim); font-weight: 600; }
-  th[data-k]:hover, th[data-k]:focus-visible { color: var(--text); }
-  th .arr { display: inline-block; width: 10px; }
-  .scroll { overflow: auto; max-height: 520px; }
-  thead th { position: sticky; top: 0; background: var(--panel); }
-  .legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--dim); font-size: 12px; margin-bottom: 6px; }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-  svg { display: block; width: 100%; height: auto; }
-  svg text { fill: var(--dim); font: 11px system-ui, sans-serif; }
-  svg text.v { fill: var(--text); }
-  svg rect[data-tip]:hover { filter: brightness(1.25); }
-  #tip { position: fixed; pointer-events: none; background: #0d0f13; border: 1px solid #454c5a; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: none; z-index: 20; white-space: pre; box-shadow: 0 4px 14px #0008; }
-  .meter { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; width: 140px; display: inline-block; vertical-align: middle; }
-  .meter > i { display: block; height: 100%; background: var(--ok); }
-  .meter.low > i { background: var(--bad); } .meter.mid > i { background: var(--warn); }
-  .dim { color: var(--dim); }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--s5); }
+  .tile .l { color: var(--faint); font-size: 12px; }
+  .tile .v { font-size: 28px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; }
+  .tile .s { color: var(--muted); font-size: 12px; margin-top: 2px; min-height: 18px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); }
+  .g3 { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: var(--s5); }
+  .filters { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
+  th[data-k] { cursor: pointer; user-select: none; } th[data-k]:hover { color: var(--text); }
+  th[aria-sort=ascending], th[aria-sort=descending] { color: var(--text); }
+  th .arr { display: inline-block; width: 12px; color: var(--accent); }
   .best { color: var(--ok); font-weight: 600; }
-  @media (max-width: 1250px) { .tiles { grid-template-columns: repeat(3, 1fr); } .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .ptag { display: inline-flex; align-items: center; gap: 6px; }
+  @media (max-width: 1250px) { .tiles { grid-template-columns: repeat(3, 1fr); } .g2, .g3 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<header>
+<header class="topbar">
   <h1>Token stats</h1>
-  <a href="/">&larr; Pipeline</a>
+  <nav class="nav"><a href="/">Pipeline</a><a class="on" href="/stats">Token stats</a></nav>
   <span class="sp"></span>
-  <label>Milestone <select id="fMilestone"></select></label>
-  <label>Provider <select id="fProvider"></select></label>
-  <label>Role <select id="fRole"></select></label>
-  <label><input type="checkbox" id="fCache"> hide cache</label>
-  <span class="dim" id="updated"></span>
-</header>
-<main>
-  <div class="tiles" id="tiles"></div>
-  <div class="grid3">
-    <section><h2>Tokens per model</h2><div class="legend" id="legend"></div><div id="cModel"></div></section>
-    <section><h2>Per role</h2><div id="cRole"></div></section>
-    <section><h2>Per milestone</h2><div id="cMile"></div></section>
+  <div class="filters">
+    <label>Milestone <select id="fMilestone"></select></label>
+    <label>Provider <select id="fProvider"></select></label>
+    <label>Role <select id="fRole"></select></label>
+    <label><input type="checkbox" id="fCache"> hide cache</label>
+    <span class="faint" id="updated" style="font-size:12px"></span>
   </div>
-  <div class="grid2">
-    <section><h2>Daily tokens per provider</h2><div class="legend" id="legendP"></div><div id="cTime"></div></section>
-    <div style="display:grid;gap:14px;align-content:start">
-      <section><h2>Coder A/B <span class="note dim">coder + fixer runs per task</span></h2><div id="ab"></div></section>
-      <section><h2>Quota windows <span class="note dim">cached 60 s</span></h2><div id="quota"></div></section>
+</header>
+<main class="page">
+  <section class="card"><div class="tiles" id="tiles"></div></section>
+  <section class="card">
+    <h2>Tokens <span class="note">by model, provider, role and milestone</span><span class="sp"></span></h2>
+    <div class="legend" id="legend"></div>
+    <div class="g2" style="row-gap:var(--s5)">
+      <div><h2 class="note">Model</h2><div id="cModel"></div></div>
+      <div><h2 class="note">Provider</h2><div id="cProv"></div></div>
+      <div><h2 class="note">Role</h2><div id="cRole"></div></div>
+      <div><h2 class="note">Milestone</h2><div id="cMile"></div></div>
+    </div>
+  </section>
+  <div class="g2">
+    <section class="card"><h2>Daily tokens <span class="note">by provider</span></h2><div class="legend" id="legendP"></div><div id="cTime"></div></section>
+    <div class="stack">
+      <section class="card"><h2>Coder A/B <span class="note">coder and fixer runs per task</span></h2><div id="ab"></div></section>
+      <section class="card"><h2>Quota windows <span class="note">cached 60 s</span></h2><div id="quota"></div></section>
     </div>
   </div>
-  <section><h2>Per task <span class="note dim">click a header to sort</span></h2><div class="scroll"><table id="tasks"></table></div></section>
-  <section><h2>Per model <span class="note dim">prices are pay-as-you-go estimates, USD per 1M tokens (in / cached / out)</span></h2><div class="scroll"><table id="models"></table></div></section>
+  <section class="card"><h2>Per task <span class="note">click a header to sort, click a row for who worked on it</span></h2><div class="scroll"><table id="tasks"></table></div></section>
+  <section class="card"><h2>Per model <span class="note">pay-as-you-go estimates, USD per 1M tokens (in / cached / out)</span></h2><div class="scroll"><table id="models"></table></div></section>
 </main>
-<div id="tip"></div>
+<script src="/ui.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const KINDS = [['input','Input','var(--in)'],['output','Output','var(--out)'],['cacheRead','Cache read','var(--cr)'],['cacheWrite','Cache write','var(--cw)']];
-const PROV = {glm:'#56B4E9', kimi:'#E69F00', qwen:'#009E73', mimo:'#CC79A7', deepseek:'#F0E442'};
-const provColor = p => PROV[p] || '#bbbbbb';
-const fmt = n => n >= 1e9 ? (n/1e9).toFixed(2)+' B' : n >= 1e6 ? (n/1e6).toFixed(2)+' M' : n >= 1e3 ? (n/1e3).toFixed(1)+' k' : String(Math.round(n));
-const usd = n => '$' + (n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n.toFixed(3));
+const KINDS = [['input','Input','var(--c-input)'],['output','Output','var(--c-output)'],['cacheRead','Cache read','var(--c-cacheR)'],['cacheWrite','Cache write','var(--c-cacheW)']];
 let D = null, sort = {k: 'total', dir: -1};
+const empty = (t, s) => `<div class="empty"><b>${t}</b>${s || ''}</div>`;
 
 function query() {
   const q = new URLSearchParams();
   for (const [id, k] of [['fMilestone','milestone'],['fProvider','provider'],['fRole','role']]) if ($(id).value) q.set(k, $(id).value);
   return q.toString();
 }
-
-function fillSelect(id, label, items) {
+function fillSelect(id, items) {
   const el = $(id), cur = el.value;
   const html = `<option value="">all</option>` + items.map(i => `<option>${esc(i)}</option>`).join('');
   if (el.dataset.sig !== html) { el.innerHTML = html; el.dataset.sig = html; el.value = cur; }
 }
-
-function tip(e) {
-  const t = e.target.closest && e.target.closest('[data-tip]'), el = $('tip');
-  if (!t) { el.style.display = 'none'; return; }
-  el.textContent = t.dataset.tip; el.style.display = 'block';
-  const w = el.offsetWidth;
-  el.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px';
-  el.style.top = (e.clientY + 14) + 'px';
-}
-document.addEventListener('mousemove', tip);
-document.addEventListener('mouseleave', () => $('tip').style.display = 'none');
-
-function tile(label, value, sub) { return `<div class="tile"><div class="l">${label}</div><div class="v">${value}</div><div class="s">${sub || ''}</div></div>`; }
+const tile = (l, v, s) => `<div class="tile"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s || ''}</div></div>`;
 
 function renderTiles() {
   const t = D.totals, share = t.total ? 100 * (t.cacheRead + t.cacheWrite) / t.total : 0;
   $('tiles').innerHTML =
-    tile('Total tokens', fmt(t.total), `${fmt(t.input)} in · ${fmt(t.cacheRead + t.cacheWrite)} cache`) +
-    tile('Output tokens', fmt(t.output), t.total ? (100 * t.output / t.total).toFixed(1) + '% of total' : '') +
-    tile('Cache share', share.toFixed(1) + '%', 'read + write of total') +
+    tile('Total tokens', fmtN(t.total), `${fmtN(t.input)} in · ${fmtN(t.cacheRead + t.cacheWrite)} cache`) +
+    tile('Output tokens', fmtN(t.output), t.total ? (100 * t.output / t.total).toFixed(1) + '% of total' : '') +
+    tile('Cache share', share.toFixed(1) + '%', 'read + write') +
     tile('Runs', t.runs, `${t.tasks} tasks · ${t.turns} API turns`) +
-    tile('Est. pay-as-you-go', usd(t.costUsd), 'estimate' + (D.unpricedModels.length ? ' · no price: ' + esc(D.unpricedModels.join(', ')) : ''));
+    tile('Est. cost', usd(t.costUsd), 'pay-as-you-go estimate' + (D.unpricedModels.length ? ' · no price: ' + esc(D.unpricedModels.join(', ')) : ''));
 }
+const legend = (el, items) => $(el).innerHTML = items.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('');
 
-function legend(el, items) {
-  $(el).innerHTML = items.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('');
-}
+const fmtA = n => fmtN(n).replace('.00', '').replace(/(\.\d)0/, '$1');
+function niceMax(v) { const p = 10 ** Math.floor(Math.log10(v || 1)); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return 10 * p; }
 
-// Horizontal stacked bars: groups = {name: stats}
+// Horizontal stacked bars with axis; groups = {name: stats}
 function bars(groups, opts = {}) {
   const hide = $('fCache').checked, names = Object.keys(groups);
-  if (!names.length) return '<span class="dim">no data</span>';
+  if (!names.length) return empty('No data', 'Nothing matches the current filters.');
   const val = g => hide ? g.input + g.output : g.total;
-  const max = Math.max(1, ...names.map(n => val(groups[n]))), W = opts.W || 640, L = opts.label || 120, R = 60, H = 22, G = 8;
-  const bw = W - L - R;
-  let y = 0, out = `<svg viewBox="0 0 ${W} ${names.length * (H + G)}" role="img" aria-label="${esc(opts.aria || 'tokens')}">`;
+  const max = niceMax(Math.max(1, ...names.map(n => val(groups[n])))), W = 520, L = opts.label || 120, R = 56, H = 18, G = 10, A = 22;
+  const bw = W - L - R, h = names.length * (H + G);
+  let out = `<svg viewBox="0 0 ${W} ${h + A}" role="img" aria-label="${esc(opts.aria || 'tokens')}">`;
+  for (let i = 0; i <= 4; i++) {
+    const x = L + bw * i / 4;
+    out += `<line class="grid" x1="${x}" x2="${x}" y1="0" y2="${h}"/><text x="${x}" y="${h + 15}" text-anchor="middle">${fmtA(max * i / 4)}</text>`;
+  }
+  let y = G / 2;
   for (const n of names) {
     const g = groups[n]; let x = L;
-    out += `<text x="${L - 8}" y="${y + 15}" text-anchor="end">${esc(n.length > 18 ? n.slice(0, 17) + '…' : n)}</text>`;
+    out += `<text class="v" x="${L - 10}" y="${y + 13}" text-anchor="end">${esc(n.length > 20 ? n.slice(0, 19) + '…' : n)}</text>`;
     for (const [k, label, color] of KINDS) {
       if (hide && k.startsWith('cache')) continue;
       const w = bw * g[k] / max; if (w <= 0) continue;
-      out += `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(w, 1).toFixed(1)}" height="${H}" fill="${color}" data-tip="${esc(n)}\n${label}: ${g[k].toLocaleString()} (${(100 * g[k] / Math.max(g.total, 1)).toFixed(1)}%)\nruns ${g.runs} · tasks ${g.tasks} · est. ${usd(g.costUsd)}"/>`;
+      out += `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(w, 1).toFixed(1)}" height="${H}" style="fill:${color}" data-tip="${esc(n)}\n${label}: ${g[k].toLocaleString()} (${(100 * g[k] / Math.max(g.total, 1)).toFixed(1)}%)\nruns ${g.runs} · tasks ${g.tasks} · est. ${usd(g.costUsd)}"/>`;
       x += w;
     }
-    out += `<text class="v" x="${x + 6}" y="${y + 15}">${fmt(val(g))}</text>`;
+    out += `<text class="v" x="${x + 6}" y="${y + 13}">${fmtN(val(g))}</text>`;
     y += H + G;
   }
   return out + '</svg>';
 }
 
-// Stacked columns per day by provider
 function timeline() {
   const tl = D.timeline;
-  if (!tl.length) return '<span class="dim">no data</span>';
+  if (!tl.length) { $('legendP').innerHTML = ''; return empty('No data', 'Nothing matches the current filters.'); }
   const provs = [...new Set(tl.flatMap(d => Object.keys(d.byProvider)))].sort();
-  legend('legendP', provs.map(p => [p, provColor(p)]));
-  const W = 640, H = 240, L = 46, B = 28, T = 8, n = tl.length, slot = (W - L - 6) / n, bw = Math.min(46, slot * 0.7);
-  const max = Math.max(...tl.map(d => d.total), 1);
+  legend('legendP', provs.map(p => [p, provVar(p)]));
+  const W = 620, H = 260, L = 52, B = 30, T = 10, n = tl.length, slot = (W - L) / n, bw = Math.min(48, slot * 0.64);
+  const max = niceMax(Math.max(...tl.map(d => d.total), 1));
   let out = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="daily tokens per provider">`;
   for (let i = 0; i <= 4; i++) {
     const y = T + (H - B - T) * (1 - i / 4);
-    out += `<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="#2c313b"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${fmt(max * i / 4)}</text>`;
+    out += `<line class="grid" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text x="${L - 8}" y="${y + 4}" text-anchor="end">${fmtA(max * i / 4)}</text>`;
   }
+  out += `<text x="${L}" y="${H - 2}">date</text><text x="${W}" y="${H - 2}" text-anchor="end">tokens per day</text>`;
   tl.forEach((d, i) => {
     const x = L + slot * i + (slot - bw) / 2; let y = H - B;
     for (const p of provs) {
       const v = d.byProvider[p] || 0, h = (H - B - T) * v / max; if (h <= 0) continue;
       y -= h;
-      out += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" fill="${provColor(p)}" data-tip="${d.day}\n${p}: ${v.toLocaleString()}\nday total: ${d.total.toLocaleString()}"/>`;
+      out += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" rx="2" style="fill:${provVar(p)}" data-tip="${d.day}\n${p}: ${v.toLocaleString()}\nday total: ${d.total.toLocaleString()}"/>`;
     }
-    if (n <= 14 || i % Math.ceil(n / 12) === 0) out += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle">${d.day.slice(5)}</text>`;
+    if (n <= 14 || i % Math.ceil(n / 12) === 0) out += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - B + 15}" text-anchor="middle">${d.day.slice(5)}</text>`;
   });
   return out + '</svg>';
 }
 
 function renderAB() {
   const ab = D.abCoder, names = Object.keys(ab);
-  if (!names.length) { $('ab').innerHTML = '<span class="dim">no coder runs</span>'; return; }
+  if (!names.length) { $('ab').innerHTML = empty('No coder runs yet'); return; }
   const rows = [['Tasks', 'tasks', v => v, 0], ['Avg fix rounds', 'avgRounds', v => v == null ? '–' : v.toFixed(2), -1],
-    ['Avg tokens / task', 'avgTokens', fmt, -1], ['Avg minutes / task', 'avgMinutes', v => v.toFixed(1), -1],
+    ['Avg tokens / task', 'avgTokens', fmtN, -1], ['Avg minutes / task', 'avgMinutes', v => v.toFixed(1), -1],
     ['Approved without fixes', 'approvedFirstPassPct', v => v == null ? '–' : v.toFixed(0) + '%', 1]];
-  $('ab').innerHTML = '<table><thead><tr><th></th>' + names.map(n => `<th class="n"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${provColor(n)};margin-right:5px"></i>${esc(n)}</th>`).join('') + '</tr></thead><tbody>' +
+  $('ab').innerHTML = '<table><thead><tr><th></th>' + names.map(n => `<th class="n"><span class="ptag">${provDot(n)}${esc(n)}</span></th>`).join('') + '</tr></thead><tbody>' +
     rows.map(([label, k, f, better]) => {
       const vals = names.map(n => ab[n][k]), ok = vals.filter(v => v != null);
       const best = better && ok.length > 1 && new Set(ok).size > 1 ? (better > 0 ? Math.max(...ok) : Math.min(...ok)) : null;
-      return `<tr><td>${label}</td>` + names.map(n => `<td class="n ${best !== null && ab[n][k] === best ? 'best' : ''}">${f(ab[n][k])}</td>`).join('') + '</tr>';
+      return `<tr><td class="muted">${label}</td>` + names.map(n => `<td class="n ${best !== null && ab[n][k] === best ? 'best' : ''}">${f(ab[n][k])}</td>`).join('') + '</tr>';
     }).join('') + '</tbody></table>';
 }
 
 function renderQuota() {
   const rows = Object.entries(D.quota || {}).flatMap(([p, ws]) => Array.isArray(ws) ? ws.map(w => {
     const left = w.limit ? w.remaining / w.limit : 1, c = left < .1 ? 'low' : left < .3 ? 'mid' : '';
-    return `<tr><td>${esc(p)}</td><td>${esc(w.window)}</td><td><span class="meter ${c}"><i style="width:${(100 * (1 - left)).toFixed(0)}%"></i></span></td>
-      <td class="n">${w.used}/${w.limit}${w.unit === 'percent' ? ' %' : ''}</td><td class="dim">resets ${esc((w.resetAt || '').slice(5, 16).replace('T', ' '))} UTC</td></tr>`;
-  }) : [`<tr><td>${esc(p)}</td><td colspan="4" class="dim">${ws && ws.unsupported ? 'no quota API' : esc((ws && ws.error) || 'n/a')}</td></tr>`]);
-  $('quota').innerHTML = rows.length ? `<table><tbody>${rows.join('')}</tbody></table>` : '<span class="dim">n/a</span>';
+    return `<tr><td><span class="ptag">${provDot(p)}${esc(p)}</span></td><td class="muted">${esc(w.window)}</td><td style="width:120px"><div class="bar ${c}"><i style="width:${(100 * (1 - left)).toFixed(0)}%"></i></div></td>
+      <td class="n">${w.used}/${w.limit}${w.unit === 'percent' ? ' %' : ''}</td><td class="faint">resets ${fmtT(w.resetAt)}</td></tr>`;
+  }) : [`<tr><td><span class="ptag">${provDot(p)}${esc(p)}</span></td><td colspan="4" class="faint">${ws && ws.unsupported ? 'no quota API' : esc((ws && ws.error) || 'n/a')}</td></tr>`]);
+  $('quota').innerHTML = rows.length ? `<table><tbody>${rows.join('')}</tbody></table>` : empty('No quota data');
 }
 
 const COLS = [['task','Task',0],['title','Title',0],['milestone','Milestone',0],['coderProvider','Coder',0],['status','Status',0],['fixRounds','Fix',1],
-  ['runs','Runs',1],['turns','Turns',1],['input','Input',1],['output','Output',1],['cacheRead','Cache R',1],['cacheWrite','Cache W',1],['total','Total',1],['seconds','Min',1],['costUsd','Est. $',1]];
+  ['runs','Runs',1],['input','Input',1],['output','Output',1],['cache','Cache',1],['total','Total',1],['seconds','Time',1],['costUsd','Est. $',1]];
 
+function cell(k, r) {
+  const v = r[k];
+  if (k === 'cache') return fmtN(r.cacheRead + r.cacheWrite);
+  if (k === 'seconds') return dur(v);
+  if (k === 'costUsd') return usd(v);
+  if (['input','output','cacheRead','cacheWrite','total'].includes(k)) return fmtN(v);
+  if (k === 'status') return statusChip(v).replace(/^<span/, '<span');
+  if (k === 'task') return r.task === 'plan' ? 'plan' : esc(v);
+  if (k === 'coderProvider') return v ? `<span class="ptag">${v.split('+').map(provDot).join('')}${esc(v)}</span>` : '<span class="faint">–</span>';
+  return esc(v ?? '');
+}
 function renderTasks() {
   const rows = D.byTask.slice().sort((a, b) => {
     const x = a[sort.k], y = b[sort.k];
     return sort.dir * ((x == null ? -1 : x) > (y == null ? -1 : y) ? 1 : (x == null ? -1 : x) < (y == null ? -1 : y) ? -1 : 0);
   });
-  const th = COLS.map(([k, l, n]) => `<th class="${n ? 'n' : ''}" data-k="${k}" tabindex="0" role="columnheader" aria-sort="${sort.k === k ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'}">${l}<span class="arr">${sort.k === k ? (sort.dir > 0 ? '▲' : '▼') : ''}</span></th>`).join('');
-  const f = (k, v) => k === 'seconds' ? (v / 60).toFixed(1) : k === 'costUsd' ? usd(v) : ['input','output','cacheRead','cacheWrite','total'].includes(k) ? fmt(v) : (v ?? '');
-  $('tasks').innerHTML = `<thead><tr>${th}</tr></thead><tbody>` + rows.map(r => '<tr>' + COLS.map(([k, , n]) =>
-    `<td class="${n ? 'n' : k === 'title' ? 't' : ''}">${esc(f(k, r[k]))}</td>`).join('') + '</tr>').join('') + '</tbody>';
+  if (!rows.length) { $('tasks').innerHTML = `<tbody><tr><td>${empty('No tasks match', 'Try clearing a filter.')}</td></tr></tbody>`; return; }
+  const th = COLS.map(([k, l, n]) => `<th class="${n ? 'n' : ''}" data-k="${k}" tabindex="0" aria-sort="${sort.k === k ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'}">${l}<span class="arr">${sort.k === k ? (sort.dir > 0 ? '▲' : '▼') : ''}</span></th>`).join('');
+  $('tasks').innerHTML = `<thead><tr>${th}</tr></thead><tbody>` + rows.map(r => `<tr ${r.task === 'plan' ? '' : `class="click" data-task="${esc(r.task)}" tabindex="0"`}>` + COLS.map(([k, , n]) =>
+    `<td class="${n ? 'n' : k === 'title' ? 'clip' : ''} ${k === 'task' ? 'muted' : ''}">${cell(k, r)}</td>`).join('') + '</tr>').join('') + '</tbody>';
 }
 $('tasks').addEventListener('click', e => { const h = e.target.closest('th[data-k]'); if (h) setSort(h.dataset.k); });
-$('tasks').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const h = e.target.closest('th[data-k]'); if (h) { e.preventDefault(); setSort(h.dataset.k); h.focus(); } } });
+$('tasks').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const h = e.target.closest('th[data-k]'); if (h) { e.preventDefault(); setSort(h.dataset.k); } } });
 function setSort(k) {
   sort = {k, dir: sort.k === k ? -sort.dir : (['task','title','milestone','coderProvider','status'].includes(k) ? 1 : -1)};
   renderTasks();
@@ -223,17 +198,19 @@ function setSort(k) {
 
 function renderModels() {
   const rows = Object.entries(D.byModel);
-  $('models').innerHTML = '<thead><tr><th>Model</th><th class="n">Price in/cached/out</th><th class="n">Runs</th><th class="n">Turns</th><th class="n">Input</th><th class="n">Output</th><th class="n">Cache R</th><th class="n">Cache W</th><th class="n">Total</th><th class="n">Avg/run</th><th class="n">Min</th><th class="n">Est. $</th></tr></thead><tbody>' +
-    rows.map(([m, g]) => { const p = D.prices[m];
-      return `<tr><td>${esc(m)}</td><td class="n dim">${p ? `${p.input} / ${p.cached} / ${p.output}` : 'unknown'}</td><td class="n">${g.runs}</td><td class="n">${g.turns}</td><td class="n">${fmt(g.input)}</td><td class="n">${fmt(g.output)}</td><td class="n">${fmt(g.cacheRead)}</td><td class="n">${fmt(g.cacheWrite)}</td><td class="n">${fmt(g.total)}</td><td class="n">${fmt(g.avgPerRun.total)}</td><td class="n">${(g.seconds / 60).toFixed(1)}</td><td class="n">${usd(g.costUsd)}</td></tr>`; }).join('') + '</tbody>';
+  if (!rows.length) { $('models').innerHTML = ''; return; }
+  $('models').innerHTML = '<thead><tr><th>Model</th><th class="n">Price in / cached / out</th><th class="n">Runs</th><th class="n">Turns</th><th class="n">Input</th><th class="n">Output</th><th class="n">Cache R</th><th class="n">Cache W</th><th class="n">Total</th><th class="n">Avg / run</th><th class="n">Time</th><th class="n">Est. $</th></tr></thead><tbody>' +
+    rows.map(([m, g]) => { const p = D.prices[m] || D.prices[Object.keys(D.prices).find(k => m.startsWith(k))];
+      return `<tr><td>${esc(m)}</td><td class="n faint">${p ? `${p.input} / ${p.cached} / ${p.output}` : 'unknown'}</td><td class="n">${g.runs}</td><td class="n">${g.turns}</td><td class="n">${fmtN(g.input)}</td><td class="n">${fmtN(g.output)}</td><td class="n">${fmtN(g.cacheRead)}</td><td class="n">${fmtN(g.cacheWrite)}</td><td class="n">${fmtN(g.total)}</td><td class="n">${fmtN(g.avgPerRun.total)}</td><td class="n">${dur(Math.round(g.seconds))}</td><td class="n">${usd(g.costUsd)}</td></tr>`; }).join('') + '</tbody>';
 }
 
 function render() {
   legend('legend', KINDS.filter(k => !($('fCache').checked && k[0].startsWith('cache'))).map(k => [k[1], k[2]]));
   renderTiles();
-  $('cModel').innerHTML = bars(D.byModel, {label: 130, W: 560, aria: 'tokens per model'});
-  $('cRole').innerHTML = bars(D.byRole, {label: 80, W: 400, aria: 'tokens per role'});
-  $('cMile').innerHTML = bars(D.byMilestone, {label: 60, W: 400, aria: 'tokens per milestone'});
+  $('cModel').innerHTML = bars(D.byModel, {label: 130, aria: 'tokens per model'});
+  $('cProv').innerHTML = bars(D.byProvider, {label: 90, aria: 'tokens per provider'});
+  $('cRole').innerHTML = bars(D.byRole, {label: 110, aria: 'tokens per role'});
+  $('cMile').innerHTML = bars(D.byMilestone, {label: 90, aria: 'tokens per milestone'});
   $('cTime').innerHTML = timeline();
   renderAB(); renderQuota(); renderTasks(); renderModels();
 }
@@ -241,11 +218,11 @@ function render() {
 async function load() {
   try {
     D = await (await fetch('/api/stats?' + query())).json();
-    fillSelect('fMilestone', 'milestone', D.options.milestones);
-    fillSelect('fProvider', 'provider', D.options.providers);
-    fillSelect('fRole', 'role', D.options.roles);
+    fillSelect('fMilestone', D.options.milestones);
+    fillSelect('fProvider', D.options.providers);
+    fillSelect('fRole', D.options.roles);
     render();
-    $('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+    $('updated').textContent = 'updated ' + fmtT(new Date());
   } catch (e) { $('updated').textContent = 'offline'; }
 }
 for (const id of ['fMilestone', 'fProvider', 'fRole']) $(id).addEventListener('change', load);

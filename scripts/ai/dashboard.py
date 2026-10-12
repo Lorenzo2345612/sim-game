@@ -20,6 +20,7 @@ import orchestrator as orch  # noqa: E402  (respects ORCH_ROOT)
 import metrics  # noqa: E402
 import quota  # noqa: E402
 import re  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
 import threading  # noqa: E402
 import time  # noqa: E402
 from urllib.parse import parse_qs, urlparse  # noqa: E402
@@ -27,6 +28,7 @@ from urllib.parse import parse_qs, urlparse  # noqa: E402
 ROOT = orch.ROOT
 HTML = Path(__file__).resolve().parent / "dashboard.html"
 STATS_HTML = Path(__file__).resolve().parent / "stats.html"
+ASSETS = {"/ui.css": ("ui.css", "text/css; charset=utf-8"), "/ui.js": ("ui.js", "text/javascript; charset=utf-8")}
 ORCH_CMD = shlex.split(os.environ.get("DASH_ORCH_CMD") or "python3 scripts/ai/orchestrator.py")
 LOG = ROOT / ".ai/orchestrator-run.log"
 QUOTA = {}  # provider -> windows, refreshed every 60 s by refresh_quota()
@@ -62,11 +64,20 @@ def workers():
     return out
 
 
+def all_runs():
+    metrics.RUNS = ROOT / ".ai/runs"
+    runs = metrics.load_runs()
+    try:
+        runs += metrics.load_claude_runs(metrics.claude_dirs(ROOT) if not os.environ.get("CLAUDE_PROJECTS_DIR") else None)
+    except Exception:  # best-effort
+        pass
+    return runs
+
+
 def task_tokens():
     totals = defaultdict(int)
-    metrics.RUNS = ROOT / ".ai/runs"
     try:
-        for r in metrics.load_runs():
+        for r in all_runs():
             totals[r["task"]] += r["total"]
     except Exception:  # best-effort
         pass
@@ -86,9 +97,10 @@ def status():
     if orch.EVENTS.exists():
         for line in orch.EVENTS.read_text().splitlines()[-100:]:
             try:
-                events.append(json.loads(line))
+                e = json.loads(line)
             except ValueError:
-                pass
+                continue
+            events.append({**e, "ts": utc_iso(e["ts"]) if e.get("ts") else ""})
     decisions = sorted(p.name for p in orch.DECISIONS.glob("*.md")
                        if not p.name.endswith(".resolved.md")) if orch.DECISIONS.exists() else []
     tokens = defaultdict(lambda: {"tasks": set(), "total": 0})
@@ -99,7 +111,7 @@ def status():
                 tokens[r["provider"]]["total"] += r["total"]
     except Exception:  # metrics are best-effort
         pass
-    commits = orch.git("log", "--format=%h %ad %s", "--date=format:%m-%d %H:%M", "-10").stdout.splitlines()
+    commits = orch.git("log", "--format=%h %cI %s", "-10").stdout.splitlines()
     return {
         "tasks": rows,
         "done": sum(r["status"] == "done" for r in rows),
@@ -111,7 +123,8 @@ def status():
         "decisions": decisions,
         "tokens": {k: {"tasks": len(v["tasks"]), "total": v["total"]} for k, v in tokens.items()},
         "commits": commits,
-        "milestones": [{**m, "built": (ROOT / "builds" / m["id"] / "index.html").exists()}
+        "milestones": [{**m, "built": (ROOT / "builds" / m["id"] / "index.html").exists(),
+                        **({"builtAt": utc_iso(m["builtAt"])} if m.get("builtAt") else {})}
                        for m in orch.read_milestones()],
         "orchestratorRunning": bool(orchestrator_pids()),
         "worktrees": orch.list_worktrees(),
@@ -133,15 +146,28 @@ PRICES = {
     "deepseek-v4.1-flash": (0.15, 0.019, 0.47),
     "mimo-v2.6-flash": (0.145, 0.0145, 0.29),
     "mimo-v2.6-pro": (0.435, 0.0435, 0.87),
+    # ESTIMATES (Anthropic list prices as best known); cache writes billed at CLAUDE_WRITE_MULT x input.
+    "claude-opus-5-5": (5.00, 0.50, 25.00),
+    "claude-sonnet-5-5": (3.00, 0.30, 15.00),
+    "claude-haiku-5-5": (1.00, 0.10, 5.00),
 }
+CLAUDE_WRITE_MULT = 1.25
+
+
+def price_of(model):
+    p = PRICES.get(model)
+    if p or not model.startswith("claude-"):
+        return p
+    return next((v for k, v in PRICES.items() if k.startswith("claude-") and model.startswith(k)), None)
 SUM = ("runs", "turns", "input", "output", "cacheRead", "cacheWrite", "total", "seconds", "costUsd")
 
 
 def run_cost(r):
-    p = PRICES.get(r["model"])
+    p = price_of(r["model"])
     if not p:
         return 0.0
-    return (r["input"] * p[0] + r["cache_write"] * p[0] + r["cache_read"] * p[1] + r["output"] * p[2]) / 1e6
+    wm = CLAUDE_WRITE_MULT if r["provider"] == "claude" else 1.0
+    return (r["input"] * p[0] + r["cache_write"] * p[0] * wm + r["cache_read"] * p[1] + r["output"] * p[2]) / 1e6
 
 
 def blank():
@@ -158,7 +184,8 @@ def add(g, r):
     g["total"] += r["total"]
     g["seconds"] += r["seconds"]
     g["costUsd"] += run_cost(r)
-    g["tasks"].add(r["task"])
+    if r["task"] != metrics.PLANNING:
+        g["tasks"].add(r["task"])
 
 
 def finish(g):
@@ -207,7 +234,7 @@ def compute_stats(runs, tasks, milestones, state, assignments, flt=None):
     task_rows = []
     for num, g in group(sel, lambda r: r["task"]).items():
         st = state.get(num, {})
-        task_rows.append({"task": num, "title": info.get(num, {}).get("title", ""),
+        task_rows.append({"task": num, "title": info.get(num, {}).get("title", "") or ("Planning (no task)" if num == metrics.PLANNING else ""),
                           "status": info.get(num, {}).get("status", ""), "milestone": mile_of.get(num, ""),
                           "coderProvider": coder_of(num), "fixRounds": st.get("fixRounds"),
                           "byRole": dict(by_role_task[num]), **{k: v for k, v in g.items() if k != "tasks"}})
@@ -241,7 +268,7 @@ def compute_stats(runs, tasks, milestones, state, assignments, flt=None):
         "abCoder": ab,
         "timeline": [{"day": d, "byProvider": dict(v), "total": sum(v.values())} for d, v in sorted(days.items())],
         "prices": {k: {"input": v[0], "cached": v[1], "output": v[2]} for k, v in PRICES.items()},
-        "unpricedModels": sorted({r["model"] for r in sel if r["model"] not in PRICES}),
+        "unpricedModels": sorted({r["model"] for r in sel if not price_of(r["model"])}),
         "estimate": True,
         "options": {"milestones": [m["id"] for m in milestones], "providers": sorted({r["provider"] for r in runs}),
                     "roles": sorted({r["role"] for r in runs})},
@@ -251,8 +278,59 @@ def compute_stats(runs, tasks, milestones, state, assignments, flt=None):
 def stats(flt=None):
     metrics.RUNS = ROOT / ".ai/runs"
     exp = orch.load_json(orch.EXPERIMENTS).get("coderAssignments", {})
-    return compute_stats(metrics.load_runs(), orch.read_tasks() if orch.REGISTRY.exists() else [],
+    return compute_stats(all_runs(), orch.read_tasks() if orch.REGISTRY.exists() else [],
                          orch.read_milestones(), orch.load_state(), exp, flt)
+
+
+def heavy_models():
+    cfg = orch.load_json(ROOT / "ai/providers.json")
+    roles = [*cfg.get("roles", {}).values(), cfg.get("fallback") or {}]
+    normal = {r.get("model") for r in roles}
+    return {r["heavyModel"] for r in roles if r.get("heavyModel")} - normal
+
+
+def utc_iso(naive):
+    """Server-local naive 'YYYY-MM-DDTHH:MM:SS' -> UTC ISO with Z."""
+    try:
+        dt = datetime.fromisoformat(naive).astimezone(timezone.utc)
+    except ValueError:
+        return naive
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def iso(stamp):
+    return utc_iso(f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]}T{stamp[9:11]}:{stamp[11:13]}:{stamp[13:15]}")
+
+
+def task_detail(num):
+    info = next((t for t in (orch.read_tasks() if orch.REGISTRY.exists() else []) if t["num"] == num), None)
+    runs = sorted((r for r in all_runs() if r["task"] == num), key=lambda r: r["stamp"])
+    if info is None and not runs:
+        return None
+    heavy, rounds, out, tot = heavy_models(), 0, [], blank()
+    for r in runs:
+        if r["provider"] != "claude" and (r["role"] == "fixer" or (r["role"] == "coder" and r["resumed"])):
+            rounds += 1
+        add(tot, r)
+        out.append({"start": iso(r["stamp"]), "role": r["role"], "provider": r["provider"], "model": r["model"],
+                    "heavy": r["model"] in heavy, "round": None if r["provider"] == "claude" else rounds,
+                    "resumed": r["resumed"], "seconds": r["seconds"], "turns": r["turns"], "input": r["input"],
+                    "output": r["output"], "cacheRead": r["cache_read"], "cacheWrite": r["cache_write"],
+                    "total": r["total"], "costUsd": round(run_cost(r), 4), "result": r.get("result", ""),
+                    "description": r.get("description", ""), "agent": r.get("agent", "")})
+    st = orch.load_state().get(num, {})
+    events = []
+    if orch.EVENTS.exists():
+        for line in orch.EVENTS.read_text().splitlines():
+            try:
+                e = json.loads(line)
+            except ValueError:
+                continue
+            if e.get("task") == num and e.get("event") != "step":
+                events.append({**e, "ts": utc_iso(e["ts"]) if e.get("ts") else ""})
+    return {"num": num, "title": (info or {}).get("title", ""), "status": (info or {}).get("status", ""),
+            "stage": st.get("stage", ""), "fixRounds": st.get("fixRounds", 0),
+            "totals": finish(tot), "runs": out, "events": events[-40:]}
 
 
 def quota_view():
@@ -344,6 +422,9 @@ class Handler(BaseHTTPRequestHandler):
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         if u.path == "/":
             self.send(200, HTML.read_bytes(), "text/html; charset=utf-8")
+        elif u.path in ASSETS:
+            name, ctype = ASSETS[u.path]
+            self.send(200, (HTML.parent / name).read_bytes(), ctype)
         elif u.path == "/stats":
             self.send(200, STATS_HTML.read_bytes(), "text/html; charset=utf-8")
         elif u.path == "/api/status":
@@ -352,6 +433,13 @@ class Handler(BaseHTTPRequestHandler):
             data = stats({k: q.get(k, "") for k in ("milestone", "provider", "role")})
             data["quota"] = quota_view()
             self.send(200, data)
+        elif u.path == "/api/task":
+            num = q.get("num", "")
+            if not (len(num) == 3 and num.isascii() and num.isdigit()):
+                self.send(400, {"error": "num must be 3 digits"})
+            else:
+                data = task_detail(num)
+                self.send(*((404, {"error": "unknown task"}) if data is None else (200, data)))
         elif u.path == "/api/decision":
             text = decision_text(q.get("file"))
             if text is None:

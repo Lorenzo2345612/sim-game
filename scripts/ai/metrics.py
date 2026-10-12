@@ -9,7 +9,9 @@ Usage:
 import argparse
 import csv
 import json
+import os
 import re
+from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -29,6 +31,23 @@ def task_status():
             if len(cells) > 4 and re.fullmatch(r"\d{3}", cells[1]):
                 status[cells[1]] = cells[3]
     return status
+
+
+def outcome(data):
+    """pass / fail / stalled / '' (unknown) for one worker result file."""
+    if data.get("timeout"):
+        return "stalled"
+    so = data.get("structured_output")
+    word = str(so.get("verdict") or so.get("status") or "") if isinstance(so, dict) else ""
+    if not word:
+        m = re.findall(r"(?:STATUS|VERDICT): (\w+)", str(data.get("result") or ""))
+        word = m[-1] if m else ""
+    word = word.upper()
+    if word in ("OK", "PASS", "READY", "APPROVED"):
+        return "pass"
+    if word in ("CHANGES", "BLOCKED", "PARTIAL", "FAIL", "REJECTED") or data.get("is_error"):
+        return "fail"
+    return "pass" if word else ""
 
 
 def load_runs():
@@ -55,8 +74,118 @@ def load_runs():
             "resumed": bool(resumed), "error": bool(data.get("is_error")) or bool(data.get("timeout")),
             "turns": data.get("num_turns", 0), "seconds": round((data.get("duration_ms") or 0) / 1000),
             **tok, "total": sum(tok.values()),
+            "result": outcome(data),
         })
     return runs
+
+
+# -- Claude Code transcripts (planner Opus + Sonnet subagents) ------------------------------
+
+TASK_REF = re.compile(r"tasks/(\d{3})")
+_PARSE_CACHE = {}  # path -> (mtime_ns, size, parsed)
+
+
+def claude_dirs(root=ROOT):
+    env = os.environ.get("CLAUDE_PROJECTS_DIR")
+    if env:
+        return [Path(env)]
+    base = Path.home() / ".claude/projects"
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(root))
+    return [d for d in sorted(base.glob(slug + "*")) if d.name == slug or d.name.startswith(slug + "--claude-worktrees")]
+
+
+def _text(content):
+    if isinstance(content, str):
+        return content
+    return " ".join(b.get("text", "") for b in content if isinstance(b, dict)) if isinstance(content, list) else ""
+
+
+def parse_transcript(path):
+    """Unique assistant messages (streamed duplicates collapsed by message id) + first user prompt."""
+    msgs, prompt, worker = {}, "", False
+    for line in path.read_text(errors="replace").splitlines():
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(d, dict):
+            continue
+        if ".claude-workers" in str(d.get("cwd") or ""):
+            worker = True
+        if d.get("type") == "user" and not prompt:
+            prompt = _text((d.get("message") or {}).get("content"))
+        if d.get("type") != "assistant":
+            continue
+        m, u = d.get("message") or {}, (d.get("message") or {}).get("usage") or {}
+        model = str(m.get("model") or "")
+        if not model.startswith("claude-") or not u:
+            continue
+        try:
+            ts = datetime.fromisoformat(str(d["timestamp"]).replace("Z", "+00:00"))
+        except (KeyError, ValueError):
+            continue
+        key = m.get("id") or d.get("requestId") or d.get("uuid")
+        cur = msgs.setdefault(key, {"ts": ts, "model": model, "input": 0, "output": 0, "cache_read": 0, "cache_write": 0})
+        cur["ts"] = min(cur["ts"], ts)
+        for k_, f in (("input", "input_tokens"), ("output", "output_tokens"),
+                      ("cache_read", "cache_read_input_tokens"), ("cache_write", "cache_creation_input_tokens")):
+            cur[k_] = max(cur[k_], int(u.get(f) or 0))
+    return {"msgs": sorted(msgs.values(), key=lambda x: x["ts"]), "prompt": prompt, "worker": worker}
+
+
+def _parsed(path):
+    st = path.stat()
+    hit = _PARSE_CACHE.get(str(path))
+    if hit and hit[0] == st.st_mtime_ns and hit[1] == st.st_size:
+        return hit[2]
+    data = parse_transcript(path)
+    _PARSE_CACHE[str(path)] = (st.st_mtime_ns, st.st_size, data)
+    return data
+
+
+def _runs_from(parsed, role, task, extra):
+    """One run per (transcript, local day, model) so long sessions land on the right day."""
+    groups = {}
+    for m in parsed["msgs"]:
+        local = m["ts"].astimezone()
+        groups.setdefault((local.strftime("%Y%m%d"), m["model"]), []).append((local, m))
+    runs = []
+    for (day, model), items in sorted(groups.items()):
+        tok = {k_: sum(m[k_] for _, m in items) for k_ in ("input", "output", "cache_read", "cache_write")}
+        secs = sum(min((b[0] - a[0]).total_seconds(), 120) for a, b in zip(items, items[1:]))
+        runs.append({"stamp": items[0][0].strftime("%Y%m%d-%H%M%S"), "task": task, "role": role, "provider": "claude",
+                     "model": model, "resumed": False, "error": False, "turns": len(items), "seconds": round(secs),
+                     **tok, "total": sum(tok.values()), "result": "", **extra})
+    return runs
+
+
+def load_claude_runs(dirs=None):
+    runs = []
+    for d in claude_dirs() if dirs is None else dirs:
+        if not d.is_dir():
+            continue
+        for path in sorted(d.glob("*.jsonl")) + sorted(d.glob("*/subagents/*.jsonl")):
+            try:
+                p = _parsed(path)
+            except OSError:
+                continue
+            if p["worker"] or not p["msgs"]:
+                continue
+            if path.parent.name == "subagents":
+                meta = {}
+                try:
+                    meta = json.loads(path.with_suffix(".meta.json").read_text())
+                except (OSError, ValueError):
+                    pass
+                refs = set(TASK_REF.findall(p["prompt"]))
+                runs += _runs_from(p, "planner-subagent", refs.pop() if len(refs) == 1 else PLANNING,
+                                   {"agent": meta.get("agentType", ""), "description": meta.get("description", "")})
+            else:
+                runs += _runs_from(p, "planner", PLANNING, {"agent": "", "description": ""})
+    return runs
+
+
+PLANNING = "plan"
 
 
 def k(n):

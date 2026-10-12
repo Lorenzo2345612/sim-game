@@ -4,102 +4,82 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>sim-game · pipeline</title>
+<link rel="stylesheet" href="/ui.css">
 <style>
-  :root { --bg:#14161b; --panel:#1b1e25; --line:#2c313b; --text:#dde0e7; --dim:#9aa1b1; --ok:#4cc38a; --run:#5aa9ff; --warn:#f2b84b; --bad:#ef6b6b; --chip:#262b34; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 system-ui, sans-serif; }
-  a { color: var(--run); }
-  :focus-visible { outline: 2px solid var(--run); outline-offset: 2px; }
-  .dim { color: var(--dim); }
-  .top { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
-  .top h1 { font-size: 15px; margin: 0; white-space: nowrap; }
-  .grow { flex: 1; }
-  .prog { display: flex; align-items: center; gap: 8px; min-width: 200px; max-width: 300px; }
-  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; flex: 1; }
-  .bar > i { display: block; height: 100%; background: var(--ok); transition: width .4s; }
-  .pill { padding: 2px 9px; border-radius: 10px; font-size: 12px; background: var(--chip); border: 1px solid var(--line); white-space: nowrap; }
-  .pill.on { background: #1e3a5c; border-color: var(--run); color: #cfe5ff; }
-  .pill.ok { color: var(--ok); } .pill.bad { color: var(--bad); } .pill.warn { color: var(--warn); }
-  .qm { display: flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
-  .qm .bar { width: 54px; flex: none; } .qm .bar.mid > i { background: var(--warn); } .qm .bar.low > i { background: var(--bad); }
-  main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 14px; padding: 14px 18px 24px; align-items: start; }
-  .col { display: grid; gap: 14px; min-width: 0; }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
-  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
-  h2 .sp { flex: 1; }
-  button { background: #262b34; color: var(--text); border: 1px solid #3a404c; border-radius: 6px; padding: 5px 11px; cursor: pointer; font: inherit; }
-  button:hover { background: #313845; }
-  button.primary { background: #1f5f3f; border-color: var(--ok); } button.primary:hover { background: #26744d; }
-  button.danger { border-color: #7a3a3a; color: #ffb4b4; } button.danger:hover { background: #4a2626; }
-  input[type=text], input:not([type]) { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .ms { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; background: #181b21; }
-  .ms > summary { cursor: pointer; padding: 6px 10px; display: flex; align-items: center; gap: 10px; list-style: none; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--s5); align-items: start; }
+  .prog { display: flex; align-items: center; gap: var(--s3); min-width: 260px; }
+  .prog .bar { flex: 1; min-width: 80px; }
+  .quota { display: flex; align-items: center; gap: var(--s2); font-size: 12px; color: var(--muted); }
+  .quota .bar { width: 48px; }
+  .ms { margin-bottom: var(--s2); }
+  .ms > summary { cursor: pointer; padding: var(--s2) var(--s2); display: flex; align-items: center; gap: var(--s3); list-style: none; border-radius: 8px; }
+  .ms > summary:hover { background: var(--hover); }
   .ms > summary::-webkit-details-marker { display: none; }
-  .ms > summary::before { content: '▸'; color: var(--dim); width: 10px; }
-  .ms[open] > summary::before { content: '▾'; }
-  .ms .bar { width: 90px; flex: none; }
-  .t { display: grid; grid-template-columns: 38px minmax(120px, 1fr) auto 44px 62px; gap: 8px; align-items: center; padding: 3px 10px; border-top: 1px solid var(--line); }
+  .ms > summary::before { content: ''; width: 6px; height: 6px; border-right: 2px solid var(--faint); border-bottom: 2px solid var(--faint); transform: rotate(-45deg); transition: transform .15s; flex: none; margin: 0 2px; }
+  .ms[open] > summary::before { transform: rotate(45deg); }
+  .ms summary .bar { width: 80px; flex: none; }
+  .ms .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t { display: grid; grid-template-columns: 40px minmax(120px, 1fr) 150px 56px 64px; gap: var(--s3); align-items: center; padding: 5px var(--s2) 5px 28px; border-radius: 8px; cursor: pointer; }
+  .t:hover { background: var(--hover); }
   .t .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .stages { display: flex; gap: 2px; }
-  .stages i { font-style: normal; font-size: 10px; padding: 0 4px; border-radius: 3px; background: var(--chip); color: #7c8393; line-height: 16px; }
-  .stages i.past { background: #1f3b2f; color: #7fd4a8; } .stages i.cur { background: var(--run); color: #001; font-weight: 600; }
-  .stages i.cur.wait { background: var(--warn); } .stages i.cur.blocked { background: var(--bad); } .stages i.all { background: #1f3b2f; color: #7fd4a8; }
-  .badge { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #4a3a1a; color: var(--warn); }
-  .num { font-variant-numeric: tabular-nums; text-align: right; color: var(--dim); }
-  .s-done { color: var(--ok); } .s-in { color: var(--run); } .s-wait { color: var(--warn); } .s-blocked { color: var(--bad); }
-  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, monospace; color: var(--dim); max-height: 280px; overflow: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  td, th { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  .dec { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; background: #181b21; }
-  .dec pre { margin-top: 6px; max-height: 200px; color: var(--text); }
-  .ev { display: grid; grid-template-columns: 62px 38px 100px 1fr; gap: 8px; font: 12px/1.5 ui-monospace, monospace; }
-  .ev b { font-weight: 500; } .ev .e-decision, .ev .e-blocked { color: var(--bad); } .ev .e-done, .ev .e-merged, .ev .e-approved { color: var(--ok); } .ev .e-start, .ev .e-step { color: var(--run); }
-  #events { height: 260px; overflow: auto; }
-  #toast { min-height: 18px; margin-top: 8px; font: 12px ui-monospace, monospace; color: var(--dim); white-space: pre-wrap; max-height: 160px; overflow: auto; }
-  .big { height: 330px; overflow: auto; }
+  .t.done .title { color: var(--muted); }
+  .seg { display: flex; gap: 2px; align-items: center; }
+  .seg i { flex: 1; height: 4px; border-radius: 2px; background: var(--raised); }
+  .seg i.past { background: var(--ok); opacity: .55; } .seg i.cur { background: var(--accent); } .seg i.cur.wait { background: var(--warn); } .seg i.cur.blocked { background: var(--bad); }
+  .seg.all i { background: var(--ok); opacity: .55; }
+  .ev { display: grid; grid-template-columns: 132px 36px 76px 1fr; gap: var(--s3); font-size: 12px; padding: 3px 0; }
+  .ev span:first-child, .commit span { white-space: nowrap; }
+  .ev b { font-weight: 500; } .ev .e-decision, .ev .e-blocked { color: var(--warn); } .ev .e-done, .ev .e-merged, .ev .e-approved { color: var(--ok); } .ev .e-start { color: var(--accent-text); }
+  #events { height: 280px; overflow: auto; }
+  .item { padding: var(--s3) 0; border-bottom: 1px solid var(--line); } .item:last-child { border-bottom: 0; padding-bottom: 0; } .item:first-child { padding-top: 0; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 var(--mono); color: var(--muted); max-height: 200px; overflow: auto; }
+  #toast { margin-top: var(--s3); font: 12px var(--mono); color: var(--muted); white-space: pre-wrap; max-height: 160px; overflow: auto; }
+  .commit { display: grid; grid-template-columns: 56px 132px 1fr; gap: var(--s3); font-size: 12px; padding: 2px 0; }
+  .commit span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<div class="top">
+<div class="topbar">
   <h1>AI pipeline</h1>
-  <div class="prog"><span id="msName" class="pill">–</span><div class="bar"><i id="bar" style="width:0"></i></div><span id="msCount" class="dim">–</span></div>
-  <span id="orch" class="pill">orchestrator idle</span>
-  <span id="wk" class="pill">0 workers</span>
-  <span class="grow"></span>
-  <span id="qm" class="qm"></span>
-  <a href="/stats" style="white-space:nowrap">Token stats &rarr;</a>
-  <span id="updated" class="dim" style="white-space:nowrap;font-size:11px"></span>
+  <nav class="nav"><a class="on" href="/">Pipeline</a><a href="/stats">Token stats</a></nav>
+  <div class="prog"><span id="msName" class="chip">–</span><div class="bar"><i id="bar" style="width:0"></i></div><span id="msCount" class="muted">–</span></div>
+  <span class="sp"></span>
+  <span id="qm" class="row" style="gap:16px"></span>
+  <span id="orch" class="chip"><i class="dot"></i>idle</span>
+  <span id="wk" class="chip">0 workers</span>
+  <span id="updated" class="faint" style="font-size:12px"></span>
 </div>
-<main>
-  <div class="col">
-    <section><h2>Task board <span class="sp"></span><span id="allCount" class="dim" style="text-transform:none;letter-spacing:0"></span></h2><div id="board"></div></section>
-    <section><h2>Events <span class="sp"></span><input id="evf" placeholder="filter (task, event, text)" aria-label="Filter events"></h2><div id="events" class="big" style="height:260px"></div></section>
+<main class="page">
+ <div class="grid">
+  <div class="stack">
+    <section class="card"><h2>Task board <span class="sp"></span><span id="allCount" class="note"></span></h2><div id="board"></div></section>
+    <section class="card"><h2>Events <span class="sp"></span><input id="evf" placeholder="Filter events" aria-label="Filter events" size="22"></h2><div id="events"></div></section>
   </div>
-  <div class="col">
-    <section><h2>Deliverables</h2><div id="deliv"></div></section>
-    <section><h2>Running workers</h2><div id="workers"></div></section>
-    <section><h2>Decisions waiting</h2><div id="decisions"></div></section>
-    <section>
+  <div class="stack">
+    <section class="card"><h2>Deliverables</h2><div id="deliv"></div></section>
+    <section class="card"><h2>Running workers</h2><div id="workers"></div></section>
+    <section class="card"><h2>Decisions waiting</h2><div id="decisions"></div></section>
+    <section class="card">
       <h2>Actions</h2>
       <div class="row">
         <button class="primary" id="bRun">Run orchestrator</button>
         <input id="only" placeholder="only: 020,021" size="14" aria-label="Only tasks">
+        <span class="sp"></span>
         <button class="danger" id="bStop">Stop</button>
         <button id="bTest">npm test</button>
       </div>
       <div id="toast" role="status" aria-live="polite"></div>
     </section>
-    <section><h2>Commits</h2><pre id="commits"></pre></section>
+    <section class="card"><h2>Recent commits</h2><div id="commits"></div></section>
   </div>
+ </div>
 </main>
+<script src="/ui.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'k' : n ? String(n) : '';
+const fmt = n => n ? fmtN(n) : '';
 const STAGES = ['acceptance','tester-pre','coder','tester','reviewer','merge','done'];
 const STAGE_ALIAS = {'commit-tests':'coder','cleanup':'merge'};
-const cls = s => s === 'done' ? 's-done' : s === 'in progress' ? 's-in' : s.startsWith('waiting') ? 's-wait' : s === 'blocked' ? 's-blocked' : '';
 const open = new Set(JSON.parse(localStorage.getItem('openMs') || 'null') || []);
 let seenMs = new Set(JSON.parse(localStorage.getItem('seenMs') || '[]'));
 const last = {};
@@ -107,12 +87,12 @@ let D = null, decisions = {};
 
 function set(id, html) { if (last[id] !== html) { last[id] = html; $(id).innerHTML = html; } }
 function setText(id, t) { if (last[id] !== t) { last[id] = t; $(id).textContent = t; } }
+const empty = (t, s) => `<div class="empty"><b>${t}</b>${s || ''}</div>`;
 
-function stageChips(t) {
-  if (t.status === 'done') return `<span class="stages" title="done">${STAGES.map(s => `<i class="all">${s === 'tester-pre' ? 'pre' : s.slice(0, 3)}</i>`).join('')}</span>`;
+function stageBar(t) {
+  if (t.status === 'done') return `<span class="seg all" title="done">${STAGES.map(() => '<i></i>').join('')}</span>`;
   const cur = STAGES.indexOf(STAGE_ALIAS[t.stage] || t.stage), state = t.status.startsWith('waiting') ? 'wait' : t.status === 'blocked' ? 'blocked' : '';
-  return `<span class="stages" title="stage: ${esc(t.stage || 'not started')}">${STAGES.map((s, i) =>
-    `<i class="${cur < 0 ? '' : i < cur ? 'past' : i === cur ? 'cur ' + state : ''}">${s === 'tester-pre' ? 'pre' : s.slice(0, 3)}</i>`).join('')}</span>`;
+  return `<span class="seg" title="stage: ${esc(t.stage || 'not started')}">${STAGES.map((s, i) => `<i class="${cur < 0 ? '' : i < cur ? 'past' : i === cur ? 'cur ' + state : ''}"></i>`).join('')}</span>`;
 }
 
 function board(d) {
@@ -127,14 +107,15 @@ function board(d) {
     if (!seenMs.has(id)) { seenMs.add(id); if (id === d.activeMilestone || id === '' || (done < tasks.length && done > 0)) open.add(id); }
     const stc = m.status === 'approved' ? 'ok' : m.status === 'built' ? 'warn' : '';
     html += `<details class="ms" data-id="${esc(id)}" ${open.has(id) ? 'open' : ''}><summary>
-      <b>${esc(id || '–')}</b><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.title)}</span>
-      ${m.status ? `<span class="pill ${stc}">${esc(m.status)}</span>` : ''}
-      <span class="bar"><i style="width:${100 * done / tasks.length}%"></i></span><span class="dim" style="min-width:42px;text-align:right">${done}/${tasks.length}</span>
-      <span class="dim" style="min-width:48px;text-align:right">${fmt(tok)}</span></summary>` +
-      tasks.map(t => `<div class="t"><span class="dim">${t.num}</span><span class="title ${cls(t.status)}" title="${esc(t.title)} — ${esc(t.status)}">${esc(t.title)}</span>
-        ${stageChips(t)}<span>${t.fixRounds ? `<span class="badge" title="fix rounds">fix ${t.fixRounds}</span>` : ''}</span><span class="num" title="tokens">${fmt(t.tokens)}</span></div>`).join('') + '</details>';
+      <b>${esc(id || '–')}</b><span class="name muted">${esc(m.title)}</span>
+      ${m.status ? `<span class="chip ${stc}">${esc(m.status)}</span>` : ''}
+      <span class="bar"><i style="width:${100 * done / tasks.length}%"></i></span><span class="muted num" style="min-width:40px">${done}/${tasks.length}</span>
+      <span class="faint num" style="min-width:52px">${fmt(tok)}</span></summary>` +
+      tasks.map(t => `<div class="t ${t.status === 'done' ? 'done' : ''}" data-task="${t.num}" tabindex="0" role="button" title="Show who worked on ${t.num}">
+        <span class="faint">${t.num}</span><span class="title">${esc(t.title)}</span>${stageBar(t)}
+        <span>${t.fixRounds ? `<span class="chip warn" title="fix rounds">fix ${t.fixRounds}</span>` : ''}</span><span class="num faint" title="tokens">${fmt(t.tokens)}</span></div>`).join('') + '</details>';
   }
-  set('board', html);
+  set('board', html || empty('No tasks', 'Add specs to tasks/ and register them.'));
 }
 $('board').addEventListener('toggle', e => {
   const el = e.target; if (!el.dataset || el.dataset.id === undefined) return;
@@ -146,9 +127,9 @@ function quotaMini(d) {
   const out = [];
   for (const p of ['glm', 'kimi']) {
     const w = Array.isArray(d.quota?.[p]) ? d.quota[p].find(x => x.window === '5h') : null;
-    if (!w) { out.push(`<span class="qm dim" title="${p}: no data">${p.toUpperCase()} –</span>`); continue; }
+    if (!w) { out.push(`<span class="quota" title="${p}: no data">${provDot(p)}${p} –</span>`); continue; }
     const used = w.limit ? 100 * (1 - w.remaining / w.limit) : 0, c = used > 90 ? 'low' : used > 70 ? 'mid' : '';
-    out.push(`<span class="qm" title="${p} 5h window: ${w.used}/${w.limit}, resets ${esc(w.resetAt)}">${p.toUpperCase()}<span class="bar ${c}"><i style="width:${used.toFixed(0)}%"></i></span>${used.toFixed(0)}%</span>`);
+    out.push(`<span class="quota" title="${p} 5h window: ${w.used}/${w.limit}, resets ${fmtT(w.resetAt)}">${provDot(p)}${p}<span class="bar ${c}"><i style="width:${used.toFixed(0)}%"></i></span>${used.toFixed(0)}%</span>`);
   }
   set('qm', out.join(''));
 }
@@ -156,23 +137,24 @@ function quotaMini(d) {
 function deliverables(d) {
   const list = d.milestones.filter(m => m.status === 'built' || m.id === d.activeMilestone || m.builtAt);
   set('deliv', list.length ? list.map(m => {
-    const ok = v => v === undefined ? '' : `<span class="pill ${v ? 'ok' : 'bad'}">${v ? 'ok' : 'FAILED'}</span>`;
-    return `<div class="dec"><div class="row"><b>${esc(m.id)}</b><span style="flex:1">${esc(m.title)}</span>
-      <span class="pill ${m.status === 'approved' ? 'ok' : m.status === 'built' ? 'warn' : ''}">${esc(m.status || 'open')}</span></div>
-      <div class="row dim" style="margin:4px 0">${m.builtAt ? `built ${esc(m.builtAt.replace('T', ' '))} @ ${esc(m.commit || '')}` : 'not built yet'}
-        ${m.builtAt ? `<span>build ${ok(m.buildOk)}</span><span>tests ${ok(m.testsOk)}</span>` : ''}</div>
+    const ok = (l, v) => v === undefined ? '' : `<span class="chip ${v ? 'ok' : 'bad'}">${l} ${v ? 'ok' : 'failed'}</span>`;
+    return `<div class="item"><div class="row"><b>${esc(m.id)}</b><span style="flex:1" class="muted">${esc(m.title)}</span>
+      <span class="chip ${m.status === 'approved' ? 'ok' : m.status === 'built' ? 'warn' : ''}">${esc(m.status || 'open')}</span></div>
+      <div class="row faint" style="margin:6px 0;font-size:12px">${m.builtAt ? `built ${fmtT(m.builtAt)} · ${esc(m.commit || '')}` : 'not built yet'}
+        ${m.builtAt ? ok('build', m.buildOk) + ok('tests', m.testsOk) : ''}</div>
       <div class="row">${m.built ? `<button data-play="${esc(m.id)}">Play</button>` : ''}
         ${m.status === 'built' ? `<button class="primary" data-approve="${esc(m.id)}">Approve &amp; continue</button>` : ''}</div></div>`;
-  }).join('') : '<span class="dim">no milestone built yet</span>');
+  }).join('') : empty('Nothing built yet', 'Milestones appear here once they are built.'));
 }
 
 function workers(d) {
   set('workers', d.workers.length ? '<table><tbody>' + d.workers.map(w =>
-    `<tr><td><b>${w.task}</b></td><td>${esc(w.role)}${w.heavy ? ' <span class="badge">heavy</span>' : ''}${w.resume ? ' <span class="badge">resume</span>' : ''}</td><td>${esc(w.provider || '–')}</td><td class="num" title="pid ${w.pid}">${esc(w.etime)}</td></tr>`).join('') + '</tbody></table>'
-    : '<span class="dim">no workers running</span>');
+    `<tr class="click" data-task="${w.task}"><td><b>${w.task}</b></td><td>${esc(w.role)}${w.heavy ? ' <span class="chip">heavy</span>' : ''}${w.resume ? ' <span class="chip">resume</span>' : ''}</td>
+     <td><span class="row" style="gap:6px;flex-wrap:nowrap">${provDot(w.provider)}${esc(w.provider || '–')}</span></td><td class="n muted" title="pid ${w.pid}">${esc(w.etime)}</td></tr>`).join('') + '</tbody></table>'
+    : empty('No workers running', 'Start the orchestrator to see activity.'));
 }
 
-async function decisionsCard(d) {
+function decisionsCard(d) {
   for (const f of d.decisions) if (!(f in decisions)) {
     decisions[f] = 'loading…';
     fetch('/api/decision?file=' + encodeURIComponent(f)).then(r => r.json()).then(j => { decisions[f] = j.content ?? j.error; renderDecisions(); });
@@ -181,15 +163,20 @@ async function decisionsCard(d) {
 }
 function renderDecisions() {
   if (!D) return;
-  set('decisions', D.decisions.length ? D.decisions.map(f => `<div class="dec"><div class="row"><b style="flex:1">${esc(f)}</b>
-    <button data-resolve="${esc(f)}">Resolved</button></div><pre>${esc(decisions[f] || '')}</pre></div>`).join('') : '<span class="dim">none</span>');
+  set('decisions', D.decisions.length ? D.decisions.map(f => `<div class="item"><div class="row"><b style="flex:1">${esc(f)}</b>
+    <button data-resolve="${esc(f)}">Resolved</button></div><pre style="margin-top:8px">${esc(decisions[f] || '')}</pre></div>`).join('') : empty('Nothing needs you', 'Planner decisions will queue here.'));
 }
 
 function events(d) {
   const q = $('evf').value.toLowerCase();
   set('events', d.events.slice().reverse().filter(e => !q || JSON.stringify(e).toLowerCase().includes(q)).map(e =>
-    `<div class="ev"><span class="dim">${esc((e.ts || '').slice(11))}</span><span>${esc(e.task || '-')}</span><b class="e-${esc(e.event)}">${esc(e.event)}</b><span class="dim">${esc(e.detail || '')}</span></div>`).join('')
-    || '<span class="dim">no events</span>');
+    `<div class="ev"><span class="faint">${fmtT(e.ts)}</span><span class="muted">${esc(e.task || '–')}</span><b class="e-${esc(e.event)}">${esc(e.event)}</b><span class="muted">${esc(e.detail || '')}</span></div>`).join('')
+    || empty('No events', q ? 'Nothing matches the filter.' : ''));
+}
+
+function commits(d) {
+  set('commits', d.commits.map(c => { const m = c.match(/^(\S+) (\S+) (.*)$/) || [0, '', '', c];
+    return `<div class="commit"><span class="mono faint">${esc(m[1])}</span><span class="faint">${fmtT(m[2])}</span><span title="${esc(m[3])}">${esc(m[3])}</span></div>`; }).join('') || empty('No commits'));
 }
 
 async function refresh() {
@@ -203,12 +190,10 @@ async function refresh() {
     $('bar').style.width = (scope.length ? 100 * done / scope.length : 0) + '%';
     setText('msCount', `${done}/${scope.length} tasks`);
     setText('allCount', `${d.done}/${d.total} done overall`);
-    $('orch').textContent = d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle';
-    $('orch').className = 'pill' + (d.orchestratorRunning ? ' on' : '');
+    set('orch', `<i class="dot ${d.orchestratorRunning ? 'live' : ''}"></i>${d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle'}`);
     setText('wk', `${d.workers.length} worker${d.workers.length === 1 ? '' : 's'}`);
-    quotaMini(d); board(d); deliverables(d); workers(d); decisionsCard(d); events(d);
-    setText('commits', d.commits.join('\n'));
-    setText('updated', new Date().toLocaleTimeString([], {hour12: false}));
+    quotaMini(d); board(d); deliverables(d); workers(d); decisionsCard(d); events(d); commits(d);
+    setText('updated', 'updated ' + fmtT(new Date()));
   } catch (e) { setText('updated', 'offline'); }
 }
 
