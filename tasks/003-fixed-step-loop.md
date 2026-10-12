@@ -1,6 +1,6 @@
 # 003 — Implement the fixed-step loop
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 002
 Roles: coder, tester, reviewer
