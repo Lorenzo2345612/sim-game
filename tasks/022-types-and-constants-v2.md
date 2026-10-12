@@ -1,6 +1,6 @@
 # 022 — Add TrackData v2 types and Phase 1 constants
 
-Status: pending
+Status: done
 Phase: 1
 Depends on: nothing
 Complexity: simple
