@@ -32,7 +32,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 026 | Detect radii, kerbs and run-offs | in progress | 022 |
 | 027 | Lay out barriers | waiting decision | 022 |
 | 028 | Build the terrain heightfield | in progress | 022, 023, 024, 025 |
-| 029 | Place trees deterministically | in progress | 022 |
+| 029 | Place trees deterministically | done | 022 |
 | 030 | Generate TrackData v2 for Monza, Spa and Silverstone | pending | 022, 024, 025, 026, 027, 028, 029 |
 | 031 | Build track surface geometry from TrackData v2 | waiting decision | 022 |
 | 032 | Terrain, surface and barrier colliders | pending | 022, 031 |

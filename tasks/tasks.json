@@ -357,7 +357,7 @@
     {
       "num": "029",
       "title": "Place trees deterministically",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],
