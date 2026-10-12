@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNS = ROOT / ".ai/runs"
-NAME = re.compile(r"^(\d{8}-\d{6})-([a-z]+)-([a-z]+)-(.+?)(-resume)?\.json$")
+NAME = re.compile(r"^(\d{8}-\d{6})-(acceptance|tester-pre|tester|coder|reviewer|fixer)-([a-z]+)-(.+?)(-resume)?\.json$")
 FIELDS = ["stamp", "task", "role", "provider", "model", "resumed", "error", "turns", "seconds",
           "input", "output", "cache_read", "cache_write", "total"]
 
