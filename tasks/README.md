@@ -28,7 +28,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 022 | Add TrackData v2 types and Phase 1 constants | done | - |
 | 023 | Add inverse projection unprojectXZ | done | - |
 | 024 | Fetch DEM windows for the three tracks | done | 023 |
-| 025 | DEM sampling and centerline elevation profile | in progress | 022, 023, 024 |
+| 025 | DEM sampling and centerline elevation profile | done | 022, 023, 024 |
 | 026 | Detect radii, kerbs and run-offs | in progress | 022 |
 | 027 | Lay out barriers | in progress | 022 |
 | 028 | Build the terrain heightfield | pending | 022, 023, 024, 025 |

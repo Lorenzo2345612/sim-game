@@ -304,7 +304,7 @@
     {
       "num": "025",
       "title": "DEM sampling and centerline elevation profile",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022",
         "023",
