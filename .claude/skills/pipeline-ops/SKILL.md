@@ -27,6 +27,10 @@ setsid nohup scripts/ai/run-after.sh 021 >> .ai/orchestrator-run.log 2>&1 < /dev
 ```
 Only one orchestrator runs at a time (`.ai/orchestrator.lock`; a second `run` exits 4). Tasks run in worktrees `.ai/wt/<num>`; `orchestrator.py cleanup [--all] [--sessions DAYS]` removes leftovers. To stop: kill its process group (`kill -TERM -- -<pgid>`), never `pkill -f` with a pattern that matches your own shell. A restarted orchestrator resumes each task from its saved stage. Restart it after changing `orchestrator.py`/`worker.py` rules (running processes keep the old code).
 
+## Deliverables (milestones)
+
+`tasks/milestones.json` lists ordered deliverables (M0, M1.1, M1.2, …), each with its tasks and status `open → built → approved`. The orchestrator only runs the active (first non-approved) milestone's tasks; when they are all done it runs `npm run build` into `builds/<id>/`, tags the commit (`m1.1`), notifies and exits. The user plays it (dashboard "Play", or `python3 scripts/ai/play.py <id> --open` → http://localhost:53xx) and approves (dashboard "Approve & continue", or `orchestrator.py approve <id>` then `run`). Manual build: `orchestrator.py build <id>`. New tasks must be added to `tasks/tasks.json` AND to a milestone.
+
 ## Decisions
 
 The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABLE, BLOCKED, escalation exhausted) and continues with other tasks. Planner: read it, fix the spec (or the acceptance table — Opus only) and commit, then rename the file to `<NNN>-<stage>.resolved.md` and start/restart the orchestrator; the stage reruns. Only product-level questions go to the user.
