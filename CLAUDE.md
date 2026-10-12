@@ -72,7 +72,7 @@ No verbose output; minimal comments; reports and replies short and to the point.
 
 ## Reuse
 
-Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.claude/agents/`) instead of being rediscovered. Current ones: skills `plan-feature`, `pipeline-ops`, `dispatch`, `physics-lab`, `render-preview`; agents `spec-writer`, `spec-reviewer`, `asset-scout` (all sonnet); workers via `scripts/ai/worker.py`, unattended runs via `scripts/ai/orchestrator.py`, dashboard `scripts/ai/dashboard.py`.
+Anything done more than once becomes a skill (`.claude/skills/`) or an agent (`.claude/agents/`) instead of being rediscovered. Current ones: skills `plan-feature`, `pipeline-ops`, `dispatch`, `physics-lab`, `render-preview`, `milestone-review`; agents `spec-writer`, `spec-reviewer`, `asset-scout` (all sonnet); workers via `scripts/ai/worker.py`, unattended runs via `scripts/ai/orchestrator.py`, dashboard `scripts/ai/dashboard.py`.
 
 ## Planning subagents
 
