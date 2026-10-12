@@ -41,8 +41,8 @@
     },
     "reviewer": {
       "provider": "kimi",
-      "model": "kimi-for-coding",
-      "heavyModel": "k3-256k",
+      "model": "k3-256k",
+      "heavyModel": "k3",
       "prompt": "ai/agents/reviewer.md",
       "timeoutMin": 20
     },

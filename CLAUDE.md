@@ -11,7 +11,7 @@ Web simulator of single-seaters on real circuits. Requirements and decisions in 
 | acceptance | Qwen `qwen3.8-flash` | Turns the acceptance table into failing tests in `tests/unit/acceptance/` before coding | Edit `src/` |
 | coder | GLM `glm-5.3-flash` (heavy: `glm-5.3`) | Implements a spec | Design or expand scope |
 | tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Tests for the acceptance criteria | Edit `src/` |
-| reviewer | Kimi `kimi-for-coding` (heavy: `k3-256k`) | Validates against the spec, runs checks | Edit files |
+| reviewer | Kimi `k3-256k` (heavy: `k3`, 1M ctx, ~2× quota) | Validates against the spec, runs checks | Edit files |
 | fixer | DeepSeek `deepseek-v4.1-flash` via Bailian | Second opinion when the coder gets stuck | — |
 | fallback | Xiaomi MiMo `mimo-v2.6-flash` (heavy: `mimo-v2.6-pro`) | Replaces any role when its provider runs out of quota (automatic) | — |
 
