@@ -604,6 +604,14 @@ def _run_task(task, slot):
 
 # -- scheduler -------------------------------------------------------------------
 
+DECISION_POLL = float(os.environ.get("ORCH_DECISION_POLL", "30"))
+
+
+def decision_resolved(num):
+    name = load_state().get(num, {}).get("decision")
+    return bool(name) and (DECISIONS / name.replace(".md", ".resolved.md")).exists()
+
+
 def ready_tasks(tasks, done, running, waiting, only):
     out = []
     scope = milestone_scope()
@@ -692,12 +700,17 @@ def run(max_parallel, only, dry_run):
     quota_hit = False
     with ThreadPoolExecutor(max_workers=max_parallel) as pool:
         while True:
+            waiting -= {n for n in waiting if decision_resolved(n)}
             if not quota_hit:
                 for t in ready_tasks(tasks, done, running, waiting, only)[:max_parallel - len(running)]:
                     running[t["num"]] = pool.submit(run_task, t)
             if not running:
-                break
-            finished, _ = wait(running.values(), return_when=FIRST_COMPLETED)
+                if quota_hit or DECISION_POLL <= 0 or not any(load_state().get(n, {}).get("decision") for n in waiting):
+                    break
+                time.sleep(DECISION_POLL)
+                tasks = read_tasks()
+                continue
+            finished, _ = wait(running.values(), timeout=DECISION_POLL if DECISION_POLL > 0 else None, return_when=FIRST_COMPLETED)
             for num, fut in list(running.items()):
                 if fut not in finished:
                     continue

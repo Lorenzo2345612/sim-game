@@ -135,6 +135,7 @@ class Harness(unittest.TestCase):
         mock.write_text(json.dumps(self.quota_mock))
         env.update({
             "ORCH_ROOT": str(self.repo),
+            "ORCH_DECISION_POLL": "0",
             "ORCH_WORKER_CMD": shlex.join([sys.executable, str(FAKE_WORKER)]),
             "FAKE_SCRIPT": str(getattr(self, "script_path", "")),
             "FAKE_CALLS": str(self.tmp / "calls.jsonl"),
