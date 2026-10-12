@@ -525,7 +525,7 @@
     {
       "num": "039",
       "title": "Instanced procedural trees with LOD",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022",
         "035"

@@ -42,7 +42,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | done | 022, 031, 035 |
 | 038 | Render barriers | in progress | 022 |
-| 039 | Instanced procedural trees with LOD | in progress | 022, 035 |
+| 039 | Instanced procedural trees with LOD | done | 022, 035 |
 | 040 | Procedural grandstands with crowd | done | 022 |
 | 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
