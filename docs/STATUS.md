@@ -10,7 +10,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 ## In flight (planner side)
 
-- A Sonnet subagent (worktree branch `worktree-agent-…`) is adding to the orchestrator: auto-retry, graceful `restart`, structured decisions, `brief`, Sonnet auto-triage (`ORCH_TRIAGE_CMD`), notifications. When it reports: run the pipeline tests, merge, then `orchestrator.py restart` (graceful) and remove the worktree.
+- 2026-10-12: Bailian/Qwen workers stalled repeatedly; acceptance, tester-pre, tester and fixer moved to MiMo in `ai/providers.json`. Move them back when Qwen is healthy.
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
