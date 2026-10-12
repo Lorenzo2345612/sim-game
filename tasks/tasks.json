@@ -430,7 +430,7 @@
     {
       "num": "032",
       "title": "Terrain, surface and barrier colliders",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022",
         "031"
@@ -688,7 +688,7 @@
     {
       "num": "052",
       "title": "Graphics presets and FPS overlay",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
