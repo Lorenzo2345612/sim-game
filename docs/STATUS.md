@@ -8,6 +8,11 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 - **Phase 1: running unattended** (tasks 022–056) via orchestrator v2 (worktrees, JSON reports, max 6 parallel), gated by deliverables in `tasks/milestones.json`: M0 (approved, build in `builds/M0`), M1.1 real tracks (active), M1.2 scenery + menu, M1.3 gameplay, M1.4 F4 car. Design: `ai/guides/phase1.md`. Goal: Monza, Spa, Silverstone with elevation, kerbs, run-offs, barriers, forests, grandstands, pits; surface grip, track limits, gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets, track menu.
 - **Blocked:** 053 F4 car — waiting for the user to download https://sketchfab.com/3d-models/f4-tatuus-t014-chasis-d61ce2f877fb4bf29da381cfa4f0f3d7 into `assets/vendor/f4/`; then the planner details the spec (inspect nodes, gltf-transform simplify < 80k tris, separate wheels, livery materials). Never use the "Tatuus" name in game.
 
+## In flight (planner side)
+
+- A Sonnet subagent is building the token stats page (`/stats`) and the dashboard redesign in an isolated worktree branch (`worktree-agent-…`, under `.claude/worktrees/`). When it reports: verify `python3 -m unittest discover -s scripts/ai/tests -t .`, look at its screenshots, merge the branch into master (`git merge --no-edit <branch>`), restart the dashboard (kill `scripts/ai/dashboard.py`, relaunch per skill `pipeline-ops`) and remove the agent worktree.
+- When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
+
 ## Pipeline (how work gets done)
 
 Planner (Claude Opus, main session) designs and writes acceptance tables; Sonnet subagents write/review specs; cheap workers code (GLM/MiMo), test (Qwen), review (Kimi K3) via `scripts/ai/worker.py`; `scripts/ai/orchestrator.py` runs it all unattended; dashboard at http://127.0.0.1:8765. Details: `CLAUDE.md`, skills `plan-feature`, `pipeline-ops`.
