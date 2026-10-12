@@ -52,9 +52,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | done | - |
-| 049 | Minimap | in progress | - |
+| 049 | Minimap | done | - |
 | 050 | Best-lap ghost recording and replay | in progress | - |
-| 051 | Engine and tyre audio | pending | - |
+| 051 | Engine and tyre audio | in progress | - |
 | 052 | Graphics presets and FPS overlay | pending | - |
 | 053 | F4 car model pipeline (offline asset build) | pending | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |

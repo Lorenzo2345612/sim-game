@@ -655,7 +655,7 @@
     {
       "num": "049",
       "title": "Minimap",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -677,7 +677,7 @@
     {
       "num": "051",
       "title": "Engine and tyre audio",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
