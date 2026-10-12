@@ -1,6 +1,6 @@
 # sim-game
 
-New session? Read `docs/STATUS.md` first (current phase, what is running, what is pending), then use skill `pipeline-ops`.
+New session? Read `docs/STATUS.md` first, then use skill `pipeline-ops` and follow its "Short orchestration session" routine. Pipeline code is frozen while a milestone is open (`docs/pipeline-backlog.md`).
 
 Web simulator of single-seaters on real circuits. Requirements and decisions in `PRD.md` (the decisions table is in section 14).
 

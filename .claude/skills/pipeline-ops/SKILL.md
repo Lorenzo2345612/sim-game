@@ -45,9 +45,16 @@ The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABL
 - Round analyst: when verification fails for the 2nd time (right before fix round 2) `ORCH_ANALYST_CMD` (default headless `claude -p --model sonnet` with `ai/agents/analyst.md`; `off` disables; off under `ORCH_ROOT`) reads spec, tests, all reports and the diff, and answers `guide_coder` (note prepended to round 2), `dismiss_findings` (verifier rerun once per task, no round counted) or `escalate` (decision `spec`/`tests`, no triage). It writes `.ai/insights/<num>-round<k>.md` + `insights.jsonl` (event `analyst`); failures change nothing. It never edits files: improvement proposals are for the planner, who reviews `.ai/insights/` in short sessions (`brief` counts unreviewed) and renames each md to `.reviewed.md`.
 - Notifications are off unless `ORCH_NOTIFY_CMD` is set (message appended as last arg); alerts live in the dashboard.
 
-## Short orchestration session
+## Short orchestration session (default way to work)
 
-`brief` -> handle open escalated decisions (fix spec, rename to `.resolved.md`) -> check `BUILD READY` lines (play, approve) -> `restart` if code changed -> exit.
+1. `python3 scripts/ai/orchestrator.py brief` — do not read logs, run files or transcripts unless brief points at a problem.
+2. Handle open escalated decisions (fix the spec, rename to `.resolved.md`); skim unreviewed `.ai/insights/`.
+3. `BUILD READY` → skill `milestone-review` before telling the user; the user plays and approves.
+4. End the session. Delegate any investigation to a Sonnet subagent; keep the Opus context small.
+
+## Pipeline freeze
+
+While a milestone is open, do not change `scripts/ai/*` or `ai/*` (each restart drains or kills work). Write wanted changes in `docs/pipeline-backlog.md` and apply them in one batch after the user approves the milestone, then `restart` once. Exception: a bug that blocks the active milestone.
 
 ## Failure patterns seen
 
