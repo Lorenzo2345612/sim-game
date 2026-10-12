@@ -10,12 +10,11 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 ## In flight (planner side)
 
-- A Sonnet subagent is building the token stats page (`/stats`) and the dashboard redesign in an isolated worktree branch (`worktree-agent-…`, under `.claude/worktrees/`). When it reports: verify `python3 -m unittest discover -s scripts/ai/tests -t .`, look at its screenshots, merge the branch into master (`git merge --no-edit <branch>`), restart the dashboard (kill `scripts/ai/dashboard.py`, relaunch per skill `pipeline-ops`) and remove the agent worktree.
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
 
-Planner (Claude Opus, main session) designs and writes acceptance tables; Sonnet subagents write/review specs; cheap workers code (GLM/MiMo), test (Qwen), review (Kimi K3) via `scripts/ai/worker.py`; `scripts/ai/orchestrator.py` runs it all unattended; dashboard at http://127.0.0.1:8765. Details: `CLAUDE.md`, skills `plan-feature`, `pipeline-ops`.
+Planner (Claude Opus, main session) designs and writes acceptance tables; Sonnet subagents write/review specs; cheap workers code (GLM/MiMo), test (Qwen), review (Kimi K3) via `scripts/ai/worker.py`; `scripts/ai/orchestrator.py` runs it all unattended; dashboard at http://127.0.0.1:8765 (token stats at `/stats`). Details: `CLAUDE.md`, skills `plan-feature`, `pipeline-ops`.
 
 Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase 0): GLM 13 tasks, 1.2 rounds, 775k tokens, 4.1 min/task; MiMo 7 tasks, 1.0 rounds, 673k tokens, 7.2 min/task. `python3 scripts/ai/metrics.py`.
 
