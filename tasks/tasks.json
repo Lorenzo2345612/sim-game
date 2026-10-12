@@ -620,7 +620,7 @@
     {
       "num": "046",
       "title": "Gamepad input and input merging",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "022"
       ],

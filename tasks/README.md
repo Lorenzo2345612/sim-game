@@ -49,7 +49,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | pending | 033 |
-| 046 | Gamepad input and input merging | in progress | 022 |
+| 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | in progress | - |
 | 049 | Minimap | pending | - |
