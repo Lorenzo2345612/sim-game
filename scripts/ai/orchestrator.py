@@ -705,6 +705,9 @@ def expected_missing(line, stems):
     return bool(mod) and any(s.endswith(mod) or mod.endswith(s) for s in stems)
 
 
+IMPLICIT_ANY = ("TS7006", "TS7031")  # cascades from modules the task has not created yet
+
+
 def lint_tests(num, spec):
     """Errors in the new acceptance test files (eslint + tsc), or ''. Missing modules the spec will create are fine."""
     files = new_test_files(num)
@@ -721,6 +724,7 @@ def lint_tests(num, spec):
         stems = spec_stems(spec)
         bad = [ln for ln in (p.stdout + p.stderr).splitlines()
                if re.search(r"error TS\d+", ln) and any(ln.startswith(f) for f in files)
+               and not any(c in ln for c in IMPLICIT_ANY)
                and not (any(c in ln for c in MODULE_ERRORS) and expected_missing(ln, stems))]
         if bad:
             errors.append("tsc:\n" + "\n".join(bad)[-2000:])
