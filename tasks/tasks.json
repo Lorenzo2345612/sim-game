@@ -666,7 +666,7 @@
     {
       "num": "050",
       "title": "Best-lap ghost recording and replay",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

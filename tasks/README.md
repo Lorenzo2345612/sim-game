@@ -53,7 +53,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | done | - |
 | 049 | Minimap | done | - |
-| 050 | Best-lap ghost recording and replay | in progress | - |
+| 050 | Best-lap ghost recording and replay | done | - |
 | 051 | Engine and tyre audio | done | - |
 | 052 | Graphics presets and FPS overlay | done | - |
 | 053 | F4 car model pipeline (offline asset build) | in progress | - |
