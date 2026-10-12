@@ -12,3 +12,4 @@
 | gravel Gravel041 | `public/textures/gravel/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Gravel041 | no |
 | concrete Concrete030 | `public/textures/concrete/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Concrete030 | no |
 | metal Metal032 | `public/textures/metal/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Metal032 | no |
+| F4 single-seater chassis (source GLB; game file `public/models/f4.glb` is derived: scaled, split wheels, simplified, renamed) | `assets/vendor/f4/f4_tatuus_t014_chasis.glb` | RoyalBlond (Oriol-Plazas), Sketchfab | CC-BY 4.0 (attribution required; derived work) | https://sketchfab.com/3d-models/f4-tatuus-t014-chasis-d61ce2f877fb4bf29da381cfa4f0f3d7 | no |

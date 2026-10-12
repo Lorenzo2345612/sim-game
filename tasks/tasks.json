@@ -699,13 +699,13 @@
     {
       "num": "053",
       "title": "Integrate the F4 car model",
-      "status": "blocked",
+      "status": "pending",
       "deps": [],
-      "complexity": "simple",
+      "complexity": "complex",
       "type": "feature",
       "phase": 1,
       "spec": "tasks/053-f4-car.md",
-      "models": "standard"
+      "models": "heavy"
     },
     {
       "num": "054",
