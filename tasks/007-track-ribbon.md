@@ -1,6 +1,6 @@
 # 007 — Build the track ribbon geometry
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 004
 Roles: coder, tester, reviewer

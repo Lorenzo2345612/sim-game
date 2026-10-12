@@ -10,7 +10,7 @@ Specs for the workers. Create with the `plan-feature` skill from `_TEMPLATE.md`;
 | 004 | Project lon/lat coordinates to local metres | done | 002 | 003, 009, 010, 011, 012, 014, 015, 016 |
 | 005 | Smooth and resample the centerline | done | 004 | 003, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
 | 006 | Generate public/tracks/monza.json with the track-builder | pending | 002, 004, 005 | 003, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017 |
-| 007 | Build the track ribbon geometry | in progress | 004 | 003, 005, 006, 008, 009, 010, 011, 012, 014, 015, 016, 017 |
+| 007 | Build the track ribbon geometry | done | 004 | 003, 005, 006, 008, 009, 010, 011, 012, 014, 015, 016, 017 |
 | 008 | Track progress and lap timer | pending | 002, 004, 005 | 003, 006, 007, 009, 010, 011, 012, 013, 014, 015, 016 |
 | 009 | Implement keyboard input | done | 002 | 003, 004, 005, 006, 007, 008, 010, 011, 012, 013, 014, 015, 016, 017 |
 | 010 | Create the Rapier physics world and car config | done | 002 | 003, 004, 005, 006, 007, 008, 009, 012, 013, 014, 015, 016 |
