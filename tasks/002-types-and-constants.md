@@ -1,6 +1,6 @@
 # 002 — Create shared types and constants
 
-Status: pending
+Status: done
 Phase: 0
 Depends on: 001
 Roles: coder, tester, reviewer
