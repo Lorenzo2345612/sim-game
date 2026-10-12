@@ -67,3 +67,4 @@ The orchestrator writes `.ai/decisions/<NNN>-<stage>.md` (SPEC_SILENT, UNTESTABL
 - Runs with no report (drain, kill, stall) rerun the same stage; drains count nothing, others one auto-retry.
 - Empty diff before tester/reviewer → back to coder (retry, not fix round); 3rd time → `infra` decision.
 - `commit-tests` lints new acceptance tests (eslint + tsc on those files; missing modules listed in the spec's Files and implicit-any cascades ignored); failures resume the acceptance worker once. Override with `ORCH_LINT_CMD` / `ORCH_TSC_CMD` (`off` to skip).
+- Prefetch: a milestone's `prefetch` list (in `tasks/milestones.json`) lets independent tasks of later milestones run early, keeping 2 slots for the active milestone; their coders run on MiMo to keep GLM free. The active milestone builds as soon as its own tasks are done.
