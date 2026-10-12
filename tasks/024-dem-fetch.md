@@ -1,6 +1,6 @@
 # 024 — Fetch DEM windows for the three tracks
 
-Status: pending
+Status: done
 Phase: 1
 Depends on: 023
 Complexity: simple
