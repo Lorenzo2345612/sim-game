@@ -35,14 +35,22 @@ QUOTA = {}  # provider -> windows, refreshed every 60 s by refresh_quota()
 started = []  # Popen objects launched by this dashboard
 
 
-def processes():
-    out = subprocess.run(["ps", "-eo", "pid,etime,args"], capture_output=True, text=True).stdout
+def proc_table():
+    """All processes as {pid, ppid, etime, args}. DASH_PS_FILE (ps -eo pid,ppid,etime,args output) overrides ps."""
+    src = os.environ.get("DASH_PS_FILE")
+    out = Path(src).read_text() if src else subprocess.run(
+        ["ps", "-eo", "pid,ppid,etime,args"], capture_output=True, text=True).stdout
     rows = []
     for line in out.splitlines()[1:]:
-        pid, etime, args = line.strip().split(None, 2)
-        if ("orchestrator.py run" in args or "worker.py " in args) and "grep" not in args:
-            rows.append({"pid": int(pid), "etime": etime, "args": args})
+        parts = line.strip().split(None, 3)
+        if len(parts) == 4 and parts[0].isdigit() and parts[1].isdigit():
+            rows.append({"pid": int(parts[0]), "ppid": int(parts[1]), "etime": parts[2], "args": parts[3]})
     return rows
+
+
+def processes():
+    return [{k: p[k] for k in ("pid", "etime", "args")} for p in proc_table()
+            if ("orchestrator.py run" in p["args"] or "worker.py " in p["args"]) and "grep" not in p["args"]]
 
 
 def orchestrator_pids():
@@ -131,6 +139,220 @@ def status():
         "providers": orch.provider_status(),
         "quota": QUOTA,
     }
+
+
+# -- "now" view: what is running right this moment ---------------------------------
+
+ROLE_VERB = {"acceptance": "writing acceptance tests", "tester-pre": "edge tests", "coder": "coding",
+             "tester": "gap tests", "reviewer": "reviewing", "fixer": "fixing"}
+STAGE_ROLE = {"acceptance": "acceptance", "tester-pre": "tester-pre", "coder": "coder", "commit-tests": "coder",
+              "tester": "tester", "reviewer": "reviewer"}
+TAIL_BYTES = 131072
+_usage_cache = {}  # transcript path -> {"off": int, "ids": {message id: (in, out, cache read, cache write)}}
+
+
+def etime_seconds(etime):
+    days, _, rest = etime.rpartition("-")
+    nums = [int(x) for x in rest.split(":")]
+    while len(nums) < 3:
+        nums.insert(0, 0)
+    return int(days or 0) * 86400 + nums[0] * 3600 + nums[1] * 60 + nums[2]
+
+
+def find_transcript(session_id):
+    if not session_id:
+        return None
+    return next(iter(sorted((orch.WORKER_HOME / "projects").glob(f"*/{session_id}.jsonl"))), None)
+
+
+def transcript_tokens(path):
+    """Total tokens in a transcript, parsed incrementally (each message id counted once, at its max)."""
+    c = _usage_cache.setdefault(str(path), {"off": 0, "ids": {}})
+    try:
+        size = path.stat().st_size
+        if size < c["off"]:
+            c["off"], c["ids"] = 0, {}
+        with open(path, "rb") as f:
+            f.seek(c["off"])
+            data = f.read(size - c["off"])
+    except OSError:
+        return 0
+    end = data.rfind(b"\n") + 1
+    c["off"] += end
+    for raw in data[:end].splitlines():
+        if b'"usage"' not in raw:
+            continue
+        try:
+            m = json.loads(raw).get("message") or {}
+            u = m.get("usage") or {}
+        except ValueError:
+            continue
+        if m.get("role") == "assistant" and m.get("id"):
+            t = (u.get("input_tokens") or 0, u.get("output_tokens") or 0,
+                 u.get("cache_read_input_tokens") or 0, u.get("cache_creation_input_tokens") or 0)
+            old = c["ids"].get(m["id"], (0, 0, 0, 0))
+            c["ids"][m["id"]] = tuple(max(a, b) for a, b in zip(old, t))
+    return sum(sum(t) for t in c["ids"].values())
+
+
+def short_path(p, cwd):
+    p = str(p or "")
+    for base in (cwd, str(ROOT)):
+        if base and p.startswith(base.rstrip("/") + "/"):
+            return p[len(base.rstrip("/")) + 1:]
+    return p
+
+
+def describe_tool(block, cwd):
+    name, inp = block.get("name", "tool"), block.get("input") or {}
+    if name in ("Edit", "Write", "Read", "MultiEdit", "NotebookEdit"):
+        arg = short_path(inp.get("file_path") or inp.get("notebook_path"), cwd)
+    elif name == "Bash":
+        arg = " ".join(str(inp.get("command", "")).split())
+    elif name in ("Grep", "Glob"):
+        arg = inp.get("pattern", "")
+    else:
+        arg = " ".join(next((v for v in inp.values() if isinstance(v, str)), "").split())
+    return re.sub(r"(?:/\S*?)?\.ai/wt/\d+/", "", f"{name} {arg}".strip())[:140]
+
+
+def last_activity(path, now):
+    """Latest tool call / assistant text from the tail of a transcript. Never reads the whole file."""
+    try:
+        size = path.stat().st_size
+        with open(path, "rb") as f:
+            f.seek(max(0, size - TAIL_BYTES))
+            lines = f.read().splitlines()
+    except OSError:
+        return None
+    if size > TAIL_BYTES:
+        lines = lines[1:]
+    last_ts, found = None, None
+    for raw in reversed(lines):
+        try:
+            d = json.loads(raw)
+        except ValueError:
+            continue
+        ts = d.get("timestamp")
+        last_ts = last_ts or ts
+        content = (d.get("message") or {}).get("content") if d.get("type") == "assistant" else None
+        for b in reversed(content if isinstance(content, list) else []):
+            if b.get("type") == "tool_use":
+                found = ("tool", describe_tool(b, d.get("cwd")), ts)
+            elif b.get("type") == "text" and (b.get("text") or "").strip():
+                found = ("text", " ".join(b["text"].split())[:160], ts)
+            if found:
+                break
+        if found:
+            break
+    if not found:
+        return None
+    kind, text, ts = found
+    try:
+        ago = max(0, int(now - datetime.fromisoformat((last_ts or ts).replace("Z", "+00:00")).timestamp()))
+    except (ValueError, TypeError, AttributeError):
+        ago = None
+    return {"kind": kind, "text": text, "agoSec": ago}
+
+
+def provider_of_model(model):
+    cfg = orch.load_json(orch.PROVIDERS)
+    for r in [*cfg.get("roles", {}).values(), cfg.get("fallback") or {}]:
+        if model in (r.get("model"), r.get("heavyModel")):
+            return r.get("provider")
+    return None
+
+
+def live_workers(now):
+    """One entry per running worker.py, joined with its child claude process (model, session id) and transcript."""
+    table = proc_table()
+    titles = {t["num"]: t["title"] for t in (orch.read_tasks() if orch.REGISTRY.exists() else [])}
+    state = orch.load_state()
+    cfg_roles = orch.load_json(orch.PROVIDERS).get("roles", {})
+    out = []
+    for p in table:
+        m = re.search(r"worker\.py (\S+) .*?--task tasks/(\d{3})", p["args"])
+        if not m or "grep" in p["args"]:
+            continue
+        role, num = m.group(1), m.group(2)
+        kid = next((k for k in table if k["ppid"] == p["pid"] and re.match(r"(\S*/)?claude\b", k["args"])), None)
+        heavy = "--heavy" in p["args"]
+        mm = (re.search(r"--model (\S+)", kid["args"]) if kid else None) or re.search(r"--model (\S+)", p["args"])
+        model = mm.group(1) if mm else (cfg_roles.get(role, {}).get("heavyModel" if heavy else "model"))
+        sid = re.search(r"--(?:session-id|resume) ([0-9a-f-]{36})", kid["args"]) if kid else None
+        path = find_transcript(sid.group(1) if sid else None)
+        pm = re.search(r"--provider (\S+)", p["args"])
+        provider = provider_of_model(model) or (pm.group(1) if pm else orch.provider_of(role, num))
+        st = state.get(num, {})
+        out.append({"pid": p["pid"], "task": num, "title": titles.get(num, ""), "role": role,
+                    "verb": ROLE_VERB.get(role, role), "provider": provider, "model": model, "heavy": heavy,
+                    "resume": "--resume" in p["args"], "fixRounds": st.get("fixRounds", 0),
+                    "stage": st.get("stage", ""), "elapsedSec": etime_seconds(p["etime"]),
+                    "tokens": transcript_tokens(path) if path else 0,
+                    "activity": last_activity(path, now) if path else None})
+    return sorted(out, key=lambda w: w["task"])
+
+
+def now_view():
+    now = time.time()
+    tasks = orch.read_tasks() if orch.REGISTRY.exists() else []
+    state = orch.load_state()
+    done = {t["num"] for t in tasks if t["status"] == "done"}
+    live = live_workers(now)
+    running = {w["task"] for w in live}
+    am = orch.active_milestone()
+    scope = orch.milestone_scope()
+    pending_dec = {n for n, s in state.items() if s.get("decision") and not orch.decision_resolved(n)}
+    ready = orch.ready_tasks(tasks, done, running, pending_dec, None)
+    ready_nums = {t["num"] for t in ready}
+    blocked = [t["num"] for t in tasks if (scope is None or t["num"] in scope) and t["num"] not in done | running
+               | ready_nums | pending_dec and t["status"] not in orch.FINISHED and any(d not in done for d in t["deps"])]
+    slots = orch.provider_status()
+
+    def nxt(t):
+        st = state.get(t["num"], {}).get("stage", "")
+        role = STAGE_ROLE.get(st or "acceptance")
+        prov = orch.provider_of(role, t["num"]) if role else None
+        cap = slots.get(prov or "", {})
+        return {"num": t["num"], "title": t["title"], "next": ROLE_VERB.get(role, st), "provider": prov,
+                "waitingSlot": bool(cap.get("max") and cap["running"] >= cap["max"]), "stage": st}
+
+    scoped = [t for t in tasks if am and t["num"] in am["tasks"]] if am else tasks
+    prog = {"id": am["id"] if am else None, "title": am["title"] if am else "", "status": (am or {}).get("status", ""),
+            "done": sum(t["status"] == "done" for t in scoped), "total": len(scoped)}
+    decisions = sorted(p.name for p in orch.DECISIONS.glob("*.md") if not p.name.endswith(".resolved.md")) \
+        if orch.DECISIONS.exists() else []
+    orch_running = bool(orchestrator_pids())
+    by_role = defaultdict(int)
+    for w in live:
+        by_role[w["role"]] += 1
+    if live:
+        code, reason = "running", ""
+    elif am and am.get("status") == "built":
+        code, reason = "approval", f"{am['id']} built, waiting for your approval"
+    elif decisions:
+        code, reason = "waiting-decision", "Waiting for decision " + ", ".join(d.split("-")[0] for d in decisions)
+    elif ready and not orch_running:
+        code, reason = "stopped", f"Orchestrator stopped, {len(ready)} task{'s' if len(ready) != 1 else ''} ready to run"
+    elif orch_running:
+        code, reason = "running", "Orchestrator running, picking the next task"
+    elif am is None and tasks:
+        code, reason = "idle", "All milestones approved"
+    else:
+        code, reason = "idle", "Nothing to do"
+    events = []
+    if orch.EVENTS.exists():
+        for line in orch.EVENTS.read_text().splitlines()[-60:]:
+            try:
+                e = json.loads(line)
+            except ValueError:
+                continue
+            if e.get("event") != "step":
+                events.append({**e, "ts": utc_iso(e["ts"]) if e.get("ts") else ""})
+    return {"now": datetime.fromtimestamp(now, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "state": code, "reason": reason, "orchestratorRunning": orch_running, "milestone": prog,
+            "workers": live, "byRole": dict(by_role), "queued": len(ready), "blocked": len(blocked),
+            "decisions": decisions, "upNext": [nxt(t) for t in ready[:8]], "events": events[-5:]}
 
 
 # -- token accounting -----------------------------------------------------------
@@ -433,6 +655,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, STATS_HTML.read_bytes(), "text/html; charset=utf-8")
         elif u.path == "/api/status":
             self.send(200, status())
+        elif u.path == "/api/now":
+            self.send(200, now_view())
         elif u.path == "/api/stats":
             data = stats({k: q.get(k, "") for k in ("milestone", "provider", "role")})
             data["quota"] = quota_view()

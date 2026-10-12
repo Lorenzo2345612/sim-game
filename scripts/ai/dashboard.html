@@ -51,6 +51,7 @@
   <span id="updated" class="faint" style="font-size:12px"></span>
 </div>
 <main class="page">
+ <section class="card now" id="nowCard"><h2>Now <span class="sp"></span><span id="nowUpd" class="note"></span></h2><div id="now"></div></section>
  <div class="grid">
   <div class="stack">
     <section class="card"><h2>Task board <span class="sp"></span><span id="allCount" class="note"></span></h2><div id="board"></div></section>
@@ -58,7 +59,6 @@
   </div>
   <div class="stack">
     <section class="card"><h2>Deliverables</h2><div id="deliv"></div></section>
-    <section class="card"><h2>Running workers</h2><div id="workers"></div></section>
     <section class="card"><h2>Decisions waiting</h2><div id="decisions"></div></section>
     <section class="card">
       <h2>Actions</h2>
@@ -147,11 +147,51 @@ function deliverables(d) {
   }).join('') : empty('Nothing built yet', 'Milestones appear here once they are built.'));
 }
 
-function workers(d) {
-  set('workers', d.workers.length ? '<table><tbody>' + d.workers.map(w =>
-    `<tr class="click" data-task="${w.task}"><td><b>${w.task}</b></td><td>${esc(w.role)}${w.heavy ? ' <span class="chip">heavy</span>' : ''}${w.resume ? ' <span class="chip">resume</span>' : ''}</td>
-     <td><span class="row" style="gap:6px;flex-wrap:nowrap">${provDot(w.provider)}${esc(w.provider || '–')}</span></td><td class="n muted" title="pid ${w.pid}">${esc(w.etime)}</td></tr>`).join('') + '</tbody></table>'
-    : empty('No workers running', 'Start the orchestrator to see activity.'));
+const STATE_LABEL = {running: 'Running', idle: 'Idle', stopped: 'Stopped', approval: 'Waiting for approval', 'waiting-decision': 'Waiting for decision'};
+let NOW = null, nowAt = 0;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const VERB_ING = {acceptance: 'writing tests', 'tester-pre': 'edge tests', coder: 'coding', tester: 'gap tests', reviewer: 'reviewing', fixer: 'fixing'};
+function nowView(n, at) {
+  const w = n.workers, m = n.milestone;
+  const roles = Object.entries(n.byRole).map(([r, c]) => `${c} ${VERB_ING[r] || r}`).join(' · ');
+  const sum = [];
+  if (m.id) sum.push(`<span><b>${esc(m.id)}</b> ${m.done}/${m.total} tasks</span>`);
+  sum.push(w.length ? `<span><b>${plural(w.length, 'worker')}</b>${roles ? ' · ' + esc(roles) : ''}</span>` : '<span>no workers</span>');
+  sum.push(`<span><b>${n.queued}</b> queued</span>`, `<span><b>${n.blocked}</b> blocked on deps</span>`,
+    `<span class="${n.decisions.length ? 'chip warn' : ''}"><b>${n.decisions.length}</b> decision${n.decisions.length === 1 ? '' : 's'} waiting</span>`);
+  const head = `<div class="now-head"><span class="now-state ${esc(n.state)}"><i class="dot"></i>${STATE_LABEL[n.state] || esc(n.state)}</span>
+    <span class="now-sum">${sum.join('<span class="sep">|</span>')}</span></div>`;
+  const cards = w.map(x => {
+    const a = x.activity, since = at - x.elapsedSec * 1000;
+    return `<div class="wcard" style="--pc:${provVar(x.provider)}" data-task="${x.task}" tabindex="0" role="button" title="pid ${x.pid} · stage ${esc(x.stage)}">
+      <div class="top"><span class="num3">${x.task}</span><span class="ttl">${esc(x.title)}</span></div>
+      <div class="verb">${esc(x.verb[0].toUpperCase() + x.verb.slice(1))}${x.heavy ? '<span class="chip">heavy</span>' : ''}${x.resume ? '<span class="chip">resume</span>' : ''}${x.fixRounds ? `<span class="chip warn">fix round ${x.fixRounds}</span>` : ''}</div>
+      <div class="meta"><span class="row" style="gap:6px;flex-wrap:nowrap">${provDot(x.provider)}<b>${esc(x.provider || '–')}</b> <span class="mono">${esc(x.model || '')}</span></span>
+        <span>elapsed <b class="tick" data-since="${since}">${dur(x.elapsedSec)}</b></span><span><b>${fmtN(x.tokens)}</b> tokens</span></div>
+      <div class="act ${a ? a.kind : ''}">${a ? `<span title="${esc(a.text)}">${a.kind === 'text' ? '“' + esc(a.text) + '”' : esc(a.text)}</span>${a.agoSec == null ? '' : `<span class="ago" data-at="${at - a.agoSec * 1000}">${dur(a.agoSec)} ago</span>`}`
+        : '<span class="faint">starting…</span>'}</div></div>`;
+  }).join('');
+  const empty = `<div class="now-empty"><i class="dot" style="width:12px;height:12px"></i><div><b>${esc(n.state === 'idle' ? 'Idle: ' + n.reason : n.reason || 'Nothing running')}</b>
+    <span class="faint">${n.state === 'approval' ? 'Play the build in Deliverables, then approve it to continue.' : n.state === 'waiting-decision' ? 'Resolve it in Decisions waiting to unblock the task.'
+      : n.state === 'stopped' ? 'Press Run orchestrator to continue.' : 'Workers appear here as soon as they start.'}</span></div></div>`;
+  const next = n.upNext.map(t => `<div class="nx" data-task="${t.num}" tabindex="0" role="button"><span class="faint">${t.num}</span><span class="tt">${esc(t.title)}</span>
+    <span class="muted" style="font-size:12px">${esc(t.next)}</span><span class="row" style="gap:6px;font-size:12px;flex-wrap:nowrap">${provDot(t.provider)}${esc(t.provider || '')}${t.waitingSlot ? '<span class="chip warn">slot busy</span>' : ''}</span></div>`).join('');
+  const evs = n.events.slice().reverse().map(e => `<div class="nev"><span class="faint">${fmtClock(e.ts)}</span><span class="muted">${esc(e.task || '–')}</span><b class="e-${esc(e.event)}">${esc(e.event)}</b><span class="d" title="${esc(e.detail || '')}">${esc(e.detail || '')}</span></div>`).join('');
+  return head + (w.length ? `<div class="wgrid">${cards}</div>` : empty) +
+    `<div class="now-cols"><div><h3>Up next${n.upNext.length < n.queued ? ` · ${n.queued} ready` : ''}</h3>${next || '<div class="faint" style="font-size:13px;padding:4px 8px">Nothing ready to start.</div>'}</div>
+     <div><h3>Last events</h3>${evs || '<div class="faint" style="font-size:13px;padding:4px 8px">No events yet.</div>'}</div></div>`;
+}
+async function refreshNow() {
+  try {
+    const n = await (await fetch('/api/now')).json(), at = Date.now();
+    set('now', nowView(n, at));
+    setText('nowUpd', 'updated ' + fmtClock(at) + ' CDMX · refreshes every 5 s');
+  } catch (e) { setText('nowUpd', 'offline'); }
+}
+function tickNow() {
+  const t = Date.now();
+  document.querySelectorAll('#now .tick').forEach(el => { el.textContent = dur(Math.max(0, Math.round((t - el.dataset.since) / 1000))); });
+  document.querySelectorAll('#now .ago').forEach(el => { el.textContent = dur(Math.max(0, Math.round((t - el.dataset.at) / 1000))) + ' ago'; });
 }
 
 function decisionsCard(d) {
@@ -192,7 +232,7 @@ async function refresh() {
     setText('allCount', `${d.done}/${d.total} done overall`);
     set('orch', `<i class="dot ${d.orchestratorRunning ? 'live' : ''}"></i>${d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle'}`);
     setText('wk', `${d.workers.length} worker${d.workers.length === 1 ? '' : 's'}`);
-    quotaMini(d); board(d); deliverables(d); workers(d); decisionsCard(d); events(d); commits(d);
+    quotaMini(d); board(d); deliverables(d); decisionsCard(d); events(d); commits(d);
     setText('updated', 'updated ' + fmtT(new Date()));
   } catch (e) { setText('updated', 'offline'); }
 }
@@ -223,6 +263,9 @@ document.addEventListener('click', async e => {
 
 refresh();
 setInterval(refresh, 3000);
+refreshNow();
+setInterval(refreshNow, 5000);
+setInterval(tickNow, 1000);
 </script>
 </body>
 </html>

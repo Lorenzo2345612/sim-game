@@ -101,3 +101,39 @@ body.drawer-open #scrim { display: block; } body.drawer-open #drawer { transform
 #drawer td small { display: block; color: var(--faint); font-size: 12px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .who { display: flex; align-items: center; gap: 6px; }
 #drawer th, #drawer td { padding-left: 6px; padding-right: 6px; } #drawer table { font-size: 13px; }
+
+/* "Now" section */
+.now h2 { margin-bottom: var(--s3); }
+.now-head { display: flex; align-items: center; gap: var(--s3) var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+.now-state { display: inline-flex; align-items: center; gap: var(--s2); font-size: 16px; font-weight: 650; }
+.now-state.running .dot { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); animation: pulse 2s infinite; }
+.now-state.approval .dot, .now-state.waiting-decision .dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.now-state.stopped .dot { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px transparent; } }
+.now-sum { color: var(--muted); display: flex; gap: var(--s2) var(--s4); flex-wrap: wrap; align-items: center; }
+.now-sum b { color: var(--text); font-weight: 600; }
+.now-sum .sep { color: var(--line); }
+.wgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: var(--s4); }
+.wcard { background: var(--bg); border-radius: var(--r); padding: var(--s3) var(--s4); box-shadow: 0 0 0 1px var(--line), inset 3px 0 0 var(--pc, var(--faint)); cursor: pointer; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2); }
+.wcard:hover { background: var(--hover); }
+.wcard .top { display: flex; align-items: baseline; gap: var(--s2); }
+.wcard .num3 { font: 600 15px var(--mono); color: var(--faint); }
+.wcard .ttl { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wcard .verb { color: var(--accent-text); font-weight: 600; font-size: 15px; display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.wcard .meta { display: flex; gap: var(--s1) var(--s3); flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center; }
+.wcard .meta b { color: var(--text); font-weight: 600; }
+.wcard .act { min-width: 0; overflow: hidden; font: 12px/1.5 var(--mono); background: var(--surface); border-radius: 8px; padding: 6px var(--s2); color: var(--text); display: flex; gap: var(--s2); }
+.wcard .act span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wcard .act.text span:first-child { font-family: var(--font); font-style: italic; color: var(--muted); }
+.wcard .act .ago { color: var(--faint); flex: none; }
+.now-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); margin-top: var(--s5); }
+.now-cols h3 { font-size: 12px; font-weight: 600; color: var(--faint); margin: 0 0 var(--s2); text-transform: uppercase; letter-spacing: .04em; }
+.nx { display: grid; grid-template-columns: 36px 1fr auto auto; gap: var(--s3); align-items: center; padding: 4px var(--s2); border-radius: 8px; font-size: 13px; cursor: pointer; }
+.nx:hover { background: var(--hover); }
+.nx .tt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.nev { display: grid; grid-template-columns: 62px 36px 76px 1fr; gap: var(--s3); font-size: 12px; padding: 4px var(--s2); }
+.nev b { font-weight: 500; } .nev .e-decision, .nev .e-blocked, .nev .e-error { color: var(--warn); } .nev .e-done, .nev .e-merged, .nev .e-approved { color: var(--ok); } .nev .e-start { color: var(--accent-text); }
+.nev .d { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.now-empty { padding: var(--s4) var(--s3); background: var(--bg); border-radius: var(--r); display: flex; gap: var(--s3); align-items: center; }
+.now-empty b { font-size: 15px; display: block; } .now-empty .faint { font-size: 13px; }
+@media (max-width: 900px) { .now-cols { grid-template-columns: 1fr; } .wgrid { grid-template-columns: 1fr; } }
