@@ -50,6 +50,9 @@ PROVIDERS = ROOT / "ai/providers.json"
 EXPERIMENTS = ROOT / "ai/experiments.json"
 WORKER_HOME = Path(os.environ.get("CLAUDE_WORKERS_DIR") or Path.home() / ".claude-workers")
 TRIAGE_TIMEOUT = 300
+ANALYST_TIMEOUT = 600
+ANALYST_ROUND = 3
+INSIGHTS = AI / "insights"
 TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 MAX_FIX_ROUNDS = 4
 FINISHED = {"done", "blocked"}
@@ -540,18 +543,22 @@ def write_decision(d):
         (DECISIONS / f"{d['num']}-{d['stage']}.json").write_text(json.dumps(d, indent=2) + "\n")
 
 
-def triage_argv():
-    cmd = os.environ.get("ORCH_TRIAGE_CMD")
+def claude_argv(var, name):
+    cmd = os.environ.get(var)
     if cmd is None and not os.environ.get("ORCH_ROOT"):
         cmd = "default"
     if not cmd or cmd == "off":
         return None
     if cmd != "default":
         return shlex.split(cmd)
-    schema = json.dumps(json.loads((ROOT / "ai/schemas/triage.json").read_text()), separators=(",", ":"))
+    schema = json.dumps(json.loads((ROOT / f"ai/schemas/{name}.json").read_text()), separators=(",", ":"))
     return ["claude", "-p", "--model", "sonnet", "--output-format", "json", "--permission-mode", "plan",
             "--disallowedTools", "Edit,Write,NotebookEdit,Bash",
-            "--append-system-prompt", (ROOT / "ai/agents/triage.md").read_text(), "--json-schema", schema]
+            "--append-system-prompt", (ROOT / f"ai/agents/{name}.md").read_text(), "--json-schema", schema]
+
+
+def triage_argv():
+    return claude_argv("ORCH_TRIAGE_CMD", "triage")
 
 
 def parse_triage(out):
@@ -583,7 +590,7 @@ def run_triage(d, spec):
         return {"action": "escalate", "category": None, "note": f"triage failed: {type(e).__name__}: {e}"[:300]}
 
 
-def decision(num, title, stage, question, report, st, category="spec", r=None):
+def decision(num, title, stage, question, report, st, category="spec", r=None, triage=True):
     spec = spec_path(num)
     r = r or {}
     questions = list(dict.fromkeys([*r.get("questions", []), *r.get("blockers", [])])) or [question]
@@ -600,7 +607,7 @@ def decision(num, title, stage, question, report, st, category="spec", r=None):
     event(num, "decision", f"{stage}: {question}")
     if DECIDE_CMD:
         subprocess.run([*shlex.split(DECIDE_CMD), str(path)], cwd=ROOT)
-    t = run_triage(d, spec)
+    t = run_triage(d, spec) if triage else None
     if t:
         d["triage"] = t
         tried = st.setdefault("triaged", {})
@@ -626,6 +633,97 @@ def decision(num, title, stage, question, report, st, category="spec", r=None):
         write_decision(d)
     notify(f"Task {num} needs the planner at {stage} [{d['category']}]: {question}")
     return "decision"
+
+
+FAULTS = ("coder", "tester", "reviewer", "acceptance_tests", "spec", "infra")
+ANALYST_ACTIONS = ("guide_coder", "dismiss_findings", "escalate")
+
+
+def remember(st, role, r):
+    st.setdefault("history", []).append({"role": role, "stage": st.get("stage"), "round": st.get("fixRounds", 0),
+                                         "status": r.get("status"), "log": last_log(r.get("out", "")),
+                                         "report": (r.get("out") or "")[-3000:]})
+    st["history"] = st["history"][-20:]
+
+
+def parse_analyst(out):
+    try:
+        data = json.loads(out)
+    except ValueError:
+        m = re.search(r"\{.*\}", out, re.S)
+        data = json.loads(m.group(0)) if m else {}
+    if isinstance(data, dict) and isinstance(data.get("structured_output"), dict):
+        data = data["structured_output"]
+    elif isinstance(data, dict) and isinstance(data.get("result"), str) and "action" not in data:
+        return parse_analyst(data["result"])
+    if not isinstance(data, dict) or data.get("action") not in ANALYST_ACTIONS or data.get("fault") not in FAULTS:
+        raise ValueError("no valid fault/action")
+    return {"fault": data["fault"], "evidence": str(data.get("evidence", "")), "action": data["action"],
+            "note": str(data.get("note", "")), "dismissed": [str(x) for x in data.get("dismissed") or []],
+            "improvements": [{k: str(i.get(k, "")) for k in ("target", "change", "why")}
+                             for i in data.get("improvements") or [] if isinstance(i, dict)]}
+
+
+def task_diff(num):
+    path, base = wt_path(num), base_commit(num)
+    diff = git("diff", base, "--", ".", *EXCLUDES, cwd=path).stdout
+    new = git("ls-files", "--others", "--exclude-standard", cwd=path).stdout.split()
+    if new:
+        diff += "\n# untracked files: " + " ".join(new)
+    return diff[:30000]
+
+
+def analyst_payload(num, spec, st):
+    path = wt_path(num)
+    tests = {}
+    base = base_commit(num)
+    for f in dict.fromkeys([*git("show", "--name-only", "--format=", base, "--", "tests", cwd=path).stdout.split(),
+                            *new_test_files(num)]):
+        try:
+            tests[f] = (path / f).read_text()[:8000]
+        except OSError:
+            pass
+    prompts = {n: (ROOT / f"ai/agents/{n}.md").read_text() for n in ("coder", "tester", "reviewer")
+               if (ROOT / f"ai/agents/{n}.md").exists()}
+    return json.dumps({"task": num, "stage": st.get("stage"), "fixRounds": st.get("fixRounds", 0),
+                       "spec": spec.read_text()[:20000], "acceptanceTests": tests, "reports": st.get("history", []),
+                       "diff": task_diff(num), "rolePrompts": prompts})
+
+
+def render_insight(num, k, a, stage):
+    imps = "\n".join(f"- `{i['target']}`: {i['change']} (why: {i['why']})" for i in a["improvements"]) or "- none"
+    dis = "\n".join(f"- {x}" for x in a["dismissed"]) or "- none"
+    return (f"# Insight: task {num} round {k} ({stage})\n\nFault: {a['fault']}\nAction: {a['action']}\n\n"
+            f"## Evidence\n\n{a['evidence']}\n\n## Note\n\n{a['note']}\n\n## Dismissed findings\n\n{dis}\n\n"
+            f"## Improvement proposals (planner)\n\n{imps}\n\nReviewed: rename this file to `{num}-round{k}.reviewed.md`.\n")
+
+
+def record_insight(num, k, stage, a):
+    with lock:
+        INSIGHTS.mkdir(parents=True, exist_ok=True)
+        (INSIGHTS / f"{num}-round{k}.md").write_text(render_insight(num, k, a, stage))
+        with open(INSIGHTS / "insights.jsonl", "a") as f:
+            f.write(json.dumps({"ts": datetime.datetime.now().isoformat(timespec="seconds"), "task": num,
+                                "round": k, "stage": stage, **a}) + "\n")
+    event(num, "analyst", f"round{k} {stage}: fault={a['fault']} action={a['action']} "
+                          f"improvements={len(a['improvements'])}"[:300])
+
+
+def run_analyst(num, spec, st, k):
+    """Headless round analyst; any failure -> None (continue as before). Never edits files."""
+    argv = claude_argv("ORCH_ANALYST_CMD", "analyst")
+    if not argv:
+        return None
+    env = {n: v for n, v in os.environ.items() if n not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "SIMGAME_WORKER")}
+    try:
+        p = subprocess.run(argv, cwd=ROOT, env=env, input=analyst_payload(num, spec, st), capture_output=True,
+                           text=True, timeout=ANALYST_TIMEOUT)
+        a = parse_analyst(p.stdout)
+    except Exception as e:  # noqa: BLE001
+        event(num, "analyst", f"round{k} failed: {type(e).__name__}: {e}"[:300])
+        return None
+    record_insight(num, k, st.get("stage"), a)
+    return a
 
 
 def retry_reason(r):
@@ -844,6 +942,7 @@ def _run_task(task, slot):
             note = "Previous run left no implementation outside tests/. Implement the spec." \
                 if st.get("emptyRetries") else None
             r = call_retry(st, "coder", spec, num, heavy=heavy, note=note)
+            remember(st, "coder", r)
             if r["status"] == "BLOCKED":
                 return decision(num, title, stage, "coder blocked", r["out"], st, "spec", r)
             if not r["status"]:
@@ -864,11 +963,11 @@ def _run_task(task, slot):
                 advance("coder")
                 continue
             if stage == "tester":
-                r = call_retry(st, "tester", spec, num, heavy=models_heavy)
+                r = call_retry(st, "tester", spec, num, heavy=models_heavy, note=st.pop("verifyNote", None))
                 failed = r["status"] != "PASS"
                 note = f"Tester failures to fix:\n{r['failures'] or r['out'][-1500:]}"
             else:
-                r = call_retry(st, "reviewer", spec, num)
+                r = call_retry(st, "reviewer", spec, num, note=st.pop("verifyNote", None))
                 failed = r["status"] in ("CHANGES", "REJECTED") and bool(r["blockers"]) or \
                     r["status"] not in ("APPROVED", "CHANGES", "REJECTED")
                 note = "Reviewer BLOCKER findings to fix:\n" + "\n".join(r["blockers"]) if r["blockers"] \
@@ -876,6 +975,7 @@ def _run_task(task, slot):
             if not failed:
                 advance("reviewer" if stage == "tester" else "merge")
                 continue
+            remember(st, stage, r)
             if not r["status"] and DRAIN.is_set():
                 continue
             st["fixRounds"] = st.get("fixRounds", 0) + 1
@@ -883,7 +983,28 @@ def _run_task(task, slot):
                 return decision(num, title, stage, "escalation exhausted", r["out"], st,
                                 "tests" if r["status"] else "infra", r)
             save_task_state(num, st)
+            if st["fixRounds"] == ANALYST_ROUND and not st.get("analyzed") and not DRAIN.is_set():
+                st["analyzed"] = True
+                save_task_state(num, st)
+                a = run_analyst(num, spec, st, ANALYST_ROUND)
+                if a and a["action"] == "escalate":
+                    cat = {"acceptance_tests": "tests", "infra": "infra"}.get(a["fault"], "spec")
+                    return decision(num, title, stage, f"round analyst ({a['fault']}): {a['note'][:200]}", r["out"], st,
+                                    cat, {"questions": [a["note"] or a["evidence"]], "failures": a["evidence"]},
+                                    triage=False)
+                if a and a["action"] == "dismiss_findings" and not st.get("dismissed"):
+                    st["dismissed"] = True
+                    st["fixRounds"] -= 1
+                    st["verifyNote"] = ("Previously reported findings were judged false positives by the round "
+                                        "analyst. Dismissed:\n" + "\n".join(f"- {x}" for x in a["dismissed"]) +
+                                        f"\nEvidence: {a['evidence']}\nDo not re-raise them unless you can cite a "
+                                        "spec line that requires them.")
+                    save_task_state(num, st)
+                    continue
+                if a and a["action"] == "guide_coder" and a["note"]:
+                    note = f"Round analyst guidance:\n{a['note']}\n\n{note}"
             fr = fix_call(spec, num, st["fixRounds"], note, st, heavy=heavy)
+            remember(st, "fix", fr)
             if fr["status"] == "BLOCKED":
                 return decision(num, title, stage, "fix round blocked", fr["out"], st, "spec", fr)
             if not fr["status"]:
@@ -1188,6 +1309,9 @@ def brief(use_quota=True):
            if e["event"] in ("error", "retry", "commit-failed", "quota", "decision")] if EVENTS.exists() else []
     for e in bad[-3:]:
         lines.append(f"  recent {e['ts'][5:16]} {e['task'] or '-'} {e['event']} {str(e['detail'])[:90]}")
+    unreviewed = [f for f in INSIGHTS.glob("*.md") if not f.name.endswith(".reviewed.md")] if INSIGHTS.exists() else []
+    if unreviewed:
+        lines.append(f"insights: {len(unreviewed)} unreviewed in .ai/insights/")
     if use_quota:
         warn = quota_warnings()
         if warn:

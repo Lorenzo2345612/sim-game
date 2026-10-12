@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fault", "evidence", "action", "note", "dismissed", "improvements"],
+  "properties": {
+    "fault": {"type": "string", "enum": ["coder", "tester", "reviewer", "acceptance_tests", "spec", "infra"]},
+    "evidence": {"type": "string"},
+    "action": {"type": "string", "enum": ["guide_coder", "dismiss_findings", "escalate"]},
+    "note": {"type": "string"},
+    "dismissed": {"type": "array", "items": {"type": "string"}},
+    "improvements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "change", "why"],
+        "properties": {"target": {"type": "string"}, "change": {"type": "string"}, "why": {"type": "string"}}
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

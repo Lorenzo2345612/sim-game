@@ -92,6 +92,19 @@ def task_tokens():
     return totals
 
 
+def insights(limit=None, task=None):
+    f = orch.INSIGHTS / "insights.jsonl"
+    out = []
+    for line in f.read_text().splitlines() if f.exists() else []:
+        try:
+            i = json.loads(line)
+        except ValueError:
+            continue
+        if task is None or i.get("task") == task:
+            out.append({**i, "improvements": len(i.get("improvements", []))} if limit else i)
+    return out[-limit:] if limit else out
+
+
 def status():
     tasks = orch.read_tasks() if orch.REGISTRY.exists() else []
     state = orch.load_state()
@@ -129,6 +142,7 @@ def status():
         "activeMilestone": (orch.active_milestone() or {}).get("id"),
         "events": events,
         "decisions": decisions,
+        "insights": insights(10),
         "tokens": {k: {"tasks": len(v["tasks"]), "total": v["total"]} for k, v in tokens.items()},
         "commits": commits,
         "milestones": [{**m, "built": (ROOT / "builds" / m["id"] / "index.html").exists(),
@@ -552,7 +566,8 @@ def task_detail(num):
                 events.append({**e, "ts": utc_iso(e["ts"]) if e.get("ts") else ""})
     return {"num": num, "title": (info or {}).get("title", ""), "status": (info or {}).get("status", ""),
             "stage": st.get("stage", ""), "fixRounds": st.get("fixRounds", 0),
-            "totals": finish(tot), "runs": out, "events": events[-40:]}
+            "totals": finish(tot), "runs": out, "events": events[-40:],
+            "analyst": insights(task=num)}
 
 
 def quota_providers():

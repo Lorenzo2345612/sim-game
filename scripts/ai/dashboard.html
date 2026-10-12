@@ -59,6 +59,7 @@
   </div>
   <div class="stack">
     <section class="card"><h2>Deliverables</h2><div id="deliv"></div></section>
+    <section class="card"><h2>Insights</h2><div id="insights"></div></section>
     <section class="card"><h2>Decisions waiting</h2><div id="decisions"></div></section>
     <section class="card">
       <h2>Actions</h2>
@@ -207,6 +208,12 @@ function renderDecisions() {
     <button data-resolve="${esc(f)}">Resolved</button></div><pre style="margin-top:8px">${esc(decisions[f] || '')}</pre></div>`).join('') : empty('Nothing needs you', 'Planner decisions will queue here.'));
 }
 
+function insightsCard(d) {
+  set('insights', (d.insights || []).slice().reverse().map(i =>
+    `<div class="ev"><span class="muted">${esc(i.task)}</span><b>${esc(i.fault)}</b><span class="muted">${esc(i.action)} · ${i.improvements} proposal${i.improvements === 1 ? '' : 's'}</span></div>`).join('')
+    || empty('No insights', 'Round analyst findings will show here.'));
+}
+
 function events(d) {
   const q = $('evf').value.toLowerCase();
   set('events', d.events.slice().reverse().filter(e => !q || JSON.stringify(e).toLowerCase().includes(q)).map(e =>
@@ -232,7 +239,7 @@ async function refresh() {
     setText('allCount', `${d.done}/${d.total} done overall`);
     set('orch', `<i class="dot ${d.orchestratorRunning ? 'live' : ''}"></i>${d.orchestratorRunning ? 'orchestrator running' : 'orchestrator idle'}`);
     setText('wk', `${d.workers.length} worker${d.workers.length === 1 ? '' : 's'}`);
-    quotaMini(d); board(d); deliverables(d); decisionsCard(d); events(d); commits(d);
+    quotaMini(d); board(d); deliverables(d); decisionsCard(d); insightsCard(d); events(d); commits(d);
     setText('updated', 'updated ' + fmtT(new Date()));
   } catch (e) { setText('updated', 'offline'); }
 }
