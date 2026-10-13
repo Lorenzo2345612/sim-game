@@ -49,5 +49,6 @@ Specs say WHAT, not HOW. If the spec contains the code, the planner already paid
 ## Model split (mandatory)
 
 - Opus (this session) only for: (a) feature analysis when the feature is complex or cross-cutting (physics, architecture, data pipeline, anything with unknowns → run experiments with physics-lab or similar first); (b) the "Acceptance tests" table of every spec. Simple features: delegate the analysis to a Sonnet subagent too.
+- Tolerances: geometry stored in Float32Array (SurfaceStrip, BufferGeometry) cannot meet 1e-6 at 100 m scale; use ≥ 1e-5 there. Times accumulated from `dt` steps need a ~1e-9 s boundary tolerance. Loops in tests that step to a boundary must stop one step early.
 - Acceptance tests are written FIRST, before the rest of the spec: concrete rows (given / when / then with numbers and tolerances), covering the goal, edge cases and failure modes. They are the contract; workers turn them into `tests/unit/acceptance/` before coding.
 - Sonnet `spec-writer` writes the rest of the spec around the Opus design and copies the acceptance table verbatim (never edits it). `spec-reviewer` checks the table is present and unchanged.
