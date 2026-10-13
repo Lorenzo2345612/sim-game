@@ -594,7 +594,7 @@
     {
       "num": "044",
       "title": "Track selection and pause menu",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "043"
       ],
@@ -971,7 +971,7 @@
     {
       "num": "071",
       "title": "Generic car asset pipeline",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "053"
       ],

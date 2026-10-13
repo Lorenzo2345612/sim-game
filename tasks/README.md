@@ -47,7 +47,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
 | 043 | Load a TrackData v2 world into the game | done | 056, 038, 039, 040, 041, 042 |
-| 044 | Track selection and pause menu | pending | 043 |
+| 044 | Track selection and pause menu | in progress | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | done | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
@@ -74,7 +74,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 068 | Setup screen | pending | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
-| 071 | Generic car asset pipeline | in progress | 053 |
+| 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | pending | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
 | 074 | Credits screen | pending | 044 |
