@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "build:tracks": "tsx tools/track-builder/buildTrack.ts",
     "fetch:dem": "tsx tools/dem/fetchDem.ts",
-    "fetch:textures": "tsx tools/assets/fetchTextures.ts"
+    "fetch:textures": "tsx tools/assets/fetchTextures.ts",
+    "build:f4": "tsx tools/assets/buildF4.ts"
   },
   "dependencies": {
     "@dgreenheck/ez-tree": "1.1.0",
