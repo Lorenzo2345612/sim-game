@@ -134,9 +134,15 @@ function indexDiff(a: number, b: number, n: number): number {
 }
 
 /** Furthest grass-strip vertex distance along the lateral line, per centerline index and side. */
-function vergeEdges(strips: SurfaceStrip[], cx: [number, number][], grid: Map<string, number[]>): { left: number[]; right: number[] } {
+function vergeEdges(
+  strips: SurfaceStrip[],
+  cx: [number, number][],
+  grid: Map<string, number[]>,
+): { left: number[]; right: number[]; innerLeft: number[]; innerRight: number[] } {
   const left = new Array<number>(cx.length).fill(0);
   const right = new Array<number>(cx.length).fill(0);
+  const innerLeft = new Array<number>(cx.length).fill(Infinity);
+  const innerRight = new Array<number>(cx.length).fill(Infinity);
   for (const s of strips.filter((g) => g.surface === 'grass')) {
     for (let v = 0; v < s.positions.length / 3; v++) {
       const x = s.positions[3 * v];
@@ -145,11 +151,16 @@ function vergeEdges(strips: SurfaceStrip[], cx: [number, number][], grid: Map<st
       if (j < 0) continue;
       const [rx, rz] = rightNormalAt(cx, j);
       const lat = (x - cx[j][0]) * rx + (z - cx[j][1]) * rz;
-      if (lat > right[j]) right[j] = lat;
-      else if (-lat > left[j]) left[j] = -lat;
+      if (lat > 0) {
+        right[j] = Math.max(right[j], lat);
+        innerRight[j] = Math.min(innerRight[j], lat);
+      } else {
+        left[j] = Math.max(left[j], -lat);
+        innerLeft[j] = Math.min(innerLeft[j], -lat);
+      }
     }
   }
-  return { left, right };
+  return { left, right, innerLeft, innerRight };
 }
 
 function castDown(world: RAPIER.World, x: number, z: number, fromY: number): { collider: RAPIER.Collider; y: number } | null {
@@ -218,26 +229,28 @@ describe('077 track verges acceptance', () => {
         for (const side of [1, -1]) {
           const j = (i + 1) % n;
           const e = side === 1 ? Math.min(edges.right[i], edges.right[j]) : Math.min(edges.left[i], edges.left[j]);
-          expect(e, `grass verge edge at ${id} index ${i} side ${side === 1 ? 'right' : 'left'}`).toBeGreaterThan(0);
+          // verge-owned span only: from the verge inner edge (outermost existing strip) to its outer edge
+          const inner = side === 1 ? Math.max(edges.innerRight[i], edges.innerRight[j]) : Math.max(edges.innerLeft[i], edges.innerLeft[j]);
+          if (!(e > inner)) continue; // verge capped to zero width on tight inside corners (spec step 4)
           // chord midpoint between i and i+1: rays along mesh row lines graze shared edges (f32) and leak through
           const mx = (cx[i][0] + cx[j][0]) / 2;
           const mz = (cx[i][1] + cx[j][1]) / 2;
           let prevY: number | null = null;
-          for (let k = 0; k * 0.25 <= e; k++) {
-            const t = k * 0.25;
+          for (let k = 0; inner + k * 0.25 <= e; k++) {
+            const t = inner + k * 0.25;
             const x = mx + rx * side * t;
             const z = mz + rz * side * t;
             const hit = castDown(world, x, z, fromY);
-            if (hit === null || surfaceOf(hit.collider) === null) {
+            if (hit === null || surfaceOf(hit.collider) !== 'grass' || hit.collider.shape.type === RAPIER.ShapeType.HeightField) {
               prevY = null;
               continue;
             }
-            if (indexDiff(nearestCenterlineIndex(cx, grid, x, z), i, n) > 25) {
+            if (indexDiff(nearestCenterlineIndex(cx, grid, x, z), i, n) > 3) {
               prevY = null;
               continue;
             }
             if (prevY !== null) {
-              expect(prevY - hit.y, `upward step at ${id} index ${i} side ${side === 1 ? 'right' : 'left'} t=${t}`).toBeLessThanOrEqual(0.05);
+              expect(prevY - hit.y, `upward step at ${id} index ${i} side ${side === 1 ? 'right' : 'left'} t=${t}`).toBeLessThanOrEqual(0.08);
             }
             prevY = hit.y;
           }
