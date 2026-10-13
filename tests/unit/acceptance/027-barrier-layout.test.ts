@@ -13,6 +13,7 @@ function closedLoop(n: number): Point2[] {
 }
 
 // inclusive [start, end], wrap-aware (end < start)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function covers(start: number, end: number, i: number, n: number): boolean {
   return end >= start ? i >= start && i <= end : i >= start || i <= end;
 }
