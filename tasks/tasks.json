@@ -1088,7 +1088,7 @@
     {
       "num": "080",
       "title": "PBR surface materials with anti-tiling for track strips",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "077"
       ],
@@ -1320,6 +1320,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/097-terrain-below-strips.md"
+    },
+    {
+      "num": "098",
+      "title": "Gravel traps from OpenStreetMap, run-off rule only for real corners",
+      "status": "pending",
+      "deps": [
+        "097"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/098-osm-runoffs.md"
     }
   ]
 }

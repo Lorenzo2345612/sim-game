@@ -83,7 +83,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 077 | Add grass verges beside the track surfaces | done | - |
 | 078 | Add reverse gear | pending | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
-| 080 | PBR surface materials with anti-tiling for track strips | pending | 077 |
+| 080 | PBR surface materials with anti-tiling for track strips | in progress | 077 |
 | 081 | Terrain splat material with track-distance mown stripes | pending | 080 |
 | 082 | Painted track markings (edge lines, start/finish line) | pending | 080 |
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
@@ -100,3 +100,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
+| 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | pending | 097 |

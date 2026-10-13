@@ -78,13 +78,17 @@
         "096",
         "097"
       ],
-      "status": "open",
+      "status": "approved",
       "prefetch": [
         "038",
         "039",
         "040",
         "041"
-      ]
+      ],
+      "builtAt": "2026-10-13T13:16:02",
+      "commit": "944de0e",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.2b",
@@ -93,7 +97,8 @@
         "080",
         "081",
         "082",
-        "083"
+        "083",
+        "098"
       ],
       "status": "open",
       "prefetch": []
