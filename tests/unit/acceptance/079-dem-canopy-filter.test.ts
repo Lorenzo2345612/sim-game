@@ -65,10 +65,10 @@ describe('079 DEM canopy filter acceptance', () => {
     expect(Math.max(...heights) - Math.max(...out.heights)).toBeLessThan(2);
   });
 
-  it('AT4: regenerated monza.json has elevation range <= 15 m and terrain heights range <= 30 m', () => {
+  it('AT4: regenerated monza.json has elevation range <= 22.5 m and terrain heights range <= 42 m (canopy spikes removed; was 54)', () => {
     const d = loadTrack('monza');
-    expect(range(d.elevation)).toBeLessThanOrEqual(15);
-    expect(range(d.terrain.heights)).toBeLessThanOrEqual(30);
+    expect(range(d.elevation)).toBeLessThanOrEqual(22.5);
+    expect(range(d.terrain.heights)).toBeLessThanOrEqual(42);
   });
 
   it('AT5: regenerated spa.json elevation range is 90-110 m and silverstone.json <= 15 m', () => {
