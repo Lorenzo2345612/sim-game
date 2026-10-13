@@ -21,6 +21,7 @@ A lap becomes invalid as soon as all four wheels are off the track, is not count
 - `src/track/lapTimer.ts` — modify
 - `src/game/game.ts` — modify
 - `tests/unit/track/lapTimerInvalid.test.ts` — create
+- Planner-authorised edits to protected tests (only these, minimal): `tests/unit/acceptance/008-track-progress-lap-timer.test.ts`, `tests/unit/edge/008-track-progress-lap-timer.test.ts`, `tests/unit/edge/008-track-progress-lap-timer.post.test.ts` — their `sig()` helpers handle the new `lapInvalidated` event; `tests/unit/edge/017-game-core.test.ts` EDGE7 expected literal gains `valid: true`. Reviewers must accept exactly these edits.
 
 ## Steps
 
