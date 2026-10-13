@@ -93,10 +93,7 @@ describe('014 car render acceptance', () => {
     expect(delta.angleTo(expected)).toBeLessThanOrEqual(1e-6);
   });
 
-  it('AT6: the Kenney model and texture are copied into public/models', () => {
-    expect(existsSync(fileURLToPath(new URL('../../../public/models/race.glb', import.meta.url)))).toBe(true);
-    expect(
-      existsSync(fileURLToPath(new URL('../../../public/models/Textures/colormap.png', import.meta.url))),
-    ).toBe(true);
+  it('AT6: the car model is in public/models (F4 since 057)', () => {
+    expect(existsSync(fileURLToPath(new URL('../../../public/models/f4.glb', import.meta.url)))).toBe(true);
   });
 });

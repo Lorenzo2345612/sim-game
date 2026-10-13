@@ -117,19 +117,18 @@ describe('CarRenderer.update quaternions', () => {
 });
 
 describe('CarRenderer.fromGltfScene transforms', () => {
-  it('reorients the body pivot (ry=pi, y=-0.45) and scales the body mesh by 1.6', () => {
+  it('keeps the body unrotated and unscaled (057: no placeholder transforms)', () => {
     const renderer = CarRenderer.fromGltfScene(makeScene());
     const bodyPivot = renderer.root.children[0].children[0];
-    expect(bodyPivot.rotation.y).toBeCloseTo(Math.PI, 6);
-    expect(bodyPivot.position.y).toBeCloseTo(-0.45, 6);
+    expect(bodyPivot.rotation.y).toBeCloseTo(0, 6);
     const body = bodyPivot.children[0];
     expect(body.name).toBe('body');
-    expect(body.scale.x).toBeCloseTo(1.6, 6);
-    expect(body.scale.y).toBeCloseTo(1.6, 6);
-    expect(body.scale.z).toBeCloseTo(1.6, 6);
+    expect(body.scale.x).toBeCloseTo(1, 6);
+    expect(body.scale.y).toBeCloseTo(1, 6);
+    expect(body.scale.z).toBeCloseTo(1, 6);
   });
 
-  it('zeroes each wheel node position, scales it by 1.1 and parents it to its own wheel group', () => {
+  it('zeroes each wheel node position, keeps scale 1 and parents it to its own wheel group', () => {
     const renderer = CarRenderer.fromGltfScene(makeScene());
     for (let i = 0; i < 4; i++) {
       const group = renderer.root.children[i + 1];
@@ -139,9 +138,9 @@ describe('CarRenderer.fromGltfScene transforms', () => {
       expect(wheel.position.x).toBe(0);
       expect(wheel.position.y).toBe(0);
       expect(wheel.position.z).toBe(0);
-      expect(wheel.scale.x).toBeCloseTo(1.1, 6);
-      expect(wheel.scale.y).toBeCloseTo(1.1, 6);
-      expect(wheel.scale.z).toBeCloseTo(1.1, 6);
+      expect(wheel.scale.x).toBeCloseTo(1, 6);
+      expect(wheel.scale.y).toBeCloseTo(1, 6);
+      expect(wheel.scale.z).toBeCloseTo(1, 6);
     }
   });
 

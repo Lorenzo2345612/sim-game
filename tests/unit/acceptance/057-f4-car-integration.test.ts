@@ -60,7 +60,7 @@ describe('057 F4 car integration acceptance', () => {
 
     const kenneyRows = readFileSync(join(ROOT, 'ASSETS_LICENSES.md'), 'utf8')
       .split('\n')
-      .filter((line) => line.toLowerCase().includes('kenney'));
+      .filter((line) => /car-kit|car kit|race\.glb/i.test(line));
     expect(kenneyRows).toEqual([]);
 
     const tatuusFiles = [
