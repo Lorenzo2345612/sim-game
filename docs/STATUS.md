@@ -56,3 +56,4 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - Milestone order (user, 2026-10-13: F4 model before M1.2c): M1.2b (running) → M1.3 → M1.4 → M1.2c (visual realism + tracks Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake, Sepang: 099–106) → M1.5 → M1.6 → M1.6b (LMP2/Hypercar 112–114) → M1.7 (audio 107–111) → M2.1 (race 087–095). 054 and 057 prefetched.
 - Plans: docs/plans/{m1.2c-realism,m1.6b-prototypes,m1.7-audio,phase2-race}.md. Approval delegated: review with milestone-review, approve if no blocking issues.
 - Session routine: watcher loop on .ai/decisions + builtAt; resolve decisions (most were acceptance-table tolerance/fixture issues; see plan-feature tolerance rule).
+- M1.2b approved 2026-10-13 (delegated). Known limits: grid boxes not seen in start shots (car on pole slot), mown stripes faint, armco/tyre textures subtle (103 replaces barriers), M0 handling (vmax 176).
