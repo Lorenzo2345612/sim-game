@@ -1022,6 +1022,33 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/074-credits.md"
+    },
+    {
+      "num": "075",
+      "title": "Car pipeline: textures and wheel nodes; build gt3-d",
+      "status": "pending",
+      "deps": [
+        "071"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/075-car-pipeline-textures.md"
+    },
+    {
+      "num": "076",
+      "title": "GT3 D definition",
+      "status": "pending",
+      "deps": [
+        "072",
+        "075"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/076-gt3-d.md"
     }
   ]
 }

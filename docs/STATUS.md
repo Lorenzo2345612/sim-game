@@ -13,7 +13,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 - Test roles back on Qwen only (2026-10-12; tester A/B removed, Qwen cap 4). Early 'stalls' were the old watchdog killing long generations (fixed in c5c6853) and the ambiguous 031 table.
 - Phase 1.5 planned: specs 058–070, milestone M1.5 (plan + tables in `docs/plans/phase15.md`, design `ai/guides/vehicle-dynamics.md`, lab reference `ai/lab/vehicle-model.mjs`). Pure modules 058–064 and 067 are prefetched. Car model research for 1.6 in `docs/research/car-models.md` (asset-scout running).
 - M1.1: the user delegated approval (2026-10-12). When built: run skill `milestone-review`; if no blocking problems, `python3 scripts/ai/orchestrator.py approve M1.1` yourself and report the review to the user; if blocking problems, create bugfix tasks instead and do not approve.
-- Phase 1.6 planned: specs 071–074, milestone M1.6 (`docs/plans/phase16.md`), prefetch 071, 072. Specs 075/076 (GT3 D textures + definition) being written by a Sonnet spec-writer: when `tasks/075-*.md` and `tasks/076-*.md` exist, add them to `tasks/tasks.json` (deps 071 / 072, 075; 075 Models heavy, coder on MiMo in `ai/experiments.json`), append to M1.6 `tasks` and `prefetch` 075, run `orchestrator.py readme`, commit.
+- Phase 1.6 planned: specs 071–074, milestone M1.6 (`docs/plans/phase16.md`), prefetch 071, 072, 075 (GT3 D = Mustang source: 075 textures/wheel nodes, 076 definition).
 - Background watcher in the planner session waits for M1.1 build (re-arm after a session restart with an until-loop on `tasks/milestones.json` M1.1 `builtAt`).
 
 ## Pipeline (how work gets done)
