@@ -1,0 +1,44 @@
+{
+  "id": "f4",
+  "drive": "rwd",
+  "chassis": {
+    "massKg": 650,
+    "cgHeight": 0.28,
+    "inertia": { "x": 900, "y": 800, "z": 260 },
+    "halfExtents": { "x": 0.55, "y": 0.05, "z": 1.9 }
+  },
+  "wheels": {
+    "positions": [[-0.75, 0, -1.469], [0.75, 0, -1.469], [-0.725, 0, 1.251], [0.725, 0, 1.251]],
+    "radius": 0.28,
+    "width": 0.25,
+    "inertia": 1.2
+  },
+  "suspension": {
+    "front": { "springRate": 52000, "bumpDamping": 2400, "reboundDamping": 4000, "restLength": 0.13, "travel": 0.1, "bumpStopRate": 400000, "arb": 18000 },
+    "rear":  { "springRate": 58000, "bumpDamping": 2600, "reboundDamping": 4200, "restLength": 0.13, "travel": 0.1, "bumpStopRate": 400000, "arb": 12000 }
+  },
+  "steering": { "maxAngleLow": 0.38, "maxAngleHigh": 0.09, "fullSpeed": 60, "rate": 1.5 },
+  "tyres": {
+    "optPressureKpa": 140,
+    "compounds": {
+      "medium": {
+        "mu0": 1.65, "Fz0": 2000, "loadSens": 0.1,
+        "Bx": 14, "Cx": 1.55, "Ex": 0,
+        "By": 9, "Cy": 1.6, "Ey": 0,
+        "optTempC": 90, "tempWindowC": 40,
+        "heatCoef": 1.2e-4, "coolCoef": 0.002,
+        "wearRate": 4e-8, "wearGripLoss": 0.25, "cliffWear": 0.8
+      }
+    }
+  },
+  "aero": { "cda": 0.8, "claFront": 0.8, "claRear": 1.2, "rideHeightSens": 2 },
+  "engine": {
+    "torqueCurve": [[1000, 100], [1500, 175], [2000, 235], [2500, 255], [3500, 255], [4500, 250], [5500, 220], [6000, 203], [6500, 182], [7000, 150]],
+    "idleRpm": 1200, "limiterRpm": 6900, "launchRpm": 4000, "inertia": 0.15, "brakingTorque": 35
+  },
+  "gearbox": { "ratios": [2.3, 1.68, 1.33, 1.1, 0.93, 0.8], "final": 3.5, "reverse": 2.5, "upRpm": 6400, "downRpm": 3200, "shiftTime": 0.15, "efficiency": 0.92 },
+  "diff": { "type": "lsd", "preload": 40, "lockPower": 0.35, "lockCoast": 0.2 },
+  "brakes": { "maxTorque": 4200, "bias": 0.6 },
+  "aids": { "abs": { "enabled": true, "slip": 0.12 }, "tc": { "enabled": true, "slip": 0.2 } },
+  "fuel": { "capacityL": 40, "densityKgL": 0.745, "bsfc": 250, "startL": 20 }
+}

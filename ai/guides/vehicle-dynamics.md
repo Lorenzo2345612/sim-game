@@ -4,7 +4,7 @@ In-house vehicle model replacing Rapier's `DynamicRayCastVehicleController`. Rap
 
 ## Frames and units
 
-SI everywhere. Body frame: +X right, +Y up, −Z forward. Wheel order FL, FR, RL, RR. Positive steer = left. Simulation at `FIXED_DT = 1/120` s, one sub-step per tick (the lab validates stability at this rate).
+SI everywhere. Body frame: +X right, +Y up, −Z forward. Wheel order FL, FR, RL, RR. Positive steer = left. Simulation at `FIXED_DT = 1/120` s, one sub-step per tick. Reference implementation and calibrated F4 data: `ai/lab/vehicle-model.mjs`, `ai/lab/f4-carspec.json` (run `node ai/lab/vehicle-model.mjs`; all targets pass). Rapier: ray casts with `castRayAndGetNormal(…, filterExcludeRigidBody = chassis)`, chassis collider density 0 + `setAdditionalMassProperties` (re-called when fuel mass changes), forces via `applyImpulseAtPoint(F·dt, point)` before `world.step()`.
 
 ## Car definition (`CarSpec`)
 
@@ -16,7 +16,7 @@ One JSON per car in `public/cars/<id>.json`, typed by `src/physics/carSpec.ts`. 
 - `steering`: `maxAngleLow`, `maxAngleHigh` rad, `fullSpeed` m/s (linear blend), `rate` rad/s (max steer slew).
 - `tyres`: `compounds.soft|medium|hard` → `TyreCompound` (below), `optPressureKpa`.
 - `aero`: `cda` m², `claFront`, `claRear` m² (lift area, downforce positive), `rideHeightSens` (ClA gain per metre of ride-height reduction).
-- `engine`: `torqueCurve` [[rpm, N·m], …] (linear interpolation), `idleRpm`, `limiterRpm`, `inertia`, `brakingTorque` N·m (engine braking at closed throttle).
+- `engine`: `torqueCurve` [[rpm, N·m], …] (linear interpolation), `idleRpm`, `launchRpm`, `limiterRpm`, `inertia`, `brakingTorque` N·m (engine braking at closed throttle).
 - `gearbox`: `ratios[]`, `final`, `reverse`, `upRpm`, `downRpm`, `shiftTime` s (no drive torque while shifting), `efficiency`.
 - `diff`: `type` 'open' | 'lsd' | 'locked', `preload` N·m, `lockPower`, `lockCoast` (0..1).
 - `brakes`: `maxTorque` N·m (sum of four wheels at full pedal), `bias` (front share 0..1).
@@ -29,12 +29,13 @@ One JSON per car in `public/cars/<id>.json`, typed by `src/physics/carSpec.ts`. 
 
 Simplified Pacejka "magic formula" per axis with a friction-ellipse combination:
 
-- Slip ratio κ = (ω·r − vx) / max(|vx|, V_LOW); slip angle α = atan2(−vy, max(|vx|, V_LOW)) with lateral relaxation length `RELAX = 0.25` m (first-order lag on α with time constant RELAX / max(|vx|, V_LOW)). V_LOW = 1.5 m/s.
+- Slip velocities use the **hub** velocity `v + ω_body × (hub − CoM)` (hub = contact point + up·r), evaluated with the gravity-predicted chassis velocity `v + g·dt`. vx = along the wheel's forward axis, vlat = along its right axis.
+- Slip ratio κ = (ω·r − vx) / max(|vx|, V_LOW); slip angle target α* = atan2(vlat, max(|vx|, V_LOW)); relaxation `α += (α* − α)·(1 − exp(−dt·max(|vx|, V_LOW)/RELAX))`, RELAX = 0.25 m, V_LOW = 1.5 m/s. Lateral force to the right = −Fy_pure(α).
 - Pure forces: F = D·sin(C·atan(B·s − E·(B·s − atan(B·s)))), s = κ (long.) or α (lat.), D = μ·Fz.
 - μ = mu0 · (1 − loadSens·(Fz − Fz0)/Fz0) · surfaceGrip · tempFactor · wearFactor · pressureFactor.
 - Combined: if (Fx0/Dx)² + (Fy0/Dy)² > 1, scale both by the inverse square root (friction ellipse).
 - `TyreCompound`: `mu0`, `Fz0`, `loadSens`, `Bx, Cx, Ex`, `By, Cy, Ey`, `optTempC`, `tempWindowC`, `heatCoef`, `coolCoef`, `wearRate`, `wearGripLoss`, `cliffWear`.
-- Temperature: dT/dt = heatCoef·|Fx·vslipx + Fy·vslipy| − coolCoef·(T − ambient)·(1 + 0.05·|v|); ambient 25 °C, start 60 °C. tempFactor = 1 − min(0.25, ((T − optTempC)/tempWindowC)²·0.25).
+- Temperature: dT/dt = heatCoef·|Fx·vslipx + Fy·vslipy| − coolCoef·(T − ambient)·(1 + 0.05·|v|); ambient 25 °C, start 70 °C (warmers). tempFactor = 1 − min(0.25, ((T − optTempC)/tempWindowC)²·0.25).
 - Wear W ∈ [0, 1]: dW/dt = wearRate·|F·vslip|·wearMultiplier. wearFactor = 1 − wearGripLoss·W, minus an extra 0.15·(W − cliffWear)/(1 − cliffWear) when W > cliffWear.
 - pressureFactor = 1 − 0.002·(p − optPressureKpa)²/10 (clamped ≥ 0.9); pressure also scales heatCoef by p/optPressureKpa.
 
@@ -44,15 +45,19 @@ Simplified Pacejka "magic formula" per axis with a friction-ellipse combination:
 - Compression x = restLength − (hitDistance − radius), clamped to [0, travel]; past travel add `bumpStopRate`·excess. Damping uses bump or rebound by sign of dx/dt.
 - Anti-roll per axle: F_arb = arb·(x_left − x_right), added to the left wheel's load and subtracted from the right's.
 - Fz = max(0, spring + damper + arb). Forces applied at the contact point: Fz along the ground normal, tyre forces in the wheel's ground plane.
-- Wheel spin: I·dω/dt = T_drive − T_brake·sign(ω) − Fx·r. Brakes never reverse ω within a step (clamp to 0).
+- Static compression x0 = Fz_static/springRate per wheel; ray origin = hub + up·(restLength − x0) so the spec'd ride height is the rest state.
+- **Longitudinal force and wheel spin are solved implicitly** (explicit Euler is unstable at 120 Hz): with slip velocity s = ω·r − vx, sFree = s0 + dt·r·(T_drive − T_brake·sgn ω)/I and c = r²/I + 4/m (m = total mass incl. fuel), solve s1 = sFree − dt·c·Fx(s1) (3–4 Newton steps with bisection fallback on [0, sFree]); apply that Fx to both the wheel (ω += dt/I·(T − r·Fx)) and the chassis.
+- Locked wheel: if braking and ω is 0 or would cross 0, solve with s = −vx and c = 4/m; keep ω = 0 while |T_drive − r·Fx| ≤ T_brake, else restart with net − sign(net)·T_brake.
+- Safety clamp: no single tyre force may reverse its contact velocity within one step: |F| ≤ (m/4)·|v|/dt.
+- I_effective of a driven wheel adds the reflected engine inertia ratio_total²·I_engine/2, except while the clutch slips or the box is shifting.
 
 ## Powertrain, brakes, aids (pure)
 
-- Engine rpm from the driven wheels' mean ω through gear and final; below idle in first gear the clutch slips (rpm = idle, torque still transmitted). Torque = curve(rpm)·throttle; cut at `limiterRpm`; closed throttle gives −brakingTorque.
+- Engine rpm from the driven wheels' mean ω through gear and final; in 1st gear the clutch slips: rpm = max(rpmRaw, idle + throttle·(launchRpm − idle)) (`engine.launchRpm`, F4 4000). Torque = curve(rpm)·throttle; cut at `limiterRpm`; closed throttle gives −brakingTorque.
 - Gearbox: auto/manual as task 045, generalised to `CarSpec.gearbox`; no drive during `shiftTime`.
-- Diff: open = equal split; lsd = coupling torque clamp(50·Δω, ±(preload + lock·|T_in|)) with `lockPower` on drive and `lockCoast` off throttle; locked = high coupling.
+- Diff: open = equal split; lsd = coupling torque clamp(K·Δω, ±(preload + lock·|T_in|)), K = 30 N·m·s/rad (explicit limit is I_w/(2·dt) = 72), `lockPower` on drive, `lockCoast` off throttle; locked = lsd with lock 1 (no implicit solve in Phase 1.5).
 - Brakes: per-wheel torque = pedal·maxTorque·(bias/2 front, (1 − bias)/2 rear).
-- ABS: when a wheel's κ < −abs.slip, halve its brake torque that step. TC: when a driven wheel's κ > tc.slip, scale throttle by 0.5 that step.
+- ABS (only above 3 m/s): when a wheel's κ < −abs.slip, halve its brake torque that step. TC: when a driven wheel's κ > tc.slip, scale throttle by 0.5 that step. F4: abs.slip 0.12, tc.slip 0.20.
 
 ## Aero and fuel (pure)
 
@@ -66,3 +71,5 @@ Eight numbers in six UI groups: `frontWing`, `rearWing` (integer steps → ClA a
 ## Calibration targets (F4)
 
 0–100 km/h 3.4–4.2 s; vmax 215–235 km/h; braking 150→0 ≤ 60 m; steady skidpad (R 100 m) 1.5–2.2 g; brake + full steer at 150 km/h for 2 s: no spin (heading vs velocity < 30°); standstill on flat: drift < 1 cm in 10 s; on a 5 % slope with full brake: drift < 5 cm in 10 s; static ride height within 5 mm of spec after settling 2 s.
+
+Known limitation: a locked wheel keeps ~67 % lateral grip through the friction ellipse (forgiving, sim-cade); revisit with combined-slip weighting if lock-ups feel too safe.
