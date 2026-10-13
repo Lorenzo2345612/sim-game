@@ -151,5 +151,71 @@
       { "atMeters": 3800, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -366, "toMeters": 406, "side": "right" }
+  },
+  {
+    "id": "braselton",
+    "name": "Braselton",
+    "geojson": "us-braselton",
+    "dem": "assets/source/dem/braselton.json",
+    "maxGrade": 0.12,
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "pine", "weight": 0.6 },
+        { "name": "oak", "weight": 0.4 }
+      ],
+      "density": 0.6
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 400, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 3750, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -508, "toMeters": 511, "side": "right" }
+  },
+  {
+    "id": "elkhart",
+    "name": "Elkhart Lake",
+    "geojson": "us-elkhart",
+    "dem": "assets/source/dem/elkhart.json",
+    "maxGrade": 0.08,
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 0.5 },
+        { "name": "aspen", "weight": 0.3 },
+        { "name": "pine", "weight": 0.2 }
+      ],
+      "density": 0.6
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 640, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 5100, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -482, "toMeters": 482, "side": "right" }
+  },
+  {
+    "id": "sepang",
+    "name": "Sepang",
+    "geojson": "my-1999",
+    "dem": "assets/source/dem/sepang.json",
+    "maxGrade": 0.04,
+    "widthMeters": 16,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.15
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 400, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 5300, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -430, "toMeters": 286, "side": "right" }
   }
 ]
