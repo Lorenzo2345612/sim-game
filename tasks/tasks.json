@@ -458,7 +458,7 @@
     {
       "num": "034",
       "title": "Invalidate laps when all wheels leave the track",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "033"
       ],
@@ -817,7 +817,7 @@
     {
       "num": "061",
       "title": "Suspension, anti-roll and aero",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058"
       ],
