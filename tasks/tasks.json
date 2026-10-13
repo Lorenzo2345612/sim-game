@@ -1506,6 +1506,50 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/111-audio-mix.md"
+    },
+    {
+      "num": "112",
+      "title": "Prototype models through the car pipeline",
+      "status": "pending",
+      "deps": [
+        "071",
+        "075"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/112-prototype-models.md"
+    },
+    {
+      "num": "113",
+      "title": "Prototype CarSpecs from the lab files",
+      "status": "pending",
+      "deps": [
+        "112",
+        "072",
+        "058"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/113-prototype-carspecs.md"
+    },
+    {
+      "num": "114",
+      "title": "Car selection and credits list the prototypes",
+      "status": "pending",
+      "deps": [
+        "113",
+        "073",
+        "074"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/114-prototype-selection.md"
     }
   ]
 }

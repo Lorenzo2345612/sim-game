@@ -114,3 +114,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
 | 110 | Audio effects | pending | 109 |
 | 111 | Audio mix | pending | 110 |
+| 112 | Prototype models through the car pipeline | pending | 071, 075 |
+| 113 | Prototype CarSpecs from the lab files | pending | 112, 072, 058 |
+| 114 | Car selection and credits list the prototypes | pending | 113, 073, 074 |

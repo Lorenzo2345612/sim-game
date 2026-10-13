@@ -209,6 +209,17 @@
       ]
     },
     {
+      "id": "M1.6b",
+      "title": "Prototypes: LMP2 and Hypercar models, car specs, selection and credits",
+      "tasks": [
+        "112",
+        "113",
+        "114"
+      ],
+      "status": "open",
+      "prefetch": []
+    },
+    {
       "id": "M1.7",
       "title": "Audio: per-car engine synthesis and effects",
       "tasks": [
