@@ -57,6 +57,9 @@ describe('092 race classification edge cases', () => {
     const c = new RaceClassification(3, 1, L);
     c.update(0, 990, 0);
     c.update(0, 10, 0.5);
+    c.update(0, 500, 3);
+    c.update(0, 940, 5.4);
+    c.update(0, 10, 5.5);
     c.update(1, 300, 0);
     c.update(2, 500, 0);
     c.update(2, 600, 1);
@@ -66,7 +69,7 @@ describe('092 race classification edge cases', () => {
     expect(s[0].car).toBe(0);
     expect(s[0].position).toBe(1);
     expect(s[0].finished).toBe(true);
-    expect(s[0].totalTime).toBeCloseTo(0.25, 6);
+    expect(s[0].totalTime).toBeCloseTo(5.4 + (0.1 * 60) / 70, 6);
     expect(s[1].car).toBe(2);
     expect(s[1].position).toBe(2);
     expect(s[1].distance).toBeCloseTo(-400, 6);
@@ -86,18 +89,21 @@ describe('092 race classification edge cases', () => {
     const c = new RaceClassification(1, 1, L);
     c.update(0, 990, 0);
     c.update(0, 10, 0.2);
+    c.update(0, 500, 2.5);
+    c.update(0, 990, 4.9);
+    c.update(0, 20, 5.1);
     expect(c.finished).toBe(true);
 
-    c.update(0, 500, 5);
+    c.update(0, 500, 8);
     c.update(0, 990, 9);
-    c.update(0, 20, 9.2);
+    c.update(0, 30, 9.2);
 
     const s = c.standings()[0];
     expect(s.finished).toBe(true);
-    expect(s.lap).toBe(1);
-    expect(s.totalTime).toBeCloseTo(0.1, 6);
-    expect(s.distance).toBeCloseTo(10, 6);
-    expect(s.lastLap).toBeCloseTo(0.1, 6);
+    expect(s.lap).toBe(2);
+    expect(s.totalTime).toBeCloseTo(4.9 + (0.2 * 10) / 30, 6);
+    expect(s.distance).toBeCloseTo(1020, 6);
+    expect(s.lastLap).toBeCloseTo(4.9 + (0.2 * 10) / 30 - 0.1, 6);
   });
 
   it('EDGE5: re-cross without passing half a lap since the previous crossing does not complete a lap', () => {
@@ -148,23 +154,24 @@ describe('092 race classification edge cases', () => {
 
   it('EDGE8: lastLap is the latest lap and bestLap the minimum over unequal laps', () => {
     const c = new RaceClassification(1, 3, L);
-    for (let k = 0; k <= Math.round(54 * 120); k++) {
+    for (let k = 0; k <= Math.round(95 * 120); k++) {
       const t = k / 120;
       const travelled = t <= 5 ? 100 * t : t <= 17 ? 500 + 50 * (t - 5) : 1100 + 25 * (t - 17);
       c.update(0, (990 + travelled) % L, t);
     }
     const s = c.standings()[0];
     expect(s.finished).toBe(true);
-    expect(s.lap).toBe(3);
-    expect(s.lastLap).toBeCloseTo(38.2, 2);
-    expect(s.bestLap).toBeCloseTo(0.1, 2);
-    expect(s.totalTime).toBeCloseTo(53.4, 2);
-    expect(s.distance).toBeCloseTo(2090, 6);
+    expect(s.lap).toBe(4);
+    expect(s.lastLap).toBeCloseTo(40.0, 2);
+    expect(s.bestLap).toBeCloseTo(15.1, 2);
+    expect(s.totalTime).toBeCloseTo(93.4, 2);
+    expect(s.distance).toBeGreaterThanOrEqual(3000);
+    expect(s.distance).toBeLessThan(3001);
   });
 
   it('EDGE9: after the chequered flag the next crossing finishes the car and counts the lap', () => {
     const c = new RaceClassification(2, 3, L);
-    feed(c, [990, 990], [100, 20], 0, 30);
+    feed(c, [990, 990], [100, 20], 0, 31);
     let s = c.standings();
     expect(s[0].car).toBe(0);
     expect(s[0].finished).toBe(true);
@@ -172,7 +179,7 @@ describe('092 race classification edge cases', () => {
     expect(s[1].finished).toBe(false);
     expect(c.finished).toBe(false);
 
-    feed(c, [990, 990], [100, 20], 30 + 1 / 120, 51);
+    feed(c, [990, 990], [100, 20], 31 + 1 / 120, 51);
     s = c.standings();
     expect(s[1].finished).toBe(true);
     expect(s[1].lap).toBe(2);
