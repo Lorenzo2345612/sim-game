@@ -1297,7 +1297,7 @@
     {
       "num": "096",
       "title": "Close the gaps at kerb and run-off segment ends",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "077"
       ],
