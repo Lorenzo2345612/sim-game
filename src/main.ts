@@ -8,10 +8,12 @@ import { Game } from './game/game';
 import { KeyboardInput } from './input/keyboard';
 import { buildRibbon } from './track/ribbon';
 import { buildTrackSurfaces } from './track/surfaces';
+import { buildTrackMarkings } from './track/markings';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
+import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
 import { createTreeField, type TreeFactory, type TreeField } from './render/treeField';
 import { createGrandstand } from './render/grandstand';
@@ -268,6 +270,10 @@ async function startGame(trackId: string): Promise<void> {
     });
     scene.add(surfaces.group);
     disposables.push(surfaces);
+
+    const markings = createTrackMarkingsObject(buildTrackMarkings(track));
+    scene.add(markings.group);
+    disposables.push(markings);
 
     const barriers = createBarrierObject(track);
     scene.add(barriers.group);
