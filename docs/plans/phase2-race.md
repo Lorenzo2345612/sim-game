@@ -44,7 +44,7 @@ Minimum curvature line: minimise Σκᵢ² (κ = Menger curvature of consecutive
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | circle R 100, N 120 (clockwise as in 031's fixture), halfWidth 6, margin 1 | computeRacingLine | every point at radius 105 ± 0.05 (outer bound) |
+| AT1 | circle R 100, N 120, halfWidth 6, margin 1 | computeRacingLine | constant radius (max − min ≤ 0.05) within [95, 105] (K1999) |
 | AT2 | rounded square: 4 straights 200 m + 4 arcs R 30 (90°), spacing 2 m, halfWidth 6, margin 1 | same | at each arc midpoint the line is ≥ 4.5 m towards the corner inside; at 40 m before each arc start it is ≥ 3.5 m towards the outside; max |κ| along the line ≤ 0.022 1/m (centerline 0.0333) |
 | AT3 | monza.json | same | every |offset| ≤ 5 + 1e-9; max |κ| of the line ≤ 0.9 · max |κ| of the centerline |
 | AT4 | monza.json twice | same | outputs byte-identical |
