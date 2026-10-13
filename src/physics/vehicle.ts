@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { VehicleConfig } from './vehicleConfig';
+import { Gearbox, GearboxMode } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
 import { AIR_DENSITY, GRAVITY, SURFACE_DRAG, SURFACE_GRIP } from '../core/constants';
 import { surfaceOf } from './trackColliders';
@@ -27,6 +28,7 @@ export class Vehicle {
   private readonly config: VehicleConfig;
   private readonly controller: RAPIER.DynamicRayCastVehicleController;
   private readonly input: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
+  private readonly gearbox = new Gearbox();
 
   constructor(world: RAPIER.World, config: VehicleConfig, spawn: SpawnPose) {
     this.config = config;
@@ -72,6 +74,32 @@ export class Vehicle {
     this.input.steer = clampControl(input.steer, -1, 1);
   }
 
+  gear(): number {
+    return this.gearbox.gear;
+  }
+
+  rpm(): number {
+    return this.gearbox.rpm(this.forwardSpeed());
+  }
+
+  shiftUp(): void {
+    this.gearbox.shiftUp();
+  }
+
+  shiftDown(): void {
+    this.gearbox.shiftDown();
+  }
+
+  setGearMode(mode: GearboxMode): void {
+    this.gearbox.setMode(mode);
+  }
+
+  private forwardSpeed(): number {
+    const v = this.body.linvel();
+    const fwd = forwardOf(this.body.rotation());
+    return v.x * fwd.x + v.y * fwd.y + v.z * fwd.z;
+  }
+
   prePhysicsStep(dt: number): void {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     const config = this.config;
@@ -96,7 +124,11 @@ export class Vehicle {
     this.controller.setWheelSteering(0, steer);
     this.controller.setWheelSteering(1, steer);
 
-    const F = this.input.throttle * Math.min(config.maxDriveForceN, config.enginePowerW / Math.max(forwardSpeed, 1));
+    this.gearbox.update(forwardSpeed);
+    const F =
+      this.input.throttle *
+      Math.min(config.maxDriveForceN, config.enginePowerW / Math.max(forwardSpeed, 1)) *
+      this.gearbox.driveScale(forwardSpeed);
     this.controller.setWheelEngineForce(0, 0);
     this.controller.setWheelEngineForce(1, 0);
     this.controller.setWheelEngineForce(2, F / 2);
