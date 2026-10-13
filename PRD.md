@@ -28,8 +28,8 @@ Project model: **free and non-profit** (personal project / portfolio).
 ### Non-goals (v1)
 
 - Official F1 licenses, teams, drivers or sponsors.
-- Real-time multiplayer (planned for later phases).
-- Complex physical damage, changing weather during the race, full tire strategy.
+- Real-time multiplayer (Phase 4).
+- Complex physical damage (light damage in Phase 2), changing weather during the race.
 - Full mobile support (only verification that it doesn't break).
 
 ## 3. Target audience
@@ -223,8 +223,10 @@ Mandatory post-processing for every AI asset: decimate/remesh to budget (car 10�
 | M1 | Free practice / time trial with best-lap ghost | P0 (MVP) |
 | M2 | Quick race against AI (5–20 cars) | P1 |
 | M3 | Weekend: qualifying + race | P2 |
-| M4 | Online multiplayer (asynchronous ghosts first, real time later) | P3 |
+| M4 | Online multiplayer (asynchronous ghosts first, then real-time rated races with splits) | P3 |
 | M5 | Championship with several circuits | P3 |
+| M6 | Career: start in a junior series, get hired, promote between categories, develop the car | P2 |
+| M7 | Scheduled online events (practice, qualifying, race) created by admins | P3 |
 
 ### 8.2 Driving
 
@@ -333,13 +335,22 @@ Principles:
 - 2–3 new cars (GT3 first) with calibrated data, car selection menu.
 
 ### Phase 2 — Race
-- Pit stops (limiter, box service, strategy), AI pit strategies.
-- AI, quick race, grid, start with lights.
+- M2.1 AI and quick race: classic AI (precomputed racing line, curvature speed control, basic overtake/defend, difficulty), grid, start lights, positions, results, car-to-car collisions, penalties.
+- M2.2 Pits and strategy: pit lane and box service; 3 compounds; fuel mixture modes; strategy planner before the race (stints, compounds, fuel, stop laps) with a predictor fed by the player's own measured per-lap fuel use and wear; live strategy panel and plan changes mid-race; AI uses the same planner. Consumption stays physical (fuel by engine power, wear by tyre slip), so driving style changes it.
+- M2.3 Learned AI (experiment): imitation of the classic AI, then RL fine-tune on the headless sim (local RTX 5060, long runs on RunPod CPU pods); tiny policy net run in TS in the browser; used for hard/expert levels only if it beats the classic AI. Starts after the vehicle model is frozen.
+- M2.4 Light damage: wing loss (aero), suspension/steering misalignment, punctures, detached parts; repair at pit stops.
 - More circuits (target 10), night circuits, replays.
 
-### Phase 3 — Online
+### Phase 3 — Career (offline)
+- Race weekends (practice, qualifying, race) and championships.
+- Start in a junior series (or pick another series), results build reputation, teams offer contracts, promotion to higher categories.
+- Car development: the team earns R&D points from results and spends them on upgrades (engine, aero, chassis, reliability) within category limits. Career only; online stays fixed-spec.
+
+### Phase 4 — Online
 - Online leaderboards with ghost validation.
-- Real-time multiplayer (WebRTC / WebSocket with authoritative server).
+- Real-time multiplayer races (WebRTC with signalling, or a server-authoritative option if hosting allows).
+- Driver rating (Glicko-2 style skill rating plus a safety rating from incidents); matchmaking into splits by rating.
+- Admin area: schedule events (series, track, car class, practice/qualifying/race durations, start times, split size), publish results and standings.
 
 ## 12. Success metrics
 
@@ -382,6 +393,7 @@ Principles:
 | Tyre wear and fuel (2026-10-12) | Per-wheel wear and temperature, 3 compounds (soft/medium/hard); fuel consumption with mass effect; global wear/fuel multiplier (default 1x, race presets up to 5x) |
 | Pit stops (2026-10-12) | Pit lane speed limiter with penalty, pit box service (tyres, compound, fuel) with service time; damage repair out of MVP (data hooks only) |
 | Damage (2026-10-12) | Out of MVP; the car file reserves fields for aero/suspension damage |
+| Roadmap (2026-10-13) | After M1.6: Phase 2 race (M2.1 AI + quick race, M2.2 pits + strategy planner, M2.3 learned AI on RunPod, M2.4 light damage), Phase 3 offline career with car development, Phase 4 online (leaderboards, rated real-time races with splits, admin event scheduling). Online cars are fixed-spec; car development is career only |
 | Track elevation (2026-10-12) | Tracks are inspired by the real ones: realistic, smooth grades (DEM canopy removed, profile smoothed, grade capped per track), not survey-exact |
 | Team location | Mexico (Hunyuan3D allowed for generation; published assets preferably made with MIT tools) |
 | AI compute | Laptop RTX 5060 (8 GB) + 10 USD on RunPod + free Spaces |
@@ -391,6 +403,8 @@ Principles:
 1. Specific open-wheel car model: choose between CarlosCG31's "2010 Indycar" and "Generic F1 Car" (see 7.1) after testing them in the engine.
 2. Which GT3/other models to use (research in `docs/research/car-models.md`).
 3. Hosting and domain?
+4. Online backend with budget 0: which free tier (e.g. Cloudflare Workers/Durable Objects, Supabase) covers accounts, ratings, events and signalling; is real-time racing peer-to-peer (WebRTC) or does it need a paid authoritative server?
+5. Anti-cheat for rated races and leaderboards (deterministic replay validation of ghosts/results).
 
 ## 15. References
 
