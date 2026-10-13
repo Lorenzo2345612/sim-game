@@ -46,7 +46,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 040 | Procedural grandstands with crowd | done | 022 |
 | 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
-| 043 | Load a TrackData v2 world into the game | in progress | 056, 038, 039, 040, 041, 042 |
+| 043 | Load a TrackData v2 world into the game | done | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | done | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
@@ -93,7 +93,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 088 | Speed profile and car limits | pending | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
-| 091 | Start sequence and grid | pending | - |
+| 091 | Start sequence and grid | in progress | - |
 | 092 | Race classification | pending | - |
 | 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |

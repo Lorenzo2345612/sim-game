@@ -576,7 +576,7 @@
     {
       "num": "043",
       "title": "Load a TrackData v2 world into the game",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "056",
         "038",
@@ -1220,7 +1220,7 @@
     {
       "num": "091",
       "title": "Start sequence and grid",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
