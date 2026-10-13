@@ -1297,7 +1297,7 @@
     {
       "num": "096",
       "title": "Close the gaps at kerb and run-off segment ends",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "077"
       ],
@@ -1306,6 +1306,20 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/096-surface-transitions.md"
+    },
+    {
+      "num": "097",
+      "title": "Keep the terrain below every track surface strip",
+      "status": "pending",
+      "deps": [
+        "096",
+        "085"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/097-terrain-below-strips.md"
     }
   ]
 }

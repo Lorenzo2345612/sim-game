@@ -37,7 +37,7 @@ Conventions: wrapped indices via the existing `normIndex`; inputs not mutated; s
 | AT1 | ring fixture of 031 (R 100, N 120, width 12), left gravel runoff [10..30] width 12, no kerbs | buildTrackSurfaces | the gravel strip has 23 rows (46 vertices) covering indices 9..31; rows 9 and 31 at radial distances 106 and 118 (± 1e-5) |
 | AT2 | same ring, left gravel runoffs [10..30] width 12 and [31..50] width 18, in a Rapier world via addTrackColliders | downward ray at the chord midpoint of rows 30/31 at left lateral 6.5, 12 and 17.5 m | each hits a collider with surfaceOf = 'gravel' (not the terrain heightfield) |
 | AT3 | ring, left kerb [0..119] (whole ring) | buildTrackSurfaces | kerb strip has exactly 120 rows (no extension) |
-| AT4 | public/tracks/monza.json, spa.json, silverstone.json with addTrackColliders | for every index i and both sides: downward rays at the chord midpoint of i and i+1 (right normal at i), lateral from half + 0.1 m to the largest kerb/run-off outer extent at i or i+1, every 0.5 m; skip samples whose nearest centerline index is more than 3 from i and samples hitting barriers (surfaceOf = null, non-heightfield) | no sample hits the terrain heightfield |
+| AT4 | public/tracks/monza.json, spa.json, silverstone.json with addTrackColliders | for every index i and both sides: downward rays at the chord midpoint of i and i+1 (right normal at i), lateral from half + 0.1 m to the smaller kerb/run-off outer extent of i and i+1, every 0.5 m; skip samples whose nearest centerline index is more than 3 from i and barrier hits; a heightfield hit counts only when a ray ignoring the heightfield finds no strip below (terrain above strips is task 097) | at most 2 exposed samples per track |
 
 ## Acceptance criteria
 
