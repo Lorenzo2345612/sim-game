@@ -1427,7 +1427,7 @@
     },
     {
       "num": "106",
-      "title": "Add Mexico City, Daytona, Lusail and Sakhir to the game",
+      "title": "Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game",
       "status": "pending",
       "deps": [
         "044",
@@ -1457,7 +1457,7 @@
     {
       "num": "108",
       "title": "Engine synth DSP core",
-      "status": "pending",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

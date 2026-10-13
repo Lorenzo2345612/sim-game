@@ -108,9 +108,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
-| 106 | Add Mexico City, Daytona, Lusail and Sakhir to the game | pending | 044, 099, 102 |
+| 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102 |
 | 107 | Car sound data | pending | 058, 072 |
-| 108 | Engine synth DSP core | pending | - |
+| 108 | Engine synth DSP core | done | - |
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
 | 110 | Audio effects | pending | 109 |
 | 111 | Audio mix | pending | 110 |
