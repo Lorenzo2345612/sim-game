@@ -52,6 +52,12 @@ export class TrackProgress {
       }
     }
     if (bestIndex < 0) return this.sample;
+    // Closed ring: the end of the closing segment is the start of segment 0;
+    // without this the sample sticks at distance = length and laps never wrap.
+    if (bestIndex === n - 1 && bestT === 1) {
+      bestIndex = 0;
+      bestT = 0;
+    }
     const a = this.points[bestIndex];
     const b = this.points[(bestIndex + 1) % n];
     const dx = b[0] - a[0];

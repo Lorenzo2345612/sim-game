@@ -6,6 +6,8 @@ export interface HudData {
   currentLapTime: number | null;
   lastLapTime: number | null;
   bestLapTime: number | null;
+  /** False while the running lap is invalidated (track limits); undefined counts as valid. */
+  valid?: boolean;
 }
 
 export class Hud {
@@ -60,7 +62,9 @@ export class Hud {
   update(data: HudData): void {
     const kmh = Number.isFinite(data.speedKmh) ? Math.round(data.speedKmh) : 0;
     this.setText(this.speedEl, `${kmh} km/h`);
-    this.setText(this.lapEl, data.lap <= 0 ? 'Lap -' : `Lap ${data.lap}`);
+    const lapText =
+      data.valid === false ? 'Lap invalid' : data.lap <= 0 ? 'Lap -' : `Lap ${data.lap}`;
+    this.setText(this.lapEl, lapText);
     this.setText(this.currentEl, formatLapTime(data.currentLapTime));
     this.setText(this.lastEl, formatLapTime(data.lastLapTime));
     this.setText(this.bestEl, formatLapTime(data.bestLapTime));
