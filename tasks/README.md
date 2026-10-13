@@ -64,7 +64,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | in progress | 058 |
 | 060 | Tyre temperature, wear and pressure | in progress | 058 |
-| 061 | Suspension, anti-roll and aero | in progress | 058 |
+| 061 | Suspension, anti-roll and aero | done | 058 |
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | pending | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | pending | 058 |
 | 064 | Implicit wheel solver | pending | 058, 059 |
