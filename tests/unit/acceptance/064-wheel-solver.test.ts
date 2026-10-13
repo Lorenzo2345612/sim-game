@@ -68,7 +68,7 @@ describe('064 wheel solver acceptance', () => {
   });
 
   it('AT2: huge brake at vx 30 locks the wheel with omega1 = 0 and |fx| within mu·fz', () => {
-    const r = solve({ brakeTorque: 5000 });
+    const r = solve({ brakeTorque: 50000 }); // stopping 107 rad/s in one 1/120 s step needs > 15 400 N·m
     const mu = tyreMu(C, C.Fz0, 1);
     expect(r.locked).toBe(true);
     expect(r.omega1).toBe(0);

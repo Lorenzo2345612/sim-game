@@ -169,7 +169,7 @@ describe('064 wheel solver edge cases', () => {
   });
 
   it('EDGE10: fy at the final kappa is reduced onto the friction ellipse for a locked wheel', () => {
-    const r = solve({ omega: OMEGA0, vx: 30, brakeTorque: 5000, alpha: 0.3 });
+    const r = solve({ omega: OMEGA0, vx: 30, brakeTorque: 50000, alpha: 0.3 });
     const D = tyreMu(C, C.Fz0, 1) * C.Fz0;
     const pure = tyreForces(C, C.Fz0, 0, 0.3, 1, { fx: 0, fy: 0 }).fy;
     expect(r.fy).toBeGreaterThan(0);
