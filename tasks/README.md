@@ -75,7 +75,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
-| 072 | GT3 car definitions | pending | 058, 071 |
+| 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
 | 074 | Credits screen | pending | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | pending | 071 |
@@ -88,8 +88,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 082 | Painted track markings (edge lines, start/finish line) | pending | 080 |
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
-| 086 | Continuous barriers (no gaps between segments) | pending | 043, 077 |
-| 087 | Racing line (minimum curvature) | in progress | - |
+| 086 | Continuous barriers (no gaps between segments) | in progress | 043, 077 |
+| 087 | Racing line (minimum curvature) | waiting decision | - |
 | 088 | Speed profile and car limits | pending | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |

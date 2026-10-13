@@ -984,7 +984,7 @@
     {
       "num": "072",
       "title": "GT3 car definitions",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "058",
         "071"
@@ -1154,7 +1154,7 @@
     {
       "num": "086",
       "title": "Continuous barriers (no gaps between segments)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "043",
         "077"
@@ -1168,7 +1168,7 @@
     {
       "num": "087",
       "title": "Racing line (minimum curvature)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
