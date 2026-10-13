@@ -1172,7 +1172,7 @@
       "deps": [],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 2,
       "spec": "tasks/087-racing-line.md"
     },
