@@ -5,7 +5,8 @@ import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTra
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { layoutBarriers } from './barriers';
-import { buildTerrain } from './terrain';
+import { buildTerrain, clampTerrainBelowStrips } from './terrain';
+import { buildTrackSurfaces } from '../../src/track/surfaces';
 import { placeTrees, type Biome } from './trees';
 import type { DemGrid } from '../dem/fetchDem';
 import { bboxCenter, polylineLength, type Point2 } from '../../src/track/geo';
@@ -120,7 +121,7 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     heightMeters: SPECIES_PRESETS[sp.name].heightMeters,
   }));
 
-  return {
+  const data: TrackDataV2 = {
     ...base,
     version: 2,
     elevation,
@@ -134,6 +135,8 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     pit,
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
+  clampTerrainBelowStrips(data.terrain, buildTrackSurfaces(data));
+  return data;
 }
 
 const TRACKS = JSON.parse(

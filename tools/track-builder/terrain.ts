@@ -1,7 +1,7 @@
 import type { DemGrid } from '../dem/fetchDem';
 import { sampleDem } from './elevation';
 import { unprojectXZ, type LonLat, type Point2 } from '../../src/track/geo';
-import type { Terrain } from '../../src/core/types';
+import type { SurfaceStrip, Terrain } from '../../src/core/types';
 
 const MARGIN = 400;
 const SPACING = 8;
@@ -110,4 +110,46 @@ export function buildTerrain(
   }
 
   return { originX, originZ, sizeX, sizeZ, rows, cols, heights };
+}
+
+/** Mutates terrain.heights in place; called by buildTrack after buildTerrain with buildTrackSurfaces(track). */
+export function clampTerrainBelowStrips(
+  terrain: Terrain, strips: readonly SurfaceStrip[], dip = DIP,
+): void {
+  const { rows, cols, heights, originX, originZ, sizeX, sizeZ } = terrain;
+  const x0 = originX - sizeX / 2;
+  const z0 = originZ - sizeZ / 2;
+  const stepX = sizeX / cols;
+  const stepZ = sizeZ / rows;
+  const stride = rows + 1;
+  for (const strip of strips) {
+    const pos = strip.positions;
+    const ind = strip.indices;
+    for (let t = 0; t + 2 < ind.length; t += 3) {
+      const a = 3 * ind[t];
+      const b = 3 * ind[t + 1];
+      const c = 3 * ind[t + 2];
+      // Round like buildTerrain so a bound of e.g. -1.549999976 still reads as -1.55
+      const bound = Math.round((Math.min(pos[a + 1], pos[b + 1], pos[c + 1]) - dip) * 100) / 100;
+      const minX = Math.min(pos[a], pos[b], pos[c]);
+      const maxX = Math.max(pos[a], pos[b], pos[c]);
+      const minZ = Math.min(pos[a + 2], pos[b + 2], pos[c + 2]);
+      const maxZ = Math.max(pos[a + 2], pos[b + 2], pos[c + 2]);
+      // Cells whose closed box overlaps the triangle box; 1e-9 keeps exact-border cases in.
+      const jLo = Math.max(0, Math.ceil((minX - x0) / stepX - 1 - 1e-9));
+      const jHi = Math.min(cols - 1, Math.floor((maxX - x0) / stepX + 1e-9));
+      const iLo = Math.max(0, Math.ceil((minZ - z0) / stepZ - 1 - 1e-9));
+      const iHi = Math.min(rows - 1, Math.floor((maxZ - z0) / stepZ + 1e-9));
+      for (let j = jLo; j <= jHi; j++) {
+        for (let i = iLo; i <= iHi; i++) {
+          const k0 = j * stride + i;
+          const k1 = k0 + stride;
+          if (heights[k0] > bound) heights[k0] = bound;
+          if (heights[k0 + 1] > bound) heights[k0 + 1] = bound;
+          if (heights[k1] > bound) heights[k1] = bound;
+          if (heights[k1 + 1] > bound) heights[k1 + 1] = bound;
+        }
+      }
+    }
+  }
 }
