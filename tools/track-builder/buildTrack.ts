@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
-import { centerlineHeights, elevationProfile } from './elevation';
+import { centerlineHeights, elevationProfile, removeCanopy } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { layoutBarriers } from './barriers';
 import { buildTerrain } from './terrain';
@@ -23,6 +23,7 @@ interface GrandstandConfig {
 interface TrackConfig extends TrackSourceConfig {
   geojson: string;
   dem: string;
+  canopyRadiusCells?: number;
   biome: Biome;
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
@@ -78,7 +79,8 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const geojson = JSON.parse(
     readFileSync(join('assets/source/tracks', `${config.geojson}.geojson`), 'utf8'),
   ) as GeoJsonLineFeatureCollection;
-  const grid = JSON.parse(readFileSync(config.dem, 'utf8')) as DemGrid;
+  const dem = JSON.parse(readFileSync(config.dem, 'utf8')) as DemGrid;
+  const grid = removeCanopy(dem, config.canopyRadiusCells ?? 2);
 
   const base = buildTrackData(geojson, config);
   const centerline = base.centerline;

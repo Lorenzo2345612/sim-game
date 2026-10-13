@@ -17,6 +17,34 @@ export function sampleDem(grid: DemGrid, lon: number, lat: number): number {
     (h[bottom] * (1 - fx) + h[bottom + 1] * fx) * fy;
 }
 
+// Grey-scale morphological opening (erosion then dilation) with a clamped square window
+export function removeCanopy(grid: DemGrid, radiusCells: number): DemGrid {
+  if (!Number.isInteger(radiusCells) || radiusCells < 0) {
+    throw new Error(`canopyRadiusCells must be a non-negative integer, got ${radiusCells}`);
+  }
+  const { rows, cols, heights } = grid;
+  const out: DemGrid = { ...grid, heights: heights.slice() };
+  if (radiusCells === 0) return out;
+  const eroded = new Array<number>(rows * cols);
+  for (let pass = 0; pass < 2; pass++) {
+    const src = pass === 0 ? heights : eroded;
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        let extreme = pass === 0 ? Infinity : -Infinity;
+        for (let di = -radiusCells; di <= radiusCells; di++) {
+          const ci = clamp(i + di, 0, rows - 1) * cols;
+          for (let dj = -radiusCells; dj <= radiusCells; dj++) {
+            const v = src[ci + clamp(j + dj, 0, cols - 1)];
+            if (pass === 0 ? v < extreme : v > extreme) extreme = v;
+          }
+        }
+        (pass === 0 ? eroded : out.heights)[i * cols + j] = extreme;
+      }
+    }
+  }
+  return out;
+}
+
 export function centerlineHeights(grid: DemGrid, centerline: Point2[], origin: LonLat): number[] {
   return centerline.map(([x, z]) => {
     const [lon, lat] = unprojectXZ([x, z], origin);

@@ -4,6 +4,7 @@
     "name": "Monza",
     "geojson": "it-1922",
     "dem": "assets/source/dem/monza.json",
+    "canopyRadiusCells": 3,
     "widthMeters": 12,
     "reverse": false,
     "biome": {
