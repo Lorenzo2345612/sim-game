@@ -1127,7 +1127,7 @@
     {
       "num": "083",
       "title": "Textured barriers (armco, concrete, tyres)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "080",
         "043"
@@ -1324,7 +1324,7 @@
     {
       "num": "098",
       "title": "Gravel traps from OpenStreetMap, run-off rule only for real corners",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "097"
       ],
