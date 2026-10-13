@@ -45,3 +45,24 @@ Planner facts per source (verified 2026-10-12):
 | AT1 | unit: current `ASSETS_LICENSES.md` | build credits | one entry per CC-BY row (≥ 4: F4 + three GT3), each with author, license, url |
 | AT2 | unit: CC0 rows | build | excluded |
 | AT3 | e2e: menu → Credits | open | every entry's author and url visible; Esc closes |
+
+## Source gt3-d (Mustang, added 2026-10-12)
+`assets/vendor/cars/mustang-gt3/ford_mustang_gt3.glb`: CC-BY 4.0 (uploader's claim; author MattDoesBlender, possibly sim-extracted: verify or replace before any public release). 375k tris, 85 meshes, 39 materials named `mat_<n>` (no wheel names), 44 PNG textures with brand logos baked in (de-brand textures before release). Nose +Z; length ≈ 4.8 m (target 4.79). Wheels by node name (suffix after `.nr_`): tyres `25, 26, 28, 29`, rims `68, 69, 70, 71`, discs `5, 6, 7, 8`.
+
+## 075 — Pipeline: textures and wheel nodes; build gt3-d (complex, Models: heavy; deps 071)
+Extend `buildCar.ts` config with `wheelNodes?: string[]` (node-name substrings, alternative to `wheelMaterials`) and `maxTextureSize` (default 1024: resize with `@gltf-transform/functions` `textureCompress` + `sharp` — add `sharp` as an exact-version devDependency — to WebP), then add `assets/cars/gt3-d.pipeline.json` (triBudget 90 000, maxTextureSize 1024).
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | gt3-d output | nodes, tris | `body` + 4 wheels; tris ≤ 90 000 |
+| AT2 | gt3-d output | textures | every image ≤ 1024 px on each side; glb ≤ 12 MB |
+| AT3 | gt3-d json | dimensions | length 4.79 ± 0.08; width [1.9, 2.15]; wheelbase [2.6, 2.95]; wheelRadius [0.30, 0.37]; front wheels z < 0, left x < 0; min y ≥ −0.02 |
+| AT4 | gt3-d glb + json | names, extras | no "ford", "mustang" in names/strings (textures excluded: known) |
+| AT5 | gt3-a/b/c and f4 outputs | rebuild | unchanged (071 ATs still pass) |
+
+## 076 — GT3 D definition (simple; deps 072, 075)
+`public/cars/gt3-d.json` like 072 (GT3 dynamics, geometry from `public/models/gt3-d.json`, name "GT3 D"), and add it to `public/cars/index.json` if task 073 created it.
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | gt3-d.json | parseCarSpec | ok; category 'gt3'; name 'GT3 D' |
+| AT2 | vs model json | wheel positions | x, z ± 1e-3; y = wheelRadius − cgHeight |
+| AT3 | vs gt3-a.json | dynamics sections | deep-equal |
