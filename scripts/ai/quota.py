@@ -74,7 +74,8 @@ def kimi():
     for lim in data.get("limits", []):
         w, d = lim.get("window", {}), lim.get("detail", {})
         if w.get("duration") == 300 and "MINUTE" in str(w.get("timeUnit")):
-            out.append(window("5h", int(d["used"]), int(d["limit"]), int(d["remaining"]), iso(d["resetTime"])))
+            lim_, rem = int(d["limit"]), int(d["remaining"])
+            out.append(window("5h", int(d.get("used", lim_ - rem)), lim_, rem, iso(d["resetTime"])))
     month = data.get("usages", {}).get("limit_month_total")
     if month:
         used = round(month["used_ratio"] * 100)
