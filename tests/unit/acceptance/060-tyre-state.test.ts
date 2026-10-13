@@ -38,7 +38,7 @@ describe('060 tyre temperature, wear and pressure acceptance', () => {
     expect(Math.abs(wearFactor(MEDIUM, 1) - 0.6)).toBeLessThanOrEqual(1e-9);
   });
 
-  it('AT4: slipPower 0 and speed 0 for 600 s bring T from 90 °C to 25 ± 2 °C monotonically with wear unchanged', () => {
+  it('AT4: slipPower 0 and speed 0 for 600 s bring T from 90 °C to 25 + 65·e^(-1.2) ± 0.5 °C monotonically with wear unchanged', () => {
     const s = newTyreState();
     s.tempC = 90;
     const steps = 600 / DT;
@@ -49,7 +49,7 @@ describe('060 tyre temperature, wear and pressure acceptance', () => {
       if (s.tempC > prev) monotonic = false;
     }
     expect(monotonic).toBe(true);
-    expect(Math.abs(s.tempC - 25)).toBeLessThanOrEqual(2);
+    expect(Math.abs(s.tempC - (25 + 65 * Math.exp(-1.2)))).toBeLessThanOrEqual(0.5);
     expect(s.wear).toBeCloseTo(0, 12);
   });
 
