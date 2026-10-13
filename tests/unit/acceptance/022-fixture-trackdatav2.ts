@@ -8,8 +8,8 @@ const terrain: Terrain = {
   originZ: 0,
   sizeX: 100,
   sizeZ: 100,
-  rows: 2,
-  cols: 2,
+  rows: 1,
+  cols: 1,
   heights: [0, 0, 0, 0],
 };
 
