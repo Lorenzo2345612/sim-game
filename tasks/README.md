@@ -85,11 +85,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | done | 077 |
 | 081 | Terrain splat material with track-distance mown stripes | in progress | 080 |
-| 082 | Painted track markings (edge lines, start/finish line) | pending | 080 |
-| 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
+| 082 | Painted track markings (edge lines, start/finish line) | waiting decision | 080 |
+| 083 | Textured barriers (armco, concrete, tyres) | in progress | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
-| 087 | Racing line (minimum curvature) | in progress | - |
+| 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | pending | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
@@ -100,7 +100,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
-| 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | in progress | 097 |
+| 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | waiting decision | 097 |
 | 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | pending | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | pending | - |
 | 101 | Tree field uses baked LODs | pending | 100, 039 |

@@ -1114,7 +1114,7 @@
     {
       "num": "082",
       "title": "Painted track markings (edge lines, start/finish line)",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "080"
       ],
@@ -1127,7 +1127,7 @@
     {
       "num": "083",
       "title": "Textured barriers (armco, concrete, tyres)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "080",
         "043"
@@ -1168,7 +1168,7 @@
     {
       "num": "087",
       "title": "Racing line (minimum curvature)",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -1324,7 +1324,7 @@
     {
       "num": "098",
       "title": "Gravel traps from OpenStreetMap, run-off rule only for real corners",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "097"
       ],
