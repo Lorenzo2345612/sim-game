@@ -1,12 +1,19 @@
 import * as THREE from 'three';
 import type { Terrain } from '../core/types';
 
-export function createTerrainMesh(terrain: Terrain, material?: THREE.Material): THREE.Mesh {
+export function createTerrainMesh(
+  terrain: Terrain,
+  material?: THREE.Material,
+  trackDist?: Float32Array,
+): THREE.Mesh {
   const { originX, originZ, sizeX, sizeZ, rows, cols, heights } = terrain;
   const vertexCols = cols + 1;
   const vertexRows = rows + 1;
   if (heights.length !== vertexRows * vertexCols) {
     throw new Error('createTerrainMesh: invalid terrain');
+  }
+  if (trackDist !== undefined && trackDist.length !== vertexRows * vertexCols) {
+    throw new Error('createTerrainMesh: invalid trackDist');
   }
 
   const positions = new Float32Array(vertexRows * vertexCols * 3);
@@ -42,6 +49,9 @@ export function createTerrainMesh(terrain: Terrain, material?: THREE.Material): 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  if (trackDist !== undefined) {
+    geometry.setAttribute('trackDist', new THREE.BufferAttribute(trackDist, 1));
+  }
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
   geometry.computeVertexNormals();
 

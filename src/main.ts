@@ -12,6 +12,7 @@ import { buildTrackMarkings } from './track/markings';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
+import { createTerrainMaterial, terrainTrackDistance } from './render/terrainMaterial';
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
@@ -120,36 +121,6 @@ function headingOf(q: Quat): number {
   return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
 }
 
-const textureLoader = new THREE.TextureLoader();
-
-// createTerrainMesh lays terrain UVs in world metres / 10, so this repeat gives
-// one grass tile per GRASS_TILE_METERS.
-const GRASS_TILE_METERS = 10;
-
-function loadTiledTexture(url: string, srgb: boolean): THREE.Texture {
-  const texture = textureLoader.load(url);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.setScalar(10 / GRASS_TILE_METERS);
-  if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-// Neutral tint: full-brightness sunlit grass reads luminance ~0.6 on screen, above
-// the 0.5 the 043 AT2 tree band expects of vegetated pixels; ~0.36 linear keeps it
-// dark green without shifting the hue.
-const GRASS_TINT = 0x9a9a9a;
-
-function createTerrainMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color: GRASS_TINT,
-    map: loadTiledTexture('textures/grass/color.jpg', true),
-    normalMap: loadTiledTexture('textures/grass/normal.jpg', false),
-    roughnessMap: loadTiledTexture('textures/grass/roughness.jpg', false),
-    roughness: 1,
-  });
-}
-
 // Bilinear sample of the terrain grid; heights are column-major (col * (rows + 1) + row).
 function makeTerrainY(t: Terrain): (x: number, z: number) => number {
   const vertexRows = t.rows + 1;
@@ -233,8 +204,9 @@ async function startGame(trackId: string): Promise<void> {
   if (softwareGl) {
     // SwiftShader rasterizes on the CPU, shared by CI's parallel workers: at full
     // 1280x720 contention pushes frames past the sim catch-up clamp and the fixed-step
-    // loop falls behind wall time. 60 % resolution keeps frames inside the clamp.
-    handle.renderer.setPixelRatio(0.6);
+    // loop falls behind wall time. 50 % resolution keeps frames inside the clamp with
+    // the 081 splat terrain (10+ texture reads per fragment vs 3 before).
+    handle.renderer.setPixelRatio(0.5);
   }
   const { scene, camera, ground } = createScene();
 
@@ -259,7 +231,8 @@ async function startGame(trackId: string): Promise<void> {
     shadows.setEnabled(handle.renderer, true);
     if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
 
-    const terrain = createTerrainMesh(track.terrain, createTerrainMaterial());
+    const trackDist = terrainTrackDistance(track.terrain, track.centerline);
+    const terrain = createTerrainMesh(track.terrain, createTerrainMaterial(), trackDist);
     terrain.receiveShadow = true;
     scene.add(terrain);
 
