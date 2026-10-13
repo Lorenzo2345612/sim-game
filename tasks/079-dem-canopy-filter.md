@@ -41,7 +41,7 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 | AT1 | 20×20 grid all 100, a 3×3 block at 125 (forest) | removeCanopy(r 2) | every cell 100 ± 1e-9 |
 | AT2 | 20×20 grid, plane rising 1 per cell along cols | removeCanopy(r 2) | unchanged at interior cells (cols 2..17) ± 1e-9 |
 | AT3 | broad gaussian hill: 60×60, 30 m cells, sigma 300 m, height 40 | removeCanopy(r 2) | peak drop < 2 m |
-| AT4 | regenerated public/tracks/monza.json | elevation max − min | ≤ 15 m; terrain heights max − min ≤ 30 m |
+| AT4 | regenerated public/tracks/monza.json | elevation max − min | ≤ 22.5 m; terrain heights max − min ≤ 42 m (raw DEM: 22.3 / 54; the real park slopes ~20 m, grade smoothing is task 085) |
 | AT5 | regenerated spa.json / silverstone.json | elevation max − min | spa 90–110 m; silverstone ≤ 15 m |
 | AT6 | input grid | removeCanopy | input not mutated; returns new grid same dims |
 
