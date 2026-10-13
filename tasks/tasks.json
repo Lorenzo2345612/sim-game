@@ -1137,6 +1137,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/083-barrier-textures.md"
+    },
+    {
+      "num": "085",
+      "title": "Smooth the track elevation profile and limit its grade",
+      "status": "pending",
+      "deps": [
+        "079"
+      ],
+      "complexity": "standard",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/085-elevation-profile-smoothing.md"
     }
   ]
 }
