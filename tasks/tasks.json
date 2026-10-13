@@ -1026,7 +1026,7 @@
     {
       "num": "075",
       "title": "Car pipeline: textures and wheel nodes; build gt3-d",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "071"
       ],

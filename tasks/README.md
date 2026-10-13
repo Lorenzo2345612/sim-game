@@ -78,7 +78,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
 | 074 | Credits screen | pending | 044 |
-| 075 | Car pipeline: textures and wheel nodes; build gt3-d | in progress | 071 |
+| 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
 | 078 | Add reverse gear | pending | 054 |
