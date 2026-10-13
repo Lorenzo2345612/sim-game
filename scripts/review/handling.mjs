@@ -48,7 +48,7 @@ const untilSimTime = (page, t, ms) =>
   page.waitForFunction((t0) => window.__rec[window.__rec.length - 1].t >= t0, t, { timeout: ms, polling: 20 }).catch(() => {});
 
 async function fresh() {
-  const r = await openGame(browser, `${baseUrl}/`);
+  const r = await openGame(browser, `${baseUrl}/?track=monza`); // / shows the track menu since M1.2
   if (!r.ready) throw new Error('game not ready');
   await startRec(r.page);
   return r.page;
