@@ -54,10 +54,10 @@ describe('087 racing line edge cases', () => {
     }
   });
 
-  it('EDGE4: default margin and iterations equal explicit 1 and 600', () => {
+  it('EDGE4: default margin and iterations equal explicit 1 and 25 (K1999 passes per level)', () => {
     const implicit = computeRacingLine(circleTrack.centerline, 6);
     const marginSet = computeRacingLine(circleTrack.centerline, 6, 1);
-    const allSet = computeRacingLine(circleTrack.centerline, 6, 1, 600);
+    const allSet = computeRacingLine(circleTrack.centerline, 6, 1, 25);
     expect(bytes(implicit.offsets)).toEqual(bytes(marginSet.offsets));
     expect(bytes(implicit.points)).toEqual(bytes(marginSet.points));
     expect(bytes(implicit.dist)).toEqual(bytes(marginSet.dist));
