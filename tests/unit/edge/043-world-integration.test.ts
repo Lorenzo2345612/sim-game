@@ -44,4 +44,10 @@ describe('043 world integration edges', () => {
     expect(src).toMatch(/castShadow/);
     expect(src).toMatch(/receiveShadow/);
   });
+
+  it('EDGE7: a failed track load shows the error in #status', () => {
+    const src = mainSrc();
+    expect(src).toMatch(/status\.textContent = 'Error: '/);
+    expect(src).toMatch(/main\(\)\.catch\(\s*onError\s*\)/);
+  });
 });
