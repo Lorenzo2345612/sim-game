@@ -458,7 +458,7 @@
     {
       "num": "034",
       "title": "Invalidate laps when all wheels leave the track",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "033"
       ],
@@ -607,7 +607,7 @@
     {
       "num": "045",
       "title": "Six-speed gearbox with rpm and limiter",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "033"
       ],
@@ -776,6 +776,173 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/057-f4-car-integration.md"
+    },
+    {
+      "num": "058",
+      "title": "CarSpec type, loader and F4 data",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/058-car-spec.md"
+    },
+    {
+      "num": "059",
+      "title": "Tyre forces",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/059-tyre-forces.md"
+    },
+    {
+      "num": "060",
+      "title": "Tyre temperature, wear and pressure",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/060-tyre-state.md"
+    },
+    {
+      "num": "061",
+      "title": "Suspension, anti-roll and aero",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/061-suspension-aero.md"
+    },
+    {
+      "num": "062",
+      "title": "Powertrain: engine, launch rpm, differential, generalised gearbox",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/062-powertrain.md"
+    },
+    {
+      "num": "063",
+      "title": "Brakes, ABS/TC and fuel",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/063-brakes-aids-fuel.md"
+    },
+    {
+      "num": "064",
+      "title": "Implicit wheel solver",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/064-wheel-solver.md"
+    },
+    {
+      "num": "065",
+      "title": "Vehicle model on Rapier",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/065-vehicle-model.md"
+    },
+    {
+      "num": "066",
+      "title": "Calibration suite and F4 tuning",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/066-f4-calibration.md"
+    },
+    {
+      "num": "067",
+      "title": "Car setups (pure)",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/067-setups.md"
+    },
+    {
+      "num": "068",
+      "title": "Setup screen",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/068-setup-screen.md"
+    },
+    {
+      "num": "069",
+      "title": "HUD tyres and fuel widget",
+      "status": "pending",
+      "deps": [
+        "048"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/069-hud-tyres-fuel.md"
+    },
+    {
+      "num": "070",
+      "title": "Integrate the new vehicle model in the game",
+      "status": "pending",
+      "deps": [
+        "054"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/070-dynamics-integration.md"
     }
   ]
 }

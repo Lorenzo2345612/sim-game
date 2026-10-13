@@ -113,6 +113,36 @@
       "prefetch": [
         "053"
       ]
+    },
+    {
+      "id": "M1.5",
+      "title": "Vehicle dynamics: in-house tyre/suspension/powertrain model, setups, tyre wear, fuel",
+      "status": "open",
+      "tasks": [
+        "058",
+        "059",
+        "060",
+        "061",
+        "062",
+        "063",
+        "064",
+        "065",
+        "066",
+        "067",
+        "068",
+        "069",
+        "070"
+      ],
+      "prefetch": [
+        "058",
+        "059",
+        "060",
+        "061",
+        "062",
+        "063",
+        "064",
+        "067"
+      ]
     }
   ]
 }

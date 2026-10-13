@@ -63,7 +63,7 @@ Files: `src/physics/carSpec.ts` (types of the guide's CarSpec incl. `engine.laun
 | AT5 | gear 3, omega 50 rad/s | engineRpm | 50·ratio3·final·60/(2π) ± 1e-6 |
 | AT6 | open diff, tIn 400, ωL ≠ ωR | split | [200, 200] |
 | AT7 | lsd preload 50, lock 0.3, tIn 400, Δω large | split | difference capped at 2·(50 + 0.3·400) total transfer; sum = 400 |
-| AT8 | Gearbox with F4 params, upshift | during shiftTime 0.15 s | driveScale 0; after, 1 |
+| AT8 | Gearbox with F4 params, manual mode, `shiftUp()` from gear 1 | `update(speed, dt)` during the next 0.15 s | driveScale 0; after 0.15 s, 1 |
 
 ## 063 — Brakes, ABS/TC, fuel (complex; deps 058)
 `src/physics/brakes.ts`: `brakeTorques(brakes, pedal, bias, out: number[4])`; `absScale(abs, kappa, speed): number` (0.5 or 1); `tcScale(tc, drivenKappas: number[]): number`. `src/physics/fuel.ts`: `fuelFlowKgS(bsfc, powerW, mult)`; `class FuelTank { massKg; litres; constructor(spec, startL?); burn(powerW, dt, mult): void; empty(): boolean }`.

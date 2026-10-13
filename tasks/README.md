@@ -37,7 +37,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 031 | Build track surface geometry from TrackData v2 | done | 022 |
 | 032 | Terrain, surface and barrier colliders | done | 022, 031 |
 | 033 | Per-wheel surface grip and drag | done | 022, 032 |
-| 034 | Invalidate laps when all wheels leave the track | pending | 033 |
+| 034 | Invalidate laps when all wheels leave the track | in progress | 033 |
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | done | 022, 031, 035 |
@@ -48,7 +48,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 042 | Sky, fog per track and car-following shadows | done | - |
 | 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
-| 045 | Six-speed gearbox with rpm and limiter | pending | 033 |
+| 045 | Six-speed gearbox with rpm and limiter | in progress | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
 | 048 | HUD v2 with gear, rpm, sectors, delta and invalid lap | done | - |
@@ -61,3 +61,16 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | pending | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | pending | 053, 056 |
+| 058 | CarSpec type, loader and F4 data | pending | - |
+| 059 | Tyre forces | pending | 058 |
+| 060 | Tyre temperature, wear and pressure | pending | 058 |
+| 061 | Suspension, anti-roll and aero | pending | 058 |
+| 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | pending | 058 |
+| 063 | Brakes, ABS/TC and fuel | pending | 058 |
+| 064 | Implicit wheel solver | pending | 058 |
+| 065 | Vehicle model on Rapier | pending | 058 |
+| 066 | Calibration suite and F4 tuning | pending | 058 |
+| 067 | Car setups (pure) | pending | 058 |
+| 068 | Setup screen | pending | 058 |
+| 069 | HUD tyres and fuel widget | pending | 048 |
+| 070 | Integrate the new vehicle model in the game | pending | 054 |
