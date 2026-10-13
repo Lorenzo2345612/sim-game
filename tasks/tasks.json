@@ -594,7 +594,7 @@
     {
       "num": "044",
       "title": "Track selection and pause menu",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "043"
       ],
@@ -1168,7 +1168,7 @@
     {
       "num": "087",
       "title": "Racing line (minimum curvature)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

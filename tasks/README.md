@@ -47,7 +47,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
 | 043 | Load a TrackData v2 world into the game | done | 056, 038, 039, 040, 041, 042 |
-| 044 | Track selection and pause menu | in progress | 043 |
+| 044 | Track selection and pause menu | done | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | done | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
 | 047 | T-cam and cockpit cameras with switching | done | - |
@@ -89,7 +89,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | in progress | 043, 077 |
-| 087 | Racing line (minimum curvature) | waiting decision | - |
+| 087 | Racing line (minimum curvature) | in progress | - |
 | 088 | Speed profile and car limits | pending | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
