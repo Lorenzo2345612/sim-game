@@ -24,6 +24,7 @@ Today `detectRunoffs` (`tools/track-builder/corners.ts`) puts a run-off outside 
 - `public/tracks/monza.json`, `spa.json`, `silverstone.json` — regenerate
 - `tests/unit/track/osmRunoffs.test.ts` — create (edge cases)
 - Planner-authorised minimal edits only where pinned run-off counts/positions of real tracks change: tests under `tests/unit/acceptance/` and `tests/unit/edge/` that read `public/tracks/*.json` run-offs (026 AT5 already updated by the planner)
+- Planner-authorised: `tests/unit/edge/026-corner-analysis-edge.test.ts` and `tests/unit/edge/026-corner-analysis.post.test.ts` — update the synthetic-fixture run-off expectations (stadium/circle/rose rows) to the 098 rule (radius ≥ 150 → none; < 100 → gravel 18; else paved 12); kerb expectations unchanged
 
 ## Steps
 
