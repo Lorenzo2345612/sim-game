@@ -87,4 +87,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 081 | Terrain splat material with track-distance mown stripes | pending | 080 |
 | 082 | Painted track markings (edge lines, start/finish line) | pending | 080 |
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
-| 085 | Smooth the track elevation profile and limit its grade | pending | 079 |
+| 085 | Smooth the track elevation profile and limit its grade | done | 079 |

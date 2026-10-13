@@ -1141,7 +1141,7 @@
     {
       "num": "085",
       "title": "Smooth the track elevation profile and limit its grade",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "079"
       ],
