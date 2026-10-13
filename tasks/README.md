@@ -59,11 +59,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 053 | F4 car model pipeline (offline asset build) | done | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
-| 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | waiting decision | 030, 032, 033, 034, 035, 036, 037 |
+| 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | in progress | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | pending | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | done | 058 |
-| 060 | Tyre temperature, wear and pressure | waiting decision | 058 |
+| 060 | Tyre temperature, wear and pressure | done | 058 |
 | 061 | Suspension, anti-roll and aero | done | 058 |
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | waiting decision | 058 |

@@ -747,7 +747,7 @@
     {
       "num": "056",
       "title": "Load TrackData v2 tracks into the game (terrain, surfaces, physics)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "030",
         "032",
@@ -804,7 +804,7 @@
     {
       "num": "060",
       "title": "Tyre temperature, wear and pressure",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "058"
       ],
