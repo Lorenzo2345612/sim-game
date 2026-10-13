@@ -11,7 +11,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 ## In flight (planner side)
 
 - Test roles back on Qwen only (2026-10-12; tester A/B removed, Qwen cap 4). Early 'stalls' were the old watchdog killing long generations (fixed in c5c6853) and the ambiguous 031 table.
-- Phase 1.5 (vehicle dynamics) planning: design in `ai/guides/vehicle-dynamics.md`; a Sonnet lab subagent is validating it in `ai/lab/vehicle-model.mjs` + `ai/lab/f4-carspec.json`. Next: apply lab corrections to the guide, write acceptance tables (Opus) for tasks 058–069, spec-writers, milestone M1.5 with prefetch 058–063, 066, 068.
+- Phase 1.5 planned: specs 058–070, milestone M1.5 (plan + tables in `docs/plans/phase15.md`, design `ai/guides/vehicle-dynamics.md`, lab reference `ai/lab/vehicle-model.mjs`). Pure modules 058–064 and 067 are prefetched. Car model research for 1.6 in `docs/research/car-models.md` (asset-scout running).
 - When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
 
 ## Pipeline (how work gets done)
