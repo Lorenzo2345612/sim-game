@@ -23,7 +23,7 @@ Today `detectRunoffs` (`tools/track-builder/corners.ts`) puts a run-off outside 
 - `tools/track-builder/buildTrack.ts` — modify (read `<id>-areas.json` when present)
 - `public/tracks/monza.json`, `spa.json`, `silverstone.json` — regenerate
 - `tests/unit/track/osmRunoffs.test.ts` — create (edge cases)
-- Planner-authorised minimal edits only where pinned run-off counts/positions of real tracks change: tests under `tests/unit/acceptance/` and `tests/unit/edge/` that read `public/tracks/*.json` run-offs
+- Planner-authorised minimal edits only where pinned run-off counts/positions of real tracks change: tests under `tests/unit/acceptance/` and `tests/unit/edge/` that read `public/tracks/*.json` run-offs (026 AT5 already updated by the planner)
 
 ## Steps
 
