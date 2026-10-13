@@ -1,0 +1,17 @@
+<!doctype html><html><body style="margin:0;background:#bcd"><script type="module">
+// Generic GLB viewer: ?url=/path.glb&v=side|top|front34 ; auto-fits the model, axes helper at origin of the fitted box.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+const q = new URLSearchParams(location.search);
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(3, 5, 2); s.add(d);
+const c = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.01, 1e5);
+new GLTFLoader().load(q.get('url'), g => {
+  const box = new THREE.Box3().setFromObject(g.scene), ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  g.scene.position.sub(ctr); s.add(g.scene);
+  const R = size.length(); const ax = new THREE.AxesHelper(R * 0.4); s.add(ax); // red +X, green +Y, blue +Z
+  const v = q.get('v') || 'front34';
+  const P = { side: [R * 1.6, 0, 0], top: [0, R * 1.8, 0.001], front34: [-R, R * 0.4, -R], sideZ: [0, 0, R * 1.6] }[v];
+  c.position.set(...P); c.lookAt(0, 0, 0); r.render(s, c); document.title = 'ready';
+});
+</script></body></html>
