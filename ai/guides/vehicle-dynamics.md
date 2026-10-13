@@ -11,7 +11,7 @@ SI everywhere. Body frame: +X right, +Y up, −Z forward. Wheel order FL, FR, RL
 One JSON per car in `public/cars/<id>.json`, typed by `src/physics/carSpec.ts`. Every physical parameter lives here; code holds no per-car numbers. Unknown future fields (damage) are optional.
 
 - `chassis`: `massKg` (with driver, no fuel), `cgHeight` (m above ground at static ride height), `inertia` {x, y, z} kg·m² (if absent: box formula from `halfExtents`), `halfExtents`.
-- `wheels`: hub `positions[4]` (body frame, at static ride height), `radius`, `width`, `inertia` kg·m² (one wheel incl. brake, default 1.2).
+- `wheels`: hub `positions[4]` (body frame relative to the CoM at static ride height: y = radius − cgHeight, e.g. F4 0, GT3 −0.06), `radius`, `width`, `inertia` kg·m² (one wheel incl. brake, default 1.2).
 - `suspension.front|rear`: `springRate` N/m (wheel rate), `bumpDamping`, `reboundDamping` N·s/m, `restLength`, `travel` m, `bumpStopRate` N/m, `arb` N/m (anti-roll wheel-rate).
 - `steering`: `maxAngleLow`, `maxAngleHigh` rad, `fullSpeed` m/s (linear blend), `rate` rad/s (max steer slew).
 - `tyres`: `compounds.soft|medium|hard` → `TyreCompound` (below), `optPressureKpa`.
@@ -68,7 +68,11 @@ Simplified Pacejka "magic formula" per axis with a friction-ellipse combination:
 
 Eight numbers in six UI groups: `frontWing`, `rearWing` (integer steps → ClA and CdA deltas per step from the car file), `brakeBias`, `finalDrive`, `arbFront`, `arbRear`, `rideHeight` (offset m), `tyrePressureKpa`. Each has min, max, step and default in `CarSpec.setup`; presets `stable`, `balanced`, `aggressive` are value sets in the same file. `applySetup(spec, setup) → CarSpec` is pure (returns a new spec); saved per car+track in localStorage.
 
-## Calibration targets (F4)
+## Calibration targets
+
+Per car (lab: `lab.targets` in each `ai/lab/<id>-carspec.json`; `SPEC=path node ai/lab/vehicle-model.mjs`). GT3 (`ai/lab/gt3-carspec.json`): 0–100 3.0–3.8 s; vmax 265–295; braking 200→0 ≤ 110 m; skidpad 1.4–1.9 g; brake+steer no spin; fuel 1.5–2.5 L/min at race pace. Wing steps use `aero.wingStep` {claFront, claRear, cda} (task 058 naming).
+
+### F4
 
 0–100 km/h 3.4–4.2 s; vmax 215–235 km/h; braking 150→0 ≤ 60 m; steady skidpad (R 100 m) 1.5–2.2 g; brake + full steer at 150 km/h for 2 s: no spin (heading vs velocity < 30°); standstill on flat: drift < 1 cm in 10 s; on a 5 % slope with full brake: drift < 5 cm in 10 s; static ride height within 5 mm of spec after settling 2 s.
 

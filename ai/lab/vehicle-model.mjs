@@ -4,10 +4,12 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import fs from 'node:fs';
 
-const BASE = JSON.parse(fs.readFileSync(new URL('./f4-carspec.json', import.meta.url), 'utf8'));
+const BASE = JSON.parse(fs.readFileSync((process.env.SPEC ? new URL(process.env.SPEC, 'file://' + process.cwd() + '/') : new URL('./f4-carspec.json', import.meta.url)), 'utf8'));
 // SPEC_PATCH='{"engine":{"launchRpm":4500}}' deep-merges over the JSON for quick sweeps.
 const merge = (a, b) => { for (const k in b) a[k] = b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) ? merge(a[k] ?? {}, b[k]) : b[k]; return a; };
 if (process.env.SPEC_PATCH) merge(BASE, JSON.parse(process.env.SPEC_PATCH));
+// Targets: F4 defaults; a spec may override via lab.targets (SPEC=ai/lab/gt3-carspec.json node ai/lab/vehicle-model.mjs).
+const TG = { accel: [3.4, 4.2], vmax: [215, 235], brakeKmh: 150, brakeM: 60, skid: [1.5, 2.2], stintT: [70, 120], stintFuelKg: [0.1, 2], ...(BASE.lab?.targets ?? {}) };
 const DT = 1 / 120, RHO = 1.225, G = 9.81, V_LOW = BASE.lab?.vLow ?? 1.5, RELAX = BASE.lab?.relax ?? 0.25, AMBIENT = 25;
 const RPM = 30 / Math.PI; // rad/s -> rpm
 await RAPIER.init();
@@ -267,20 +269,20 @@ function tAccel(spec) {
     vmax = Math.max(vmax, s.vfwd);
   }
   const s = sense(c);
-  rec('0-100 km/h', t100?.toFixed(2), 's', t100 > 3.4 && t100 < 4.2 && !bad, '3.4-4.2');
-  rec('vmax', (s.vfwd * KMH).toFixed(1), 'km/h', s.vfwd * KMH >= 215 && s.vfwd * KMH <= 235, `215-235 (gear ${c.gear}, ${c.rpm.toFixed(0)} rpm)`);
+  rec('0-100 km/h', t100?.toFixed(2), 's', t100 > TG.accel[0] && t100 < TG.accel[1] && !bad, TG.accel.join('-'));
+  rec('vmax', (s.vfwd * KMH).toFixed(1), 'km/h', s.vfwd * KMH >= TG.vmax[0] && s.vfwd * KMH <= TG.vmax[1], `${TG.vmax.join('-')} (gear ${c.gear}, ${c.rpm.toFixed(0)} rpm)`);
 }
 function holdSpeed(c, v, ticks, steer = 0) {
   for (let k = 0; k < ticks; k++) { const s = sense(c); step(c, { throttle: clamp(0.3 + 0.15 * (v - s.vfwd), 0, 1), brake: s.vfwd > v + 2 ? 0.3 : 0, steer }); }
 }
 function tBrake(spec) {
   for (const abs of [false, true]) {
-  const c = makeCar(spec, { v0: 150 / KMH, T0: 90, abs });
-  holdSpeed(c, 150 / KMH, 120);
+  const c = makeCar(spec, { v0: TG.brakeKmh / KMH, T0: 90, abs });
+  holdSpeed(c, TG.brakeKmh / KMH, 120);
   const s0 = sense(c).p; let n = 0;
   while (sense(c).vfwd > 0.3 && n < 120 * 20) { step(c, { throttle: 0, brake: 1, steer: 0 }); n++; }
   const s = sense(c), d = norm(sub(s.p, s0));
-  rec(`braking 150->0 ABS ${abs ? 'on' : 'off'}`, d.toFixed(1), 'm', d <= 60, `<=60 (t=${(n * DT).toFixed(2)} s, mean ${(41.67 ** 2 / 2 / d / G).toFixed(2)} g)`);
+  rec(`braking ${TG.brakeKmh}->0 ABS ${abs ? 'on' : 'off'}`, d.toFixed(1), 'm', d <= TG.brakeM, `<=${TG.brakeM} (t=${(n * DT).toFixed(2)} s, mean ${((TG.brakeKmh / KMH) ** 2 / 2 / d / G).toFixed(2)} g)`);
   }
 }
 function tSkid(spec) {
@@ -302,7 +304,7 @@ function tSkid(spec) {
     const ay = s.speed * s.speed / R0 / G;
     if (Math.abs(e) < 4 && ay > best) { best = ay; bestV = s.speed; }
   }
-  rec('skidpad R=100', best.toFixed(2), 'g', best >= 1.5 && best <= 2.2, `1.5-2.2 (@${(bestV * KMH).toFixed(0)} km/h, ${ended})`);
+  rec('skidpad R=100', best.toFixed(2), 'g', best >= TG.skid[0] && best <= TG.skid[1], `${TG.skid.join('-')} (@${(bestV * KMH).toFixed(0)} km/h, ${ended})`);
 }
 function runBrakeSteer(spec, opts) {
   const c = makeCar(spec, { v0: 150 / KMH, T0: 90, ...opts });
@@ -390,8 +392,8 @@ function tStint(spec) {
   }
   const T = c.wheels.map((w) => w.T.toFixed(0)).join('/'), Wr = c.wheels.map((w) => (w.W * 100).toFixed(2)).join('/');
   const avgT = c.wheels.reduce((a, w) => a + w.T, 0) / 4;
-  rec('stint 90 s tyre temp FL/FR/RL/RR', T, 'C', !bad && avgT > 70 && avgT < 120, `start 60, plausible 70-120; wear% ${Wr}`);
-  rec('stint 90 s fuel used', (fuel0 - c.fuelKg).toFixed(3), 'kg', fuel0 - c.fuelKg > 0.1 && fuel0 - c.fuelKg < 2, `vmax ${(maxSpeed * KMH).toFixed(0)} km/h, mass ${c.massSet.toFixed(1)} kg`);
+  rec('stint 90 s tyre temp FL/FR/RL/RR', T, 'C', !bad && avgT > TG.stintT[0] && avgT < TG.stintT[1], `start 60, plausible ${TG.stintT.join('-')}; wear% ${Wr}`);
+  rec('stint 90 s fuel used', (fuel0 - c.fuelKg).toFixed(3), 'kg', fuel0 - c.fuelKg > TG.stintFuelKg[0] && fuel0 - c.fuelKg < TG.stintFuelKg[1], `${((fuel0 - c.fuelKg) / spec.fuel.densityKgL / 1.5).toFixed(2)} L/min, vmax ${(maxSpeed * KMH).toFixed(0)} km/h, mass ${c.massSet.toFixed(1)} kg`);
 }
 
 function tStress(spec) {
