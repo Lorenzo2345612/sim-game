@@ -1,4 +1,4 @@
-# 106 — Add Mexico City, Daytona, Lusail and Sakhir to the game
+# 106 — Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game
 
 Status: pending
 Phase: 1
@@ -10,7 +10,7 @@ Roles: acceptance, coder, reviewer
 
 ## Goal
 
-The four new circuits (data already in `public/tracks/{mexico,daytona,lusail,bahrain}.json`) are selectable in the menu and load with their own sky, fog and satellite ground; their JSON carries the correct data source.
+The seven new circuits (data already in `public/tracks/{mexico,daytona,lusail,bahrain,braselton,elkhart,sepang}.json`) are selectable in the menu and load with their own sky, fog and satellite ground; their JSON carries the correct data source.
 
 ## Context
 
@@ -18,26 +18,26 @@ Track data was built by the planner (`tools/track-builder/tracks.json` entries, 
 
 ## Files
 
-- `src/ui/menu.ts` — modify (`TRACK_CHOICES` + mexico 'Mexico City', daytona 'Daytona', lusail 'Lusail', bahrain 'Sakhir', in that order after the existing three)
-- `src/render/environment.ts` — modify (per-track sky/fog entries for the four ids)
-- `tools/track-builder/tracks.json` — modify (optional `source` {dataset, license, url} per track; set for the four new ids)
+- `src/ui/menu.ts` — modify (`TRACK_CHOICES` + mexico 'Mexico City', daytona 'Daytona', lusail 'Lusail', bahrain 'Sakhir', braselton 'Braselton', elkhart 'Elkhart Lake', sepang 'Sepang', in that order after the existing three)
+- `src/render/environment.ts` — modify (per-track sky/fog entries for the seven ids)
+- `tools/track-builder/tracks.json` — modify (optional `source` {dataset, license, url} per track; set for the seven new ids)
 - `tools/track-builder/buildTrackData.ts` — modify (use the config `source` when present, else the current default)
-- `public/tracks/mexico.json`, `daytona.json`, `lusail.json`, `bahrain.json` — regenerate (`npm run build:tracks -- mexico daytona lusail bahrain`)
+- `public/tracks/mexico.json`, `daytona.json`, `lusail.json`, `bahrain.json` — regenerate (`npm run build:tracks -- mexico daytona lusail bahrain braselton elkhart sepang`)
 
 ## Steps
 
-- Environment: mexico and daytona use `kloofendal_48d_partly_cloudy_puresky`; lusail and bahrain use `qwantani_noon_puresky` (clear midday); fog densities: mexico 0.0005, daytona 0.0004, lusail 0.0003, bahrain 0.0003.
-- Sources: mexico {bacinger/f1-circuits, MIT, https://github.com/bacinger/f1-circuits}; daytona, lusail and bahrain {OpenStreetMap, ODbL 1.0, https://www.openstreetmap.org/copyright}.
+- Environment: mexico, daytona, braselton, elkhart and sepang use `kloofendal_48d_partly_cloudy_puresky`; lusail and bahrain use `qwantani_noon_puresky` (clear midday); fog densities: mexico 0.0005, daytona 0.0004, lusail 0.0003, bahrain 0.0003, braselton 0.0005, elkhart 0.0005, sepang 0.0004.
+- Sources: mexico and sepang {bacinger/f1-circuits, MIT, https://github.com/bacinger/f1-circuits}; daytona, lusail, bahrain, braselton and elkhart {OpenStreetMap, ODbL 1.0, https://www.openstreetmap.org/copyright}.
 - Existing three tracks' JSON must not change.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | e2e `/` | menu | 7 track buttons in order monza, spa, silverstone, mexico, daytona, lusail, bahrain with names Monza, Spa, Silverstone, Mexico City, Daytona, Lusail, Sakhir |
-| AT2 | e2e `/?track=<id>` for mexico, daytona, lusail, bahrain | ready | `trackId()` = id; no console errors; 3 s of throttle reaches > 30 km/h |
+| AT1 | e2e `/` | menu | 10 track buttons in order monza, spa, silverstone, mexico, daytona, lusail, bahrain, braselton, elkhart, sepang with names Monza, Spa, Silverstone, Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake, Sepang |
+| AT2 | e2e `/?track=<id>` for mexico, daytona, lusail, bahrain, braselton, elkhart, sepang | ready | `trackId()` = id; no console errors; 3 s of throttle reaches > 30 km/h |
 | AT3 | e2e each new track | ready | `sceneStats().environment` per Steps; `sceneStats().groundTexture` contains `textures/ground/<id>.jpg` |
-| AT4 | public/tracks/daytona.json, lusail.json, bahrain.json / mexico.json | read `source` | dataset 'OpenStreetMap', license 'ODbL 1.0' / dataset 'bacinger/f1-circuits', license 'MIT' |
+| AT4 | public/tracks/daytona.json, lusail.json, bahrain.json, braselton.json, elkhart.json / mexico.json, sepang.json | read `source` | dataset 'OpenStreetMap', license 'ODbL 1.0' / dataset 'bacinger/f1-circuits', license 'MIT' |
 | AT5 | public/tracks/monza.json, spa.json, silverstone.json | git diff vs base | unchanged |
 
 ## Acceptance criteria
