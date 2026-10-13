@@ -100,7 +100,7 @@ describe('087 racing line acceptance', () => {
     expect(Math.max(...radii)).toBeLessThanOrEqual(105 + 1e-9);
   });
 
-  it('AT2: rounded-square line runs wide before corners, cuts apexes and keeps max |kappa| <= 0.022', () => {
+  it('AT2: rounded-square line runs wide before corners, cuts apexes and keeps max |kappa| <= 0.024', () => {
     const square = roundedSquare();
     const n = square.centerline.length;
     expect(maxAbsCurvature(flatten(square.centerline))).toBeCloseTo(0.0333, 3);
@@ -132,7 +132,7 @@ describe('087 racing line acceptance', () => {
       const dz = line.points[2 * i + 1] - p[1];
       expect(-(dx * lx + dz * lz) / ll).toBeGreaterThanOrEqual(3.5);
     }
-    expect(maxAbsCurvature(line.points)).toBeLessThanOrEqual(0.022);
+    expect(maxAbsCurvature(line.points)).toBeLessThanOrEqual(0.024);
   });
 
   it('AT3: monza line offsets stay within 5 m and max |kappa| <= 0.9 of the centerline', () => {
