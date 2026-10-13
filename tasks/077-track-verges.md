@@ -42,9 +42,9 @@ Fixture: the circle helper from tests/unit/acceptance/031-track-surfaces-geometr
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| AT1 | circle, no kerbs/runoffs | buildTrackSurfaces | exactly 2 strips with surface 'grass'; left (outer side) verge vertices at radial distance 106, 112, 115 from the circle centre (± 1e-6) with y 0, 0, −0.30 |
-| AT2 | circle, left kerb on indices 10..30 | same | left verge inner radius 107.2 at indices 10..30, 106 elsewhere; flat end = inner + 6; outer = inner + 9 |
-| AT3 | circle, right (inner) side | same | right verge outer radial distance ≥ 100 − 0.8·100 = 20 from centre, i.e. lateral extent ≤ 80 m; with R 100 nothing is capped: inner 94, flat end 88, outer 85 |
+| AT1 | circle, no kerbs/runoffs | buildTrackSurfaces | exactly 2 strips with surface 'grass'; left (outer side) verge vertices at radial distance 106, 112, 115 from the circle centre (± 1e-5, float32 positions) with y 0, 0, −0.30 (± 1e-6) |
+| AT2 | circle, left kerb on indices 10..30 | same | (radial ± 1e-5) left verge inner radius 107.2 at indices 10..30, 106 elsewhere; flat end = inner + 6; outer = inner + 9 |
+| AT3 | circle, right (inner) side | same | (radial ± 1e-5) right verge outer radial distance ≥ 100 − 0.8·100 = 20 from centre, i.e. lateral extent ≤ 80 m; with R 100 nothing is capped: inner 94, flat end 88, outer 85 |
 | AT4 | public/tracks/monza.json, spa.json, silverstone.json loaded into a Rapier world with addTrackColliders | downward rays every 0.25 m along the lateral line from the centerline to the verge's outer edge at that index, both sides, every 4th centerline index; skip samples whose hit collider has surfaceOf(...) = null (barriers) and samples whose nearest centerline index is more than 25 indices from i (crossovers) | upward step (height of sample k minus sample k+1, moving outward) ≤ 0.05 m for every remaining sample |
 | AT5 | strips incl. grass | createTrackSurfaceObject with a stub loadTexture | a mesh named 'grass' exists and its material map was loaded from a URL containing 'textures/grass' |
 

@@ -30,13 +30,14 @@ Acceptance tests for this task are Playwright in `tests/e2e/acceptance/043-world
 // additions to Window.__SIMGAME__
 trackId(): string;
 carPosition(): Vec3;            // current chassis position (used by e2e checks of 043 and 055)
-surfaceUnderCar(): Surface;   // majority of `game.getWheelSurfaces()`; 'asphalt' when none
+surfaceUnderCar(): Surface;   // already exists (task 056: surface at chassis centre); keep as is, do not change
 ```
 
 - Scene: `createScene()`, then `applyEnvironment(scene, track.id)`, `ShadowRig` (enabled), hide `ground`. Add: `createTerrainMesh` (material with the `textures/grass/*` set, `RepeatWrapping`, repeat so one tile ≈ 10 m), `createTrackSurfaceObject(buildTrackSurfaces(track))`, `createBarrierObject(track)`, `createTreeField` (`terrainY` bilinear from `track.terrain`; `update(camera.position)` once per frame), one `createGrandstand` per `track.grandstands` (set y from nearest centerline elevation), `createPitBuilding`, `createStartGantry`, `createStartLights` (keep `setLights(0)`).
 - Car and track meshes: `castShadow` true for the car; `receiveShadow` true for terrain and surfaces. `ShadowRig.update(car position)` every frame.
 - Camera: ChaseCamera as today. Status text stays until everything is added; no console errors.
 - On load failure show the error in `#status` (existing `onError`).
+- Grandstand y, tree `terrainY` and the per-frame `ShadowRig.update` stay inline in `main.ts`; they are covered by e2e and review only, no new unit seams.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
