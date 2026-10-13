@@ -67,8 +67,9 @@ describe('buildTrackSurfaces', () => {
         [{ start: 20, end: 20, side: 'right', surface: 'gravel', widthMeters: 18 }],
       ),
     );
-    expect(strips.length).toBe(1);
+    expect(strips.length).toBe(3);
     expect(strips[0].surface).toBe('asphalt');
+    expect(strips.slice(1).every((s) => s.surface === 'grass')).toBe(true);
   });
 
   it('keeps every index below the vertex count', () => {

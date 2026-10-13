@@ -7,6 +7,7 @@ export interface TrackSurfaceObject { group: THREE.Group; dispose(): void }
 const MESH_NAME: Partial<Record<Surface, string>> = {
   asphalt: 'asphalt',
   kerb: 'kerbs',
+  grass: 'grass',
   gravel: 'gravel',
   runoff: 'runoff',
 };

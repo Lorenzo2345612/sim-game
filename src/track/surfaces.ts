@@ -1,21 +1,21 @@
 import { KERB_WIDTH } from '../core/constants';
-import type { Surface, SurfaceStrip, TrackDataV2, TrackSegment } from '../core/types';
+import type { Side, Surface, SurfaceStrip, TrackDataV2, TrackSegment } from '../core/types';
 
 const ASPHALT_Y = 0.02;
 const KERB_Y = 0.04;
 const RUNOFF_Y = 0.01;
 const UV_SCALE = 10;
 const KERB_UV_V = 1.5;
+const VERGE_FLAT = 6;
+const VERGE_SLOPE = 3;
+const VERGE_DROP = 0.3;
 
-interface Row {
-  x0: number;
+interface Vertex {
+  x: number;
   y: number;
-  z0: number;
-  u0: number;
+  z: number;
+  u: number;
   v: number;
-  x1: number;
-  z1: number;
-  u1: number;
 }
 
 /** Right normal of the ring at point i: d = normalize(P[i+1] - P[i-1]), right = (-d.z, d.x). */
@@ -36,37 +36,41 @@ function rightNormal(centerline: [number, number][], i: number): [number, number
   return [-dz, dx];
 }
 
-/** Triangles wind counter-clockwise seen from +Y for both sides and any lateral range. */
-function makeStrip(surface: Surface, rows: Row[], closed: boolean): SurfaceStrip {
+/** Triangles wind counter-clockwise seen from +Y when columns are ordered by increasing lateral. */
+function makeStrip(surface: Surface, rows: Vertex[][], closed: boolean): SurfaceStrip {
   const k = rows.length;
-  const positions = new Float32Array(k * 6);
-  const uvs = new Float32Array(k * 4);
-  const quads = closed ? k : k - 1;
-  const indices = new Uint32Array(quads * 6);
+  const w = k > 0 ? rows[0].length : 0;
+  const positions = new Float32Array(k * w * 3);
+  const uvs = new Float32Array(k * w * 2);
+  const span = Math.max(0, w - 1);
+  const indices = new Uint32Array(Math.max(0, (closed ? k : k - 1)) * span * 6);
   for (let i = 0; i < k; i++) {
-    const r = rows[i];
-    const p = i * 6;
-    positions[p] = r.x0;
-    positions[p + 1] = r.y;
-    positions[p + 2] = r.z0;
-    positions[p + 3] = r.x1;
-    positions[p + 4] = r.y;
-    positions[p + 5] = r.z1;
-    const t = i * 4;
-    uvs[t] = r.u0;
-    uvs[t + 1] = r.v;
-    uvs[t + 2] = r.u1;
-    uvs[t + 3] = r.v;
+    for (let c = 0; c < w; c++) {
+      const t = rows[i][c];
+      const p = (i * w + c) * 3;
+      positions[p] = t.x;
+      positions[p + 1] = t.y;
+      positions[p + 2] = t.z;
+      const q = (i * w + c) * 2;
+      uvs[q] = t.u;
+      uvs[q + 1] = t.v;
+    }
   }
-  for (let i = 0; i < quads; i++) {
+  let o = 0;
+  for (let i = 0; i < (closed ? k : k - 1); i++) {
     const j = closed ? (i + 1) % k : i + 1;
-    const o = i * 6;
-    indices[o] = 2 * i;
-    indices[o + 1] = 2 * i + 1;
-    indices[o + 2] = 2 * j;
-    indices[o + 3] = 2 * i + 1;
-    indices[o + 4] = 2 * j + 1;
-    indices[o + 5] = 2 * j;
+    for (let c = 0; c < span; c++) {
+      const a = i * w + c;
+      const b = a + 1;
+      const d = j * w + c;
+      const e = d + 1;
+      indices[o++] = a;
+      indices[o++] = b;
+      indices[o++] = d;
+      indices[o++] = b;
+      indices[o++] = e;
+      indices[o++] = d;
+    }
   }
   return { surface, positions, indices, uvs };
 }
@@ -95,12 +99,12 @@ function segmentRows(
   latOf: Lateral,
   yOf: (idx: number) => number,
   vScale: number,
-): Row[] {
+): Vertex[][] {
   const cx = track.centerline;
   const n = cx.length;
   const k = segmentLength(start, end, n);
   if (k < 2) return [];
-  const rows: Row[] = [];
+  const rows: Vertex[][] = [];
   let s = 0;
   let prevX = cx[start][0];
   let prevZ = cx[start][1];
@@ -113,18 +117,78 @@ function segmentRows(
     prevZ = z;
     const [latMin, latMax, u0, u1] = latOf(idx);
     const [rx, rz] = rightNormal(cx, idx);
-    rows.push({
-      x0: x + rx * latMin,
-      y: yOf(idx),
-      z0: z + rz * latMin,
-      u0,
-      v: s / vScale,
-      x1: x + rx * latMax,
-      z1: z + rz * latMax,
-      u1,
-    });
+    const y = yOf(idx);
+    const v = s / vScale;
+    rows.push([
+      { x: x + rx * latMin, y, z: z + rz * latMin, u: u0, v },
+      { x: x + rx * latMax, y, z: z + rz * latMax, u: u1, v },
+    ]);
   }
   return rows;
+}
+
+/** Outermost lateral extent of asphalt, kerbs and runoffs on one side at centerline index i. */
+function vergeInnerExtent(track: TrackDataV2, side: Side, i: number): number {
+  const n = track.centerline.length;
+  const half = track.widthMeters / 2;
+  const kerb = track.kerbs.some((k) => k.side === side && segmentCovers(k, i, n));
+  let inner = half + (kerb ? KERB_WIDTH : 0);
+  for (const seg of track.runoffs) {
+    if (seg.side !== side || !segmentCovers(seg, i, n)) continue;
+    inner = Math.max(inner, half + (kerb ? KERB_WIDTH : 0) + seg.widthMeters);
+  }
+  return inner;
+}
+
+/** Circumradius of P[i-1], P[i], P[i+1] and the side its centre lies on; null when collinear or degenerate. */
+function cornerCurvature(cx: [number, number][], i: number): { side: Side; radius: number } | null {
+  const n = cx.length;
+  const prev = cx[(i - 1 + n) % n];
+  const next = cx[(i + 1) % n];
+  const v1x = cx[i][0] - prev[0];
+  const v1z = cx[i][1] - prev[1];
+  const v2x = next[0] - cx[i][0];
+  const v2z = next[1] - cx[i][1];
+  const cross = v1x * v2z - v1z * v2x;
+  const a = Math.hypot(v1x, v1z);
+  const b = Math.hypot(v2x, v2z);
+  const c = Math.hypot(v1x + v2x, v1z + v2z);
+  if (cross === 0 || a === 0 || b === 0 || c === 0) return null;
+  return { side: cross > 0 ? 'right' : 'left', radius: (a * b * c) / (2 * Math.abs(cross)) };
+}
+
+/** Closed grass verge: inner and flat columns at elev(i), outer column at elev(i) - VERGE_DROP. */
+function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
+  const cx = track.centerline;
+  const n = cx.length;
+  const sign = side === 'right' ? 1 : -1;
+  const rows: Vertex[][] = [];
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
+    const inner = vergeInnerExtent(track, side, i);
+    let flat = inner + VERGE_FLAT;
+    let outer = flat + VERGE_SLOPE;
+    const corner = cornerCurvature(cx, i);
+    if (corner !== null && corner.side === side) {
+      // Inner side of a corner: keep the verge inside 0.8 x radius of curvature.
+      const cap = 0.8 * corner.radius;
+      flat = Math.max(inner, Math.min(inner + VERGE_FLAT, cap - VERGE_SLOPE));
+      outer = Math.max(inner, Math.min(flat + VERGE_SLOPE, cap));
+    }
+    const y = track.elevation[i] ?? 0;
+    const [rx, rz] = rightNormal(cx, i);
+    const v = s / UV_SCALE;
+    const cols: Vertex[] = [
+      { x: cx[i][0] + rx * sign * outer, y: y - VERGE_DROP, z: cx[i][1] + rz * sign * outer, u: (sign * outer) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * flat, y, z: cx[i][1] + rz * sign * flat, u: (sign * flat) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * inner, y, z: cx[i][1] + rz * sign * inner, u: (sign * inner) / UV_SCALE, v },
+    ];
+    // makeStrip expects columns ordered by increasing lateral.
+    if (sign > 0) cols.reverse();
+    rows.push(cols);
+  }
+  return makeStrip('grass', rows, true);
 }
 
 export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
@@ -136,21 +200,17 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   const strips: SurfaceStrip[] = [];
 
   // Asphalt: closed ring, s from point 0.
-  const asphaltRows: Row[] = [];
+  const asphaltRows: Vertex[][] = [];
   let s = 0;
   for (let i = 0; i < n; i++) {
     if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
     const [rx, rz] = rightNormal(cx, i);
-    asphaltRows.push({
-      x0: cx[i][0] - rx * half,
-      y: elev(i) + ASPHALT_Y,
-      z0: cx[i][1] - rz * half,
-      u0: -half / UV_SCALE,
-      v: s / UV_SCALE,
-      x1: cx[i][0] + rx * half,
-      z1: cx[i][1] + rz * half,
-      u1: half / UV_SCALE,
-    });
+    const y = elev(i) + ASPHALT_Y;
+    const v = s / UV_SCALE;
+    asphaltRows.push([
+      { x: cx[i][0] - rx * half, y, z: cx[i][1] - rz * half, u: -half / UV_SCALE, v },
+      { x: cx[i][0] + rx * half, y, z: cx[i][1] + rz * half, u: half / UV_SCALE, v },
+    ]);
   }
   strips.push(makeStrip('asphalt', asphaltRows, true));
 
@@ -193,6 +253,9 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     );
     if (rows.length > 0) strips.push(makeStrip(seg.surface, rows, false));
   }
+
+  strips.push(vergeStrip(track, 'left'));
+  strips.push(vergeStrip(track, 'right'));
 
   return strips;
 }
