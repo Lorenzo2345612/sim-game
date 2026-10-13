@@ -104,24 +104,6 @@
       "prefetch": []
     },
     {
-      "id": "M1.2c",
-      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
-      "tasks": [
-        "099",
-        "100",
-        "101",
-        "102",
-        "103",
-        "104",
-        "105",
-        "106"
-      ],
-      "status": "open",
-      "prefetch": [
-        "100"
-      ]
-    },
-    {
       "id": "M1.3",
       "title": "Gameplay: gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets",
       "tasks": [
@@ -145,7 +127,8 @@
         "049",
         "050",
         "051",
-        "052"
+        "052",
+        "054"
       ]
     },
     {
@@ -157,7 +140,8 @@
       ],
       "status": "open",
       "prefetch": [
-        "053"
+        "053",
+        "057"
       ]
     },
     {
@@ -188,6 +172,24 @@
         "063",
         "064",
         "067"
+      ]
+    },
+    {
+      "id": "M1.2c",
+      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
+      "tasks": [
+        "099",
+        "100",
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106"
+      ],
+      "status": "open",
+      "prefetch": [
+        "100"
       ]
     },
     {
