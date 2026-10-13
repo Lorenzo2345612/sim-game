@@ -51,3 +51,8 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - 2026-10-13: WSL (14 GB) hit an OOM kill with --max-parallel 5 (workers + vitest Rapier track tests). Not caused by the pipeline (user side); keep --max-parallel 5. If the lock survives a crash, check `ps` and delete `.ai/orchestrator.lock`.
 
 - 2026-10-13: M1.2 approved (944de0e). Review: no blocking issues; known: Monza far hills show few trees, Silverstone start lights look dark, tyre stacks look large up close, menu not covered by review shots. Old M0 handling (vmax 175, brake+steer spin) until M1.5.
+
+## 2026-10-13 afternoon
+- Milestone order: M1.2b (running) → M1.2c (visual realism + tracks Mexico City, Daytona, Lusail, Sakhir: 099–106) → M1.3 → M1.4 → M1.5 → M1.6 → M1.6b (LMP2/Hypercar 112–114, lab specs in ai/lab/) → M1.7 (audio 107–111) → M2.1 (race 087–095).
+- Plans: docs/plans/{m1.2c-realism,m1.6b-prototypes,m1.7-audio,phase2-race}.md. Approval delegated: review with milestone-review, approve if no blocking issues.
+- Session routine: watcher loop on .ai/decisions + builtAt; resolve decisions (most were acceptance-table tolerance/fixture issues; see plan-feature tolerance rule).
