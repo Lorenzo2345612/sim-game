@@ -85,7 +85,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | done | 077 |
 | 081 | Terrain splat material with track-distance mown stripes | in progress | 080 |
-| 082 | Painted track markings (edge lines, start/finish line) | waiting decision | 080 |
+| 082 | Painted track markings (edge lines, start/finish line) | done | 080 |
 | 083 | Textured barriers (armco, concrete, tyres) | in progress | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |

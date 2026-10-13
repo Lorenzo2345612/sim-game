@@ -1114,7 +1114,7 @@
     {
       "num": "082",
       "title": "Painted track markings (edge lines, start/finish line)",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "080"
       ],
