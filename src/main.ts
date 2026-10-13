@@ -120,13 +120,6 @@ function headingOf(q: Quat): number {
 
 const textureLoader = new THREE.TextureLoader();
 
-// Task 035 ships no runoff texture set; run-off areas are asphalt (builder rule).
-function loadSurfaceTexture(url: string): THREE.Texture {
-  const texture = textureLoader.load(url.replace('textures/runoff/', 'textures/asphalt/'));
-  texture.name = url;
-  return texture;
-}
-
 // createTerrainMesh lays terrain UVs in world metres / 10, so this repeat gives
 // one grass tile per GRASS_TILE_METERS.
 const GRASS_TILE_METERS = 10;
@@ -268,9 +261,7 @@ async function startGame(trackId: string): Promise<void> {
     terrain.receiveShadow = true;
     scene.add(terrain);
 
-    const surfaces = createTrackSurfaceObject(buildTrackSurfaces(track), {
-      loadTexture: loadSurfaceTexture,
-    });
+    const surfaces = createTrackSurfaceObject(buildTrackSurfaces(track));
     surfaces.group.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (mesh.isMesh) mesh.receiveShadow = true;

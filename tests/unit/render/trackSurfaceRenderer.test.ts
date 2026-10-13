@@ -72,9 +72,10 @@ describe('trackSurfaceRenderer edge cases', () => {
       'texture',
     ]);
     expect(loaded.map((texture) => texture.name)).toEqual([
-      'textures/runoff/color.jpg',
-      'textures/runoff/normal.jpg',
-      'textures/runoff/roughness.jpg',
+      'textures/macro-noise.png',
+      'textures/asphalt/color.jpg',
+      'textures/asphalt/normal.jpg',
+      'textures/asphalt/roughness.jpg',
     ]);
   });
 });

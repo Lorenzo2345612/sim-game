@@ -80,7 +80,7 @@ describe('037 track surface render acceptance', () => {
     }
   });
 
-  it('AT2: asphalt/gravel/runoff use textures/<surface>/{color,normal,roughness}.jpg and kerbs a red/white uv.v stripe', () => {
+  it('AT2: every surface uses its texture dir {color,normal,roughness}.jpg plus one macro-noise; kerb stripes live in the shader (task 080)', () => {
     const strips = allSurfaceStrips();
     const loaded: string[] = [];
     const byUrl = new Map<string, THREE.Texture>();
@@ -93,42 +93,37 @@ describe('037 track surface render acceptance', () => {
         return texture;
       },
     });
-    const expectedUrls = ['asphalt', 'gravel', 'runoff'].flatMap((surface) =>
-      ['color', 'normal', 'roughness'].map((channel) => `textures/${surface}/${channel}.jpg`),
-    );
+    const DIR_FOR_SURFACE: Record<string, string> = {
+      asphalt: 'asphalt-track',
+      gravel: 'gravel',
+      runoff: 'asphalt',
+      kerb: 'kerb',
+    };
+    const expectedUrls = [
+      ...Object.values(DIR_FOR_SURFACE).flatMap((dir) =>
+        ['color', 'normal', 'roughness'].map((channel) => `textures/${dir}/${channel}.jpg`),
+      ),
+      'textures/macro-noise.png',
+    ];
     expect([...loaded].sort()).toEqual([...expectedUrls].sort());
-    const slot = (surface: string, channel: string): THREE.Texture => {
-      const texture = byUrl.get(`textures/${surface}/${channel}.jpg`);
-      if (!texture) throw new Error(`texture not loaded: ${surface}/${channel}`);
+    const slot = (dir: string, channel: string): THREE.Texture => {
+      const texture = byUrl.get(`textures/${dir}/${channel}.jpg`);
+      if (!texture) throw new Error(`texture not loaded: ${dir}/${channel}`);
       return texture;
     };
-    for (const surface of ['asphalt', 'gravel', 'runoff']) {
-      const material = meshByName(group, surface).material as THREE.MeshStandardMaterial;
+    for (const surface of Object.keys(DIR_FOR_SURFACE)) {
+      const material = meshByName(group, MESH_FOR_SURFACE[surface]).material as THREE.MeshStandardMaterial;
       expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
-      expect(material.map).toBe(slot(surface, 'color'));
-      expect(material.normalMap).toBe(slot(surface, 'normal'));
-      expect(material.roughnessMap).toBe(slot(surface, 'roughness'));
+      const dir = DIR_FOR_SURFACE[surface];
+      expect(material.map).toBe(slot(dir, 'color'));
+      expect(material.normalMap).toBe(slot(dir, 'normal'));
+      expect(material.roughnessMap).toBe(slot(dir, 'roughness'));
       expect(material.map!.colorSpace).toBe(THREE.SRGBColorSpace);
       for (const texture of [material.map!, material.normalMap!, material.roughnessMap!]) {
         expect(texture.wrapS).toBe(THREE.RepeatWrapping);
         expect(texture.wrapT).toBe(THREE.RepeatWrapping);
       }
     }
-    const kerbMaterial = meshByName(group, 'kerbs').material as THREE.MeshStandardMaterial;
-    expect(kerbMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
-    const stripe = kerbMaterial.map;
-    expect(stripe).toBeInstanceOf(THREE.DataTexture);
-    if (!(stripe instanceof THREE.DataTexture)) throw new Error('kerb map is not a DataTexture');
-    expect(stripe.image.width).toBe(1);
-    expect(stripe.image.height).toBe(2);
-    expect(stripe.magFilter).toBe(THREE.NearestFilter);
-    expect(stripe.minFilter).toBe(THREE.NearestFilter);
-    expect(stripe.wrapS).toBe(THREE.RepeatWrapping);
-    expect(stripe.wrapT).toBe(THREE.RepeatWrapping);
-    expect(stripe.repeat.y).toBeCloseTo(0.5, 10);
-    const data = stripe.image.data!;
-    const pixel = (i: number): string => `${data[i * 4]},${data[i * 4 + 1]},${data[i * 4 + 2]}`;
-    expect([pixel(0), pixel(1)].sort()).toEqual(['204,34,34', '238,238,238']);
   });
 
   it('AT3: dispose() disposes every geometry, material and texture exactly once', () => {
@@ -154,7 +149,7 @@ describe('037 track surface render acceptance', () => {
     });
     expect(geometries).toHaveLength(4);
     expect(materials).toHaveLength(4);
-    expect(textures).toHaveLength(10);
+    expect(textures).toHaveLength(12);
     const spies = [
       ...geometries.map((geometry) => vi.spyOn(geometry, 'dispose')),
       ...materials.map((material) => vi.spyOn(material, 'dispose')),

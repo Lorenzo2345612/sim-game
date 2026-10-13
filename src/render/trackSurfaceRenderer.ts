@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Surface, SurfaceStrip } from '../core/types';
+import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMaterials';
 
 export interface TrackSurfaceOptions { loadTexture?: (url: string) => THREE.Texture }
 export interface TrackSurfaceObject { group: THREE.Group; dispose(): void }
@@ -19,20 +20,6 @@ function defaultLoadTexture(url: string): THREE.Texture {
   return texture;
 }
 
-function kerbStripeTexture(): THREE.DataTexture {
-  // 1x2 red/white; repeat.y = 0.5 gives one stripe per uv.v unit.
-  const data = new Uint8Array([0xcc, 0x22, 0x22, 0xff, 0xee, 0xee, 0xee, 0xff]);
-  const texture = new THREE.DataTexture(data, 1, 2);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(1, 0.5);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export function createTrackSurfaceObject(
   strips: SurfaceStrip[],
   options?: TrackSurfaceOptions,
@@ -48,8 +35,9 @@ export function createTrackSurfaceObject(
 
   const group = new THREE.Group();
   const geometries: THREE.BufferGeometry[] = [];
-  const materials: THREE.Material[] = [];
-  const textures: THREE.Texture[] = [];
+  const materials: THREE.MeshStandardMaterial[] = [];
+  const textures = new Set<THREE.Texture>();
+  const macro = bySurface.size > 0 ? loadTexture('textures/macro-noise.png') : undefined;
 
   for (const [surface, same] of bySurface) {
     const vertexCount = same.reduce((n, s) => n + s.positions.length / 3, 0);
@@ -73,21 +61,10 @@ export function createTrackSurfaceObject(
     geometry.computeVertexNormals();
     geometries.push(geometry);
 
-    const material = new THREE.MeshStandardMaterial();
+    const material = createSurfaceMaterial(surface, loadTexture, macro);
     materials.push(material);
-    if (surface === 'kerb') {
-      material.map = kerbStripeTexture();
-      textures.push(material.map);
-    } else {
-      material.map = loadTexture(`textures/${surface}/color.jpg`);
-      material.normalMap = loadTexture(`textures/${surface}/normal.jpg`);
-      material.roughnessMap = loadTexture(`textures/${surface}/roughness.jpg`);
-      material.map.colorSpace = THREE.SRGBColorSpace;
-      for (const texture of [material.map, material.normalMap, material.roughnessMap]) {
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-      }
-      textures.push(material.map, material.normalMap, material.roughnessMap);
+    for (const texture of (material.userData as SurfaceMaterialUserData).textures) {
+      textures.add(texture);
     }
 
     const mesh = new THREE.Mesh(geometry, material);
