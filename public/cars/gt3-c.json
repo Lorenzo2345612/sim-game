@@ -1,0 +1,324 @@
+{
+  "id": "gt3-c",
+  "name": "GT3 C",
+  "category": "gt3",
+  "model": {
+    "url": "/models/gt3-c.glb"
+  },
+  "drive": "rwd",
+  "chassis": {
+    "massKg": 1300,
+    "cgHeight": 0.4,
+    "inertia": {
+      "x": 2300,
+      "y": 2200,
+      "z": 600
+    },
+    "halfExtents": {
+      "x": 0.95,
+      "y": 0.1,
+      "z": 2.2
+    }
+  },
+  "wheels": {
+    "positions": [
+      [
+        -0.862964,
+        -0.042498,
+        -1.422511
+      ],
+      [
+        0.861604,
+        -0.042498,
+        -1.34814
+      ],
+      [
+        -0.865114,
+        -0.042498,
+        1.385326
+      ],
+      [
+        0.866474,
+        -0.042498,
+        1.385326
+      ]
+    ],
+    "radius": 0.357502,
+    "width": 0.3,
+    "inertia": 1.8
+  },
+  "suspension": {
+    "front": {
+      "springRate": 90000,
+      "bumpDamping": 3500,
+      "reboundDamping": 6000,
+      "restLength": 0.16,
+      "travel": 0.1,
+      "bumpStopRate": 500000,
+      "arb": 25000
+    },
+    "rear": {
+      "springRate": 100000,
+      "bumpDamping": 3800,
+      "reboundDamping": 6500,
+      "restLength": 0.16,
+      "travel": 0.1,
+      "bumpStopRate": 500000,
+      "arb": 18000
+    }
+  },
+  "steering": {
+    "maxAngleLow": 0.32,
+    "maxAngleHigh": 0.06,
+    "fullSpeed": 60,
+    "rate": 1.5
+  },
+  "tyres": {
+    "optPressureKpa": 180,
+    "pressureKpa": 180,
+    "compounds": {
+      "soft": {
+        "mu0": 1.7489999999999999,
+        "Fz0": 2000,
+        "loadSens": 0.1,
+        "Bx": 14,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 85,
+        "tempWindowC": 40,
+        "heatCoef": 0.00012,
+        "coolCoef": 0.002,
+        "wearRate": 8e-08,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      },
+      "medium": {
+        "mu0": 1.55,
+        "Fz0": 3800,
+        "loadSens": 0.1,
+        "Bx": 12,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 90,
+        "tempWindowC": 40,
+        "heatCoef": 6e-05,
+        "coolCoef": 0.002,
+        "wearRate": 2e-08,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      },
+      "hard": {
+        "mu0": 1.5675,
+        "Fz0": 2000,
+        "loadSens": 0.1,
+        "Bx": 14,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 95,
+        "tempWindowC": 40,
+        "heatCoef": 0.00012,
+        "coolCoef": 0.002,
+        "wearRate": 2e-08,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      }
+    }
+  },
+  "aero": {
+    "cda": 0.9,
+    "claFront": 1.2,
+    "claRear": 1.8,
+    "rideHeightSens": 2,
+    "wingStep": {
+      "claFront": 0.05,
+      "claRear": 0.07,
+      "cda": 0.008
+    }
+  },
+  "engine": {
+    "torqueCurve": [
+      [
+        1000,
+        300
+      ],
+      [
+        1500,
+        450
+      ],
+      [
+        2000,
+        560
+      ],
+      [
+        2500,
+        640
+      ],
+      [
+        3000,
+        680
+      ],
+      [
+        4000,
+        690
+      ],
+      [
+        5000,
+        680
+      ],
+      [
+        6000,
+        640
+      ],
+      [
+        6500,
+        590
+      ],
+      [
+        7000,
+        520
+      ],
+      [
+        7500,
+        440
+      ]
+    ],
+    "idleRpm": 1000,
+    "limiterRpm": 7200,
+    "launchRpm": 3500,
+    "inertia": 0.25,
+    "brakingTorque": 60
+  },
+  "gearbox": {
+    "ratios": [
+      2.75,
+      2.0,
+      1.55,
+      1.25,
+      1.0,
+      0.81
+    ],
+    "final": 3.9,
+    "reverse": 2.6,
+    "upRpm": 6800,
+    "downRpm": 3500,
+    "shiftTime": 0.05,
+    "efficiency": 0.92
+  },
+  "diff": {
+    "type": "lsd",
+    "preload": 80,
+    "lockPower": 0.45,
+    "lockCoast": 0.25
+  },
+  "brakes": {
+    "maxTorque": 9000,
+    "bias": 0.58
+  },
+  "aids": {
+    "abs": {
+      "enabled": true,
+      "slip": 0.12
+    },
+    "tc": {
+      "enabled": true,
+      "slip": 0.2
+    }
+  },
+  "fuel": {
+    "capacityL": 120,
+    "densityKgL": 0.745,
+    "bsfc": 260,
+    "startL": 60
+  },
+  "setup": {
+    "frontWing": {
+      "min": 0,
+      "max": 8,
+      "step": 1,
+      "default": 4
+    },
+    "rearWing": {
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    "brakeBias": {
+      "min": 0.5,
+      "max": 0.68,
+      "step": 0.005,
+      "default": 0.58
+    },
+    "finalDrive": {
+      "min": 3.4,
+      "max": 4.6,
+      "step": 0.05,
+      "default": 3.9
+    },
+    "arbFront": {
+      "min": 10000,
+      "max": 50000,
+      "step": 2500,
+      "default": 25000
+    },
+    "arbRear": {
+      "min": 8000,
+      "max": 40000,
+      "step": 2500,
+      "default": 18000
+    },
+    "rideHeight": {
+      "min": -0.015,
+      "max": 0.025,
+      "step": 0.0025,
+      "default": 0
+    },
+    "tyrePressureKpa": {
+      "min": 160,
+      "max": 200,
+      "step": 1,
+      "default": 180
+    }
+  },
+  "presets": {
+    "stable": {
+      "frontWing": 4,
+      "rearWing": 8,
+      "brakeBias": 0.6,
+      "finalDrive": 3.9,
+      "arbFront": 20000,
+      "arbRear": 28000,
+      "rideHeight": 0.01,
+      "tyrePressureKpa": 178
+    },
+    "balanced": {
+      "frontWing": 4,
+      "rearWing": 5,
+      "brakeBias": 0.58,
+      "finalDrive": 3.9,
+      "arbFront": 25000,
+      "arbRear": 18000,
+      "rideHeight": 0,
+      "tyrePressureKpa": 180
+    },
+    "aggressive": {
+      "frontWing": 5,
+      "rearWing": 3,
+      "brakeBias": 0.56,
+      "finalDrive": 3.8,
+      "arbFront": 32000,
+      "arbRear": 14000,
+      "rideHeight": -0.01,
+      "tyrePressureKpa": 182
+    }
+  }
+}

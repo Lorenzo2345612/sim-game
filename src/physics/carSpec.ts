@@ -51,10 +51,13 @@ export interface AxleSpec {
   arb: number;
 }
 
+export type CarCategory = 'open-wheel' | 'gt3' | 'gt4' | 'touring' | 'prototype';
+const CATEGORIES: readonly CarCategory[] = ['open-wheel', 'gt3', 'gt4', 'touring', 'prototype'];
+
 export interface CarSpec {
   id: string;
   name: string;
-  category: 'open-wheel';
+  category: CarCategory;
   model: { url: string };
   drive: 'rwd';
   chassis: {
@@ -275,7 +278,7 @@ function wheelPositions(root: unknown): [number, number, number][] {
 export function parseCarSpec(json: unknown): CarSpec {
   const id = str(json, 'id');
   const name = str(json, 'name');
-  const category = enumStr(json, 'category', ['open-wheel']);
+  const category = enumStr(json, 'category', CATEGORIES);
   const modelUrl = str(json, 'model.url');
   const drive = enumStr(json, 'drive', ['rwd']);
 
