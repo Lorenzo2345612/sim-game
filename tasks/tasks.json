@@ -1168,7 +1168,7 @@
     {
       "num": "087",
       "title": "Racing line (minimum curvature)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -1293,6 +1293,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/095-quick-race-menu.md"
+    },
+    {
+      "num": "096",
+      "title": "Close the gaps at kerb and run-off segment ends",
+      "status": "pending",
+      "deps": [
+        "077"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/096-surface-transitions.md"
     }
   ]
 }

@@ -89,7 +89,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | pending | 043, 077 |
-| 087 | Racing line (minimum curvature) | pending | - |
+| 087 | Racing line (minimum curvature) | in progress | - |
 | 088 | Speed profile and car limits | pending | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
@@ -98,3 +98,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
+| 096 | Close the gaps at kerb and run-off segment ends | pending | 077 |
