@@ -1,0 +1,53 @@
+# Car models research (2026-10-12, asset-scout)
+
+Source: Sketchfab API records (downloadable flag set). License verified on page only for Mercedes SLS GT3; the rest API-verified (HTTP 429 blocked page fetches). Separate wheels, interior and PBR are unverified: inspect before choosing. URL: `https://sketchfab.com/models/<id>`. "Rip" = description says it comes from a game (Real Racing 3, CSR, Asphalt): CC label is the uploader's claim; avoid.
+
+## GT3 (CC-BY 4.0 unless noted)
+
+| # | Model (id) | Author | Tris | GLB / textures | Logos | Notes |
+|---|---|---|---|---|---|---|
+| 1 | 2018 McLaren 720S GT3 (`905a74cf57f844a4b414980f42d9fc41`) | No Limits | 40.7k | 1.8 MB, none | none | clean, needs materials/livery; provenance unknown |
+| 2 | Low Poly Audi R8 GT3 (`d71e1fce9acd4adb93c5ca927fee9531`) | Mauro3D | 23.4k | 1.4 MB, none | none | stylized low-poly, good for LOD/AI cars |
+| 3 | 2022 Porsche 911 GT3 RSR (`6370209fd29e4752b53fea3dcceeea13`) | No Limits | 124k | 6.8 MB, none | none | decimate to ~60k |
+| 4 | Lamborghini Huracán GT3 (`6700aa37025449918b9a680b5ba093f9`) | JUSTGAME | 106.7k | 7.8 MB, 15 tex ≤2k | sponsors baked | most detail; repaint livery |
+| 5 | BMW M4 GT3 (`cb6ce32d23e549a289dcc264008abcda`) | kevin | 170k | 7.0 MB, none | BMW grille | good shape, decimate |
+| 6 | Low Poly BMW Z4 GT3 Stylized (`98cf1e3ff1dc4064b7f5535aeb540f20`) | 3DVice | 12.6k | 52 MB, 13 tex 4k | BMW, numbers | cartoony |
+| 7 | Mercedes SLS GT3 (`5ec93bea4816494cbe3e7333bbfca5f6`) | Dave Love | 176k | — | unknown | page-verified CC-BY 4.0 |
+
+Backups: Ferrari 488 GT3 (`bb14ee3833564f349a317d704a506cd3`, rip), Huracán GT3 2015 (`3e229d0e0f1a43bfa33748c485e56939`, rip), Audi R8 LMS (`18686ee8ea0b493da1ad006185ae5bc7`, 59k), heavy sim-like sets 300–490k (Mercedes-AMG GT3 EVO `458f9b78ab784b82a360f9efa4a8ab67`, Ferrari 296 GT3 `e6760847bb2d4b579d43cf916f348526`, Aston Martin Vantage GT3 `fbd3494e950c40ecb536f1335296345d`).
+
+## GT4
+
+| # | Model (id) | Author | Tris | Notes |
+|---|---|---|---|---|
+| 1 | 2022 Lotus Emira GT4 (`440775785e97483ebe7f34ceb9d63794`) | Silyboy | 36.3k | 10 MB, 4 tex 2k; not marked as rip |
+| 2 | Porsche Cayman GT4 (`9b8689f0825147808d1006ddd486f68d`) | Mona x Supercars | 50k | provenance unknown |
+| 3 | BMW M4 F82 GT4 (`950f5b87902643a3b6127b639c4ef937`) | Ddiaz Design | 64.8k | rip |
+
+## Touring (TCR/DTM/BTCC)
+
+| # | Model (id) | Author | Tris | Notes |
+|---|---|---|---|---|
+| 1 | Cherrier Vivace TCR (`09c31fb53b4040998ce51ced412307fb`) | akyolefe319 | 133.7k | fictional brand; 70 MB, 4k textures: heavy reduction |
+| 2 | BMW M4 DTM 2017 (`40ecf3aaba714fe19d3043065536681c`) | InReality Solutions | 22.8k | dense livery |
+| 3 | Volvo 850 BTCC (`06514b837a664db3be7260df12832d22`) | marksform | 20.8k | plain, simple interior |
+
+## Prototypes (LMP/LMDh)
+
+| # | Model (id) | Author | Tris | Notes |
+|---|---|---|---|---|
+| 1 | KatAttak KA01 LMP2 (full `6044bd804bed4ac4b9f0c782c5c3459b`, body `5ae1275afe494b7a827a2dcb417a5be1`, wheels `66f9b9730f2443b38d49c4baf3455902`) | mosigana | 233k | original, brandless, separate wheels |
+| 2 | Le Mans Prototype (`8f711f4dc62648fb8b9d5b3c6c1ec931`) | mudkipz321 | 41.9k | own design, generic livery |
+| 3 | Cadillac V-Series.R LMDh (`efe600b0b1694e2aae055f35db3aaeda`) | supranakamura | 77k | white, real shape |
+
+## Other single-seaters
+
+| # | Model (id) | Author | Tris | Notes |
+|---|---|---|---|---|
+| 1 | Generic Formula Car (`46e0805e009a42f297405d943d6ce22e`) | CarlosCG31 | 16.6k | generic, no logos |
+| 2 | Formula F211 (`cada3b67c43744adadee21adcabc4fc4`) | CarlosCG31 | 36.9k | generic |
+| 3 | Formula E Nissan Gen2 (`46d13900441840c18b9222fa05c73f74`) | CLeN | 13.3k | logos baked |
+
+## Caveats
+
+CC-BY needs an in-game credit per model. CC-BY-NC-SA rips: last resort only. Real car shapes/logos must be de-branded before public release (PRD §14). Expect Blender-free fixes via our gltf-transform pipeline (task 053 pattern) for wheel splitting.
