@@ -51,7 +51,7 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 | AT1 | medium, T = optTempC | `tempFactor` | 1 |
 | AT2 | T = optTempC ± tempWindowC | tempFactor | 0.75 ± 1e-9 both sides; T = opt ± 3·window → 0.75 (floor) |
 | AT3 | wear 0 / 0.5 / 1.0, cliff 0.8, gripLoss 0.25 | wearFactor | 1 / 0.875 / 1 − 0.25 − 0.15 = 0.60 (± 1e-9) |
-| AT4 | slipPower 0, speed 0, T 90 | update 600 s (dt 1/120) | T → 25 ± 2 °C monotonically, wear unchanged |
+| AT4 | slipPower 0, speed 0, T 90 | update 600 s (dt 1/120) | T decreases monotonically to 25 + 65·e^(−1.2) ≈ 44.58 ± 0.5 °C (medium coolCoef 0.002, τ = 500 s), wear unchanged |
 | AT5 | slipPower 20 kW constant, speed 30 | update 60 s | T rises, wear = wearRate·20000·60 ± 1 % |
 | AT6 | wearMult 3 vs 1 | same run | wear ratio 3 ± 1 % |
 | AT7 | pressure opt, opt ± 10, opt + 40 | pressureFactor | 1, 0.98 (1 − 0.002·100/10), 0.9 (floor) |

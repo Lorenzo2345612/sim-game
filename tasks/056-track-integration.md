@@ -24,7 +24,7 @@ Design: `ai/guides/phase1.md`. Read the specs of 030, 031, 032, 033, 034, 036, 0
 
 ## Steps
 
-1. `window.__SIMGAME__` gains `trackId(): string`, `surfaceUnderCar(): Surface`, `carPosition(): {x, y, z}`, `trackHeightUnderCar(): number` (track or terrain surface y at the car's x/z, from a downward physics raycast). Also `getHeading(): number` — car yaw in radians, 0 when facing −Z, positive turning left (counter-clockwise seen from +Y).
+1. `window.__SIMGAME__` gains `trackId(): string`, `surfaceUnderCar(): Surface` (surface at the chassis centre x/z, not per wheel; mixed-wheel cases are not tested), `carPosition(): {x, y, z}`, `trackHeightUnderCar(): number` (track or terrain surface y at the car's x/z, from a downward physics raycast). Also `getHeading(): number` — car yaw in radians, 0 when facing −Z, positive turning left (counter-clockwise seen from +Y).
 2. Spawn: `spawnFromTrack` places the car at `elevation[N−5] + 0.6`.
 3. HUD shows "Lap invalid" text when the lap is invalidated (simple text in the existing HUD lap row is enough).
 
