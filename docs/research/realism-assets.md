@@ -127,3 +127,7 @@ Practical alternative to SSAO on iGPU (higher realism per ms): baked/vertex AO o
 3. Colour the far terrain with Sentinel-2 TCI crops (free, open, attribution line) multiplied over tiling grass/forest-floor, fading into fog.
 4. Build the crowd as a self-generated desaturated sprite atlas (from CC0 Quaternius characters) with empty seats and far-field noise; no free realistic atlas exists.
 5. Fix trackside scale and material: instanced real-size tyre (~0.65 m) walls with rubber normal map, ambientCG Fence003 wire mesh, plain galvanised armco; keep post-processing to subtle bloom + LUT + SMAA, GTAO high tier only (it doubles the scene pass and breaks on alpha-tested foliage).
+
+## Install note (2026-10-13)
+
+Crowd sources (Quaternius CC0 GLBs) NOT installed. The packs with casual characters (Ultimate Animated Character Pack, Animated Men/Women, Modular Women) are served only from Google Drive folders linked on quaternius.com; every file returned "Too many users ... quota exceeded" (retry later, up to 24 h). poly.pizza copies of Quaternius characters are CC-BY 3.0, not CC0. The free itch.io "Universal Base Characters [Standard]" (CC0, verified on its page and in License_Standard.txt) contains only 2 rigged models (Superhero male/female, ~13k tris, .gltf+.bin+PNG), not 4-8. Ground textures: Sentinel-2 crops made with rasterio over /vsicurl from the scenes listed in ASSETS_LICENSES.md; north at top, u=+X, v=+Z.
