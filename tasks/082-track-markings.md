@@ -44,7 +44,7 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | circle fixture (R 100, N 120, width 12, flat) | buildTrackMarkings | two edge-line strips; left line vertices at radial 105.88 and 106 (± 1e-6), right line at 94 and 94.12; y = 0.025 |
+| AT1 | circle fixture (R 100, N 120, width 12, flat) | buildTrackMarkings | two edge-line strips; left line vertices at radial 105.88 and 106 (± 1e-5, float32 positions), right line at 94 and 94.12 (± 1e-5); y = 0.025 (± 1e-6) |
 | AT2 | same | start line strip | spans lateral −6..6 and arc length 0..0.6 m (± 1e-6) |
 | AT3 | any track | addTrackColliders | collider count unchanged vs before this task (markings never create colliders) |
 | AT4 | markings strips | renderer | group has a mesh named 'markings' whose material has polygonOffset true and colour r,g,b ≥ 0.9 |
