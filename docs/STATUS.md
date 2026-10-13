@@ -47,3 +47,5 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - 2026-10-13 stop: orchestrator and dashboard stopped for shutdown (61/84 done, M1.2 7/10). Pending decision: 071-tester AT3. Relaunch with the same commands as above.
 
 - Known geometry issue (2026-10-13, from 097): wide run-offs/verges of one section overlap a neighbouring section (Monza rows 319-325 verge over rows 343-346, Spa ~3340 left), ~0.2-0.7 m apart in height. Candidate fix: cap strip lateral extent where another section is closer (task after M1.2 review if visible).
+
+- 2026-10-13: WSL (14 GB) hit an OOM kill with --max-parallel 5 (workers + vitest Rapier track tests). Relaunch with --max-parallel 3. If the lock survives a crash, check `ps` and delete `.ai/orchestrator.lock`.
