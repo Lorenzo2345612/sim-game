@@ -12,7 +12,8 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 
 - Test roles back on Qwen only (2026-10-12; tester A/B removed, Qwen cap 4). Early 'stalls' were the old watchdog killing long generations (fixed in c5c6853) and the ambiguous 031 table.
 - Phase 1.5 planned: specs 058–070, milestone M1.5 (plan + tables in `docs/plans/phase15.md`, design `ai/guides/vehicle-dynamics.md`, lab reference `ai/lab/vehicle-model.mjs`). Pure modules 058–064 and 067 are prefetched. Car model research for 1.6 in `docs/research/car-models.md` (asset-scout running).
-- When the orchestrator stops at M1.1: check `builds/M1.1`, play it, tell the user, wait for approval.
+- M1.1: the user delegated approval (2026-10-12). When built: run skill `milestone-review`; if no blocking problems, `python3 scripts/ai/orchestrator.py approve M1.1` yourself and report the review to the user; if blocking problems, create bugfix tasks instead and do not approve.
+- Phase 1.6 planned: specs 071–074, milestone M1.6 (`docs/plans/phase16.md`), prefetch 071, 072.
 
 ## Pipeline (how work gets done)
 
