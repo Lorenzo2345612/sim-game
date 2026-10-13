@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/cars/porsche-911-gt3-rsr/2022_porche_911_gt3_rsr.glb",
+  "forward": "+z",
+  "targetLength": 4.6,
+  "wheelMaterials": ["rim19"],
+  "liveryMaterials": ["part1", "rear2"],
+  "triBudget": 70000,
+  "outGlb": "public/models/gt3-b.glb",
+  "outJson": "public/models/gt3-b.json"
+}

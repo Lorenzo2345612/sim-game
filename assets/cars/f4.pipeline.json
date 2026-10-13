@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/f4/f4_tatuus_t014_chasis.glb",
+  "forward": "-z",
+  "targetLength": 4.29,
+  "wheelMaterials": ["neumaticos", "GrisFreno"],
+  "liveryMaterials": ["Cubo_008"],
+  "triBudget": 80000,
+  "outGlb": "public/models/f4.glb",
+  "outJson": "public/models/f4.json"
+}

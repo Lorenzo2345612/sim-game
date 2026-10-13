@@ -1,0 +1,32 @@
+{
+  "wheelRadius": 0.357502,
+  "wheelbase": 2.770652,
+  "trackFront": 1.724568,
+  "trackRear": 1.731589,
+  "wheels": [
+    {
+      "name": "wheel-front-left",
+      "x": -0.862964,
+      "y": 0.350381,
+      "z": -1.422511
+    },
+    {
+      "name": "wheel-front-right",
+      "x": 0.861604,
+      "y": 0.350381,
+      "z": -1.34814
+    },
+    {
+      "name": "wheel-back-left",
+      "x": -0.865114,
+      "y": 0.364986,
+      "z": 1.385326
+    },
+    {
+      "name": "wheel-back-right",
+      "x": 0.866474,
+      "y": 0.364986,
+      "z": 1.385326
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/cars/mclaren-720s-gt3/2018_mclaren_720s_gt3.glb",
+  "forward": "-x",
+  "targetLength": 4.64,
+  "wheelMaterials": ["wheelsloda"],
+  "liveryMaterials": ["mmext1", "mmchassis1"],
+  "triBudget": 60000,
+  "outGlb": "public/models/gt3-a.glb",
+  "outJson": "public/models/gt3-a.json"
+}

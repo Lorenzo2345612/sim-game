@@ -1,14 +1,23 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { Document, Material, NodeIO, Primitive, type mat4, type vec4 } from '@gltf-transform/core';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  Accessor,
+  Document,
+  Material,
+  Mesh,
+  Node,
+  NodeIO,
+  Primitive,
+  type vec4,
+} from '@gltf-transform/core';
 import { dedup, prune, simplify, transformMesh, weld } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SOURCE_GLB = join(ROOT, 'assets', 'vendor', 'f4', 'f4_tatuus_t014_chasis.glb');
-const OUT_GLB = join(ROOT, 'public', 'models', 'f4.glb');
-const OUT_JSON = join(ROOT, 'public', 'models', 'f4.json');
+const DEFAULT_SOURCE = join(ROOT, 'assets', 'vendor', 'f4', 'f4_tatuus_t014_chasis.glb');
+const DEFAULT_OUT_GLB = join(ROOT, 'public', 'models', 'f4.glb');
+const DEFAULT_OUT_JSON = join(ROOT, 'public', 'models', 'f4.json');
 
 const MODEL_SCALE = 1.47;
 const WHEEL_NODE_NAMES = [
@@ -32,8 +41,15 @@ const LIVERY_COLOUR: vec4 = [200 / 255, 16 / 255, 46 / 255, 1];
 const DEFAULT_COLOUR: vec4 = [0.5, 0.5, 0.5, 1];
 const SIMPLIFY_RATIO = 0.2;
 const SIMPLIFY_ERROR = 0.02;
-const MAX_TRIANGLES = 80_000;
+const DEFAULT_TRI_BUDGET = 80_000;
 const MIN_TYRE_RADIAL_SEGMENTS = 24;
+
+export interface BuildF4Options {
+  source?: string;
+  outGlb?: string;
+  outJson?: string;
+  triBudget?: number;
+}
 
 interface Geom {
   position: number[];
@@ -109,25 +125,33 @@ function splitByXSign(g: Geom): { left: Geom; right: Geom } {
   return { left, right };
 }
 
-function det3(m: mat4): number {
-  return (
-    m[0] * (m[5] * m[10] - m[9] * m[6]) -
-    m[4] * (m[1] * m[10] - m[9] * m[2]) +
-    m[8] * (m[1] * m[6] - m[5] * m[2])
-  );
+function cloneAccessor(doc: Document, src: Accessor): Accessor {
+  const buffer = doc.getRoot().listBuffers()[0] ?? doc.createBuffer();
+  const array = src.getArray();
+  return doc
+    .createAccessor()
+    .setBuffer(buffer)
+    .setType(src.getType())
+    .setNormalized(src.getNormalized())
+    .setArray(array ? array.slice() : null);
 }
 
-function flipWinding(prim: Primitive): void {
-  const indices = prim.getIndices();
-  const src = indices?.getArray();
-  if (!indices || !src) return;
-  const arr = new Uint32Array(src);
-  for (let t = 0; t < arr.length; t += 3) {
-    const tmp = arr[t + 1];
-    arr[t + 1] = arr[t + 2];
-    arr[t + 2] = tmp;
+/** Deep copy so baking one node never mutates geometry another node still shares. */
+function cloneMeshDeep(doc: Document, mesh: Mesh): Mesh {
+  const out = doc.createMesh();
+  for (const prim of mesh.listPrimitives()) {
+    const copy = doc.createPrimitive().setMode(prim.getMode());
+    const material = prim.getMaterial();
+    if (material) copy.setMaterial(material);
+    const indices = prim.getIndices();
+    if (indices) copy.setIndices(cloneAccessor(doc, indices));
+    for (const semantic of prim.listSemantics()) {
+      const attr = prim.getAttribute(semantic);
+      if (attr) copy.setAttribute(semantic, cloneAccessor(doc, attr));
+    }
+    out.addPrimitive(copy);
   }
-  indices.setArray(arr);
+  return out;
 }
 
 /**
@@ -257,28 +281,46 @@ function triCount(prims: Primitive[]): number {
   return n;
 }
 
-async function main(): Promise<void> {
+export async function buildF4(options: BuildF4Options = {}): Promise<void> {
+  const source = options.source ?? DEFAULT_SOURCE;
+  const outGlb = options.outGlb ?? DEFAULT_OUT_GLB;
+  const outJson = options.outJson ?? DEFAULT_OUT_JSON;
+  const triBudget = options.triBudget ?? DEFAULT_TRI_BUDGET;
   const io = new NodeIO();
-  const srcDoc = await io.read(SOURCE_GLB);
+  const srcDoc = await io.read(source);
 
   // Bake node transforms so vertex positions are in world axes before any split.
-  const baked = new Set<ReturnType<Document['createMesh']>>();
+  const usersOf = new Map<Mesh, Node[]>();
   srcDoc
     .getRoot()
     .listScenes()[0]
     .traverse((node) => {
       const mesh = node.getMesh();
       if (!mesh) return;
-      const target = baked.has(mesh) ? mesh.clone() : mesh;
-      baked.add(target);
-      const world = node.getWorldMatrix();
-      transformMesh(target, world);
-      if (det3(world) < 0) {
-        for (const prim of target.listPrimitives()) flipWinding(prim);
-      }
+      const list = usersOf.get(mesh);
+      if (list) list.push(node);
+      else usersOf.set(mesh, [node]);
+    });
+
+  // Snapshot pristine geometry first: Mesh.clone() shares accessors, so cloning a
+  // mesh after any bake would re-apply the first node's matrix on top of the next.
+  const originals = srcDoc.getRoot().listMeshes().slice();
+  const pristine = new Map<Mesh, Mesh>();
+  for (const mesh of originals) pristine.set(mesh, cloneMeshDeep(srcDoc, mesh));
+
+  for (const mesh of originals) {
+    const snap = pristine.get(mesh) as Mesh;
+    const users = usersOf.get(mesh) ?? [];
+    for (const node of users) {
+      // transformPrimitive already reverses winding when det(matrix) < 0.
+      const target = cloneMeshDeep(srcDoc, snap);
+      transformMesh(target, node.getWorldMatrix());
       for (const prim of target.listPrimitives()) weldPositions(prim);
       node.setMesh(target);
-    });
+    }
+    snap.dispose();
+    if (users.length > 0) mesh.dispose();
+  }
 
   await MeshoptSimplifier.ready;
   await srcDoc.transform(
@@ -391,7 +433,7 @@ async function main(): Promise<void> {
 
   const meshPrims = doc.getRoot().listMeshes().flatMap((m) => m.listPrimitives());
   const triangles = triCount(meshPrims);
-  if (triangles > MAX_TRIANGLES) throw new Error(`triangle budget exceeded: ${triangles}`);
+  if (triangles > triBudget) throw new Error(`triangle budget exceeded: ${triangles}`);
 
   for (const name of WHEEL_NODE_NAMES) {
     const node = doc
@@ -420,20 +462,23 @@ async function main(): Promise<void> {
     })),
   };
 
-  mkdirSync(dirname(OUT_GLB), { recursive: true });
-  writeFileSync(OUT_GLB, await io.writeBinary(doc));
-  writeFileSync(OUT_JSON, `${JSON.stringify(meta, null, 2)}\n`);
+  mkdirSync(dirname(outGlb), { recursive: true });
+  writeFileSync(outGlb, await io.writeBinary(doc));
+  writeFileSync(outJson, `${JSON.stringify(meta, null, 2)}\n`);
 
-  const glb = readFileSync(OUT_GLB).toString('latin1').toLowerCase();
-  const json = readFileSync(OUT_JSON, 'utf8').toLowerCase();
+  const glb = readFileSync(outGlb).toString('latin1').toLowerCase();
+  const json = readFileSync(outJson, 'utf8').toLowerCase();
   if (glb.includes('tatuus') || json.includes('tatuus')) {
     throw new Error('forbidden name leaked into the output');
   }
 
-  console.log(`wrote ${OUT_GLB} (${triangles} triangles) and ${OUT_JSON}`);
+  console.log(`wrote ${outGlb} (${triangles} triangles) and ${outJson}`);
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exitCode = 1;
-});
+const entry = process.argv[1];
+if (entry !== undefined && import.meta.url === pathToFileURL(entry).href) {
+  buildF4().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  });
+}

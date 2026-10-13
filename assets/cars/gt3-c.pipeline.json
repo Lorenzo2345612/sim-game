@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/cars/audi-r8-gt3-lowpoly/low_poly_audi_r8_gt3.glb",
+  "forward": "+z",
+  "targetLength": 4.58,
+  "wheelMaterials": ["rubber", "rims", "redpaind", "silver"],
+  "liveryMaterials": ["redpaind.001", "whitepaind.001"],
+  "triBudget": 25000,
+  "outGlb": "public/models/gt3-c.glb",
+  "outJson": "public/models/gt3-c.json"
+}
