@@ -37,7 +37,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 031 | Build track surface geometry from TrackData v2 | done | 022 |
 | 032 | Terrain, surface and barrier colliders | done | 022, 031 |
 | 033 | Per-wheel surface grip and drag | done | 022, 032 |
-| 034 | Invalidate laps when all wheels leave the track | waiting decision | 033 |
+| 034 | Invalidate laps when all wheels leave the track | in progress | 033 |
 | 035 | Fetch CC0 track textures | done | 024 |
 | 036 | Render the terrain mesh | done | 022 |
 | 037 | Render track surfaces with textures | done | 022, 031, 035 |
@@ -61,7 +61,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | pending | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | pending | 053, 056 |
-| 058 | CarSpec type, loader and F4 data | in progress | - |
+| 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | pending | 058 |
 | 060 | Tyre temperature, wear and pressure | pending | 058 |
 | 061 | Suspension, anti-roll and aero | pending | 058 |

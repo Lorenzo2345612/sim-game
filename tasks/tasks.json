@@ -458,7 +458,7 @@
     {
       "num": "034",
       "title": "Invalidate laps when all wheels leave the track",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "033"
       ],
@@ -780,7 +780,7 @@
     {
       "num": "058",
       "title": "CarSpec type, loader and F4 data",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
