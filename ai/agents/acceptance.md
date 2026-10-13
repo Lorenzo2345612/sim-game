@@ -6,6 +6,7 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 
 1. Read the full task, `CLAUDE.md` and `ai/guides/testing.md`.
 2. Create `tests/unit/acceptance/NNN-<slug>.test.ts` (NNN = task number). One `it(...)` per table row, named `AT<n>: <behaviour>`, asserting exactly the row's expected value and tolerance. Import from the module paths and signatures given in the spec.
+   Rows marked e2e (browser, `__SIMGAME__`, screenshots, "e2e:" in Given) go to `tests/e2e/acceptance/NNN-<slug>.spec.ts` instead, one Playwright `test(...)` per row, following `tests/e2e/acceptance/056-track-integration.spec.ts` (loadGame helper, console-error capture, pixel sampling). Load `/?track=monza` when a row says `/` and needs the game (plain `/` shows the menu). Do not run Playwright; check the file with `npx eslint` and `npx tsc --noEmit`. Skip rows that already have a test in that file.
 3. Run `npx vitest run tests/unit/acceptance/NNN-*.test.ts`. Tests are expected to FAIL now (missing module or wrong result). They must not fail because of syntax or type errors in the test itself.
 4. Write the final report.
 
@@ -16,7 +17,7 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 
 ## Rules
 
-- Only create files in `tests/unit/acceptance/`. Never edit `src/`.
+- Only create files in `tests/unit/acceptance/` and `tests/e2e/acceptance/`. Never edit `src/`.
 - Do not add cases that are not in the table, and do not weaken any expected value or tolerance.
 - If a row is not testable as written (ambiguous input, missing signature), mark it in the report; do not guess.
 - No unused imports, parameters or variables. The tests must pass `npm run lint` (run `npx eslint` on your file) and type-check.
