@@ -57,3 +57,4 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - Plans: docs/plans/{m1.2c-realism,m1.6b-prototypes,m1.7-audio,phase2-race}.md. Approval delegated: review with milestone-review, approve if no blocking issues.
 - Session routine: watcher loop on .ai/decisions + builtAt; resolve decisions (most were acceptance-table tolerance/fixture issues; see plan-feature tolerance rule).
 - M1.2b approved 2026-10-13 (delegated). Known limits: grid boxes not seen in start shots (car on pole slot), mown stripes faint, armco/tyre textures subtle (103 replaces barriers), M0 handling (vmax 176).
+- New track data (a25ce7d): braselton (Road Atlanta, OSM, +0.06 %), elkhart (Road America, OSM, −1.16 % vs 6515 m; shape matches OSM and the real layout, accepted like Daytona), sepang (bacinger my-1999, +0.28 %, OSM mean 1.81 m). Start lines and grandstands approximate. In task 106.
