@@ -1150,6 +1150,149 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/085-elevation-profile-smoothing.md"
+    },
+    {
+      "num": "086",
+      "title": "Continuous barriers (no gaps between segments)",
+      "status": "pending",
+      "deps": [
+        "043",
+        "077"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/086-barrier-continuity.md"
+    },
+    {
+      "num": "087",
+      "title": "Racing line (minimum curvature)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/087-racing-line.md"
+    },
+    {
+      "num": "088",
+      "title": "Speed profile and car limits",
+      "status": "pending",
+      "deps": [
+        "087",
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/088-speed-profile.md"
+    },
+    {
+      "num": "089",
+      "title": "AI driver controller",
+      "status": "pending",
+      "deps": [
+        "087",
+        "088"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/089-ai-driver.md"
+    },
+    {
+      "num": "090",
+      "title": "AI traffic decisions and difficulty",
+      "status": "pending",
+      "deps": [
+        "089"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/090-ai-traffic.md"
+    },
+    {
+      "num": "091",
+      "title": "Start sequence and grid",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/091-start-and-grid.md"
+    },
+    {
+      "num": "092",
+      "title": "Race classification",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/092-race-classification.md"
+    },
+    {
+      "num": "093",
+      "title": "Multi-car race game",
+      "status": "pending",
+      "deps": [
+        "008",
+        "043",
+        "065",
+        "070",
+        "073",
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/093-race-game.md"
+    },
+    {
+      "num": "094",
+      "title": "Race HUD and AI car rendering",
+      "status": "pending",
+      "deps": [
+        "057",
+        "092",
+        "093"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/094-race-hud.md"
+    },
+    {
+      "num": "095",
+      "title": "Quick race menu and results",
+      "status": "pending",
+      "deps": [
+        "044",
+        "073",
+        "092",
+        "093",
+        "094"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/095-quick-race-menu.md"
     }
   ]
 }

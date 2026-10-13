@@ -73,7 +73,8 @@
         "044",
         "077",
         "079",
-        "085"
+        "085",
+        "086"
       ],
       "status": "open",
       "prefetch": [
@@ -180,6 +181,30 @@
         "071",
         "072",
         "075"
+      ]
+    },
+    {
+      "id": "M2.1",
+      "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
+      "tasks": [
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092",
+        "093",
+        "094",
+        "095"
+      ],
+      "status": "open",
+      "prefetch": [
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092"
       ]
     }
   ]
