@@ -73,6 +73,7 @@ const TRACKS = [
   { id: 'mexico', source: 'mx-1962' },
   { id: 'daytona', source: 'us-daytona' },
   { id: 'lusail', source: 'qa-lusail' },
+  { id: 'bahrain', source: 'bh-sakhir' },
 ];
 
 function expandedBbox(source: string): Bbox {

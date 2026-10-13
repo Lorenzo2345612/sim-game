@@ -130,5 +130,26 @@
       { "atMeters": 3600, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -290, "toMeters": 290, "side": "right" }
+  },
+  {
+    "id": "bahrain",
+    "name": "Sakhir",
+    "geojson": "bh-sakhir",
+    "dem": "assets/source/dem/bahrain.json",
+    "maxGrade": 0.04,
+    "widthMeters": 15,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.03
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 1500, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 3800, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -366, "toMeters": 406, "side": "right" }
   }
 ]
