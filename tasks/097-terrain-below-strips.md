@@ -25,6 +25,12 @@ The carved terrain never pokes through asphalt, kerbs, run-offs or verges: every
 
 ## Steps
 
+```ts
+import type { Terrain, SurfaceStrip } from '../../src/core/types';
+/** Mutates terrain.heights in place; called by buildTrack after buildTerrain with buildTrackSurfaces(track). */
+export function clampTerrainBelowStrips(terrain: Terrain, strips: readonly SurfaceStrip[], dip?: number /* DIP 0.15 */): void;
+```
+
 - After the existing carve and blend, clamp: for every terrain vertex, h ≤ min(y − DIP) over all strip vertices lying in any of the (up to 4) cells that share that vertex. Bilinear interpolation inside a cell is then bounded by its corners, so the whole cell stays below its strips.
 - Strips = `buildTrackSurfaces(track)` of the track being built (all surfaces incl. grass verges).
 - Vertices not touching a cell with strip vertices are unchanged.
@@ -36,7 +42,7 @@ Conventions: terrain layout unchanged (Rapier heightfield, origin = centre); det
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | fixture: flat terrain at 0, one strip triangle at y −1.0 covering part of one cell | clamp | the 4 corners of that cell ≤ −1.15; vertices of cells not touching the triangle unchanged (exactly) |
+| AT1 | fixture: flat terrain at 0, one strip triangle at y −1.0 covering part of one cell | clampTerrainBelowStrips(terrain, [strip]) | the 4 corners of that cell ≤ −1.15; vertices of cells not touching the triangle unchanged (exactly) |
 | AT2 | public/tracks/monza.json, spa.json, silverstone.json | for every strip vertex and every triangle centroid from buildTrackSurfaces: terrain height at (x, z) by bilinear interpolation of the heightfield (Rapier layout) | ≤ strip y − 0.10 |
 | AT3 | same tracks | compare with the previous JSON (git HEAD before the task) | only `terrain.heights` changed; every changed height decreased; centerline, elevation, kerbs, runoffs, barriers, trees identical |
 | AT4 | same tracks in a Rapier world (addTrackColliders) | downward rays at every 4th index chord midpoint across asphalt/kerb/run-off/verge lateral bands every 0.5 m | the first hit is never the terrain heightfield where a strip collider exists below it |
