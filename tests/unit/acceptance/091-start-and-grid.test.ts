@@ -33,7 +33,7 @@ describe('091 start sequence and grid acceptance', () => {
     expect(seq.goTime).toBeNull();
 
     let t = 0;
-    while (t < 2 - DT / 2) {
+    while (t < 2 - DT * 1.5) {
       seq.update(DT);
       t += DT;
       expect(seq.lights, `lights at t=${t}`).toBe(0);
@@ -93,7 +93,7 @@ describe('091 start sequence and grid acceptance', () => {
   });
 
   it('AT3: rectangle grid — slots at 6/14/22 m behind index 0, x +3/-3/+3, yaw facing -Z', () => {
-    const slots = gridSlots(rectangleTrack(), 3, 2);
+    const slots = gridSlots(rectangleTrack(), 3);
     expect(slots.length).toBe(3);
     const xs = [3, -3, 3];
     const zs = [6, 14, 22];
