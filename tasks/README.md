@@ -66,7 +66,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 060 | Tyre temperature, wear and pressure | done | 058 |
 | 061 | Suspension, anti-roll and aero | done | 058 |
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
-| 063 | Brakes, ABS/TC and fuel | waiting decision | 058 |
+| 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | in progress | 058, 059 |
 | 065 | Vehicle model on Rapier | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
