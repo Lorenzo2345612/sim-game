@@ -209,6 +209,21 @@
       ]
     },
     {
+      "id": "M1.7",
+      "title": "Audio: per-car engine synthesis and effects",
+      "tasks": [
+        "107",
+        "108",
+        "109",
+        "110",
+        "111"
+      ],
+      "status": "open",
+      "prefetch": [
+        "108"
+      ]
+    },
+    {
       "id": "M2.1",
       "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
       "tasks": [

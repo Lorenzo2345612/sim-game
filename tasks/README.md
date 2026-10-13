@@ -90,7 +90,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
-| 088 | Speed profile and car limits | pending | 087, 058 |
+| 088 | Speed profile and car limits | in progress | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
@@ -109,3 +109,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
 | 106 | Add Mexico City, Daytona and Lusail to the game | pending | 044, 099, 102 |
+| 107 | Car sound data | pending | 058, 072 |
+| 108 | Engine synth DSP core | pending | - |
+| 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
+| 110 | Audio effects | pending | 109 |
+| 111 | Audio mix | pending | 110 |

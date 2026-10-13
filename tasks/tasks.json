@@ -1179,7 +1179,7 @@
     {
       "num": "088",
       "title": "Speed profile and car limits",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "087",
         "058"
@@ -1439,6 +1439,73 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/106-new-tracks-in-game.md"
+    },
+    {
+      "num": "107",
+      "title": "Car sound data",
+      "status": "pending",
+      "deps": [
+        "058",
+        "072"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/107-car-sound-data.md"
+    },
+    {
+      "num": "108",
+      "title": "Engine synth DSP core",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/108-engine-synth.md"
+    },
+    {
+      "num": "109",
+      "title": "Engine AudioWorklet and EngineAudio integration",
+      "status": "pending",
+      "deps": [
+        "107",
+        "108",
+        "054",
+        "070"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/109-engine-worklet.md"
+    },
+    {
+      "num": "110",
+      "title": "Audio effects",
+      "status": "pending",
+      "deps": [
+        "109"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/110-audio-effects.md"
+    },
+    {
+      "num": "111",
+      "title": "Audio mix",
+      "status": "pending",
+      "deps": [
+        "110"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/111-audio-mix.md"
     }
   ]
 }
