@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -9,16 +9,20 @@ import {
   Node,
   NodeIO,
   Primitive,
+  Texture,
+  TextureInfo,
   type vec4,
 } from '@gltf-transform/core';
 import {
   dedup,
   prune,
   simplifyPrimitive,
+  textureCompress,
   transformMesh,
   weld,
 } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
+import sharp from 'sharp';
 import { buildF4 } from './buildF4';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -38,9 +42,11 @@ export interface CarPipelineConfig {
   source: string;
   forward: '+x' | '-x' | '+z' | '-z';
   targetLength: number;
-  wheelMaterials: string[];
+  wheelMaterials?: string[];
+  wheelNodes?: string[];
   liveryMaterials: string[];
   triBudget: number;
+  maxTextureSize?: number;
   outGlb: string;
   outJson: string;
 }
@@ -55,11 +61,15 @@ const FORBIDDEN = [
   'audi',
   'tatuus',
   'lamborghini',
+  'ford',
+  'mustang',
+  'mattdoesblender',
 ] as const;
 
 interface Geom {
   position: number[];
   normal: number[];
+  uv: number[];
   index: number[];
 }
 
@@ -76,7 +86,7 @@ interface Piece {
 }
 
 function emptyGeom(): Geom {
-  return { position: [], normal: [], index: [] };
+  return { position: [], normal: [], uv: [], index: [] };
 }
 
 function geomBounds(g: Geom): BBox {
@@ -145,6 +155,7 @@ function mergeGeoms(list: Geom[]): Geom {
       out.position.push(g.position[i]);
       out.normal.push(g.normal[i]);
     }
+    for (let i = 0; i < g.uv.length; i++) out.uv.push(g.uv[i]);
     for (let i = 0; i < g.index.length; i++) out.index.push(g.index[i] + base);
   }
   return out;
@@ -179,7 +190,7 @@ function cloneMeshDeep(doc: Document, mesh: Mesh): Mesh {
   return out;
 }
 
-function weldPositions(prim: Primitive): void {
+function weldPositions(prim: Primitive, keepUv: boolean): void {
   const pos = prim.getAttribute('POSITION');
   const nrm = prim.getAttribute('NORMAL');
   const idx = prim.getIndices();
@@ -187,18 +198,25 @@ function weldPositions(prim: Primitive): void {
   const pa = pos.getArray() as Float32Array;
   const na = nrm.getArray() as Float32Array;
   const ia = idx.getArray() as Uint16Array | Uint32Array;
+  const uvAttr = keepUv ? prim.getAttribute('TEXCOORD_0') : null;
+  const ua = uvAttr ? (uvAttr.getArray() as Float32Array) : null;
   const remap = new Uint32Array(pa.length / 3);
   const byKey = new Map<string, number>();
   const newPos: number[] = [];
   const newNrm: number[] = [];
+  const newUv: number[] = [];
   for (let i = 0; i < pa.length / 3; i++) {
-    const key = `${pa[i * 3]} ${pa[i * 3 + 1]} ${pa[i * 3 + 2]}`;
+    // UV is part of the key only when kept, so untextured welds stay position-only (071 bytes).
+    const key = ua
+      ? `${pa[i * 3]} ${pa[i * 3 + 1]} ${pa[i * 3 + 2]} ${ua[i * 2]} ${ua[i * 2 + 1]}`
+      : `${pa[i * 3]} ${pa[i * 3 + 1]} ${pa[i * 3 + 2]}`;
     let target = byKey.get(key);
     if (target === undefined) {
       target = newPos.length / 3;
       byKey.set(key, target);
       newPos.push(pa[i * 3], pa[i * 3 + 1], pa[i * 3 + 2]);
       newNrm.push(0, 0, 0);
+      if (ua) newUv.push(ua[i * 2], ua[i * 2 + 1]);
     }
     newNrm[target * 3] += na[i * 3];
     newNrm[target * 3 + 1] += na[i * 3 + 1];
@@ -215,20 +233,23 @@ function weldPositions(prim: Primitive): void {
   for (let i = 0; i < ia.length; i++) out[i] = remap[ia[i]];
   pos.setArray(new Float32Array(newPos));
   nrm.setArray(new Float32Array(newNrm));
+  if (uvAttr) uvAttr.setArray(new Float32Array(newUv));
   idx.setArray(out);
 }
 
-function readGeom(prim: Primitive, scale: number): Geom {
+function readGeom(prim: Primitive, scale: number, keepUv: boolean): Geom {
   const pos = prim.getAttribute('POSITION');
   const nrm = prim.getAttribute('NORMAL');
   const idx = prim.getIndices();
   if (!pos || !nrm) throw new Error('primitive missing POSITION or NORMAL');
   const posArr = pos.getArray() as Float32Array;
   const nrmArr = nrm.getArray() as Float32Array;
+  const uvArr = keepUv ? (prim.getAttribute('TEXCOORD_0')?.getArray() as Float32Array | undefined) : undefined;
   const out = emptyGeom();
-  for (let i = 0; i < posArr.length; i += 3) {
-    out.position.push(posArr[i] * scale, posArr[i + 1] * scale, posArr[i + 2] * scale);
-    out.normal.push(nrmArr[i], nrmArr[i + 1], nrmArr[i + 2]);
+  for (let v = 0; v < posArr.length / 3; v++) {
+    out.position.push(posArr[v * 3] * scale, posArr[v * 3 + 1] * scale, posArr[v * 3 + 2] * scale);
+    out.normal.push(nrmArr[v * 3], nrmArr[v * 3 + 1], nrmArr[v * 3 + 2]);
+    if (uvArr) out.uv.push(uvArr[v * 2], uvArr[v * 2 + 1]);
   }
   if (idx) {
     for (const v of idx.getArray() as Uint16Array | Uint32Array) out.index.push(v);
@@ -257,6 +278,7 @@ function splitByQuadrant(g: Geom, xMid: number, zMid: number): Map<WheelName, Ge
       const vi = g.index[t + k];
       dst.position.push(g.position[vi * 3], g.position[vi * 3 + 1], g.position[vi * 3 + 2]);
       dst.normal.push(g.normal[vi * 3], g.normal[vi * 3 + 1], g.normal[vi * 3 + 2]);
+      if (g.uv.length > 0) dst.uv.push(g.uv[vi * 2], g.uv[vi * 2 + 1]);
       dst.index.push(base + k);
     }
   }
@@ -274,6 +296,12 @@ function createPrim(doc: Document, g: Geom, material: Material): Primitive {
     'NORMAL',
     doc.createAccessor().setBuffer(buffer).setType('VEC3').setArray(new Float32Array(g.normal)),
   );
+  if (g.uv.length > 0) {
+    prim.setAttribute(
+      'TEXCOORD_0',
+      doc.createAccessor().setBuffer(buffer).setType('VEC2').setArray(new Float32Array(g.uv)),
+    );
+  }
   prim.setIndices(
     doc.createAccessor().setBuffer(buffer).setType('SCALAR').setArray(new Uint32Array(g.index)),
   );
@@ -298,6 +326,167 @@ function triCount(prims: Primitive[]): number {
 function matches(name: string, patterns: string[]): boolean {
   const lower = name.toLowerCase();
   return patterns.some((p) => lower.includes(p.toLowerCase()));
+}
+
+interface WheelNodeEntry {
+  cls: 'tyre' | 'rim';
+  suffix: string;
+}
+
+function parseWheelNodes(list: string[]): WheelNodeEntry[] {
+  return list.map((entry) => {
+    const sep = entry.indexOf(':');
+    const cls = sep === -1 ? 'rim' : entry.slice(0, sep);
+    const suffix = sep === -1 ? entry : entry.slice(sep + 1);
+    if (cls !== 'tyre' && cls !== 'rim') {
+      throw new Error(`wheelNodes entry must be tyre:<suffix> or rim:<suffix>: ${entry}`);
+    }
+    return { cls, suffix };
+  });
+}
+
+/** Matches ".nr_<suffix>" with a non-digit boundary so ".nr_5" never hits ".nr_51". */
+function matchWheelNode(name: string, entries: WheelNodeEntry[]): 'tyre' | 'rim' | null {
+  for (const entry of entries) {
+    const needle = `.nr_${entry.suffix}`;
+    let from = 0;
+    for (;;) {
+      const at = name.indexOf(needle, from);
+      if (at === -1) break;
+      const next = name.charCodeAt(at + needle.length);
+      if (!(next >= 48 && next <= 57)) return entry.cls;
+      from = at + 1;
+    }
+  }
+  return null;
+}
+
+function hasTexture(material: Material | null): boolean {
+  if (!material) return false;
+  return !!(
+    material.getBaseColorTexture() ||
+    material.getMetallicRoughnessTexture() ||
+    material.getNormalTexture() ||
+    material.getOcclusionTexture() ||
+    material.getEmissiveTexture()
+  );
+}
+
+function sniffMime(image: Uint8Array): string {
+  if (image[0] === 0x89 && image[1] === 0x50 && image[2] === 0x4e && image[3] === 0x47) {
+    return 'image/png';
+  }
+  if (image[0] === 0xff && image[1] === 0xd8) return 'image/jpeg';
+  if (image[0] === 0x52 && image[8] === 0x57) return 'image/webp';
+  return 'image/png';
+}
+
+function copyTextureOf(
+  doc: Document,
+  src: Texture | null,
+  cache: Map<Texture, Texture>,
+): Texture | null {
+  if (!src) return null;
+  const hit = cache.get(src);
+  if (hit) return hit;
+  const image = src.getImage();
+  const dst = doc
+    .createTexture()
+    .setMimeType(src.getMimeType() || (image ? sniffMime(image) : 'image/png'))
+    .setImage(image ? image.slice() : null);
+  cache.set(src, dst);
+  return dst;
+}
+
+function copyTextureInfo(src: TextureInfo | null, dst: TextureInfo | null): void {
+  if (!src || !dst) return;
+  dst.setTexCoord(src.getTexCoord());
+  dst.setWrapS(src.getWrapS());
+  dst.setWrapT(src.getWrapT());
+  dst.setMagFilter(src.getMagFilter());
+  dst.setMinFilter(src.getMinFilter());
+}
+
+function copyBodyTextures(
+  doc: Document,
+  src: Material,
+  dst: Material,
+  cache: Map<Texture, Texture>,
+): void {
+  const base = copyTextureOf(doc, src.getBaseColorTexture(), cache);
+  if (base) {
+    dst.setBaseColorTexture(base);
+    copyTextureInfo(src.getBaseColorTextureInfo(), dst.getBaseColorTextureInfo());
+  }
+  const mr = copyTextureOf(doc, src.getMetallicRoughnessTexture(), cache);
+  if (mr) {
+    dst.setMetallicRoughnessTexture(mr);
+    copyTextureInfo(src.getMetallicRoughnessTextureInfo(), dst.getMetallicRoughnessTextureInfo());
+  }
+  const nrm = copyTextureOf(doc, src.getNormalTexture(), cache);
+  if (nrm) {
+    dst.setNormalTexture(nrm);
+    copyTextureInfo(src.getNormalTextureInfo(), dst.getNormalTextureInfo());
+  }
+  const occ = copyTextureOf(doc, src.getOcclusionTexture(), cache);
+  if (occ) {
+    dst.setOcclusionTexture(occ);
+    copyTextureInfo(src.getOcclusionTextureInfo(), dst.getOcclusionTextureInfo());
+  }
+  const emi = copyTextureOf(doc, src.getEmissiveTexture(), cache);
+  if (emi) {
+    dst.setEmissiveTexture(emi);
+    copyTextureInfo(src.getEmissiveTextureInfo(), dst.getEmissiveTextureInfo());
+  }
+}
+
+function glbJsonChunk(bytes: Buffer): string {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return bytes.subarray(20, 20 + dv.getUint32(12, true)).toString('utf8');
+}
+
+/** Rewrites the GLB JSON chunk so webp images carry a declared EXT_texture_webp. */
+function declareTextureWebp(glb: Buffer): Buffer {
+  const dv = new DataView(glb.buffer, glb.byteOffset, glb.byteLength);
+  const jsonLen = dv.getUint32(12, true);
+  const json = JSON.parse(glb.subarray(20, 20 + jsonLen).toString('utf8')) as {
+    images?: { mimeType?: string }[];
+    textures?: { source?: number; extensions?: Record<string, { source?: number }> }[];
+    extensionsUsed?: string[];
+  };
+  const hasWebp = json.images?.some((image) => image.mimeType === 'image/webp');
+  if (!hasWebp) return glb;
+  const used = json.extensionsUsed ?? [];
+  if (!used.includes('EXT_texture_webp')) used.push('EXT_texture_webp');
+  json.extensionsUsed = used;
+  for (const texture of json.textures ?? []) {
+    if (texture.source === undefined) continue;
+    texture.extensions = {
+      ...(texture.extensions ?? {}),
+      EXT_texture_webp: { source: texture.source },
+    };
+  }
+  let chunk = Buffer.from(JSON.stringify(json), 'utf8');
+  const pad = (4 - (chunk.length % 4)) % 4;
+  if (pad > 0) chunk = Buffer.concat([chunk, Buffer.alloc(pad, 0x20)]);
+  const rest = glb.subarray(20 + jsonLen);
+  const total = 12 + 8 + chunk.length + rest.length;
+  const out = Buffer.alloc(total);
+  out.writeUInt32LE(0x46546c67, 0);
+  out.writeUInt32LE(2, 4);
+  out.writeUInt32LE(total, 8);
+  out.writeUInt32LE(chunk.length, 12);
+  out.writeUInt32LE(0x4e4f534a, 16);
+  chunk.copy(out, 20);
+  rest.copy(out, 20 + chunk.length);
+  return out;
+}
+
+/** renameSync so parallel workers never observe a torn output file. */
+function writeAtomic(path: string, data: string | Uint8Array): void {
+  const tmp = `${path}.tmp-${process.pid}-${Math.floor(performance.now() * 1000)}`;
+  writeFileSync(tmp, data);
+  renameSync(tmp, path);
 }
 
 function rotationFor(forward: CarPipelineConfig['forward']): { c: number; s: number } {
@@ -327,24 +516,32 @@ function configIds(): string[] {
 }
 
 async function buildGeneric(config: CarPipelineConfig): Promise<void> {
+  if (!config.wheelNodes?.length && !config.wheelMaterials?.length) {
+    throw new Error('config must give wheelNodes or wheelMaterials');
+  }
   const io = new NodeIO();
   const srcDoc = await io.read(join(ROOT, config.source));
+  const wheelEntries = config.wheelNodes?.length ? parseWheelNodes(config.wheelNodes) : [];
+  const wheelMaterials = config.wheelMaterials ?? [];
+  const maxTextureSize = config.maxTextureSize ?? 1024;
 
   const roleOf = new Map<string, Role>();
   const tyreOf = new Map<string, boolean>();
   const colourOf = new Map<string, vec4>();
+  const materialOf = new Map<string, Material>();
   const bodyKeys: string[] = [];
   for (const material of srcDoc.getRoot().listMaterials()) {
     const name = material.getName();
     // Livery wins so a wheel pattern like "redpand" cannot swallow "redpand.001".
     const role: Role = matches(name, config.liveryMaterials)
       ? 'livery'
-      : matches(name, config.wheelMaterials)
+      : matches(name, wheelMaterials)
         ? 'wheel'
         : 'body';
     roleOf.set(name, role);
     tyreOf.set(name, /tyre|rubber/i.test(name));
     colourOf.set(name, material.getBaseColorFactor());
+    materialOf.set(name, material);
     if (role === 'body') bodyKeys.push(name);
   }
 
@@ -373,24 +570,40 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
       // transformPrimitive already reverses winding when det(matrix) < 0.
       const target = cloneMeshDeep(srcDoc, snap);
       transformMesh(target, node.getWorldMatrix());
-      for (const prim of target.listPrimitives()) weldPositions(prim);
+      for (const prim of target.listPrimitives()) {
+        weldPositions(prim, hasTexture(prim.getMaterial()));
+      }
       node.setMesh(target);
     }
     snap.dispose();
     if (users.length > 0) mesh.dispose();
   }
 
+  // wheelNodes may name an ancestor group; inherit the match down to the mesh node.
+  const wheelClassOf = new Map<Mesh, 'tyre' | 'rim'>();
+  if (wheelEntries.length > 0) {
+    const walk = (node: Node, inherited: 'tyre' | 'rim' | null): void => {
+      const cls = matchWheelNode(node.getName(), wheelEntries) ?? inherited;
+      const mesh = node.getMesh();
+      if (mesh && cls && !wheelClassOf.has(mesh)) wheelClassOf.set(mesh, cls);
+      for (const child of node.listChildren()) walk(child, cls);
+    };
+    for (const child of srcDoc.getRoot().listScenes()[0].listChildren()) walk(child, null);
+  }
+
   const pieces: Piece[] = [];
   for (const mesh of srcDoc.getRoot().listMeshes()) {
+    const cls = wheelClassOf.get(mesh) ?? null;
     for (const prim of mesh.listPrimitives()) {
       if (prim.getMode() !== 4) throw new Error(`primitive of ${mesh.getName()} is not TRIANGLES`);
-      const source = prim.getMaterial()?.getName() ?? '';
-      const role = roleOf.get(source);
+      const material = prim.getMaterial();
+      const source = material?.getName() ?? '';
+      const role = cls ? 'wheel' : roleOf.get(source);
       if (!role) throw new Error(`unmapped material ${source}`);
       pieces.push({
-        geom: readGeom(prim, 1),
+        geom: readGeom(prim, 1, hasTexture(material)),
         role,
-        isTyre: tyreOf.get(source) ?? false,
+        isTyre: cls ? cls === 'tyre' : (tyreOf.get(source) ?? false),
         source,
       });
     }
@@ -484,17 +697,22 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
       doc.createMaterial('rim').setBaseColorFactor(colourOf.get(firstRim.source) ?? DEFAULT_COLOUR),
     );
   }
+  const texCache = new Map<Texture, Texture>();
   bodyKeys.forEach((key, i) => {
-    materials.set(
-      `body_${i}`,
-      doc.createMaterial(`body_${i}`).setBaseColorFactor(colourOf.get(key) ?? DEFAULT_COLOUR),
-    );
+    const srcMat = materialOf.get(key);
+    const dst = doc
+      .createMaterial(`body_${i}`)
+      .setBaseColorFactor(colourOf.get(key) ?? DEFAULT_COLOUR);
+    if (srcMat) copyBodyTextures(doc, srcMat, dst, texCache);
+    materials.set(`body_${i}`, dst);
   });
 
   const scene = doc.createScene('Scene');
   const bodyNode = doc.createNode('body');
   const bodyMesh = doc.createMesh('body');
   const liveryPrims: Primitive[] = [];
+  const tyrePrims: Primitive[] = [];
+  const rimPrims: Primitive[] = [];
   if ((bodyGroups.get('livery') as Geom[]).length > 0) {
     const prim = createPrim(doc, mergeGeoms(bodyGroups.get('livery') as Geom[]), livery);
     liveryPrims.push(prim);
@@ -516,12 +734,14 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
     const tyreGeoms = cornerTyre.get(meta.name) as Geom[];
     const rimGeoms = cornerRim.get(meta.name) as Geom[];
     if (tyreGeoms.length > 0) {
-      mesh.addPrimitive(
-        createPrim(doc, mergeGeoms(tyreGeoms), materials.get('tyre') as Material),
-      );
+      const prim = createPrim(doc, mergeGeoms(tyreGeoms), materials.get('tyre') as Material);
+      tyrePrims.push(prim);
+      mesh.addPrimitive(prim);
     }
     if (rimGeoms.length > 0) {
-      mesh.addPrimitive(createPrim(doc, mergeGeoms(rimGeoms), materials.get('rim') as Material));
+      const prim = createPrim(doc, mergeGeoms(rimGeoms), materials.get('rim') as Material);
+      rimPrims.push(prim);
+      mesh.addPrimitive(prim);
     }
     node.setMesh(mesh);
     node.setTranslation([meta.x, meta.y, meta.z]);
@@ -560,12 +780,50 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
     }
   }
 
-  await doc.transform(weld(), dedup(), prune());
-  // dedup merges materials by properties, which can swallow 'livery' into a same-colour body.
-  if (liveryPrims.length > 0 && !doc.getRoot().listMaterials().some((m) => m.getName() === 'livery')) {
+  // keepSolidTextures: legitimate livery/tyre maps are often flat colours.
+  await doc.transform(weld(), dedup(), prune({ keepSolidTextures: true }));
+  // dedup merges materials by properties, which can swallow named roles into a same-colour twin.
+  const stillMissing = (name: string) =>
+    !doc.getRoot().listMaterials().some((m) => m.getName() === name);
+  if (liveryPrims.length > 0 && stillMissing('livery')) {
     const restored = doc.createMaterial('livery').setBaseColorFactor(LIVERY_COLOUR);
     for (const prim of liveryPrims) prim.setMaterial(restored);
   }
+  if (tyrePrims.length > 0 && stillMissing('tyre')) {
+    const restored = doc
+      .createMaterial('tyre')
+      .setBaseColorFactor(colourOf.get(firstTyre?.source ?? '') ?? DEFAULT_COLOUR);
+    for (const prim of tyrePrims) prim.setMaterial(restored);
+  }
+  if (rimPrims.length > 0 && stillMissing('rim')) {
+    const restored = doc
+      .createMaterial('rim')
+      .setBaseColorFactor(colourOf.get(firstRim?.source ?? '') ?? DEFAULT_COLOUR);
+    for (const prim of rimPrims) prim.setMaterial(restored);
+  }
+  const outTextures = doc.getRoot().listTextures();
+  if (outTextures.length > 0) {
+    for (const t of outTextures) {
+      if (!t.getMimeType()) {
+        const image = t.getImage();
+        if (image) t.setMimeType(sniffMime(image));
+      }
+    }
+    await doc.transform(
+      textureCompress({
+        encoder: sharp,
+        targetFormat: 'webp',
+        resize: [maxTextureSize, maxTextureSize],
+      }),
+    );
+    doc.getRoot().listTextures().forEach((t, i) => {
+      t.setName(`tex_${i}`);
+      t.setURI('');
+    });
+    for (const ext of doc.getRoot().listExtensionsUsed()) ext.dispose();
+  }
+  const asset = doc.getRoot().getAsset();
+  if (asset.extras !== undefined) delete asset.extras;
   const triangles = triCount(doc.getRoot().listMeshes().flatMap((m) => m.listPrimitives()));
   if (triangles > config.triBudget) {
     throw new Error(`triangle budget exceeded: ${triangles} > ${config.triBudget}`);
@@ -604,13 +862,14 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
   const outJson = join(ROOT, config.outJson);
   mkdirSync(dirname(outGlb), { recursive: true });
   mkdirSync(dirname(outJson), { recursive: true });
-  writeFileSync(outGlb, await io.writeBinary(doc));
-  writeFileSync(outJson, `${JSON.stringify(meta, null, 2)}\n`);
+  writeAtomic(outGlb, declareTextureWebp(Buffer.from(await io.writeBinary(doc))));
+  writeAtomic(outJson, `${JSON.stringify(meta, null, 2)}\n`);
 
-  const glb = readFileSync(outGlb).toString('latin1').toLowerCase();
+  // Texture bytes are excluded (known limitation); names and extras must be clean.
+  const glbStrings = glbJsonChunk(readFileSync(outGlb)).toLowerCase();
   const json = readFileSync(outJson, 'utf8').toLowerCase();
   for (const brand of FORBIDDEN) {
-    if (glb.includes(brand) || json.includes(brand)) {
+    if (glbStrings.includes(brand) || json.includes(brand)) {
       throw new Error(`forbidden name ${brand} leaked into the output`);
     }
   }

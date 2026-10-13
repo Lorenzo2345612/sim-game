@@ -1,0 +1,24 @@
+{
+  "source": "assets/vendor/cars/mustang-gt3/ford_mustang_gt3.glb",
+  "forward": "+z",
+  "targetLength": 4.79,
+  "wheelNodes": [
+    "tyre:68",
+    "tyre:69",
+    "tyre:70",
+    "tyre:71",
+    "rim:25",
+    "rim:26",
+    "rim:28",
+    "rim:29",
+    "rim:5",
+    "rim:6",
+    "rim:7",
+    "rim:8"
+  ],
+  "liveryMaterials": [],
+  "triBudget": 90000,
+  "maxTextureSize": 1024,
+  "outGlb": "public/models/gt3-d.glb",
+  "outJson": "public/models/gt3-d.json"
+}
