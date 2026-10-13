@@ -1077,7 +1077,7 @@
     {
       "num": "079",
       "title": "Remove tree canopy from the DEM before building tracks",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [],
       "complexity": "standard",
       "type": "bugfix",
