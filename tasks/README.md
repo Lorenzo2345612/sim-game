@@ -75,6 +75,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | pending | 053 |
-| 072 | GT3 car definitions | pending | 058 |
-| 073 | Car registry and selection | pending | 070 |
+| 072 | GT3 car definitions | pending | 058, 071 |
+| 073 | Car registry and selection | pending | 070, 044, 072 |
 | 074 | Credits screen | pending | 044 |
