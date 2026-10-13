@@ -58,7 +58,7 @@ export interface Vec3 { x: number; y: number; z: number }
 export interface Quat { x: number; y: number; z: number; w: number }
 
 /** Normalised driver controls. steer: -1 = full left, +1 = full right. */
-export interface DriverInput { throttle: number; brake: number; steer: number; reset: boolean }
+export interface DriverInput { throttle: number; brake: number; steer: number; reset: boolean; shiftUp?: boolean; shiftDown?: boolean }
 
 export interface SpawnPose { position: Vec3; yaw: number }
 
@@ -98,16 +98,51 @@ export type LapEvent =
   | { type: 'lapStarted'; lap: number; time: number }
   | { type: 'sectorCompleted'; lap: number; sector: number; sectorTime: number }
   | { type: 'lapCompleted'; lap: number; lapTime: number; isBest: boolean };
+
+export type Surface = 'asphalt' | 'kerb' | 'grass' | 'gravel' | 'runoff';
+export type Side = 'left' | 'right';
+/** Centerline index range; end is inclusive, segments may wrap (end < start). */
+export interface TrackSegment { start: number; end: number; side: Side }
+export interface RunoffSegment extends TrackSegment { surface: 'gravel' | 'runoff'; widthMeters: number }
+export interface BarrierSegment extends TrackSegment { type: 'armco' | 'tyres' | 'wall'; offsetMeters: number }
+export interface Terrain { originX: number; originZ: number; sizeX: number; sizeZ: number; rows: number; cols: number; heights: number[] } // Rapier layout; origin = centre
+export interface TreeSpecies { name: string; preset: string; heightMeters: number }
+export interface TreeInstances { species: string; data: number[] } // flat [x, z, scale, rotY] * n
+export interface Grandstand { x: number; z: number; yaw: number; lengthMeters: number; rows: number; roof: boolean }
+export interface PitLane { start: number; end: number; side: Side }
+export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
+export interface TrackDataV2 extends Omit<TrackData, 'source'> {
+  version: 2;
+  elevation: number[];      // metres, per centerline point, relative to the start line (start = 0)
+  kerbs: TrackSegment[];
+  runoffs: RunoffSegment[];
+  barriers: BarrierSegment[];
+  terrain: Terrain;
+  treeSpecies: TreeSpecies[];
+  trees: TreeInstances[];
+  grandstands: Grandstand[];
+  pit: PitLane;
+  source: { dataset: string; license: string; url: string; dem: string };
+}
 ```
 
 ## Constants (`src/core/constants.ts`, task 002)
 
 ```ts
+import type { Surface } from './types';
+
 export const FIXED_DT = 1 / 120;          // s
 export const MAX_STEPS_PER_FRAME = 8;     // avoid spiral of death
 export const GRAVITY = -9.81;             // m/s², Y axis
 export const AIR_DENSITY = 1.225;         // kg/m³
 export const MS_TO_KMH = 3.6;
+export const KERB_WIDTH = 1.2;            // m, outside the asphalt edge
+export const VERGE_WIDTH = 4;             // m of grass between asphalt/kerb/runoff and barrier where no runoff
+export const BARRIER_GAP = 1;             // m extra beyond verge/runoff
+export const CORNER_RADIUS = 400;         // m: points with radius below this are "corner"
+export const KERB_RADIUS = 250;           // m: kerbs where radius below this
+export const SURFACE_GRIP: Record<Surface, number> = { asphalt: 1, kerb: 0.9, runoff: 0.95, grass: 0.45, gravel: 0.35 }; // × frictionSlip
+export const SURFACE_DRAG: Record<Surface, number> = { asphalt: 0, kerb: 0, runoff: 0, grass: 0.15, gravel: 0.6 };   // × m·g, per wheel share
 ```
 
 ## Placeholder car (values calibrated with Rapier 0.21.0)
