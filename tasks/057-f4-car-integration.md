@@ -38,6 +38,8 @@ The game renders `public/models/f4.glb` (task 053) with spinning/steering wheels
 | AT3 | e2e: `/` | ready, 3 s throttle | no console errors; `__SIMGAME__.getSpeedKmh() > 30`; screenshot pixel at (640, 600) differs from the sky pixel (640, 40) by > 40 in some channel |
 | AT4 | e2e: `/?track=spa` | ready, 3 s throttle | `|carPosition().y − trackHeightUnderCar()| < 0.8` (the car still rides on the track with the new geometry) |
 
+AT3/AT4 are planner-written e2e tests in `tests/e2e/acceptance/057-f4-car.spec.ts` (AT3 loads `/?track=monza` since `/` shows the menu); the acceptance role writes only AT1/AT2.
+
 ## Acceptance criteria
 
 - [ ] AT1–AT4 pass; all Phase 0/1 unit and e2e tests pass.
