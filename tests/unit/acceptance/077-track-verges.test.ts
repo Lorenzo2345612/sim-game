@@ -216,13 +216,17 @@ describe('077 track verges acceptance', () => {
       for (let i = 0; i < n; i += 4) {
         const [rx, rz] = rightNormalAt(cx, i);
         for (const side of [1, -1]) {
-          const e = side === 1 ? edges.right[i] : edges.left[i];
+          const j = (i + 1) % n;
+          const e = side === 1 ? Math.min(edges.right[i], edges.right[j]) : Math.min(edges.left[i], edges.left[j]);
           expect(e, `grass verge edge at ${id} index ${i} side ${side === 1 ? 'right' : 'left'}`).toBeGreaterThan(0);
+          // chord midpoint between i and i+1: rays along mesh row lines graze shared edges (f32) and leak through
+          const mx = (cx[i][0] + cx[j][0]) / 2;
+          const mz = (cx[i][1] + cx[j][1]) / 2;
           let prevY: number | null = null;
           for (let k = 0; k * 0.25 <= e; k++) {
             const t = k * 0.25;
-            const x = cx[i][0] + rx * side * t;
-            const z = cx[i][1] + rz * side * t;
+            const x = mx + rx * side * t;
+            const z = mz + rz * side * t;
             const hit = castDown(world, x, z, fromY);
             if (hit === null || surfaceOf(hit.collider) === null) {
               prevY = null;

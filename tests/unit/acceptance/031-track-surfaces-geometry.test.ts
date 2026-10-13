@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { RunoffSegment, SurfaceStrip, TrackDataV2, TrackSegment } from '../../../src/core/types';
-import { buildTrackSurfaces } from '../../../src/track/surfaces';
+import { buildTrackSurfaces as buildAllSurfaces } from '../../../src/track/surfaces';
+// Task 077 appends grass verge strips; these pre-077 contracts cover the other strips only.
+const buildTrackSurfaces = (track: Parameters<typeof buildAllSurfaces>[0]) =>
+  buildAllSurfaces(track).filter((strip) => strip.surface !== 'grass');
 import { fixture } from './022-fixture-trackdatav2';
 import { circleTrack } from '../../fixtures/circleTrack';
 

@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { RunoffSegment, SurfaceStrip, TrackDataV2, TrackSegment } from '../../../src/core/types';
-import { buildTrackSurfaces } from '../../../src/track/surfaces';
+import { buildTrackSurfaces as buildAllSurfaces } from '../../../src/track/surfaces';
+// Task 077 appends grass verge strips; these pre-077 contracts cover the other strips only.
+const buildTrackSurfaces = (track: Parameters<typeof buildAllSurfaces>[0]) =>
+  buildAllSurfaces(track).filter((strip) => strip.surface !== 'grass');
 import { fixture } from '../acceptance/022-fixture-trackdatav2';
 import { circleTrack } from '../../fixtures/circleTrack';
 
