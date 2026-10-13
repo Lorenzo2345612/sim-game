@@ -1077,13 +1077,52 @@
     {
       "num": "079",
       "title": "Remove tree canopy from the DEM before building tracks",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "standard",
       "type": "bugfix",
       "models": "standard",
       "phase": 1,
       "spec": "tasks/079-dem-canopy-filter.md"
+    },
+    {
+      "num": "080",
+      "title": "PBR surface materials with anti-tiling for track strips",
+      "status": "pending",
+      "deps": [
+        "077"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/080-surface-materials.md"
+    },
+    {
+      "num": "081",
+      "title": "Terrain splat material with track-distance mown stripes",
+      "status": "pending",
+      "deps": [
+        "080"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/081-terrain-material.md"
+    },
+    {
+      "num": "082",
+      "title": "Painted track markings (edge lines, start/finish line)",
+      "status": "pending",
+      "deps": [
+        "080"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/082-track-markings.md"
     }
   ]
 }

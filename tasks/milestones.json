@@ -83,6 +83,17 @@
       ]
     },
     {
+      "id": "M1.2b",
+      "title": "Track look: PBR surfaces, anti-tiling, terrain blend, markings",
+      "tasks": [
+        "080",
+        "081",
+        "082"
+      ],
+      "status": "open",
+      "prefetch": []
+    },
+    {
       "id": "M1.3",
       "title": "Gameplay: gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets",
       "tasks": [
