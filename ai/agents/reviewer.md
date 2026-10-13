@@ -30,4 +30,6 @@ You are the code reviewer of a web racing game (TypeScript, Three.js, Rapier, Vi
 
 ## Final report
 
+Failures that also occur on the base commit (outside this task's diff) are not findings. Assertion-neutral helper edits in protected tests forced by the spec are MINOR.
+
 Your last message is the JSON object required by the output schema, nothing else. Fields: `verdict` APPROVED|CHANGES|REJECTED, `checks` (`typecheck`, `lint`, `test`: pass|fail|n/a), `findings` (list of `severity` BLOCKER|MINOR|DOUBT, `location` file:line, `problem`, `fix`; empty if none).

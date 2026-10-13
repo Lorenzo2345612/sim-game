@@ -23,4 +23,6 @@ Complex task, before any code exists. The acceptance tests (`tests/unit/acceptan
 
 ## Final report
 
+Compute every expected value from the spec formulas, including unit conversions (e.g. kg to litres via density). No two assertions on the same quantity may conflict.
+
 Your last message is the JSON object required by the output schema, nothing else. Fields: `status` READY|BLOCKED, `file` (edge test file), `gaps` (EDGE1..EDGEn, one line each), `specSilent` (only undefined behaviours that change what the coder must build for valid inputs; skip invalid-input handling, tie-breaks, rounding and other trivia; empty list if none). Use status BLOCKED only if the spec cannot be tested at all.

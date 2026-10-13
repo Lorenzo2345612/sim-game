@@ -25,4 +25,6 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 
 ## Final report
 
+Compute every expected value from the spec formulas, including unit conversions (e.g. kg to litres via density). No two assertions on the same quantity may conflict.
+
 Your last message is the JSON object required by the output schema, nothing else. Fields: `status` READY|BLOCKED, `file` (acceptance test file), `rows` (AT rows written), `untestable` (rows that could not be written and why; empty list if none).

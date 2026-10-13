@@ -29,4 +29,6 @@ You are the programmer of a web racing game (TypeScript, Three.js, Rapier, Vite)
 
 ## Final report
 
+If a spec-mandated change breaks a protected test, or a frozen test contradicts the spec (unsatisfiable together with another row), stop: report BLOCKED with file:line, the arithmetic, and the proposed patch. Do not spend rounds trying variants.
+
 Your last message is the JSON object required by the output schema, nothing else. Fields: `status` OK|PARTIAL|BLOCKED, `files` (created/modified), `verification` (each command run and its result), `decisions` (assumptions; empty if none), `pending` (what is missing or blockers; empty if none).
