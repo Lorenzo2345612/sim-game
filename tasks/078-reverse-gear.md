@@ -32,7 +32,7 @@ update(speedMs: number, dt?: number, input?: { throttle: number; brake: number }
 driveTorque(engineTorqueNm: number, input: { throttle: number; brake: number }, speedMs: number): number;
 brakeRequest(input: { throttle: number; brake: number }): number;
 ```
-   `input` omitted = no pedals. `shiftUp`/`shiftDown` signature gets optional `speedMs?: number` (default 0 if omitted... shiftDown without speed uses the last speed passed to `update`).
+   `input` omitted = no pedals. `shiftUp`/`shiftDown` keep their signatures; the reverse rule uses the last `speedMs` passed to `update` (0 before the first update). AT4 calls `update(speed)` then `shiftDown()`.
 3. Auto: with |speed| < 0.5, brake ≥ 0.5 and throttle < 0.05 held continuously for 0.4 s (timer resets when any condition breaks) → gear −1. In −1: throttle ≥ 0.5 while |speed| < 0.5 → gear 1. No automatic up/down shifting while in −1; remove the "speed < 0 → gear 1" rule.
 4. Manual: `shiftDown` at gear 1 with |speed| < 0.5 → −1; at gear 1 with |speed| ≥ 0.5 stays 1; `shiftUp` at −1 → 1; −1 is never skipped by other shifts.
 5. `driveTorque`: gear > 0 unchanged semantics (engineTorque × throttle × ratio × final); gear −1: −engineTorque × brake × REVERSE_RATIO × final, and 0 when backwards speed > 30 km/h (speedMs ≤ −REVERSE_MAX_SPEED_MS) ; throttle contributes nothing in −1. `brakeRequest`: gear −1 returns `input.throttle`, otherwise `input.brake`.
