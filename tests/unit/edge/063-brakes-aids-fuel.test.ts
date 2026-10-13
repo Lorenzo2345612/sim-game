@@ -58,7 +58,7 @@ describe('063 brakes, ABS/TC and fuel edge cases', () => {
     const tank = new FuelTank({ capacityL: 20, densityKgL: 0.745, bsfc: 250, startL: 20 });
     tank.burn(100000, 10, 1);
     expect(tank.litres).toBeCloseTo(tank.massKg / 0.745, 9);
-    expect(tank.litres).toBeCloseTo(20 - fuelFlowKgS(250, 100000, 1) * 10, 6);
+    expect(tank.litres).toBeCloseTo(20 - fuelFlowKgS(250, 100000, 1) * 10 / 0.745, 6);
   });
 
   it('EDGE9: burn inputs and brakeTorques non-out inputs are not mutated', () => {
