@@ -8,7 +8,7 @@ import { Game } from './game/game';
 import { KeyboardInput } from './input/keyboard';
 import { buildRibbon } from './track/ribbon';
 import { buildTrackSurfaces } from './track/surfaces';
-import { createRenderer, createScene } from './render/sceneSetup';
+import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
@@ -20,6 +20,7 @@ import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
 import { ChaseCamera } from './render/chaseCamera';
 import { Hud } from './ui/hud';
+import { Menu } from './ui/menu';
 
 export interface SceneStats {
   barriers: number;
@@ -62,14 +63,55 @@ const MAX_SIM_STEPS_PER_FRAME = 240;
 
 const status = document.getElementById('status');
 
+interface Session {
+  dispose(): void;
+}
+
+let menu: Menu | null = null;
+let session: Session | null = null;
+// One WebGL context for the page: a second WebGLRenderer on the same canvas would share it.
+let rendererHandle: RendererHandle | null = null;
+
 function onError(e: unknown): void {
-  if (status) status.textContent = 'Error: ' + (e instanceof Error ? e.message : String(e));
+  if (status) {
+    status.textContent = 'Error: ' + (e instanceof Error ? e.message : String(e));
+    status.style.display = '';
+  }
   console.error(e);
 }
 
-function selectedTrackId(): string {
-  const requested = new URLSearchParams(window.location.search).get('track');
-  return requested !== null && TRACK_IDS.includes(requested) ? requested : DEFAULT_TRACK_ID;
+function endSession(): void {
+  session?.dispose();
+  session = null;
+}
+
+function showTrackSelect(): void {
+  menu?.showTrackSelect((id) => {
+    startGame(id).catch(onError);
+  });
+}
+
+function disposeMaterial(material: THREE.Material): void {
+  for (const value of Object.values(material)) {
+    if (value instanceof THREE.Texture) value.dispose();
+  }
+  material.dispose();
+}
+
+function disposeScene(scene: THREE.Scene): void {
+  scene.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.geometry) mesh.geometry.dispose();
+    const material = mesh.material;
+    if (Array.isArray(material)) {
+      for (const m of material) disposeMaterial(m);
+    } else if (material) {
+      disposeMaterial(material);
+    }
+    const shadowMap = (obj as THREE.DirectionalLight).shadow?.map;
+    if (shadowMap) shadowMap.dispose();
+  });
+  scene.clear();
 }
 
 function headingOf(q: Quat): number {
@@ -175,19 +217,23 @@ function nearestElevation(track: TrackDataV2, x: number, z: number): number {
   return track.elevation[best] ?? 0;
 }
 
-async function main(): Promise<void> {
-  if (!status) throw new Error('Missing #status');
-  status.textContent = 'Loading…';
+async function startGame(trackId: string): Promise<void> {
+  endSession();
+  menu?.hide();
+  if (status) {
+    status.textContent = 'Loading…';
+    status.style.display = '';
+  }
 
-  const trackId = selectedTrackId();
   const res = await fetch(`/tracks/${trackId}.json`);
   if (!res.ok) throw new Error(`Could not load ${trackId}.json`);
   const track: TrackData | TrackDataV2 = await res.json();
 
-  const game = await Game.create(track);
+  let game = await Game.create(track);
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
-  const handle = createRenderer(canvas);
+  if (!rendererHandle) rendererHandle = createRenderer(canvas);
+  const handle = rendererHandle;
   const softwareGl = isSoftwareGl(handle.renderer);
   if (softwareGl) {
     // SwiftShader rasterizes on the CPU, shared by CI's parallel workers: at full
@@ -197,6 +243,7 @@ async function main(): Promise<void> {
   }
   const { scene, camera, ground } = createScene();
 
+  const disposables: { dispose(): void }[] = [];
   let shadows: ShadowRig | null = null;
   let treeField: TreeField | null = null;
   const stats: SceneStats = {
@@ -229,9 +276,11 @@ async function main(): Promise<void> {
       if (mesh.isMesh) mesh.receiveShadow = true;
     });
     scene.add(surfaces.group);
+    disposables.push(surfaces);
 
     const barriers = createBarrierObject(track);
     scene.add(barriers.group);
+    disposables.push(barriers);
 
     const trees = createTreeField(track.trees, track.treeSpecies, {
       terrainY: makeTerrainY(track.terrain),
@@ -268,6 +317,7 @@ async function main(): Promise<void> {
     if (mesh.isMesh) mesh.castShadow = true;
   });
   scene.add(car.root);
+  disposables.push(car);
 
   const chase = new ChaseCamera(camera);
   chase.snap(game.getCurrentState());
@@ -282,28 +332,96 @@ async function main(): Promise<void> {
   );
   const interp = createVehicleState(4);
 
-  const onResize = (): void => handle.resize(window.innerWidth, window.innerHeight, camera);
-  window.addEventListener('resize', onResize);
-  onResize();
-
+  let paused = false;
+  let running = true;
   let last = -1;
+  let rafId = 0;
+
+  const onResize = (): void => handle.resize(window.innerWidth, window.innerHeight, camera);
   const frameFn = (now: number): void => {
+    if (!running) return;
     if (last < 0) last = now;
     const frame = Math.min((now - last) / 1000, 2);
     last = now;
-    const { alpha } = loop.advance(frame);
-    interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
-    car.update(interp);
-    chase.update(interp, frame);
-    shadows?.update(interp.position);
-    treeField?.update(camera.position);
-    hud.update({ speedKmh: Math.abs(interp.forwardSpeed) * MS_TO_KMH, ...game.getLapInfo() });
+    // Paused: only the render keeps going, the fixed-step simulation must not advance.
+    if (!paused) {
+      const { alpha } = loop.advance(frame);
+      interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
+      car.update(interp);
+      chase.update(interp, frame);
+      shadows?.update(interp.position);
+      treeField?.update(camera.position);
+      hud.update({ speedKmh: Math.abs(interp.forwardSpeed) * MS_TO_KMH, ...game.getLapInfo() });
+    }
     handle.renderer.render(scene, camera);
-    requestAnimationFrame(frameFn);
+    rafId = requestAnimationFrame(frameFn);
   };
-  requestAnimationFrame(frameFn);
 
-  status.style.display = 'none';
+  const resume = (): void => {
+    paused = false;
+    menu?.hide();
+  };
+
+  const restart = async (): Promise<void> => {
+    const next = await Game.create(track);
+    // The session may have been torn down while the new Game was being created.
+    if (!running) {
+      next.dispose();
+      return;
+    }
+    game.dispose();
+    game = next;
+    chase.snap(game.getCurrentState());
+    loop.reset();
+  };
+
+  const changeTrack = (): void => {
+    endSession();
+    showTrackSelect();
+  };
+
+  const onKeydown = (event: KeyboardEvent): void => {
+    if (event.code !== 'Escape') return;
+    if (paused) {
+      resume();
+      return;
+    }
+    paused = true;
+    menu?.showPause({
+      onResume: resume,
+      onRestart: () => {
+        restart()
+          .then(() => {
+            if (running) resume();
+          })
+          .catch(onError);
+      },
+      onChangeTrack: changeTrack,
+    });
+  };
+
+  const dispose = (): void => {
+    running = false;
+    cancelAnimationFrame(rafId);
+    window.removeEventListener('keydown', onKeydown);
+    window.removeEventListener('resize', onResize);
+    keyboard.dispose();
+    hud.dispose();
+    game.dispose();
+    for (const disposable of disposables) disposable.dispose();
+    treeField?.dispose();
+    disposeScene(scene);
+    window.__SIMGAME__ = undefined;
+  };
+
+  session = { dispose };
+
+  window.addEventListener('keydown', onKeydown);
+  window.addEventListener('resize', onResize);
+  onResize();
+  rafId = requestAnimationFrame(frameFn);
+
+  if (status) status.style.display = 'none';
   window.__SIMGAME__ = {
     ready: true,
     getSpeedKmh: () => Math.abs(game.getCurrentState().forwardSpeed) * MS_TO_KMH,
@@ -325,6 +443,21 @@ async function main(): Promise<void> {
     }),
     drawCalls: () => handle.renderer.info.render.calls,
   };
+}
+
+async function main(): Promise<void> {
+  if (!status) throw new Error('Missing #status');
+  const menuRoot = document.getElementById('menu');
+  if (!menuRoot) throw new Error('Missing #menu');
+  menu = new Menu(menuRoot, window.localStorage);
+
+  const requested = new URLSearchParams(window.location.search).get('track');
+  if (requested === null) {
+    status.style.display = 'none';
+    showTrackSelect();
+    return;
+  }
+  await startGame(TRACK_IDS.includes(requested) ? requested : DEFAULT_TRACK_ID);
 }
 
 main().catch(onError);
