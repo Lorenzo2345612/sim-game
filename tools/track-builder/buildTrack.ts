@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
-import { centerlineHeights, elevationProfile, removeCanopy } from './elevation';
+import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { layoutBarriers } from './barriers';
 import { buildTerrain } from './terrain';
@@ -24,6 +24,8 @@ interface TrackConfig extends TrackSourceConfig {
   geojson: string;
   dem: string;
   canopyRadiusCells?: number;
+  profileSigmaM?: number;
+  maxGrade?: number;
   biome: Biome;
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
@@ -88,7 +90,18 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const lapLength = polylineLength(centerline, true);
   const cum = cumulativeLengths(centerline);
 
-  const elevation = elevationProfile(centerlineHeights(grid, centerline, origin));
+  const spacing = lapLength / centerline.length;
+  const smoothed = smoothProfile(centerlineHeights(grid, centerline, origin), spacing, config.profileSigmaM ?? 60);
+  // Grade is Δh per actual segment run, so the shortest segment binds the uniform clamp
+  let minRun = Infinity;
+  for (let i = 0; i < centerline.length; i++) {
+    const [x, z] = centerline[i];
+    const [nx, nz] = centerline[(i + 1) % centerline.length];
+    minRun = Math.min(minRun, Math.hypot(nx - x, nz - z));
+  }
+  const limited = limitGrade(smoothed, minRun, config.maxGrade ?? 0.08);
+  const startHeight = limited[0];
+  const elevation = limited.map((h) => h - startHeight);
   const kerbs = detectKerbs(centerline);
   const runoffs = detectRunoffs(centerline);
   const pit: PitLane = {

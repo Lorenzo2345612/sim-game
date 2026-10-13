@@ -5,6 +5,7 @@
     "geojson": "it-1922",
     "dem": "assets/source/dem/monza.json",
     "canopyRadiusCells": 3,
+    "maxGrade": 0.04,
     "widthMeters": 12,
     "reverse": false,
     "biome": {
@@ -27,6 +28,7 @@
     "name": "Spa",
     "geojson": "be-1925",
     "dem": "assets/source/dem/spa.json",
+    "maxGrade": 0.20,
     "widthMeters": 14,
     "reverse": false,
     "biome": {
@@ -48,6 +50,7 @@
     "name": "Silverstone",
     "geojson": "gb-1948",
     "dem": "assets/source/dem/silverstone.json",
+    "maxGrade": 0.04,
     "widthMeters": 12,
     "reverse": false,
     "biome": {

@@ -52,6 +52,60 @@ export function centerlineHeights(grid: DemGrid, centerline: Point2[], origin: L
   });
 }
 
+export function smoothProfile(raw: number[], spacingM: number, sigmaM: number): number[] {
+  if (!(spacingM > 0)) throw new Error(`spacingM must be > 0, got ${spacingM}`);
+  if (!(sigmaM > 0)) throw new Error(`sigmaM must be > 0, got ${sigmaM}`);
+  const n = raw.length;
+  if (n === 0) return [];
+  const radius = Math.ceil((3 * sigmaM) / spacingM);
+  const kernel = new Array<number>(2 * radius + 1);
+  let sum = 0;
+  for (let k = -radius; k <= radius; k++) {
+    const w = Math.exp(-0.5 * ((k * spacingM) / sigmaM) ** 2);
+    kernel[k + radius] = w;
+    sum += w;
+  }
+  const out = new Array<number>(n);
+  for (let i = 0; i < n; i++) {
+    let acc = 0;
+    for (let k = -radius; k <= radius; k++) {
+      acc += kernel[k + radius] * raw[(((i + k) % n) + n) % n];
+    }
+    out[i] = acc / sum;
+  }
+  return out;
+}
+
+export function limitGrade(profile: number[], spacingM: number, maxGrade: number): number[] {
+  if (!(spacingM > 0)) throw new Error(`spacingM must be > 0, got ${spacingM}`);
+  if (!(maxGrade >= 0)) throw new Error(`maxGrade must be >= 0, got ${maxGrade}`);
+  const n = profile.length;
+  const out = profile.slice();
+  if (n <= 1) return out;
+  const maxDh = maxGrade * spacingM;
+  const clampTo = (i: number, ref: number) => {
+    const v = Math.min(ref + maxDh, Math.max(ref - maxDh, out[i]));
+    if (v !== out[i]) {
+      out[i] = v;
+      return true;
+    }
+    return false;
+  };
+  for (let iter = 0; iter < 100; iter++) {
+    let changed = false;
+    for (let i = 0; i < n - 1; i++) changed = clampTo(i + 1, out[i]) || changed;
+    for (let i = n - 1; i >= 1; i--) changed = clampTo(i, out[(i + 1) % n]) || changed;
+    if (!changed) break;
+  }
+  const closure = out[n - 1] - out[0];
+  const target = Math.sign(closure) * Math.min(Math.abs(closure), maxDh);
+  const residual = closure - target;
+  if (residual !== 0) {
+    for (let i = 1; i < n; i++) out[i] -= (residual * i) / (n - 1);
+  }
+  return out;
+}
+
 export function elevationProfile(raw: number[], window = 25): number[] {
   const n = raw.length;
   const half = Math.floor(window / 2);
