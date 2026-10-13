@@ -25,11 +25,11 @@ New layer `src/ai` (may import only `core` and `track`; no Rapier, no three). De
 
 ```ts
 export interface RacingLine { offsets: Float64Array; points: Float64Array /* x,z interleaved */; dist: Float64Array /* cumulative, dist[0]=0 */; length: number }
-export function computeRacingLine(centerline: [number, number][], halfWidth: number, margin?: number /* 1.0 */, iterations?: number /* 600 */): RacingLine;
+export function computeRacingLine(centerline: [number, number][], halfWidth: number, margin?: number /* 1.0 */, iterations?: number /* 25 passes per level */): RacingLine;
 export function mengerCurvature(ax: number, az: number, bx: number, bz: number, cx: number, cz: number): number; // signed, 1/m, + = turning right
 ```
 
-- Minimise Σκᵢ² (κ = Menger curvature of consecutive points of the closed offset path) over the lateral offsets by projected gradient descent: gradient per offset by central finite difference (h = 0.01 m, recomputing only the 3 affected terms); a step is accepted only if the objective decreases (halve the step otherwise, double it after a success); initial step 0.5 m; `iterations` full sweeps; offsets clamped to ±(halfWidth − margin); start from offsets 0.
+- Algorithm: K1999 (Rémi Coulom, TORCS) on the lateral offsets, start from offsets 0. For step s = 64, 32, 16, 8, 4, 2, 1: run `iterations` passes; in each pass, for every index i that is a multiple of s: κᵢ = Menger curvature of points (i−s, i, i+s); target κₜ = (κ(i−s) + κ(i+s)) / 2, each measured the same way with its own ±s neighbours; dκ/do by moving point i 1e-4 m along its normal; oᵢ += (κₜ − κᵢ)/(dκ/do) (skip when |dκ/do| < 1e-12); clamp oᵢ to ±(halfWidth − margin). After each level, set the offsets of indices between multiples of s by linear interpolation (wrapping). (Plain gradient descent on Σκ² was tried and is too ill-conditioned to converge.)
 - Closed loop: indices wrap. `dist[i]` is the cumulative polyline length from point 0 to point i; `length` is the closed total including the closing segment; `dist` has n entries.
 - `mengerCurvature` is `2·cross/(|AB||BC||CA|)`, sign + for a right turn in the x,z plane with the convention above; collinear or coincident points give 0 (no NaN).
 - Positive offset moves the point along the right normal of the centerline.
@@ -40,7 +40,7 @@ Conventions: no rounding; clamp is inclusive; `centerline.length < 3` throws `Er
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | circle R 100, N 120 (clockwise as in 031's fixture), halfWidth 6, margin 1 | computeRacingLine | every point at radius 105 ± 0.05 (outer bound) |
+| AT1 | circle R 100, N 120 (as in 031's fixture), halfWidth 6, margin 1 | computeRacingLine | all points at the same radius (max − min ≤ 0.05) within [95, 105] (constant curvature: K1999 has nothing to balance) |
 | AT2 | rounded square: 4 straights 200 m + 4 arcs R 30 (90°), spacing 2 m, halfWidth 6, margin 1 | same | at each arc midpoint the line is ≥ 4.5 m towards the corner inside; at 40 m before each arc start it is ≥ 3.5 m towards the outside; max |κ| along the line ≤ 0.022 1/m (centerline 0.0333) |
 | AT3 | monza.json | same | every |offset| ≤ 5 + 1e-9; max |κ| of the line ≤ 0.9 · max |κ| of the centerline |
 | AT4 | monza.json twice | same | outputs byte-identical |
