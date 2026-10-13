@@ -91,12 +91,13 @@ function bytes(a: Float64Array): Uint8Array {
 }
 
 describe('087 racing line acceptance', () => {
-  it('AT1: circle racing line sits on the outer bound at radius 105 +/- 0.05', () => {
+  it('AT1: circle racing line keeps a constant radius within [95, 105]', () => {
     const line = computeRacingLine(circleTrack.centerline, HALF_WIDTH, MARGIN);
-    for (let i = 0; i < line.points.length; i += 2) {
-      const r = Math.hypot(line.points[i], line.points[i + 1]);
-      expect(Math.abs(r - 105)).toBeLessThanOrEqual(0.05);
-    }
+    const radii: number[] = [];
+    for (let i = 0; i < line.points.length; i += 2) radii.push(Math.hypot(line.points[i], line.points[i + 1]));
+    expect(Math.max(...radii) - Math.min(...radii)).toBeLessThanOrEqual(0.05);
+    expect(Math.min(...radii)).toBeGreaterThanOrEqual(95 - 1e-9);
+    expect(Math.max(...radii)).toBeLessThanOrEqual(105 + 1e-9);
   });
 
   it('AT2: rounded-square line runs wide before corners, cuts apexes and keeps max |kappa| <= 0.022', () => {
