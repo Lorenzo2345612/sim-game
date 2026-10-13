@@ -22,6 +22,13 @@ export class LapTimer {
   get lap(): number { return this.currentLap; }
   get lastLapTime(): number | null { return this.lastLap; }
   get bestLapTime(): number | null { return this.bestLap; }
+  get valid(): boolean { return !this.invalid; }
+
+  invalidate(): LapEvent[] {
+    if (this.currentLap === 0 || this.invalid) return [];
+    this.invalid = true;
+    return [{ type: 'lapInvalidated', lap: this.currentLap }];
+  }
 
   update(distance: number, time: number): LapEvent[] {
     if (!Number.isFinite(distance) || !Number.isFinite(time)) return [];

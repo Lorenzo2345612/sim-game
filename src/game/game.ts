@@ -15,6 +15,7 @@ export interface LapInfo {
   currentLapTime: number | null;
   lastLapTime: number | null;
   bestLapTime: number | null;
+  valid: boolean;
 }
 
 export function spawnFromTrack(track: TrackData): SpawnPose {
@@ -96,6 +97,10 @@ export class Game {
     this.world.step();
     this.time += FIXED_DT;
     this.vehicle.getState(this.current);
+    const surfaces = this.vehicle.getWheelSurfaces();
+    if (!surfaces.some((s) => s === 'asphalt' || s === 'kerb')) {
+      this.events.push(...this.lapTimer.invalidate());
+    }
     const sample = this.progress.update(this.current.position.x, this.current.position.z);
     this.events.push(...this.lapTimer.update(sample.distance, this.time));
   }
@@ -114,6 +119,7 @@ export class Game {
       currentLapTime: this.lapTimer.currentLapTime(this.time),
       lastLapTime: this.lapTimer.lastLapTime,
       bestLapTime: this.lapTimer.bestLapTime,
+      valid: this.lapTimer.valid,
     };
   }
 

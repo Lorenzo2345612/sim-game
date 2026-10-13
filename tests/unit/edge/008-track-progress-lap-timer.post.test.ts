@@ -17,7 +17,9 @@ function sig(e: LapEvent): string {
     ? `lapStarted/${e.lap}`
     : e.type === 'lapCompleted'
       ? `lapCompleted/${e.lap}`
-      : `sectorCompleted/${e.sector}`;
+      : e.type === 'sectorCompleted'
+        ? `sectorCompleted/${e.sector}`
+        : `lapInvalidated/${e.lap}`;
 }
 
 function circle(r: number, n: number): Point2[] {

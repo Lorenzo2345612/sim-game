@@ -41,7 +41,8 @@ export interface TrackData {
 export type LapEvent =
   | { type: 'lapStarted'; lap: number; time: number }
   | { type: 'sectorCompleted'; lap: number; sector: number; sectorTime: number }
-  | { type: 'lapCompleted'; lap: number; lapTime: number; isBest: boolean };
+  | { type: 'lapCompleted'; lap: number; lapTime: number; isBest: boolean }
+  | { type: 'lapInvalidated'; lap: number };
 
 export type Surface = 'asphalt' | 'kerb' | 'grass' | 'gravel' | 'runoff';
 export type Side = 'left' | 'right';

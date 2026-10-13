@@ -23,7 +23,9 @@ function sig(e: LapEvent): string {
     ? `lapStarted/${e.lap}`
     : e.type === 'lapCompleted'
       ? `lapCompleted/${e.lap}`
-      : `sectorCompleted/${e.sector}`;
+      : e.type === 'sectorCompleted'
+        ? `sectorCompleted/${e.sector}`
+        : `lapInvalidated/${e.lap}`;
 }
 
 function completed(events: LapEvent[]): Extract<LapEvent, { type: 'lapCompleted' }>[] {

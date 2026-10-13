@@ -352,7 +352,7 @@ describe('017 game edge cases', () => {
     within(cur.position.z, spawn.position.z, 0.05);
     within(cur.forwardSpeed, 0, 1e-6);
     within(game.simTime, 0, 1e-12);
-    expect(game.getLapInfo()).toEqual({ lap: 0, currentLapTime: null, lastLapTime: null, bestLapTime: null });
+    expect(game.getLapInfo()).toEqual({ lap: 0, currentLapTime: null, lastLapTime: null, bestLapTime: null, valid: true });
   }, 20000);
 
   it('EDGE8: the reset step snapshots prev from the pre-reset current state and still advances simTime by exactly one FIXED_DT', async () => {
