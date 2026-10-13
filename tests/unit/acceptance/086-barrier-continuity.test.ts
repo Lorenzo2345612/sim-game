@@ -165,7 +165,8 @@ describe('086 barrier continuity acceptance', () => {
         const my = ((track.elevation[i] ?? 0) + (track.elevation[j] ?? 0)) / 2 + 0.5;
         for (const side of ['left', 'right'] as const) {
           const s = side === 'right' ? 1 : -1;
-          const toi = castBarrierToi(world, mx, my, mz, s * rx, 0, s * rz, 45);
+          // 098: OSM gravel can be 40 m wide, pushing barriers to ~46 m; ray must still reach them
+          const toi = castBarrierToi(world, mx, my, mz, s * rx, 0, s * rz, 50);
           if (toi === null && !foldedInside(track, i, s)) missed.push(`${id} ${i} ${side}`);
         }
       }

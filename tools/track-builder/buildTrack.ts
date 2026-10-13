@@ -4,6 +4,7 @@ import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
+import { loadGravelPolygons } from './osmAreas';
 import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
@@ -104,7 +105,11 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const startHeight = limited[0];
   const elevation = limited.map((h) => h - startHeight);
   const kerbs = detectKerbs(centerline);
-  const runoffs = detectRunoffs(centerline);
+  const gravelPolygons = loadGravelPolygons(
+    join('assets/source/osm', `${config.id}-areas.json`),
+    origin,
+  );
+  const runoffs = detectRunoffs(centerline, gravelPolygons, config.widthMeters / 2, kerbs);
   const pit: PitLane = {
     start: indexAtMeters(cum, config.pit.fromMeters, lapLength),
     end: indexAtMeters(cum, config.pit.toMeters, lapLength),

@@ -1,10 +1,16 @@
 import type { Point2 } from '../../src/track/geo';
 import type { RunoffSegment, Side, TrackSegment } from '../../src/core/types';
-import { CORNER_RADIUS, KERB_RADIUS } from '../../src/core/constants';
+import { CORNER_RADIUS, KERB_RADIUS, KERB_WIDTH } from '../../src/core/constants';
 
 const OFFSET = 5;
 const CAP = 1e6;
 const MIN_KERB_RUN = 8;
+const GRAVEL_REACH = 40;
+const MIN_GRAVEL_RUN = 5;
+const MIN_EXTENT = 4;
+const MEDIAN_SPLIT = 6;
+const FALLBACK_RADIUS = 150;
+const GRAVEL_RADIUS = 100;
 
 const wrap = (v: number, n: number) => ((v % n) + n) % n;
 
@@ -91,18 +97,138 @@ export function detectKerbs(points: Point2[]): TrackSegment[] {
   return out.sort((a, b) => a.start - b.start);
 }
 
-export function detectRunoffs(points: Point2[]): RunoffSegment[] {
+function covers(seg: TrackSegment, i: number, n: number): boolean {
+  const len = ((seg.end - seg.start) % n + n) % n;
+  return ((i - seg.start) % n + n) % n <= len;
+}
+
+function rightNormal(points: Point2[], i: number, n: number): Point2 {
+  const prev = points[(i - 1 + n) % n];
+  const next = points[(i + 1) % n];
+  const dx = next[0] - prev[0];
+  const dz = next[1] - prev[1];
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-9) return [0, -1];
+  return [-dz / len, dx / len];
+}
+
+// Parameter of the farthest intersection of segment pq with any polygon edge, or -1.
+function farthestCrossing(p: Point2, q: Point2, polygons: Point2[][]): number {
+  let best = -1;
+  const pqx = q[0] - p[0];
+  const pqz = q[1] - p[1];
+  for (const ring of polygons) {
+    for (let k = 0; k < ring.length; k++) {
+      const a = ring[k];
+      const b = ring[(k + 1) % ring.length];
+      const d = pqx * (b[1] - a[1]) - pqz * (b[0] - a[0]);
+      if (Math.abs(d) < 1e-12) continue;
+      const t = ((a[0] - p[0]) * (b[1] - a[1]) - (a[1] - p[1]) * (b[0] - a[0])) / d;
+      const u = ((a[0] - p[0]) * pqz - (a[1] - p[1]) * pqx) / d;
+      if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+      if (t > best) best = t;
+    }
+  }
+  return best;
+}
+
+function gravelExtents(
+  points: Point2[], polygons: Point2[][], half: number, kerbs: TrackSegment[], side: Side,
+): (number | undefined)[] {
+  const n = points.length;
+  const sign = side === 'right' ? 1 : -1;
+  const out: (number | undefined)[] = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const kerbed = kerbs.some((k) => k.side === side && covers(k, i, n));
+    const edge = half + (kerbed ? KERB_WIDTH : 0);
+    const [nx, nz] = rightNormal(points, i, n);
+    const c = points[i];
+    const p: Point2 = [c[0] + nx * sign * edge, c[1] + nz * sign * edge];
+    const q: Point2 = [c[0] + nx * sign * (half + GRAVEL_REACH), c[1] + nz * sign * (half + GRAVEL_REACH)];
+    const t = farthestCrossing(p, q, polygons);
+    if (t < 0) continue;
+    out[i] = Math.min(Math.max(t * (half + GRAVEL_REACH - edge), MIN_EXTENT), GRAVEL_REACH);
+  }
+  return out;
+}
+
+function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+interface ExtentRun { start: number; end: number; width: number }
+
+function extentRuns(extents: (number | undefined)[], n: number): ExtentRun[] {
+  let anchor = 0;
+  while (anchor < n && extents[anchor] !== undefined) anchor++;
+  const from = anchor < n ? anchor + 1 : 0;
+  const runs: ExtentRun[] = [];
+  let cur: number[] = [];
+  const flush = () => {
+    if (cur.length >= MIN_GRAVEL_RUN) {
+      runs.push({ start: cur[0], end: cur[cur.length - 1], width: Math.round(median(cur.map((i) => extents[i] as number))) });
+    }
+    cur = [];
+  };
+  for (let k = from; k < from + n; k++) {
+    const i = k % n;
+    const e = extents[i];
+    if (e === undefined) {
+      flush();
+      continue;
+    }
+    if (cur.length && Math.abs(e - median(cur.map((j) => extents[j] as number))) > MEDIAN_SPLIT) flush();
+    cur.push(i);
+  }
+  flush();
+  return runs;
+}
+
+function overlapsRange(seg: TrackSegment, start: number, end: number, n: number): boolean {
+  const len = ((end - start) % n + n) % n;
+  for (let k = 0; k <= len; k++) {
+    if (covers(seg, (start + k) % n, n)) return true;
+  }
+  return false;
+}
+
+// OSM coverage counts within the same +-15 index slack the fallback rule grants the corner run.
+function osmCovers(osmRuns: RunoffSegment[], side: Side, start: number, end: number, n: number): boolean {
+  return osmRuns.some((r) =>
+    r.side === side && overlapsRange({ ...r, start: wrap(r.start - 15, n), end: wrap(r.end + 15, n) }, start, end, n));
+}
+
+export function detectRunoffs(
+  points: Point2[], gravel: Point2[][] = [], halfWidth = 6, kerbs: TrackSegment[] = [],
+): RunoffSegment[] {
   const n = points.length;
   if (n === 0) return [];
   const out: RunoffSegment[] = [];
+  const osmRuns: RunoffSegment[] = [];
+  if (gravel.length) {
+    for (const side of ['right', 'left'] as const) {
+      const extents = gravelExtents(points, gravel, halfWidth, kerbs, side);
+      for (const run of extentRuns(extents, n)) {
+        osmRuns.push({ start: run.start, end: run.end, side, surface: 'gravel', widthMeters: run.width });
+      }
+    }
+    out.push(...osmRuns);
+  }
   for (const run of analyze(points, CORNER_RADIUS)) {
-    const gravel = run.minRadius < 150;
+    if (run.minRadius >= FALLBACK_RADIUS) continue;
+    const side = opposite(run.side);
+    const start = wrap(run.start - 15, n);
+    const end = wrap(run.end + 15, n);
+    if (osmCovers(osmRuns, side, start, end, n)) continue;
+    const tight = run.minRadius < GRAVEL_RADIUS;
     out.push({
-      start: wrap(run.start - 15, n),
-      end: wrap(run.end + 15, n),
-      side: opposite(run.side),
-      surface: gravel ? 'gravel' : 'runoff',
-      widthMeters: gravel ? 18 : 12,
+      start,
+      end,
+      side,
+      surface: tight ? 'gravel' : 'runoff',
+      widthMeters: tight ? 18 : 12,
     });
   }
   return out.sort((a, b) => a.start - b.start);

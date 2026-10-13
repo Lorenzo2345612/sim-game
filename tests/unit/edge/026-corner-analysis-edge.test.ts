@@ -120,18 +120,12 @@ describe('026 corner analysis edge cases', () => {
     for (const v of r) expect(v).toBeCloseTo(1e6, 6);
   });
 
-  it('EDGE5: turns of r = 200 m (below KERB_RADIUS, at or above 150) get kerbs and asphalt 12 m run-offs', () => {
+  it('EDGE5: turns of r = 200 m (below KERB_RADIUS, at or above 150) get kerbs but no run-offs (098 rule)', () => {
     const pts = stadium(200, 315);
     const kerbs = detectKerbs(pts);
     expect(kerbs.filter(k => k.side === 'right')).toHaveLength(2);
     expect(kerbs.filter(k => k.side === 'left')).toHaveLength(2);
-    const runoff = detectRunoffs(pts);
-    expect(runoff).toHaveLength(2);
-    for (const s of runoff) {
-      expect(s.side).toBe('left');
-      expect(s.surface).toBe('runoff');
-      expect(s.widthMeters).toBeCloseTo(12, 9);
-    }
+    expect(detectRunoffs(pts)).toHaveLength(0); // min radius >= 150: no run-off since 098
   });
 
   it('EDGE6: run-off of a turn crossing index 0 wraps (end < start) instead of splitting', () => {

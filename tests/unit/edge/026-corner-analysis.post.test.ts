@@ -132,17 +132,19 @@ function specKerbs(pts: Point2[]): TrackSegment[] {
 
 function specRunoffs(pts: Point2[]): RunoffSegment[] {
   const n = pts.length;
-  return specRuns(pts, CORNER_RADIUS).map(run => {
-    const end = (run.end + 15) % n;
-    const gravel = run.minRadius < 150;
-    return {
-      start: (run.start - 15 + n) % n,
-      end,
-      side: opp(run.side),
-      surface: gravel ? 'gravel' : 'runoff',
-      widthMeters: gravel ? 18 : 12,
-    };
-  });
+  return specRuns(pts, CORNER_RADIUS)
+    .filter(run => run.minRadius < 150) // 098: no run-off for corners at or above 150 m
+    .map(run => {
+      const end = (run.end + 15) % n;
+      const gravel = run.minRadius < 100;
+      return {
+        start: (run.start - 15 + n) % n,
+        end,
+        side: opp(run.side),
+        surface: gravel ? 'gravel' : 'runoff',
+        widthMeters: gravel ? 18 : 12,
+      };
+    });
 }
 
 const canon = (segs: object[]): string[] =>
@@ -195,28 +197,26 @@ describe('026 corner analysis post-coder gaps', () => {
     }
   });
 
-  it('thresholds are strict: R = 450 loop is neither corner nor kerb, R = 260 gets a run-off but no kerbs', () => {
+  it('thresholds are strict: R = 450 loop is neither corner nor kerb, R = 260 gets no kerbs and no run-off (098)', () => {
     const wide = circle(450, 1414); // ~2 m spacing, radius >= CORNER_RADIUS (400)
     expect(detectKerbs(wide)).toEqual([]);
     expect(detectRunoffs(wide)).toEqual([]);
-    const mid = circle(260, 817); // >= KERB_RADIUS (250), < CORNER_RADIUS
+    const mid = circle(260, 817); // >= KERB_RADIUS (250), < CORNER_RADIUS, min radius >= 150
     expect(detectKerbs(mid)).toEqual([]);
-    const runoff = detectRunoffs(mid);
-    expect(runoff).toHaveLength(1);
-    expect(runoff[0].surface).toBe('runoff');
-    expect(runoff[0].widthMeters).toBe(12);
-    expect(runoff[0].side).toBe('right'); // CCW loop turns left; outside is right
+    expect(detectRunoffs(mid)).toEqual([]); // 098: sweeper, no run-off
   });
 
-  it('gravel/asphalt switch uses the run minimum radius against 150 m', () => {
-    const tight = circle(140, 440);
+  it('gravel/asphalt switch uses the run minimum radius against 150 m and 100 m', () => {
+    const gravel = circle(90, 283);
+    const paved = circle(140, 440);
     const loose = circle(160, 503);
-    expect(detectRunoffs(tight)).toEqual([
+    expect(detectRunoffs(gravel)).toEqual([
       { start: expect.any(Number), end: expect.any(Number), side: 'right', surface: 'gravel', widthMeters: 18 },
     ]);
-    expect(detectRunoffs(loose)).toEqual([
+    expect(detectRunoffs(paved)).toEqual([
       { start: expect.any(Number), end: expect.any(Number), side: 'right', surface: 'runoff', widthMeters: 12 },
     ]);
+    expect(detectRunoffs(loose)).toEqual([]); // 098: min radius >= 150, no run-off
   });
 
   it('all-qualifying loop is one run anchored at index 0 with exact extension bounds', () => {
@@ -248,7 +248,9 @@ describe('026 corner analysis post-coder gaps', () => {
           }
           expect(segs.map(s => s.start)).toEqual([...segs.map(s => s.start)].sort((a, b) => a - b));
         }
-        expect(detectKerbs(pts).length + detectRunoffs(pts).length).toBeGreaterThan(0);
+        if (detectKerbs(base).length > 0) { // stadium(300) has no kerbs and, since 098, no run-offs
+          expect(detectKerbs(pts).length + detectRunoffs(pts).length).toBeGreaterThan(0);
+        }
       }
     }
   });
@@ -280,25 +282,19 @@ describe('026 corner analysis post-coder gaps', () => {
     }
   });
 
-  it('threshold comparisons are strict near the constants: 248 gets kerbs but 252 none, 398 gets a run-off but 402 none, 148 is gravel but 152 asphalt', () => {
+  it('threshold comparisons are strict near the constants: 248 gets kerbs but 252 none, 398 and 402 get no run-off, 148 is paved but 152 none (098)', () => {
     expect(detectKerbs(circle(248, 777))).toHaveLength(2);
-    const at248 = detectRunoffs(circle(248, 777));
-    expect(at248).toHaveLength(1);
-    expect(at248[0].surface).toBe('runoff');
+    expect(detectRunoffs(circle(248, 777))).toEqual([]); // 098: min radius >= 150
     expect(detectKerbs(circle(252, 792))).toEqual([]);
-    const at252 = detectRunoffs(circle(252, 792));
-    expect(at252).toHaveLength(1);
-    expect(at252[0].surface).toBe('runoff');
-    expect(at252[0].widthMeters).toBe(12);
-    expect(detectRunoffs(circle(398, 1250))).toHaveLength(1);
+    expect(detectRunoffs(circle(252, 792))).toEqual([]);
+    expect(detectRunoffs(circle(398, 1250))).toEqual([]);
     expect(detectRunoffs(circle(402, 1263))).toEqual([]);
     expect(detectKerbs(circle(402, 1263))).toEqual([]);
-    const gravel = detectRunoffs(circle(148, 465));
-    expect(gravel[0].surface).toBe('gravel');
-    expect(gravel[0].widthMeters).toBe(18);
-    const asphalt = detectRunoffs(circle(152, 478));
-    expect(asphalt[0].surface).toBe('runoff');
-    expect(asphalt[0].widthMeters).toBe(12);
+    const tight = detectRunoffs(circle(148, 465));
+    expect(tight).toHaveLength(1); // 098: below 150 keeps a run-off
+    expect(tight[0].surface).toBe('runoff'); // but 148 >= 100, so paved
+    expect(tight[0].widthMeters).toBe(12);
+    expect(detectRunoffs(circle(152, 478))).toEqual([]); // 098: min radius >= 150
   });
 
   it('a loop whose turning side flips with no straight between the arcs splits into two runs, one kerb pair each', () => {
@@ -331,11 +327,14 @@ describe('026 corner analysis post-coder gaps', () => {
       expect(kerbs.some(k => k.side === side)).toBe(true);
     }
     expect(runoff.length).toBe(kerbs.length / 2);
-    expect(runoff.some(s => s.surface === 'gravel')).toBe(true);
+    expect(runoff.every(s => s.surface === 'runoff' && s.widthMeters === 12)).toBe(true); // 098: every run min radius in [100, 150)
   });
 
   it('segment indices shift exactly with a rotation of the input on every non-degenerate fixture', () => {
-    const fixtures = [stadium(80, 126), stadium(300, 471), manyCorners(50, 3, 20), rose(), kinkLoop()];
+    const sweeper = stadium(300, 471); // no kerbs and, since 098, no run-offs
+    expect(detectKerbs(sweeper)).toEqual([]);
+    expect(detectRunoffs(sweeper)).toEqual([]);
+    const fixtures = [stadium(80, 126), manyCorners(50, 3, 20), rose(), kinkLoop()];
     for (const base of fixtures) {
       const n = base.length;
       const k0 = detectKerbs(base);

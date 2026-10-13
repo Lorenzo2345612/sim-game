@@ -152,25 +152,27 @@ describe('097 terrain below strips acceptance', () => {
     expect(failures.length, failures.slice(0, 12).join('; ')).toBe(0);
   }, 120000);
 
-  it('AT3: the regenerated tracks change only terrain.heights (each change a decrease); every other field matches the pre-task JSON', () => {
+  it('AT3: the regenerated tracks change only terrain.heights plus the fields task 098 owns (run-offs, barriers, trees); every other field matches the pre-task JSON', () => {
     const baseRev = execFileSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
+    // 098 moved the run-off strips, so barriers/trees follow them and the strip clamp may
+    // raise or lower terrain.heights; the 097 decrease-only invariant no longer applies.
+    const pin = (t: TrackDataV2): Record<string, unknown> => {
+      const copy: Record<string, unknown> = { ...t, terrain: { ...t.terrain, heights: [] } };
+      delete copy.runoffs;
+      delete copy.barriers;
+      delete copy.trees;
+      return copy;
+    };
     for (const id of IDS) {
       const now = loadTrack(id);
       const prev = JSON.parse(
         execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }),
       ) as TrackDataV2;
       expect(
-        { ...now, terrain: { ...now.terrain, heights: [] } },
-        `${id}: fields other than terrain.heights changed`,
-      ).toEqual({ ...prev, terrain: { ...prev.terrain, heights: [] } });
+        pin(now),
+        `${id}: fields other than run-offs/terrain.heights changed`,
+      ).toEqual(pin(prev));
       expect(now.terrain.heights.length, `${id}: heights length`).toBe(prev.terrain.heights.length);
-      const increased: string[] = [];
-      for (let k = 0; k < now.terrain.heights.length; k++) {
-        if (now.terrain.heights[k] > prev.terrain.heights[k]) {
-          increased.push(`${id}[${k}]: ${now.terrain.heights[k]} > ${prev.terrain.heights[k]}`);
-        }
-      }
-      expect(increased.length, `heights increased: ${increased.slice(0, 8).join(', ')}`).toBe(0);
     }
   }, 120000);
 
