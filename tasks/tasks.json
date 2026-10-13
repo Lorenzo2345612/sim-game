@@ -1154,7 +1154,7 @@
     {
       "num": "086",
       "title": "Continuous barriers (no gaps between segments)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "043",
         "077"
@@ -1231,7 +1231,7 @@
     {
       "num": "092",
       "title": "Race classification",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
