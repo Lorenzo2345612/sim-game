@@ -100,7 +100,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
-| 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | in progress | 097 |
+| 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
 | 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | pending | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | in progress | - |
 | 101 | Tree field uses baked LODs | pending | 100, 039 |
