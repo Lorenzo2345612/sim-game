@@ -145,6 +145,24 @@
       ]
     },
     {
+      "id": "M1.2c",
+      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
+      "tasks": [
+        "099",
+        "100",
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106"
+      ],
+      "status": "open",
+      "prefetch": [
+        "100"
+      ]
+    },
+    {
       "id": "M1.5",
       "title": "Vehicle dynamics: in-house tyre/suspension/powertrain model, setups, tyre wear, fuel",
       "status": "open",
@@ -172,24 +190,6 @@
         "063",
         "064",
         "067"
-      ]
-    },
-    {
-      "id": "M1.2c",
-      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
-      "tasks": [
-        "099",
-        "100",
-        "101",
-        "102",
-        "103",
-        "104",
-        "105",
-        "106"
-      ],
-      "status": "open",
-      "prefetch": [
-        "100"
       ]
     },
     {
