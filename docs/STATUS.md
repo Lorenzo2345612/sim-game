@@ -45,3 +45,5 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - Phase 0 visual polish noted: Kenney wheel pivot offset, no shadows (Phase 1 task 042 adds them), all Kenney assets to be removed with the F4 car.
 
 - 2026-10-13 stop: orchestrator and dashboard stopped for shutdown (61/84 done, M1.2 7/10). Pending decision: 071-tester AT3. Relaunch with the same commands as above.
+
+- Known geometry issue (2026-10-13, from 097): wide run-offs/verges of one section overlap a neighbouring section (Monza rows 319-325 verge over rows 343-346, Spa ~3340 left), ~0.2-0.7 m apart in height. Candidate fix: cap strip lateral extent where another section is closer (task after M1.2 review if visible).
