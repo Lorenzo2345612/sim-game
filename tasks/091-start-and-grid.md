@@ -41,7 +41,7 @@ export function isJumpStart(movedMeters: number, phase: StartPhase): boolean;
 - `gridSlots`: slot k (0 = pole) at distance d = 6 + spacing·k behind centerline index 0, measured along the centerline backwards (wrapping from index 0 to the last point, linear interpolation between points); lateral = (k even ? +1 : −1)·widthMeters/4 (pole on the right); `yaw` = track direction at that point (segment containing it); `position.y` = interpolated `elevation` + 0.6; x,z = centerline point + lateral · right normal.
 - `isJumpStart(m, phase)` = `m > 0.5 && phase !== 'go'`.
 
-Conventions: times in seconds, distances in metres; `count` ≤ 0 → empty array; `count` larger than the lap just keeps wrapping; `update` with dt ≤ 0 is a no-op; no input is mutated.
+Conventions: phase boundaries are reached when accumulated time ≥ boundary − 1e-9 s (time is a sum of dt steps, e.g. 240 × 1/120 = 1.9999999999999953); times in seconds, distances in metres; `count` ≤ 0 → empty array; `count` larger than the lap just keeps wrapping; `update` with dt ≤ 0 is a no-op; no input is mutated.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
