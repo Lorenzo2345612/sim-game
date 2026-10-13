@@ -844,7 +844,7 @@
     {
       "num": "063",
       "title": "Brakes, ABS/TC and fuel",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058"
       ],
@@ -857,7 +857,7 @@
     {
       "num": "064",
       "title": "Implicit wheel solver",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "059"
@@ -908,7 +908,7 @@
     {
       "num": "067",
       "title": "Car setups (pure)",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "058"
       ],

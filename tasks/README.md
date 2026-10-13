@@ -66,11 +66,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 060 | Tyre temperature, wear and pressure | waiting decision | 058 |
 | 061 | Suspension, anti-roll and aero | done | 058 |
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | in progress | 058, 045 |
-| 063 | Brakes, ABS/TC and fuel | in progress | 058 |
-| 064 | Implicit wheel solver | pending | 058, 059 |
+| 063 | Brakes, ABS/TC and fuel | waiting decision | 058 |
+| 064 | Implicit wheel solver | in progress | 058, 059 |
 | 065 | Vehicle model on Rapier | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
-| 067 | Car setups (pure) | pending | 058 |
+| 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | pending | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
