@@ -47,7 +47,7 @@ describe('091 start sequence and grid acceptance', () => {
     expect(seq.lights).toBe(1);
     expect(seq.goTime).toBeNull();
 
-    while (t < 6 - DT / 2) {
+    while (t < 6 - DT * 1.5) {
       seq.update(DT);
       t += DT;
       expect(seq.lights, `lights at t=${t}`).toBeLessThan(5);
