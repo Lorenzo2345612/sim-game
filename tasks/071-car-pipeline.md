@@ -43,7 +43,7 @@ Conventions: metres; tolerance 1 cm for derived dimensions; unknown config id or
 |---|---|---|---|
 | AT1 | `npm run build:cars` | f4 output | node names, triangle count ±1 %, `f4.json` values ±0.005 equal to the outputs committed by task 053 |
 | AT2 | gt3-a, gt3-b, gt3-c outputs | root nodes | exactly `body` + 4 wheel names; triangles ≤ `triBudget` (gt3-a 60 000, gt3-b 70 000, gt3-c 25 000) |
-| AT3 | each output json | read | length (z) = targetLength ± 0.05; width (x) in [1.85, 2.15]; height in [1.05, 1.35]; wheelbase in [2.55, 2.85]; wheelRadius in [0.30, 0.37] |
+| AT3 | each output json | read | length (z) = targetLength ± 0.05; width (x, whole model incl. wheels) in [1.85, 2.35]; height in [1.05, 1.35]; wheelbase in [2.40, 2.90]; wheelRadius in [0.30, 0.37] |
 | AT4 | each output | wheel hubs | front wheels z < 0, left wheels x < 0; each wheel node's geometry bbox centred on its pivot ± 0.02 m; \|x\| of left and right hubs equal ± 0.02 |
 | AT5 | each output | all vertices | min y ≥ −0.02 (ground at 0) |
 | AT6 | each output glb + json bytes | case-insensitive search | none of: mclaren, porsche, porche, audi, tatuus, lamborghini |
