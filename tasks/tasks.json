@@ -832,7 +832,8 @@
       "title": "Powertrain: engine, launch rpm, differential, generalised gearbox",
       "status": "pending",
       "deps": [
-        "058"
+        "058",
+        "045"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -858,7 +859,8 @@
       "title": "Implicit wheel solver",
       "status": "pending",
       "deps": [
-        "058"
+        "058",
+        "059"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -871,7 +873,17 @@
       "title": "Vehicle model on Rapier",
       "status": "pending",
       "deps": [
-        "058"
+        "058",
+        "059",
+        "060",
+        "061",
+        "062",
+        "063",
+        "064",
+        "033",
+        "045",
+        "054",
+        "057"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -884,7 +896,8 @@
       "title": "Calibration suite and F4 tuning",
       "status": "pending",
       "deps": [
-        "058"
+        "058",
+        "065"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -910,7 +923,10 @@
       "title": "Setup screen",
       "status": "pending",
       "deps": [
-        "058"
+        "058",
+        "067",
+        "044",
+        "054"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -923,7 +939,8 @@
       "title": "HUD tyres and fuel widget",
       "status": "pending",
       "deps": [
-        "048"
+        "048",
+        "065"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -936,7 +953,14 @@
       "title": "Integrate the new vehicle model in the game",
       "status": "pending",
       "deps": [
-        "054"
+        "054",
+        "057",
+        "058",
+        "065",
+        "066",
+        "067",
+        "068",
+        "069"
       ],
       "complexity": "complex",
       "type": "feature",
