@@ -26,7 +26,7 @@ Track data was built by the planner (`tools/track-builder/tracks.json` entries, 
 
 ## Steps
 
-- Environment: mexico and daytona use `kloofendal_48d_partly_cloudy_puresky`; lusail uses the desert clear-sky HDRI if one is installed in `public/hdri/` (else the partly cloudy one); fog densities: mexico 0.0005, daytona 0.0004, lusail 0.0003.
+- Environment: mexico and daytona use `kloofendal_48d_partly_cloudy_puresky`; lusail uses `qwantani_noon_puresky` (clear midday); fog densities: mexico 0.0005, daytona 0.0004, lusail 0.0003.
 - Sources: mexico {bacinger/f1-circuits, MIT, https://github.com/bacinger/f1-circuits}; daytona and lusail {OpenStreetMap, ODbL 1.0, https://www.openstreetmap.org/copyright}.
 - Existing three tracks' JSON must not change.
 
