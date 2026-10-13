@@ -89,9 +89,13 @@ def claude_dirs(root=ROOT):
     env = os.environ.get("CLAUDE_PROJECTS_DIR")
     if env:
         return [Path(env)]
-    base = Path.home() / ".claude/projects"
+    bases = [Path.home() / ".claude"]
+    cfg = os.environ.get("CLAUDE_CONFIG_DIR_PLANNER") or os.environ.get("CLAUDE_CONFIG_DIR")
+    if cfg and Path(cfg).resolve() != bases[0].resolve():
+        bases.append(Path(cfg))
     slug = re.sub(r"[^A-Za-z0-9]", "-", str(root))
-    return [d for d in sorted(base.glob(slug + "*")) if d.name == slug or d.name.startswith(slug + "--claude-worktrees")]
+    return [d for b in bases for d in sorted((b / "projects").glob(slug + "*"))
+            if d.name == slug or d.name.startswith(slug + "--claude-worktrees")]
 
 
 def _text(content):
@@ -160,28 +164,32 @@ def _runs_from(parsed, role, task, extra):
 
 
 def load_claude_runs(dirs=None):
-    runs = []
+    runs, latest = [], {}
     for d in claude_dirs() if dirs is None else dirs:
         if not d.is_dir():
             continue
         for path in sorted(d.glob("*.jsonl")) + sorted(d.glob("*/subagents/*.jsonl")):
+            key = (d.name, str(path.relative_to(d)))  # session copied across config dirs: keep the longest copy
+            if key not in latest or path.stat().st_size > latest[key].stat().st_size:
+                latest[key] = path
+    for path in latest.values():
+        try:
+            p = _parsed(path)
+        except OSError:
+            continue
+        if p["worker"] or not p["msgs"]:
+            continue
+        if path.parent.name == "subagents":
+            meta = {}
             try:
-                p = _parsed(path)
-            except OSError:
-                continue
-            if p["worker"] or not p["msgs"]:
-                continue
-            if path.parent.name == "subagents":
-                meta = {}
-                try:
-                    meta = json.loads(path.with_suffix(".meta.json").read_text())
-                except (OSError, ValueError):
-                    pass
-                refs = set(TASK_REF.findall(p["prompt"]))
-                runs += _runs_from(p, "planner-subagent", refs.pop() if len(refs) == 1 else PLANNING,
-                                   {"agent": meta.get("agentType", ""), "description": meta.get("description", "")})
-            else:
-                runs += _runs_from(p, "planner", PLANNING, {"agent": "", "description": ""})
+                meta = json.loads(path.with_suffix(".meta.json").read_text())
+            except (OSError, ValueError):
+                pass
+            refs = set(TASK_REF.findall(p["prompt"]))
+            runs += _runs_from(p, "planner-subagent", refs.pop() if len(refs) == 1 else PLANNING,
+                               {"agent": meta.get("agentType", ""), "description": meta.get("description", "")})
+        else:
+            runs += _runs_from(p, "planner", PLANNING, {"agent": "", "description": ""})
     return runs
 
 
