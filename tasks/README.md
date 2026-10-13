@@ -60,7 +60,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 054 | Wire gameplay features into the game | in progress | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | done | 030, 032, 033, 034, 035, 036, 037 |
-| 057 | Use the F4 car in the game and remove the Kenney placeholder | pending | 053, 056 |
+| 057 | Use the F4 car in the game and remove the Kenney placeholder | waiting decision | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | done | 058 |
 | 060 | Tyre temperature, wear and pressure | done | 058 |
@@ -90,11 +90,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
-| 088 | Speed profile and car limits | waiting decision | 087, 058 |
+| 088 | Speed profile and car limits | in progress | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
-| 092 | Race classification | in progress | - |
+| 092 | Race classification | done | - |
 | 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |

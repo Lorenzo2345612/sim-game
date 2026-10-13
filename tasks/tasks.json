@@ -766,7 +766,7 @@
     {
       "num": "057",
       "title": "Use the F4 car in the game and remove the Kenney placeholder",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "053",
         "056"
@@ -1179,7 +1179,7 @@
     {
       "num": "088",
       "title": "Speed profile and car limits",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "087",
         "058"
@@ -1231,7 +1231,7 @@
     {
       "num": "092",
       "title": "Race classification",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
