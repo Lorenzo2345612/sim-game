@@ -34,7 +34,7 @@ describe('buildTrackSurfaces', () => {
     expect(left.positions.length).toBe(right.positions.length);
     for (let i = 0; i < left.positions.length / 3; i++) {
       const pair = Math.floor(i / 2);
-      const [cx, cz] = circleTrack.centerline[(10 + pair) % N];
+      const [cx, cz] = circleTrack.centerline[(9 + pair) % N];
       const mirror = [2 * pair, 2 * pair + 1].some((k) => {
         return (
           Math.abs(right.positions[3 * k] - (2 * cx - left.positions[3 * i])) <= 1e-3 &&
@@ -47,7 +47,7 @@ describe('buildTrackSurfaces', () => {
     }
   });
 
-  it('gives a kerb of k points exactly 2k vertices', () => {
+  it('gives a kerb of k points exactly 2(k + 2) vertices (one transition row each side)', () => {
     for (const [start, end] of [
       [10, 30],
       [115, 5],
@@ -55,7 +55,7 @@ describe('buildTrackSurfaces', () => {
     ] as const) {
       const k = ((end - start + N) % N) + 1;
       const s = buildTrackSurfaces(circleV2(zeros(), [{ start, end, side: 'left' }], []))[1];
-      expect(s.positions.length / 3).toBe(2 * k);
+      expect(s.positions.length / 3).toBe(2 * (k + 2));
     }
   });
 

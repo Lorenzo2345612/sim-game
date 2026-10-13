@@ -104,15 +104,21 @@ function segmentRows(
   const n = cx.length;
   const k = segmentLength(start, end, n);
   if (k < 2) return [];
+  // One extra row each side covers the band to the neighbouring row; skipped when the
+  // segment covers the whole ring or the extension would wrap onto itself (k + 2 > n).
+  const ext = k + 2 <= n ? 1 : 0;
   const rows: Vertex[][] = [];
   let s = 0;
-  let prevX = cx[start][0];
-  let prevZ = cx[start][1];
-  for (let j = 0; j < k; j++) {
-    const idx = (start + j) % n;
+  let s0 = 0;
+  const first = normIndex(start - ext, n);
+  let prevX = cx[first][0];
+  let prevZ = cx[first][1];
+  for (let j = 0; j < k + 2 * ext; j++) {
+    const idx = normIndex(start - ext + j, n);
     const x = cx[idx][0];
     const z = cx[idx][1];
     if (j > 0) s += Math.hypot(x - prevX, z - prevZ);
+    if (j === ext) s0 = s;
     prevX = x;
     prevZ = z;
     const [latMin, latMax, u0, u1] = latOf(idx);
@@ -123,6 +129,14 @@ function segmentRows(
       { x: x + rx * latMin, y, z: z + rz * latMin, u: u0, v },
       { x: x + rx * latMax, y, z: z + rz * latMax, u: u1, v },
     ]);
+  }
+  // Re-base v on the original start row so it stays 0 there and negative on the pre-row.
+  const shift = s0 / vScale;
+  if (shift !== 0) {
+    for (const row of rows) {
+      row[0].v -= shift;
+      row[1].v -= shift;
+    }
   }
   return rows;
 }

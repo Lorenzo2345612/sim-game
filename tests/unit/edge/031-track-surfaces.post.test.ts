@@ -128,8 +128,8 @@ describe('031 track surfaces post-code edge cases', () => {
     );
     expect(strips.length).toBe(2);
     const s = strips[1];
-    expect(s.positions.length / 3).toBe(22);
-    for (let j = 0; j <= 10; j++) {
+    expect(s.positions.length / 3).toBe(26);
+    for (let j = 0; j <= 12; j++) {
       expect(Math.abs(radial(s, 2 * j) - 94)).toBeLessThanOrEqual(1e-3);
       expect(Math.abs(radial(s, 2 * j + 1) - 94)).toBeLessThanOrEqual(1e-3);
     }
@@ -141,8 +141,8 @@ describe('031 track surfaces post-code edge cases', () => {
       circleV2(zeros(), [], [{ start: 50, end: 60, side: 'right', surface: 'gravel', widthMeters: -18 }]),
     );
     const s = strips[1];
-    expect(s.positions.length / 3).toBe(22);
-    for (let j = 0; j <= 10; j++) {
+    expect(s.positions.length / 3).toBe(26);
+    for (let j = 0; j <= 12; j++) {
       expectPairRadii(s, j, [94, 112]);
     }
     expectFinite(s);
@@ -158,9 +158,9 @@ describe('031 track surfaces post-code edge cases', () => {
       ),
     );
     const s = strips[2];
-    expect(s.positions.length / 3).toBe(42);
-    for (let j = 0; j <= 20; j++) {
-      const pushed = j >= 5 && j <= 15;
+    expect(s.positions.length / 3).toBe(46);
+    for (let j = 0; j <= 22; j++) {
+      const pushed = j >= 6 && j <= 16;
       expectPairRadii(s, j, pushed ? [92.8, 74.8] : [94, 76]);
     }
   });
@@ -217,12 +217,12 @@ describe('031 track surfaces post-code edge cases', () => {
       circleV2(zeros(), [], [{ start: 50, end: 60, side: 'left', surface: 'gravel', widthMeters: 18 }]),
     );
     const s = strips[1];
-    for (let j = 0; j <= 10; j++) {
+    for (let j = 0; j <= 12; j++) {
       expectPairRadii(s, j, [106, 124]);
       for (const k of [2 * j, 2 * j + 1]) {
         const inner = Math.abs(radial(s, k) - 106) <= 1e-3;
         expect(s.uvs[2 * k]).toBeCloseTo(inner ? -0.6 : -2.4, 5);
-        expect(s.uvs[2 * k + 1]).toBeCloseTo((j * C) / 10, 3);
+        expect(s.uvs[2 * k + 1]).toBeCloseTo(((j - 1) * C) / 10, 3);
       }
     }
   });

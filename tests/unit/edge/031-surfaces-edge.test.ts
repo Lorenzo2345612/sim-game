@@ -75,8 +75,8 @@ describe('031 track surfaces edge cases', () => {
   it('EDGE1: right-side kerb mirrors the left-side kerb about the centerline and faces up', () => {
     const left = buildTrackSurfaces(circleV2(zeros(), [{ start: 10, end: 30, side: 'left' }], []))[1];
     const right = buildTrackSurfaces(circleV2(zeros(), [{ start: 10, end: 30, side: 'right' }], []))[1];
-    for (let j = 0; j <= 20; j++) {
-      const [cx, cz] = onCircle(10 + j, R);
+    for (let j = 0; j <= 22; j++) {
+      const [cx, cz] = onCircle(9 + j, R);
       expectPairRadii(left, j, [106, 107.2]);
       expectPairRadii(right, j, [94, 92.8]);
       for (const ka of [2 * j, 2 * j + 1]) {
@@ -94,12 +94,12 @@ describe('031 track surfaces edge cases', () => {
     facesUp(right);
   });
 
-  it('EDGE2: a two-point open segment yields one quad of 4 vertices and 6 indices', () => {
+  it('EDGE2: a two-point open segment yields 4 rows (transition rows included) of 8 vertices and 18 indices', () => {
     const s = buildTrackSurfaces(circleV2(zeros(), [{ start: 0, end: 1, side: 'left' }], []))[1];
-    expect(s.positions.length / 3).toBe(4);
-    expect(s.indices.length).toBe(6);
+    expect(s.positions.length / 3).toBe(8);
+    expect(s.indices.length).toBe(18);
     const used = new Set(Array.from(s.indices));
-    expect(used).toEqual(new Set([0, 1, 2, 3]));
+    expect(used).toEqual(new Set([0, 1, 2, 3, 4, 5, 6, 7]));
     facesUp(s);
   });
 
@@ -118,7 +118,7 @@ describe('031 track surfaces edge cases', () => {
       ),
     );
     expect(strips.map((s: SurfaceStrip) => s.surface)).toEqual(['asphalt', 'kerb', 'kerb', 'gravel', 'runoff']);
-    const starts = [80, 10, 40, 20];
+    const starts = [79, 9, 39, 19];
     const innerRadii = [94, 106, 94, 94];
     for (let n = 0; n < 4; n++) {
       const s = strips[n + 1];
@@ -155,9 +155,9 @@ describe('031 track surfaces edge cases', () => {
       circleV2(zeros(), [], [{ start: 50, end: 60, side: 'right', surface: 'gravel', widthMeters: 18 }]),
     );
     const s = strips[1];
-    for (let j = 0; j <= 10; j++) {
+    for (let j = 0; j <= 12; j++) {
       expectPairRadii(s, j, [94, 76]);
-      const vExp = (j * C) / 10;
+      const vExp = ((j - 1) * C) / 10;
       for (const k of [2 * j, 2 * j + 1]) {
         const uExp = Math.abs(radial(s, k) - 94) <= 1e-3 ? 0.6 : 2.4;
         expect(s.uvs[2 * k]).toBeCloseTo(uExp, 5);
@@ -175,9 +175,9 @@ describe('031 track surfaces edge cases', () => {
       ),
     );
     const s = strips[2];
-    expect(s.positions.length / 3).toBe(42);
-    for (let j = 0; j <= 20; j++) {
-      expectPairRadii(s, j, j <= 9 ? [94, 76] : [92.8, 74.8]);
+    expect(s.positions.length / 3).toBe(46);
+    for (let j = 0; j <= 22; j++) {
+      expectPairRadii(s, j, j >= 11 && j <= 21 ? [92.8, 74.8] : [94, 76]);
     }
   });
 
@@ -191,7 +191,7 @@ describe('031 track surfaces edge cases', () => {
     );
     const s = strips[2];
     expect(s.surface).toBe('gravel');
-    for (let j = 0; j <= 10; j++) {
+    for (let j = 0; j <= 12; j++) {
       expectPairRadii(s, j, [106, 124]);
     }
     facesUp(s);
@@ -199,8 +199,8 @@ describe('031 track surfaces edge cases', () => {
 
   it('EDGE9: a wrapped kerb keeps v = s/1.5 continuous across index 0', () => {
     const s = buildTrackSurfaces(circleV2(zeros(), [{ start: 115, end: 5, side: 'left' }], []))[1];
-    for (let j = 0; j <= 10; j++) {
-      const vExp = (j * C) / 1.5;
+    for (let j = 0; j <= 12; j++) {
+      const vExp = ((j - 1) * C) / 1.5;
       for (const k of [2 * j, 2 * j + 1]) {
         const inner = Math.abs(radial(s, k) - 106) <= 1e-3;
         expect(s.uvs[2 * k]).toBeCloseTo(inner ? 0 : 1, 5);
@@ -220,10 +220,10 @@ describe('031 track surfaces edge cases', () => {
     );
     const kerb = strips[1];
     const gravel = strips[2];
-    for (let j = 0; j <= 2; j++) {
+    for (let j = 0; j <= 4; j++) {
       for (const k of [2 * j, 2 * j + 1]) {
-        expect(yAt(kerb, k)).toBeCloseTo(elevation[10 + j] + 0.04, 4);
-        expect(yAt(gravel, k)).toBeCloseTo(elevation[50 + j] + 0.01, 4);
+        expect(yAt(kerb, k)).toBeCloseTo(elevation[9 + j] + 0.04, 4);
+        expect(yAt(gravel, k)).toBeCloseTo(elevation[49 + j] + 0.01, 4);
       }
     }
   });

@@ -92,13 +92,13 @@ describe('031 track surfaces geometry acceptance', () => {
     expect(strips.length).toBe(2);
     const s = strips[1];
     expect(s.surface).toBe('kerb');
-    expect(s.positions.length / 3).toBe(42);
+    expect(s.positions.length / 3).toBe(46);
     expectRadiusIn(s, [106, 107.2]);
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < 46; i++) {
       expect(Math.abs(yAt(s, i) - 0.04)).toBeLessThanOrEqual(1e-4);
     }
-    for (let j = 0; j <= 20; j++) {
-      const vExp = (j * C) / 1.5;
+    for (let j = 0; j <= 22; j++) {
+      const vExp = ((j - 1) * C) / 1.5;
       for (const k of [2 * j, 2 * j + 1]) {
         const inner = Math.abs(radial(s, k) - 106) <= 1e-3;
         expect(s.uvs[2 * k]).toBeCloseTo(inner ? 0 : 1, 5);
@@ -114,9 +114,9 @@ describe('031 track surfaces geometry acceptance', () => {
     );
     const s = strips[1];
     expect(s.surface).toBe('gravel');
-    expect(s.positions.length / 3).toBe(22);
+    expect(s.positions.length / 3).toBe(26);
     expectRadiusIn(s, [94, 76]);
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 26; i++) {
       expect(Math.abs(yAt(s, i) - 0.01)).toBeLessThanOrEqual(1e-4);
     }
     facesUp(s);
@@ -132,13 +132,14 @@ describe('031 track surfaces geometry acceptance', () => {
     );
     expect(strips.map((s: SurfaceStrip) => s.surface)).toEqual(['asphalt', 'kerb', 'gravel']);
     expectRadiusIn(strips[1], [94, 92.8]);
-    expectRadiusIn(strips[2], [92.8, 74.8]);
+    // The transition rows at 49 and 61 are outside the kerb, so the runoff is unpushed there.
+    expectRadiusIn(strips[2], [92.8, 74.8, 94, 76]);
   });
 
   it('AT6: wrapped kerb 115..5 is finite, starts at point 115 and keeps inner spacing across index 0', () => {
     const strips = buildTrackSurfaces(circleV2(zeros(), [{ start: 115, end: 5, side: 'right' }], []));
     const s = strips[1];
-    expect(s.positions.length / 3).toBe(22);
+    expect(s.positions.length / 3).toBe(26);
     for (let i = 0; i < s.positions.length; i++) {
       expect(Number.isFinite(s.positions[i])).toBe(true);
     }
@@ -148,10 +149,10 @@ describe('031 track surfaces geometry acceptance', () => {
       return Math.abs(radial(s, a) - 94) <= Math.abs(radial(s, b) - 94) ? a : b;
     };
     const first = innerOf(0);
-    const theta = (2 * Math.PI * 115) / 120;
+    const theta = (2 * Math.PI * 114) / 120;
     expect(Math.abs(s.positions[3 * first] - 94 * Math.cos(theta))).toBeLessThanOrEqual(1e-3);
     expect(Math.abs(s.positions[3 * first + 2] - 94 * Math.sin(theta))).toBeLessThanOrEqual(1e-3);
-    for (let j = 0; j < 10; j++) {
+    for (let j = 0; j < 12; j++) {
       const p = innerOf(j);
       const q = innerOf(j + 1);
       const d = Math.hypot(s.positions[3 * q] - s.positions[3 * p], s.positions[3 * q + 2] - s.positions[3 * p + 2]);
