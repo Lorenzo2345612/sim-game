@@ -830,7 +830,7 @@
     {
       "num": "062",
       "title": "Powertrain: engine, launch rpm, differential, generalised gearbox",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "045"
@@ -971,7 +971,7 @@
     {
       "num": "071",
       "title": "Generic car asset pipeline",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "053"
       ],
