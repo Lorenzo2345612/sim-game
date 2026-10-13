@@ -1123,6 +1123,20 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/082-track-markings.md"
+    },
+    {
+      "num": "083",
+      "title": "Textured barriers (armco, concrete, tyres)",
+      "status": "pending",
+      "deps": [
+        "080",
+        "043"
+      ],
+      "complexity": "standard",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/083-barrier-textures.md"
     }
   ]
 }
