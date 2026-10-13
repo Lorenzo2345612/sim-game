@@ -47,7 +47,7 @@ Conventions: no rounding; inclusive segment ends; empty `barriers` gives `[]`; n
 | AT1 | ring fixture R 100, N 120, width 12; left barriers [0..59] offset 10 and [60..119] offset 20 | barrierRuns(track,'left') | exactly 1 run of 120 vertices, closed; vertex 59 at radial distance 110 ± 1e-6, vertex 60 at 120 ± 1e-6 |
 | AT2 | same fixture, left barriers [0..39] and [60..119] (indices 40..59 uncovered) | barrierRuns | exactly 1 run of 100 vertices starting at index 60 and ending at index 39 (wrap joined), not closed |
 | AT3 | same fixture as AT1 in a Rapier world via addTrackColliders | horizontal ray from the centre-line point halfway between indices 59 and 60 (and between 119 and 0), y 0.5, pointing outward along the left normal, length 40, filtered to non-surface colliders (surfaceOf = null) | hits, toi in [10 − 0.5, 20 + 0.5] |
-| AT4 | public/tracks/monza.json, spa.json, silverstone.json with addTrackColliders | for every centerline index i and both sides: ray from the midpoint of i and i+1 at elevation + 0.5, along the side's normal, length 45, filtered to surfaceOf = null | hits for 100 % of samples |
+| AT4 | public/tracks/monza.json, spa.json, silverstone.json with addTrackColliders | for every centerline index i and both sides: ray from the midpoint of i and i+1 at elevation + 0.5, along the side's normal, length 45, filtered to surfaceOf = null | hits for 100 % of samples, except on the inside of corners whose radius (Menger, ±3 points) is below the side's max barrier offset + 5 m (the offset polyline folds there) |
 | AT5 | AT1 fixture | createBarrierObject | the barrier geometry has a triangle using a vertex at (index 59, radius 110) and one at (index 60, radius 120) (± 1e-3) |
 
 ## Acceptance criteria
