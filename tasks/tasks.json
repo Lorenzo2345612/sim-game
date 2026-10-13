@@ -1026,7 +1026,7 @@
     {
       "num": "075",
       "title": "Car pipeline: textures and wheel nodes; build gt3-d",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "071"
       ],
@@ -1310,7 +1310,7 @@
     {
       "num": "097",
       "title": "Keep the terrain below every track surface strip",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "096",
         "085"

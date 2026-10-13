@@ -78,7 +78,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
 | 074 | Credits screen | pending | 044 |
-| 075 | Car pipeline: textures and wheel nodes; build gt3-d | pending | 071 |
+| 075 | Car pipeline: textures and wheel nodes; build gt3-d | in progress | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
 | 078 | Add reverse gear | pending | 054 |
@@ -99,4 +99,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
-| 097 | Keep the terrain below every track surface strip | in progress | 096, 085 |
+| 097 | Keep the terrain below every track surface strip | done | 096, 085 |
