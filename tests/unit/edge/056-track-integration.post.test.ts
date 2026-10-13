@@ -178,4 +178,11 @@ describe('056 track integration gaps', () => {
     expect(pose.position.x).toBeCloseTo(SPAWN[0], 9);
     expect(pose.position.z).toBeCloseTo(SPAWN[1], 9);
   });
+
+  it('POST8: the HUD shows "Lap invalid" even when no lap has started yet', () => {
+    const { hud, container } = setupHud();
+    hud.update({ speedKmh: 0, lap: 0, currentLapTime: null, lastLapTime: null, bestLapTime: null, valid: false });
+    const lapRow = findByClass(container, 'hud-lap');
+    expect(lapRow?.textContent).toBe('Lap invalid');
+  });
 });
