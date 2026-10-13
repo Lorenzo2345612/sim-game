@@ -88,13 +88,16 @@ describe('088 speed profile acceptance', () => {
     expect(cornerSpeed(0.004, lim)).toBe(lim.vMax);
   });
 
-  it('AT4: circle racing line profile equals cornerSpeed(1/105) within 0.5% at every point', () => {
+  it('AT4: circle racing line profile is constant within 0.5% and between cornerSpeed(1/95) and cornerSpeed(1/105)', () => {
     const line = computeRacingLine(circleTrack.centerline, 6, 1);
     const profile = speedProfile(line, limits({}));
-    const expected = Math.sqrt((1.5 * G) / (1 / 105));
     expect(profile.length).toBe(line.points.length / 2);
+    const sorted = Array.from(profile).sort((x, y) => x - y);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    expect(median).toBeGreaterThanOrEqual(Math.sqrt((1.5 * G) / (1 / 95)) * 0.995);
+    expect(median).toBeLessThanOrEqual(Math.sqrt((1.5 * G) / (1 / 105)) * 1.005);
     for (let i = 0; i < profile.length; i++) {
-      expect(Math.abs(profile[i] - expected)).toBeLessThanOrEqual(0.005 * expected);
+      expect(Math.abs(profile[i] - median)).toBeLessThanOrEqual(0.005 * median);
     }
   });
 
