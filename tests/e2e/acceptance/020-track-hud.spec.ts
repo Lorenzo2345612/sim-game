@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 test.use({ viewport: { width: 1280, height: 720 } });
 
 async function loadGame(page: Page): Promise<void> {
-  await page.goto('/');
+  await page.goto('/?track=monza');
   await page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 60000 });
 }
 

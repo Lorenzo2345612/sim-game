@@ -87,9 +87,11 @@ test.describe('056 track integration', () => {
     expect(speed).toBeGreaterThan(30);
   });
 
-  test('AT6: the default track without a query is monza', async ({ page }) => {
+  test('AT6: without a query the menu shows first; choosing monza loads monza (task 044)', async ({ page }) => {
     test.setTimeout(120000);
-    await loadGame(page, '/');
+    await page.goto('/');
+    await page.click('button[data-track="monza"]');
+    await page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 90000 });
     const id = await page.evaluate(() => window.__SIMGAME__!.trackId());
     expect(id).toBe('monza');
   });

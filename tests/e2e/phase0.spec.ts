@@ -9,7 +9,7 @@ test('car accelerates in Monza without console errors', async ({ page }) => {
   });
   page.on('pageerror', (e) => errors.push(e.message));
 
-  await page.goto('/');
+  await page.goto('/?track=monza');
   await page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 60000 });
   await page.screenshot({ path: 'test-results/phase0-start.png' });
 
