@@ -48,7 +48,8 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 | AT2 | same | start line strip | spans lateral −6..6 and arc length 0..0.6 m (± 1e-6) |
 | AT3 | any track | addTrackColliders | collider count unchanged vs before this task (markings never create colliders) |
 | AT4 | markings strips | renderer | group has a mesh named 'markings' whose material has polygonOffset true and colour r,g,b ≥ 0.9 |
-| AT5 | e2e `/?track=monza` | ready | no console errors |
+
+(The former AT5 "monza loads without console errors" is covered by the existing e2e 056/020 checks.)
 
 ## Acceptance criteria
 
