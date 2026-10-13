@@ -747,7 +747,7 @@
     {
       "num": "056",
       "title": "Load TrackData v2 tracks into the game (terrain, surfaces, physics)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "030",
         "032",
@@ -791,7 +791,7 @@
     {
       "num": "059",
       "title": "Tyre forces",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058"
       ],
@@ -804,7 +804,7 @@
     {
       "num": "060",
       "title": "Tyre temperature, wear and pressure",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058"
       ],
@@ -830,7 +830,7 @@
     {
       "num": "062",
       "title": "Powertrain: engine, launch rpm, differential, generalised gearbox",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "045"
@@ -844,7 +844,7 @@
     {
       "num": "063",
       "title": "Brakes, ABS/TC and fuel",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058"
       ],
