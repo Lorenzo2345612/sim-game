@@ -864,7 +864,7 @@
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/064-wheel-solver.md"
     },

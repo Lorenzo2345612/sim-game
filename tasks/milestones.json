@@ -54,7 +54,11 @@
         "037",
         "056"
       ],
-      "status": "open"
+      "status": "built",
+      "builtAt": "2026-10-12T21:41:53",
+      "commit": "e3ff1cf",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.2",

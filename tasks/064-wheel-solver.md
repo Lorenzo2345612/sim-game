@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 058, 059
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Goal
