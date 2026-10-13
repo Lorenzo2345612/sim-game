@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { BarrierSegment, TrackDataV2 } from '../core/types';
+import { barrierRuns, type BarrierVertex } from '../track/barrierPath';
 
 export interface BarrierObject {
   group: THREE.Group;
@@ -26,6 +27,12 @@ interface PathPoint {
   s: number;
 }
 
+interface BarrierSpan {
+  type: BarrierSegment['type'];
+  verts: BarrierVertex[];
+  closed: boolean;
+}
+
 function normalXZ(ax: number, az: number, bx: number, bz: number): [number, number] {
   let dx = bx - ax;
   let dz = bz - az;
@@ -36,29 +43,46 @@ function normalXZ(ax: number, az: number, bx: number, bz: number): [number, numb
   return [-dz, dx];
 }
 
-function barrierPath(track: TrackDataV2, seg: BarrierSegment): PathPoint[] {
-  const centerline = track.centerline;
-  const n = centerline.length;
-  const sign = seg.side === 'right' ? 1 : -1;
-  const count = ((seg.end - seg.start + n) % n) + 1;
+function spanPath(verts: BarrierVertex[]): PathPoint[] {
   const path: PathPoint[] = [];
   let s = 0;
-  for (let k = 0; k < count; k++) {
-    const i = (seg.start + k) % n;
-    const prev = centerline[(i - 1 + n) % n];
-    const next = centerline[(i + 1) % n];
-    const [nx, nz] = normalXZ(prev[0], prev[1], next[0], next[1]);
-    const off = sign * seg.offsetMeters;
-    const x = centerline[i][0] + nx * off;
-    const z = centerline[i][1] + nz * off;
-    const y = track.elevation[i] ?? 0;
+  for (let k = 0; k < verts.length; k++) {
+    const v = verts[k];
     if (k > 0) {
       const p = path[k - 1];
-      s += Math.hypot(x - p.x, z - p.z);
+      s += Math.hypot(v.x - p.x, v.z - p.z);
     }
-    path.push({ x, y, z, s });
+    path.push({ x: v.x, y: v.y, z: v.z, s });
   }
   return path;
+}
+
+/**
+ * Quads of a run grouped by type (the quad between two vertices takes the type
+ * of the second one). Each span carries the polyline of its quads; a span is
+ * closed only when it is the whole closed run.
+ */
+function runSpans(run: BarrierVertex[], closedRun: boolean): BarrierSpan[] {
+  const m = run.length;
+  const steps = closedRun ? m : m - 1;
+  if (steps < 1) return [];
+  const typeOf = (k: number): BarrierSegment['type'] => run[(k + 1) % m].type;
+  const starts: number[] = [];
+  for (let k = 0; k < steps; k++) {
+    const prev = closedRun ? typeOf((k - 1 + steps) % steps) : k === 0 ? null : typeOf(k - 1);
+    if (typeOf(k) !== prev) starts.push(k);
+  }
+  if (starts.length === 0) {
+    return [{ type: typeOf(0), verts: run.slice(), closed: true }];
+  }
+  return starts.map((start) => {
+    const type = typeOf(start);
+    let len = 0;
+    while (len < steps && typeOf((start + len) % steps) === type) len++;
+    const verts: BarrierVertex[] = [];
+    for (let j = 0; j <= len; j++) verts.push(run[(start + j) % m]);
+    return { type, verts, closed: false };
+  });
 }
 
 function pointAt(path: PathPoint[], s: number, out: THREE.Vector3): THREE.Vector3 {
@@ -71,15 +95,21 @@ function pointAt(path: PathPoint[], s: number, out: THREE.Vector3): THREE.Vector
   return out.set(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
 }
 
-function appendRail(positions: number[], indices: number[], path: PathPoint[]): void {
+function appendRail(
+  positions: number[],
+  indices: number[],
+  path: PathPoint[],
+  closed: boolean,
+): void {
   const base = positions.length / 3;
   for (const p of path) {
     positions.push(p.x, p.y + RAIL_BOTTOM, p.z, p.x, p.y + RAIL_TOP, p.z);
   }
-  for (let k = 0; k + 1 < path.length; k++) {
-    const i = base + k * 2;
-    indices.push(i, i + 1, i + 2, i + 1, i + 3, i + 2);
-  }
+  const edge = (i: number, j: number): void => {
+    indices.push(i, i + 1, j, i + 1, j + 1, j);
+  };
+  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 2, base + (k + 1) * 2);
+  if (closed && path.length > 1) edge(base + (path.length - 1) * 2, base);
 }
 
 // Wall cross-section is perpendicular to the barrier polyline itself.
@@ -90,7 +120,13 @@ function pathNormal(path: PathPoint[], i: number): [number, number] {
 }
 
 // Section spans from the polyline outward so the inner face sits flush on the barrier line.
-function appendWall(positions: number[], indices: number[], path: PathPoint[], side: BarrierSegment['side']): void {
+function appendWall(
+  positions: number[],
+  indices: number[],
+  path: PathPoint[],
+  side: BarrierSegment['side'],
+  closed: boolean,
+): void {
   const tLo = side === 'right' ? 0 : -WALL_THICKNESS;
   const tHi = side === 'right' ? WALL_THICKNESS : 0;
   const base = positions.length / 3;
@@ -108,14 +144,14 @@ function appendWall(positions: number[], indices: number[], path: PathPoint[], s
       p.x + hx, p.y + WALL_HEIGHT, p.z + hz,
     );
   }
-  for (let k = 0; k + 1 < path.length; k++) {
-    const i0 = base + k * 4;
-    const j0 = i0 + 4;
+  const edge = (i0: number, j0: number): void => {
     indices.push(i0 + 1, j0 + 1, j0 + 3, i0 + 1, j0 + 3, i0 + 3);
     indices.push(i0, i0 + 2, j0 + 2, i0, j0 + 2, j0);
     indices.push(i0 + 2, i0 + 3, j0 + 3, i0 + 2, j0 + 3, j0 + 2);
     indices.push(i0, j0, j0 + 1, i0, j0 + 1, i0 + 1);
-  }
+  };
+  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 4, base + (k + 1) * 4);
+  if (closed && path.length > 1) edge(base + (path.length - 1) * 4, base);
 }
 
 function tyreStackGeometry(): THREE.BufferGeometry {
@@ -147,25 +183,30 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
   let hasWall = false;
 
   const at = new THREE.Vector3();
-  for (const seg of track.barriers) {
-    const path = barrierPath(track, seg);
-    const length = path[path.length - 1].s;
-    if (seg.type === 'armco') {
-      hasArmco = true;
-      appendRail(railPositions, railIndices, path);
-      const count = Math.floor(length / POST_SPACING) + 1;
-      for (let k = 0; k < count; k++) {
-        posts.push(pointAt(path, k * POST_SPACING, at).clone());
+  for (const side of ['right', 'left'] as const) {
+    for (const run of barrierRuns(track, side)) {
+      const closed = run.length === track.centerline.length;
+      for (const span of runSpans(run, closed)) {
+        const path = spanPath(span.verts);
+        const length = path[path.length - 1].s;
+        if (span.type === 'armco') {
+          hasArmco = true;
+          appendRail(railPositions, railIndices, path, span.closed);
+          const count = Math.floor(length / POST_SPACING) + 1;
+          for (let k = 0; k < count; k++) {
+            posts.push(pointAt(path, k * POST_SPACING, at).clone());
+          }
+        } else if (span.type === 'tyres') {
+          hasTyres = true;
+          const count = Math.floor(length / TYRE_SPACING) + 1;
+          for (let k = 0; k < count; k++) {
+            tyres.push(pointAt(path, k * TYRE_SPACING, at).clone());
+          }
+        } else {
+          hasWall = true;
+          appendWall(wallPositions, wallIndices, path, side, span.closed);
+        }
       }
-    } else if (seg.type === 'tyres') {
-      hasTyres = true;
-      const count = Math.floor(length / TYRE_SPACING) + 1;
-      for (let k = 0; k < count; k++) {
-        tyres.push(pointAt(path, k * TYRE_SPACING, at).clone());
-      }
-    } else {
-      hasWall = true;
-      appendWall(wallPositions, wallIndices, path, seg.side);
     }
   }
 

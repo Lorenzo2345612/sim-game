@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
+import { barrierRuns } from '../track/barrierPath';
 import { buildTrackSurfaces } from '../track/surfaces';
 
 const WALL_BOTTOM = -0.3;
@@ -28,53 +29,36 @@ function removePhase0Ground(world: RAPIER.World): void {
   for (const c of doomed) world.removeCollider(c, false);
 }
 
-/** Right normal of the ring at point i: d = normalize(P[i+1] - P[i-1]), right = (-d.z, d.x). */
-function rightNormalAt(cx: [number, number][], i: number): [number, number] {
-  const n = cx.length;
-  const prev = cx[(i - 1 + n) % n];
-  const next = cx[(i + 1) % n];
-  const dx = next[0] - prev[0];
-  const dz = next[1] - prev[1];
-  const len = Math.hypot(dx, dz);
-  if (len < 1e-9) return [0, -1];
-  return [-dz / len, dx / len];
-}
-
 /**
- * One trimesh for all barrier segments. Wall quads between consecutive points,
- * wound so the triangle normals face the track (Rapier raycasts are one-sided).
+ * One trimesh for all barrier runs. Wall quads between consecutive vertices of
+ * a run (including last-to-first when the run is closed), wound so the triangle
+ * normals face the track (Rapier raycasts are one-sided).
  */
 function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
-  const cx = track.centerline;
-  const n = cx.length;
   const positions: number[] = [];
   const indices: number[] = [];
-  for (const seg of track.barriers) {
-    const sign = seg.side === 'right' ? 1 : -1;
-    const points = (((seg.end - seg.start) % n) + n) % n + 1;
-    let px = 0;
-    let pz = 0;
-    let pBottom = 0;
-    let pTop = 0;
-    for (let j = 0; j < points; j++) {
-      const i = (((seg.start + j) % n) + n) % n;
-      const [rx, rz] = rightNormalAt(cx, i);
-      const x = cx[i][0] + sign * seg.offsetMeters * rx;
-      const z = cx[i][1] + sign * seg.offsetMeters * rz;
-      const e = track.elevation[i] ?? 0;
-      if (j > 0) {
+  for (const side of ['right', 'left'] as const) {
+    const sign = side === 'right' ? 1 : -1;
+    for (const run of barrierRuns(track, side)) {
+      if (run.length < 2) continue;
+      const closed = run.length === track.centerline.length;
+      const steps = closed ? run.length : run.length - 1;
+      for (let k = 0; k < steps; k++) {
+        const a = run[k];
+        const b = run[(k + 1) % run.length];
         const base = positions.length / 3;
-        positions.push(px, pBottom, pz, px, pTop, pz, x, e + WALL_TOP, z, x, e + WALL_BOTTOM, z);
+        positions.push(
+          a.x, a.y + WALL_BOTTOM, a.z,
+          a.x, a.y + WALL_TOP, a.z,
+          b.x, b.y + WALL_TOP, b.z,
+          b.x, b.y + WALL_BOTTOM, b.z,
+        );
         if (sign > 0) {
           indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
         } else {
           indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
         }
       }
-      px = x;
-      pz = z;
-      pBottom = e + WALL_BOTTOM;
-      pTop = e + WALL_TOP;
     }
   }
   if (indices.length > 0) {
