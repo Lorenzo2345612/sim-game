@@ -382,6 +382,7 @@ Principles:
 | Tyre wear and fuel (2026-10-12) | Per-wheel wear and temperature, 3 compounds (soft/medium/hard); fuel consumption with mass effect; global wear/fuel multiplier (default 1x, race presets up to 5x) |
 | Pit stops (2026-10-12) | Pit lane speed limiter with penalty, pit box service (tyres, compound, fuel) with service time; damage repair out of MVP (data hooks only) |
 | Damage (2026-10-12) | Out of MVP; the car file reserves fields for aero/suspension damage |
+| Track elevation (2026-10-12) | Tracks are inspired by the real ones: realistic, smooth grades (DEM canopy removed, profile smoothed, grade capped per track), not survey-exact |
 | Team location | Mexico (Hunyuan3D allowed for generation; published assets preferably made with MIT tools) |
 | AI compute | Laptop RTX 5060 (8 GB) + 10 USD on RunPod + free Spaces |
 
