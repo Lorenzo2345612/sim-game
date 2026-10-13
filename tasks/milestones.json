@@ -104,6 +104,23 @@
       "prefetch": []
     },
     {
+      "id": "M1.2c",
+      "title": "Visual realism: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing",
+      "tasks": [
+        "099",
+        "100",
+        "101",
+        "102",
+        "103",
+        "104",
+        "105"
+      ],
+      "status": "open",
+      "prefetch": [
+        "100"
+      ]
+    },
+    {
       "id": "M1.3",
       "title": "Gameplay: gearbox, gamepad, cameras, HUD v2, minimap, ghost, audio, presets",
       "tasks": [

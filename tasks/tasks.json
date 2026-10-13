@@ -1324,7 +1324,7 @@
     {
       "num": "098",
       "title": "Gravel traps from OpenStreetMap, run-off rule only for real corners",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "097"
       ],
@@ -1333,6 +1333,97 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/098-osm-runoffs.md"
+    },
+    {
+      "num": "099",
+      "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
+      "status": "pending",
+      "deps": [
+        "042"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/099-hdri-sky.md"
+    },
+    {
+      "num": "100",
+      "title": "Bake realistic tree LODs with EZ-Tree (offline tool)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/100-tree-bake.md"
+    },
+    {
+      "num": "101",
+      "title": "Tree field uses baked LODs",
+      "status": "pending",
+      "deps": [
+        "100",
+        "039"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/101-tree-lods.md"
+    },
+    {
+      "num": "102",
+      "title": "Satellite colour on distant terrain",
+      "status": "pending",
+      "deps": [
+        "081"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/102-satellite-ground.md"
+    },
+    {
+      "num": "103",
+      "title": "Real-size tyre walls, W-beam armco with posts, catch fences",
+      "status": "pending",
+      "deps": [
+        "083",
+        "086"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/103-trackside-realism.md"
+    },
+    {
+      "num": "104",
+      "title": "Crowd sprite atlas and seated crowd",
+      "status": "pending",
+      "deps": [
+        "040"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/104-crowd.md"
+    },
+    {
+      "num": "105",
+      "title": "Post-processing tiers: bloom, LUT, SMAA (GTAO high only)",
+      "status": "pending",
+      "deps": [
+        "099"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/105-post-processing.md"
     }
   ]
 }
