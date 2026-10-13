@@ -576,7 +576,7 @@
     {
       "num": "043",
       "title": "Load a TrackData v2 world into the game",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "056",
         "038",
@@ -1049,6 +1049,41 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/076-gt3-d.md"
+    },
+    {
+      "num": "077",
+      "title": "Add grass verges beside the track surfaces",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "standard",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/077-track-verges.md"
+    },
+    {
+      "num": "078",
+      "title": "Add reverse gear",
+      "status": "pending",
+      "deps": [
+        "054"
+      ],
+      "complexity": "standard",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/078-reverse-gear.md"
+    },
+    {
+      "num": "079",
+      "title": "Remove tree canopy from the DEM before building tracks",
+      "status": "pending",
+      "deps": [],
+      "complexity": "standard",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/079-dem-canopy-filter.md"
     }
   ]
 }

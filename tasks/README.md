@@ -46,7 +46,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 040 | Procedural grandstands with crowd | done | 022 |
 | 041 | Pit building, start gantry and start lights | done | 022 |
 | 042 | Sky, fog per track and car-following shadows | done | - |
-| 043 | Load a TrackData v2 world into the game | pending | 056, 038, 039, 040, 041, 042 |
+| 043 | Load a TrackData v2 world into the game | in progress | 056, 038, 039, 040, 041, 042 |
 | 044 | Track selection and pause menu | pending | 043 |
 | 045 | Six-speed gearbox with rpm and limiter | done | 033 |
 | 046 | Gamepad input and input merging | done | 022 |
@@ -80,3 +80,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 074 | Credits screen | pending | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | pending | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
+| 077 | Add grass verges beside the track surfaces | in progress | - |
+| 078 | Add reverse gear | pending | 054 |
+| 079 | Remove tree canopy from the DEM before building tracks | pending | - |

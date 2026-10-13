@@ -54,7 +54,7 @@
         "037",
         "056"
       ],
-      "status": "built",
+      "status": "approved",
       "builtAt": "2026-10-12T21:41:53",
       "commit": "e3ff1cf",
       "buildOk": true,
@@ -70,7 +70,9 @@
         "041",
         "042",
         "043",
-        "044"
+        "044",
+        "077",
+        "079"
       ],
       "status": "open",
       "prefetch": [
@@ -93,7 +95,8 @@
         "051",
         "052",
         "054",
-        "055"
+        "055",
+        "078"
       ],
       "status": "open",
       "prefetch": [
