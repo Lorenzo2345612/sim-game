@@ -1350,7 +1350,7 @@
     {
       "num": "100",
       "title": "Bake realistic tree LODs with EZ-Tree (offline tool)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
