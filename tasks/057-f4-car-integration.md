@@ -17,10 +17,10 @@ The game renders `public/models/f4.glb` (task 053) with spinning/steering wheels
 
 ## Files
 
-- `src/physics/vehicleConfig.ts` — modify: add `F4_CAR` (mass, engine, aero, brake, steer, suspension values identical to `PLACEHOLDER_CAR`; `wheelRadius` and `wheelPositions` from `f4.json` as constants); remove `PLACEHOLDER_CAR`
+- `src/physics/vehicleConfig.ts` — modify: add `F4_CAR` (mass, engine, aero, brake, steer, suspension values identical to `PLACEHOLDER_CAR`; `wheelRadius` and `wheelPositions` from `f4.json` as constants); keep `PLACEHOLDER_CAR` exported unchanged (test fixture for older tests), the game no longer uses it
 - `src/render/carRenderer.ts` — modify: remove the Kenney-specific transforms (rotation π, scales 1.6/1.1, offset −0.45); body offset `bodyOffsetY` passed in
 - `src/game/game.ts`, `src/main.ts` — modify: use `F4_CAR` and `/models/f4.glb`
-- delete `public/models/race.glb`, `assets/vendor/kenney-car-kit/`, the Kenney row of `ASSETS_LICENSES.md`; update tests that referenced them
+- delete `public/models/race.glb`, `assets/vendor/kenney-car-kit/`, the Car Kit row of `ASSETS_LICENSES.md` (the Kenney crowd rows stay); tests 014 AT6 and edge 014 transforms already updated by the planner
 - `tests/unit/acceptance/057-*.test.ts`, `tests/e2e/acceptance/057-*.spec.ts` — created by the acceptance worker
 
 ## Steps
@@ -34,7 +34,7 @@ The game renders `public/models/f4.glb` (task 053) with spinning/steering wheels
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | `F4_CAR` and `public/models/f4.json` | compare | `wheelRadius` and each `wheelPositions[i]` x, z equal the json hubs ± 1e-3, y = 0; massKg 650, enginePowerW 130000, dragAreaCdA 0.9, liftAreaClA 2.0 |
-| AT2 | repo files | check | `public/models/race.glb` and `assets/vendor/kenney-car-kit` do not exist; no file in `src/`, `tests/`, `index.html` mentions `race.glb` or "kenney" (case-insensitive); `ASSETS_LICENSES.md` has no Kenney row; no file in `src/`, `public/`, `index.html` contains "tatuus" (case-insensitive) |
+| AT2 | repo files | check | `public/models/race.glb` and `assets/vendor/kenney-car-kit` do not exist; no file in `src/`, `tests/`, `index.html` mentions `race.glb` or "kenney" (case-insensitive); `ASSETS_LICENSES.md` has no Car Kit / race.glb row; no file in `src/`, `public/`, `index.html` contains "tatuus" (case-insensitive) |
 | AT3 | e2e: `/` | ready, 3 s throttle | no console errors; `__SIMGAME__.getSpeedKmh() > 30`; screenshot pixel at (640, 600) differs from the sky pixel (640, 40) by > 40 in some channel |
 | AT4 | e2e: `/?track=spa` | ready, 3 s throttle | `|carPosition().y − trackHeightUnderCar()| < 0.8` (the car still rides on the track with the new geometry) |
 
