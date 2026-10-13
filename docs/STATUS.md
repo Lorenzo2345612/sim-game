@@ -43,3 +43,5 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 
 - Task 021 (dashboard) was written by the planner; its acceptance table has no automated test yet.
 - Phase 0 visual polish noted: Kenney wheel pivot offset, no shadows (Phase 1 task 042 adds them), all Kenney assets to be removed with the F4 car.
+
+- 2026-10-13 stop: orchestrator and dashboard stopped for shutdown (61/84 done, M1.2 7/10). Pending decision: 071-tester AT3. Relaunch with the same commands as above.
