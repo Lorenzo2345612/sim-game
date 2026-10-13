@@ -84,7 +84,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 078 | Add reverse gear | pending | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | done | 077 |
-| 081 | Terrain splat material with track-distance mown stripes | pending | 080 |
+| 081 | Terrain splat material with track-distance mown stripes | in progress | 080 |
 | 082 | Painted track markings (edge lines, start/finish line) | pending | 080 |
 | 083 | Textured barriers (armco, concrete, tyres) | pending | 080, 043 |
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
@@ -108,3 +108,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
+| 106 | Add Mexico City, Daytona and Lusail to the game | pending | 044, 099, 102 |

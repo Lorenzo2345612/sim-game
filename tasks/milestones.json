@@ -105,7 +105,7 @@
     },
     {
       "id": "M1.2c",
-      "title": "Visual realism: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing",
+      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
       "tasks": [
         "099",
         "100",
@@ -113,7 +113,8 @@
         "102",
         "103",
         "104",
-        "105"
+        "105",
+        "106"
       ],
       "status": "open",
       "prefetch": [

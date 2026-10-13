@@ -1101,7 +1101,7 @@
     {
       "num": "081",
       "title": "Terrain splat material with track-distance mown stripes",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "080"
       ],
@@ -1424,6 +1424,21 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/105-post-processing.md"
+    },
+    {
+      "num": "106",
+      "title": "Add Mexico City, Daytona and Lusail to the game",
+      "status": "pending",
+      "deps": [
+        "044",
+        "099",
+        "102"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/106-new-tracks-in-game.md"
     }
   ]
 }
