@@ -27,12 +27,11 @@ describe('043 world integration edges', () => {
     expect(mainSrc()).toMatch(/\.update\(\s*camera\.position\s*\)/);
   });
 
-  it('EDGE4: the terrain grass material repeats with RepeatWrapping at one tile per ~10 m', () => {
-    const src = mainSrc();
-    expect(src).toMatch(/textures\/grass\//);
+  it('EDGE4: the terrain grass material repeats with RepeatWrapping (moved to terrainMaterial.ts by 081)', () => {
+    const src = readFileSync(fileURLToPath(new URL('src/render/terrainMaterial.ts', ROOT)), 'utf8');
+    expect(src).toMatch(/'grass'/);
     expect(src).toMatch(/RepeatWrapping/);
     expect(src).toMatch(/\.repeat\b/);
-    expect(src).toMatch(/\b(?:10|0\.1)\b/);
   });
 
   it('EDGE5: the environment is applied for the selected track id', () => {

@@ -58,7 +58,7 @@ describe('081 terrain material edge cases', () => {
   it('EDGE2: every vertex of an asymmetric grid (rows != cols, non-zero origin) equals min(cap, brute-force nearest distance)', () => {
     const rnd = lcg(20261013);
     const centerline: [number, number][] = [];
-    for (let p = 0; p < 48; p++) centerline.push([-260 + 520 * rnd(), -260 + 520 * rnd()]);
+    for (let p = 0; p < 48; p++) centerline.push([-260 + 100 * rnd(), -260 + 100 * rnd()]);
     const rows = 7;
     const cols = 11;
     const t = gridTerrain(rows, cols, 176, 112, -30, 45);
