@@ -66,5 +66,69 @@
       { "atMeters": 5200, "side": "right", "offsetMeters": 30, "lengthMeters": 50, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -250, "toMeters": 150, "side": "left" }
+  },
+  {
+    "id": "mexico",
+    "name": "Mexico City",
+    "geojson": "mx-1962",
+    "dem": "assets/source/dem/mexico.json",
+    "maxGrade": 0.04,
+    "widthMeters": 13,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 0.6 },
+        { "name": "pine", "weight": 0.4 }
+      ],
+      "density": 0.15
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 14, "roof": true },
+      { "atMeters": 1100, "side": "right", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false },
+      { "atMeters": 3300, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false }
+    ],
+    "pit": { "fromMeters": -300, "toMeters": 360, "side": "right" }
+  },
+  {
+    "id": "daytona",
+    "name": "Daytona",
+    "geojson": "us-daytona",
+    "dem": "assets/source/dem/daytona.json",
+    "maxGrade": 0.04,
+    "widthMeters": 15,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.05
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": -500, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 12, "roof": false },
+      { "atMeters": 2800, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -400, "toMeters": 190, "side": "left" }
+  },
+  {
+    "id": "lusail",
+    "name": "Lusail",
+    "geojson": "qa-lusail",
+    "dem": "assets/source/dem/lusail.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.05
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 14, "roof": true },
+      { "atMeters": 1200, "side": "right", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false },
+      { "atMeters": 3600, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -290, "toMeters": 290, "side": "right" }
   }
 ]

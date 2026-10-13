@@ -144,7 +144,9 @@ const TRACKS = JSON.parse(
 ) as TrackConfig[];
 
 mkdirSync('public/tracks', { recursive: true });
+const only = process.argv.slice(2);
 for (const track of TRACKS) {
+  if (only.length && !only.includes(track.id)) continue;
   const data = buildTrackV2(track);
   const dev = Math.abs(data.lengthMeters - data.officialLengthMeters) / data.officialLengthMeters;
   if (dev > 0.01) {

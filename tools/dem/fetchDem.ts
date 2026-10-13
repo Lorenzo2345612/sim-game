@@ -70,6 +70,9 @@ const TRACKS = [
   { id: 'monza', source: 'it-1922' },
   { id: 'spa', source: 'be-1925' },
   { id: 'silverstone', source: 'gb-1948' },
+  { id: 'mexico', source: 'mx-1962' },
+  { id: 'daytona', source: 'us-daytona' },
+  { id: 'lusail', source: 'qa-lusail' },
 ];
 
 function expandedBbox(source: string): Bbox {
@@ -139,7 +142,9 @@ function makeReader(): DemReader {
 
 async function main(): Promise<void> {
   const reader = makeReader();
+  const only = process.argv.slice(2);
   for (const track of TRACKS) {
+    if (only.length && !only.includes(track.id)) continue;
     const bbox = expandedBbox(track.source);
     const outPath = join('assets/source/dem', `${track.id}.json`);
     const grid = await writeDemGrid(reader, bbox, outPath);
