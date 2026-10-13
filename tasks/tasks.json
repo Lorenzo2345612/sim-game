@@ -710,7 +710,7 @@
     {
       "num": "054",
       "title": "Wire gameplay features into the game",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "034",
         "042",
@@ -1101,7 +1101,7 @@
     {
       "num": "081",
       "title": "Terrain splat material with track-distance mown stripes",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "080"
       ],
@@ -1179,7 +1179,7 @@
     {
       "num": "088",
       "title": "Speed profile and car limits",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "087",
         "058"
