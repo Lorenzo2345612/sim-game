@@ -1053,7 +1053,7 @@
     {
       "num": "077",
       "title": "Add grass verges beside the track surfaces",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "standard",
       "type": "bugfix",

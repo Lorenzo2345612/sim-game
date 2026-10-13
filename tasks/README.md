@@ -80,7 +80,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 074 | Credits screen | pending | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | pending | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
-| 077 | Add grass verges beside the track surfaces | in progress | - |
+| 077 | Add grass verges beside the track surfaces | done | - |
 | 078 | Add reverse gear | pending | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | pending | 077 |
