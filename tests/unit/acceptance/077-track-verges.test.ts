@@ -241,7 +241,9 @@ describe('077 track verges acceptance', () => {
             const x = mx + rx * side * t;
             const z = mz + rz * side * t;
             const hit = castDown(world, x, z, fromY);
-            if (hit === null || surfaceOf(hit.collider) !== 'grass' || hit.collider.shape.type === RAPIER.ShapeType.HeightField) {
+            // a verge of row i lies within [elev − 0.30, elev]; hits outside belong to an overlapping verge of another section
+            const ownY = (track.elevation[i] + track.elevation[j]) / 2;
+            if (hit === null || surfaceOf(hit.collider) !== 'grass' || hit.collider.shape.type === RAPIER.ShapeType.HeightField || hit.y < ownY - 0.33 || hit.y > ownY + 0.03) {
               prevY = null;
               continue;
             }
