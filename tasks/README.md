@@ -67,7 +67,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 061 | Suspension, anti-roll and aero | done | 058 |
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
-| 064 | Implicit wheel solver | in progress | 058, 059 |
+| 064 | Implicit wheel solver | done | 058, 059 |
 | 065 | Vehicle model on Rapier | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
@@ -99,4 +99,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
-| 097 | Keep the terrain below every track surface strip | pending | 096, 085 |
+| 097 | Keep the terrain below every track surface strip | in progress | 096, 085 |

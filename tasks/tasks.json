@@ -857,7 +857,7 @@
     {
       "num": "064",
       "title": "Implicit wheel solver",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "059"
@@ -1310,7 +1310,7 @@
     {
       "num": "097",
       "title": "Keep the terrain below every track surface strip",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "096",
         "085"
