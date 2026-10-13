@@ -7,7 +7,6 @@ import type { TrackSegment } from '../../../src/core/types';
 // Turn points include both tangent points; ~2 m spacing; travelled clockwise on the
 // map (east +X, north -Z), so both turns are 'right' turns.
 const TURN_80: [number, number][] = [[100, 226], [426, 552]];
-const TURN_300: [number, number][] = [[100, 571], [771, 1242]];
 
 // Closed lap: 400 m straight, 180° arc of radius R, 400 m straight, 180° arc of radius R.
 // Straights step exactly 2 m; the arc uses arcSteps chords so both tangent points land
@@ -91,19 +90,10 @@ describe('026 corner analysis acceptance', () => {
     });
   });
 
-  it('AT5: same loop with r = 300 m turns yields 2 runoff (asphalt) segments of 12 m and no kerbs', () => {
+  it('AT5: same loop with r = 300 m turns yields no run-offs (sweepers, task 098) and no kerbs', () => {
     const pts = stadium(300, 471);
     expect(detectKerbs(pts)).toHaveLength(0); // 300 > KERB_RADIUS
-    const runoff = byStart(detectRunoffs(pts));
-    expect(runoff).toHaveLength(2);
-    runoff.forEach((s, i) => {
-      const [t0, t1] = TURN_300[i];
-      expect(s.side).toBe('left'); // outside
-      expect(s.surface).toBe('runoff'); // min radius of the run >= 150
-      expect(s.widthMeters).toBeCloseTo(12, 9);
-      expect(s.start).toBeLessThanOrEqual(t0 + 16); // covers the turn
-      expect(s.end).toBeGreaterThanOrEqual(t1 - 16);
-    });
+    expect(detectRunoffs(pts)).toHaveLength(0); // min radius >= 150: no run-off since 098
   });
 
   it('AT6: loop crossing index 0 inside a turn yields one wrapping kerb segment (end < start) instead of a split', () => {
