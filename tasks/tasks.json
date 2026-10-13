@@ -1088,7 +1088,7 @@
     {
       "num": "080",
       "title": "PBR surface materials with anti-tiling for track strips",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "077"
       ],
