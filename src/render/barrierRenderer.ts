@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { BarrierSegment, TrackDataV2 } from '../core/types';
 import { barrierRuns, type BarrierVertex } from '../track/barrierPath';
+import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMaterials';
 
 export interface BarrierObject {
   group: THREE.Group;
@@ -19,6 +20,20 @@ const TYRE_LAYERS = 3;
 const TYRE_SPACING = 1;
 const WALL_THICKNESS = 0.3;
 const WALL_HEIGHT = 1;
+// One metal tile every 2 m of rail; wall uv is metres / 10 like the strip surfaces.
+const RAIL_TILE_METERS = 2;
+const RAIL_UV_SCALE = 1 / RAIL_TILE_METERS;
+const WALL_UV_SCALE = 1 / 10;
+const TYRE_COLOR_A = new THREE.Color(0.9, 0.9, 0.9);
+const TYRE_COLOR_B = new THREE.Color(0.75, 0.1, 0.1);
+
+function defaultLoadTexture(url: string): THREE.Texture {
+  // TextureLoader needs a DOM; fall back to a plain texture under Node.
+  const texture =
+    typeof document !== 'undefined' ? new THREE.TextureLoader().load(url) : new THREE.Texture();
+  texture.name = url;
+  return texture;
+}
 
 interface PathPoint {
   x: number;
@@ -97,6 +112,7 @@ function pointAt(path: PathPoint[], s: number, out: THREE.Vector3): THREE.Vector
 
 function appendRail(
   positions: number[],
+  uvs: number[],
   indices: number[],
   path: PathPoint[],
   closed: boolean,
@@ -104,6 +120,8 @@ function appendRail(
   const base = positions.length / 3;
   for (const p of path) {
     positions.push(p.x, p.y + RAIL_BOTTOM, p.z, p.x, p.y + RAIL_TOP, p.z);
+    const u = p.s * RAIL_UV_SCALE;
+    uvs.push(u, 0, u, 1);
   }
   const edge = (i: number, j: number): void => {
     indices.push(i, i + 1, j, i + 1, j + 1, j);
@@ -122,6 +140,7 @@ function pathNormal(path: PathPoint[], i: number): [number, number] {
 // Section spans from the polyline outward so the inner face sits flush on the barrier line.
 function appendWall(
   positions: number[],
+  uvs: number[],
   indices: number[],
   path: PathPoint[],
   side: BarrierSegment['side'],
@@ -130,6 +149,7 @@ function appendWall(
   const tLo = side === 'right' ? 0 : -WALL_THICKNESS;
   const tHi = side === 'right' ? WALL_THICKNESS : 0;
   const base = positions.length / 3;
+  const vTop = WALL_HEIGHT * WALL_UV_SCALE;
   for (let k = 0; k < path.length; k++) {
     const p = path[k];
     const [nx, nz] = pathNormal(path, k);
@@ -143,6 +163,8 @@ function appendWall(
       p.x + lx, p.y + WALL_HEIGHT, p.z + lz,
       p.x + hx, p.y + WALL_HEIGHT, p.z + hz,
     );
+    const u = p.s * WALL_UV_SCALE;
+    uvs.push(u, 0, u, 0, u, vTop, u, vTop);
   }
   const edge = (i0: number, j0: number): void => {
     indices.push(i0 + 1, j0 + 1, j0 + 3, i0 + 1, j0 + 3, i0 + 3);
@@ -167,14 +189,21 @@ function tyreStackGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
-export function createBarrierObject(track: TrackDataV2): BarrierObject {
+export function createBarrierObject(
+  track: TrackDataV2,
+  loadTexture?: (url: string) => THREE.Texture,
+): BarrierObject {
+  const load = loadTexture ?? defaultLoadTexture;
   const group = new THREE.Group();
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.Material[] = [];
+  const textures: THREE.Texture[] = [];
 
   const railPositions: number[] = [];
+  const railUvs: number[] = [];
   const railIndices: number[] = [];
   const wallPositions: number[] = [];
+  const wallUvs: number[] = [];
   const wallIndices: number[] = [];
   const posts: THREE.Vector3[] = [];
   const tyres: THREE.Vector3[] = [];
@@ -191,7 +220,7 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
         const length = path[path.length - 1].s;
         if (span.type === 'armco') {
           hasArmco = true;
-          appendRail(railPositions, railIndices, path, span.closed);
+          appendRail(railPositions, railUvs, railIndices, path, span.closed);
           const count = Math.floor(length / POST_SPACING) + 1;
           for (let k = 0; k < count; k++) {
             posts.push(pointAt(path, k * POST_SPACING, at).clone());
@@ -204,7 +233,7 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
           }
         } else {
           hasWall = true;
-          appendWall(wallPositions, wallIndices, path, side, span.closed);
+          appendWall(wallPositions, wallUvs, wallIndices, path, side, span.closed);
         }
       }
     }
@@ -213,19 +242,34 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
   if (hasArmco) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(railPositions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(railUvs, 2));
     geometry.setIndex(railIndices);
     geometry.computeVertexNormals();
-    const material = new THREE.MeshStandardMaterial({ color: 0xb0b4b8, side: THREE.DoubleSide });
+    const map = load('textures/metal/color.jpg');
+    map.colorSpace = THREE.SRGBColorSpace;
+    const normalMap = load('textures/metal/normal.jpg');
+    const roughnessMap = load('textures/metal/roughness.jpg');
+    for (const texture of [map, normalMap, roughnessMap]) {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+    }
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xb0b4b8,
+      side: THREE.DoubleSide,
+      map,
+      normalMap,
+      roughnessMap,
+    });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'armco';
     mesh.castShadow = true;
     group.add(mesh);
     geometries.push(geometry);
     materials.push(material);
+    textures.push(map, normalMap, roughnessMap);
 
     const postGeometry = new THREE.BoxGeometry(POST_SIZE, POST_HEIGHT, POST_SIZE);
-    const postMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa0a6 });
-    const posts_ = new THREE.InstancedMesh(postGeometry, postMaterial, posts.length);
+    const posts_ = new THREE.InstancedMesh(postGeometry, material, posts.length);
     posts_.name = 'armcoPosts';
     const matrix = new THREE.Matrix4();
     for (let i = 0; i < posts.length; i++) {
@@ -237,12 +281,11 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
     posts_.castShadow = true;
     group.add(posts_);
     geometries.push(postGeometry);
-    materials.push(postMaterial);
   }
 
   if (hasTyres) {
     const geometry = tyreStackGeometry();
-    const material = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
     const mesh = new THREE.InstancedMesh(geometry, material, tyres.length);
     mesh.name = 'tyres';
     const matrix = new THREE.Matrix4();
@@ -250,6 +293,7 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
       const p = tyres[i];
       matrix.makeTranslation(p.x, p.y, p.z);
       mesh.setMatrixAt(i, matrix);
+      mesh.setColorAt(i, i % 2 === 0 ? TYRE_COLOR_A : TYRE_COLOR_B);
     }
     mesh.instanceMatrix.needsUpdate = true;
     mesh.castShadow = true;
@@ -261,9 +305,11 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
   if (hasWall) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(wallPositions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(wallUvs, 2));
     geometry.setIndex(wallIndices);
     geometry.computeVertexNormals();
-    const material = new THREE.MeshStandardMaterial({ color: 0xc8c8c2 });
+    const material = createSurfaceMaterial('concrete', load);
+    textures.push(...(material.userData as SurfaceMaterialUserData).textures);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'wall';
     mesh.castShadow = true;
@@ -280,6 +326,7 @@ export function createBarrierObject(track: TrackDataV2): BarrierObject {
       disposed = true;
       for (const geometry of geometries) geometry.dispose();
       for (const material of materials) material.dispose();
+      for (const texture of textures) texture.dispose();
     },
   };
 }
