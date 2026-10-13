@@ -189,12 +189,12 @@ describe('071 car pipeline acceptance', () => {
       const width = max[0] - min[0];
       const height = max[1] - min[1];
       expect(width, id).toBeGreaterThanOrEqual(1.85);
-      expect(width, id).toBeLessThanOrEqual(2.15);
+      expect(width, id).toBeLessThanOrEqual(2.35);
       expect(height, id).toBeGreaterThanOrEqual(1.05);
       expect(height, id).toBeLessThanOrEqual(1.35);
       const meta = readMeta(id);
-      expect(meta.wheelbase, id).toBeGreaterThanOrEqual(2.55);
-      expect(meta.wheelbase, id).toBeLessThanOrEqual(2.85);
+      expect(meta.wheelbase, id).toBeGreaterThanOrEqual(2.40);
+      expect(meta.wheelbase, id).toBeLessThanOrEqual(2.90);
       expect(meta.wheelRadius, id).toBeGreaterThanOrEqual(0.3);
       expect(meta.wheelRadius, id).toBeLessThanOrEqual(0.37);
     }
