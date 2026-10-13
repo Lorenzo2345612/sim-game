@@ -747,7 +747,7 @@
     {
       "num": "056",
       "title": "Load TrackData v2 tracks into the game (terrain, surfaces, physics)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "030",
         "032",
@@ -967,6 +967,58 @@
       "models": "heavy",
       "phase": 1,
       "spec": "tasks/070-dynamics-integration.md"
+    },
+    {
+      "num": "071",
+      "title": "Generic car asset pipeline",
+      "status": "pending",
+      "deps": [
+        "053"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/071-car-pipeline.md"
+    },
+    {
+      "num": "072",
+      "title": "GT3 car definitions",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/072-gt3-cars.md"
+    },
+    {
+      "num": "073",
+      "title": "Car registry and selection",
+      "status": "pending",
+      "deps": [
+        "070"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/073-car-selection.md"
+    },
+    {
+      "num": "074",
+      "title": "Credits screen",
+      "status": "pending",
+      "deps": [
+        "044"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/074-credits.md"
     }
   ]
 }

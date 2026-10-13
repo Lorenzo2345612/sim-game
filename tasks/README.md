@@ -59,7 +59,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 053 | F4 car model pipeline (offline asset build) | done | - |
 | 054 | Wire gameplay features into the game | pending | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
-| 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | pending | 030, 032, 033, 034, 035, 036, 037 |
+| 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | in progress | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | pending | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | in progress | 058 |
@@ -74,3 +74,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 068 | Setup screen | pending | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
+| 071 | Generic car asset pipeline | pending | 053 |
+| 072 | GT3 car definitions | pending | 058 |
+| 073 | Car registry and selection | pending | 070 |
+| 074 | Credits screen | pending | 044 |
