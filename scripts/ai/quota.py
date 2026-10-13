@@ -16,7 +16,8 @@ from pathlib import Path
 GLM_URL = "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
 KIMI_URL = "https://api.kimi.com/coding/v1/usages"
 CLAUDE_URL = "https://api.anthropic.com/api/oauth/usage"
-CLAUDE_CREDS = Path(os.environ.get("CLAUDE_CONFIG_DIR_PLANNER") or Path.home() / ".claude") / ".credentials.json"
+CLAUDE_CREDS = Path(os.environ.get("CLAUDE_CONFIG_DIR_PLANNER") or os.environ.get("CLAUDE_CONFIG_DIR")
+                    or Path.home() / ".claude") / ".credentials.json"
 CONSOLES = {"qwen": "https://bailian.console.aliyun.com", "mimo": "https://platform.xiaomimimo.com"}
 KEYS = {"glm": "GLM_API_KEY", "kimi": "KIMI_API_KEY"}
 LOW = 0.10
