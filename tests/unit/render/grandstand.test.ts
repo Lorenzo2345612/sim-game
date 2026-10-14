@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type { Grandstand } from '../../../src/core/types';
-import { createGrandstand, disposeGrandstand } from '../../../src/render/grandstand';
+import { createGrandstand, disposeGrandstand, seatPositions } from '../../../src/render/grandstand';
 
 const INPUT: Grandstand = { x: 12, z: -30, yaw: 0.7, lengthMeters: 10, rows: 1, roof: true };
 
@@ -57,9 +57,9 @@ describe('createGrandstand', () => {
     );
   });
 
-  it('crowd has rows * floor(length / 0.6) instances with seeded distinct colours', () => {
+  it('crowd has round(0.85 * rows * floor(length / 0.6)) instances with seeded distinct colours', () => {
     const crowd = crowdOf(createGrandstand(INPUT));
-    const expected = INPUT.rows * Math.floor(INPUT.lengthMeters / 0.6);
+    const expected = Math.round(0.85 * INPUT.rows * Math.floor(INPUT.lengthMeters / 0.6));
     expect(crowd.count).toBe(expected);
     const colors = colorsOf(crowd);
     expect(colors).toHaveLength(crowd.count * 3);
@@ -68,14 +68,23 @@ describe('createGrandstand', () => {
     expect(colorsOf(crowdOf(createGrandstand({ ...INPUT, x: 13 })))).not.toEqual(colors);
   });
 
-  it('people sit on the row top, inside the stand length', () => {
+  it('every instance translation equals a seatPositions entry', () => {
     const crowd = crowdOf(createGrandstand(INPUT));
+    const seats = seatPositions(INPUT);
     const matrix = new THREE.Matrix4();
-    crowd.getMatrixAt(0, matrix);
-    const position = new THREE.Vector3().setFromMatrixPosition(matrix);
-    expect(position.y).toBeCloseTo(0.8 + 0.25, 5);
-    expect(position.z).toBeCloseTo(0.45, 5);
-    expect(Math.abs(position.x)).toBeLessThan(5);
+    const position = new THREE.Vector3();
+    for (let i = 0; i < crowd.count; i++) {
+      crowd.getMatrixAt(i, matrix);
+      position.setFromMatrixPosition(matrix);
+      expect(
+        seats.some(
+          (seat) =>
+            Math.abs(seat.x - position.x) < 1e-6 &&
+            Math.abs(seat.y - position.y) < 1e-6 &&
+            Math.abs(seat.z - position.z) < 1e-6,
+        ),
+      ).toBe(true);
+    }
   });
 });
 

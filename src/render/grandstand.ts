@@ -7,7 +7,10 @@ const SEAT_SPACING = 0.6;
 const ROOF_CLEARANCE = 0.9;
 const ROOF_THICKNESS = 0.2;
 const POST_SIZE = 0.3;
-const PERSON_SIZE: [number, number, number] = [0.35, 0.5, 0.3];
+const QUAD_SIZE = 0.9;
+const OCCUPANCY = 0.85;
+const ATLAS_GRID = 8;
+const ATLAS_URL = '/textures/crowd/atlas.png';
 
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -19,9 +22,54 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+function defaultLoadTexture(url: string): THREE.Texture {
+  // TextureLoader needs a DOM; fall back to a plain texture under Node.
+  const texture =
+    typeof document !== 'undefined' ? new THREE.TextureLoader().load(url) : new THREE.Texture();
+  texture.name = url;
+  return texture;
+}
+
+interface Seat {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export function seatPositions(g: Grandstand): Seat[] {
+  const length = Math.max(0, g.lengthMeters);
+  const rows = Math.max(0, Math.floor(g.rows));
+  const perRow = Math.max(0, Math.floor(length / SEAT_SPACING));
+  const seats: Seat[] = [];
+  if (perRow === 0) return seats;
+  const spacing = length / perRow;
+  for (let row = 0; row < rows; row++) {
+    // Float32 metres so an instanceMatrix (Float32Array) round-trips the seat exactly.
+    const y = Math.fround((row + 1) * ROW_RISE);
+    const z = Math.fround((row + 0.5) * ROW_DEPTH);
+    for (let seat = 0; seat < perRow; seat++) {
+      seats.push({ x: Math.fround(-length / 2 + (seat + 0.5) * spacing), y, z });
+    }
+  }
+  return seats;
+}
+
+// Quad origin at the bottom centre, front face toward local -Z (the track).
+function crowdQuad(): THREE.BufferGeometry {
+  const quad = new THREE.PlaneGeometry(QUAD_SIZE, QUAD_SIZE);
+  quad.translate(0, QUAD_SIZE / 2, 0);
+  quad.rotateY(Math.PI);
+  const uv = quad.attributes['uv'] as THREE.BufferAttribute;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+  return quad;
+}
+
 const disposedGroups = new WeakSet<THREE.Group>();
 
-export function createGrandstand(g: Grandstand): THREE.Group {
+export function createGrandstand(
+  g: Grandstand,
+  loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
+): THREE.Group {
   const group = new THREE.Group();
   group.position.set(g.x, 0, g.z);
   group.rotation.y = g.yaw;
@@ -68,34 +116,57 @@ export function createGrandstand(g: Grandstand): THREE.Group {
     }
   }
 
-  const perRow = Math.max(0, Math.floor(length / SEAT_SPACING));
-  const count = rows * perRow;
+  const seats = seatPositions(g);
+  const count = Math.round(OCCUPANCY * rows * Math.floor(length / SEAT_SPACING));
   if (count > 0) {
-    const personGeometry = new THREE.BoxGeometry(...PERSON_SIZE);
-    const crowdMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0 });
+    const personGeometry = crowdQuad();
+    const atlas = loadTexture(ATLAS_URL);
+    atlas.name = ATLAS_URL;
+    atlas.colorSpace = THREE.SRGBColorSpace;
+    // Atlas row 0 is the PNG top, so keep it at v = 0; cells offset uv by (col, row) / 8.
+    atlas.flipY = false;
+    atlas.repeat.set(1 / ATLAS_GRID, 1 / ATLAS_GRID);
+    const crowdMaterial = new THREE.MeshStandardMaterial({
+      map: atlas,
+      alphaTest: 0.5,
+      roughness: 0.9,
+      metalness: 0,
+    });
+    crowdMaterial.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute vec2 aCell;')
+        .replace('#include <uv_vertex>', `#include <uv_vertex>\n\tvMapUv += aCell / ${ATLAS_GRID}.0;`);
+    };
+    crowdMaterial.customProgramCacheKey = () => 'crowd-atlas';
     geometries.push(personGeometry);
     materials.push(crowdMaterial);
     const crowd = new THREE.InstancedMesh(personGeometry, crowdMaterial, count);
     crowd.name = 'crowd';
-    crowd.castShadow = true;
+    crowd.receiveShadow = true;
     crowd.frustumCulled = false;
 
     const rng = mulberry32(Math.round(g.x * 31 + g.z * 17));
-    const spacing = length / perRow;
+    const order = seats.slice();
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const swap = order[i];
+      order[i] = order[j];
+      order[j] = swap;
+    }
+    const cells = new Float32Array(count * 2);
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
-    let index = 0;
-    for (let row = 0; row < rows; row++) {
-      const y = (row + 1) * ROW_RISE + PERSON_SIZE[1] / 2;
-      const z = (row + 0.5) * ROW_DEPTH;
-      for (let seat = 0; seat < perRow; seat++) {
-        matrix.makeTranslation(-length / 2 + (seat + 0.5) * spacing, y, z);
-        crowd.setMatrixAt(index, matrix);
-        color.setHSL(rng(), 0.4 + rng() * 0.4, 0.3 + rng() * 0.3);
-        crowd.setColorAt(index, color);
-        index++;
-      }
+    for (let i = 0; i < count; i++) {
+      const seat = order[i];
+      matrix.makeTranslation(seat.x, seat.y, seat.z);
+      crowd.setMatrixAt(i, matrix);
+      color.setHSL(rng(), 0.3 + rng() * 0.3, 0.45 + rng() * 0.25);
+      crowd.setColorAt(i, color);
+      const cell = Math.floor(rng() * ATLAS_GRID * ATLAS_GRID);
+      cells[i * 2] = cell % ATLAS_GRID;
+      cells[i * 2 + 1] = Math.floor(cell / ATLAS_GRID);
     }
+    personGeometry.setAttribute('aCell', new THREE.InstancedBufferAttribute(cells, 2));
     crowd.instanceMatrix.needsUpdate = true;
     if (crowd.instanceColor) crowd.instanceColor.needsUpdate = true;
     group.add(crowd);
@@ -109,6 +180,7 @@ export function disposeGrandstand(group: THREE.Group): void {
   disposedGroups.add(group);
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
   group.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
     geometries.add(object.geometry);
@@ -116,6 +188,10 @@ export function disposeGrandstand(group: THREE.Group): void {
     if (Array.isArray(material)) for (const m of material) materials.add(m);
     else materials.add(material);
   });
+  for (const material of materials) {
+    if (material instanceof THREE.MeshStandardMaterial && material.map) textures.add(material.map);
+  }
   for (const geometry of geometries) geometry.dispose();
   for (const material of materials) material.dispose();
+  for (const texture of textures) texture.dispose();
 }
