@@ -6,6 +6,7 @@ import { cumulativeLengths } from '../track/centerline';
 import { LapTimer } from '../track/lapTimer';
 import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
+import type { GearboxMode } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle } from '../physics/vehicle';
 import { F4_CAR } from '../physics/vehicleConfig';
@@ -44,6 +45,7 @@ export class Game {
   private readonly world: World;
   private readonly vehicle: Vehicle;
   private readonly spawn: SpawnPose;
+  private readonly track: TrackData | TrackDataV2;
   private readonly progress: TrackProgress;
   private readonly lapTimer: LapTimer;
   private readonly prev: VehicleState;
@@ -56,6 +58,7 @@ export class Game {
     world: World,
     vehicle: Vehicle,
     spawn: SpawnPose,
+    track: TrackData | TrackDataV2,
     progress: TrackProgress,
     lapTimer: LapTimer,
     prev: VehicleState,
@@ -64,6 +67,7 @@ export class Game {
     this.world = world;
     this.vehicle = vehicle;
     this.spawn = spawn;
+    this.track = track;
     this.progress = progress;
     this.lapTimer = lapTimer;
     this.prev = prev;
@@ -86,7 +90,7 @@ export class Game {
     vehicle.getState(current);
     const prev = createVehicleState(4);
     copyVehicleState(current, prev);
-    return new Game(world, vehicle, spawn, progress, lapTimer, prev, current);
+    return new Game(world, vehicle, spawn, track, progress, lapTimer, prev, current);
   }
 
   get simTime(): number {
@@ -124,6 +128,39 @@ export class Game {
 
   getWheelSurfaces(): Surface[] {
     return this.vehicle.getWheelSurfaces();
+  }
+
+  // Arrow fields so the debug hooks survive being detached from the instance.
+  gear = (): number => this.vehicle.gear();
+
+  rpm = (): number => this.vehicle.rpm();
+
+  shiftUp(): void {
+    this.vehicle.shiftUp();
+  }
+
+  shiftDown(): void {
+    this.vehicle.shiftDown();
+  }
+
+  setGearMode(mode: GearboxMode): void {
+    this.vehicle.setGearMode(mode);
+  }
+
+  /** Places the car on centerline point `i`, facing the next point, at rest. */
+  teleportToIndex(i: number): void {
+    const centerline = this.track.centerline;
+    const n = centerline.length;
+    const idx = ((Math.floor(i) % n) + n) % n;
+    const p = centerline[idx];
+    const next = centerline[(idx + 1) % n];
+    const ground = 'elevation' in this.track ? this.track.elevation[idx] ?? 0 : 0;
+    this.vehicle.reset({
+      position: { x: p[0], y: ground + 0.6, z: p[1] },
+      yaw: Math.atan2(-(next[0] - p[0]), -(next[1] - p[1])),
+    });
+    this.progress.reset();
+    this.lapTimer.reset();
   }
 
   /**

@@ -1,14 +1,18 @@
 import './ui/hud.css';
+import './ui/hudV2.css';
 import * as THREE from 'three';
+import { EngineAudio } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
-import type { Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
+import { loadPreset, presetSettings, type Preset } from './core/settings';
+import type { DriverInput, LapEvent, Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
+import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
+import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
-import { buildRibbon } from './track/ribbon';
-import { buildTrackSurfaces } from './track/surfaces';
-import { buildTrackMarkings } from './track/markings';
+import { F4_CAR } from './physics/vehicleConfig';
+import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
@@ -21,10 +25,14 @@ import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
-import { F4_CAR } from './physics/vehicleConfig';
-import { ChaseCamera } from './render/chaseCamera';
-import { Hud } from './ui/hud';
+import { TrackProgress } from './track/trackProgress';
+import { buildRibbon } from './track/ribbon';
+import { buildTrackSurfaces } from './track/surfaces';
+import { buildTrackMarkings } from './track/markings';
+import { HudV2, type HudV2Data } from './ui/hudV2';
 import { Menu } from './ui/menu';
+import { Minimap } from './ui/minimap';
+import { FpsOverlay } from './ui/fpsOverlay';
 
 export interface SceneStats {
   barriers: number;
@@ -51,6 +59,10 @@ declare global {
       getHeading(): number;
       sceneStats(): SceneStats;
       drawCalls(): number;
+      cameraMode(): CameraMode;
+      gear(): number;
+      preset(): Preset;
+      teleportToIndex(i: number): void;
     };
   }
 }
@@ -75,6 +87,29 @@ let menu: Menu | null = null;
 let session: Session | null = null;
 // One WebGL context for the page: a second WebGLRenderer on the same canvas would share it.
 let rendererHandle: RendererHandle | null = null;
+// Page-lifetime audio: one AudioContext, created suspended and resumed on first gesture.
+let engineAudio: EngineAudio | null = null;
+let audioResumed = false;
+
+const NO_SLIP: readonly number[] = [0, 0, 0, 0];
+
+function resumeAudio(): void {
+  audioResumed = true;
+  engineAudio?.resume();
+}
+
+function anyGamepadPressed(): boolean {
+  if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return false;
+  const pads = navigator.getGamepads();
+  if (!pads) return false;
+  for (const pad of pads) {
+    if (!pad) continue;
+    for (const button of pad.buttons) {
+      if (button.pressed) return true;
+    }
+  }
+  return false;
+}
 
 function onError(e: unknown): void {
   if (status) {
@@ -184,6 +219,23 @@ function nearestElevation(track: TrackDataV2, x: number, z: number): number {
   return track.elevation[best] ?? 0;
 }
 
+/** Distance along the centerline of every ghost sample, for the lap-delta lookup. */
+function ghostDistances(ghost: GhostLap, centerline: [number, number][]): Float64Array {
+  const progress = new TrackProgress(centerline);
+  const out = new Float64Array(ghost.samples.length);
+  for (let i = 0; i < ghost.samples.length; i++) {
+    out[i] = progress.update(ghost.samples[i][1], ghost.samples[i][3]).distance;
+  }
+  return out;
+}
+
+function presetFromQuery(storage: Storage): Preset {
+  const requested = new URLSearchParams(window.location.search).get('preset');
+  return requested === 'low' || requested === 'medium' || requested === 'high'
+    ? requested
+    : loadPreset(storage);
+}
+
 async function startGame(trackId: string): Promise<void> {
   endSession();
   menu?.hide();
@@ -201,6 +253,9 @@ async function startGame(trackId: string): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
   const handle = rendererHandle;
+  const preset = presetFromQuery(window.localStorage);
+  const settings = presetSettings(preset, window.devicePixelRatio);
+  handle.renderer.setPixelRatio(settings.pixelRatio);
   const softwareGl = isSoftwareGl(handle.renderer);
   if (softwareGl) {
     // SwiftShader rasterizes on the CPU, shared by CI's parallel workers: at full
@@ -229,7 +284,7 @@ async function startGame(trackId: string): Promise<void> {
     ground.visible = false;
     applyEnvironment(scene, track.id);
     shadows = new ShadowRig(scene);
-    shadows.setEnabled(handle.renderer, true);
+    shadows.setEnabled(handle.renderer, settings.shadows);
     if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
 
     const trackDist = terrainTrackDistance(track.terrain, track.centerline);
@@ -255,6 +310,7 @@ async function startGame(trackId: string): Promise<void> {
 
     const trees = createTreeField(track.trees, track.treeSpecies, {
       terrainY: makeTerrainY(track.terrain),
+      farDistance: settings.treeFarDistance,
       factory: softwareGl ? makeCheapTreeFactory() : undefined,
     });
     treeField = trees;
@@ -291,23 +347,140 @@ async function startGame(trackId: string): Promise<void> {
   scene.add(car.root);
   disposables.push(car);
 
-  const chase = new ChaseCamera(camera);
-  chase.snap(game.getCurrentState());
+  const ghostCar = await CarRenderer.load('/models/f4.glb', -(F4_CAR.suspensionRestLength + F4_CAR.wheelRadius));
+  ghostCar.makeGhost();
+  ghostCar.root.visible = false;
+  scene.add(ghostCar.root);
+  disposables.push(ghostCar);
+
+  const cameraRig = new CameraRig(camera);
+  cameraRig.update(game.getCurrentState(), 0);
 
   const keyboard = new KeyboardInput(window);
-  const hud = new Hud(document.getElementById('hud') as HTMLElement);
+  const gamepad = new GamepadInput();
 
+  const hud = new HudV2(document.getElementById('hud') as HTMLElement);
+  const minimap = new Minimap(document.body, track.centerline);
+  const fpsOverlay = new FpsOverlay(document.body, window);
+
+  const ghostRecorder = new GhostRecorder(track.id);
+  let ghost = loadGhost(window.localStorage, track.id);
+  let ghostDist = ghost === null ? null : ghostDistances(ghost, track.centerline);
+  let ghostCursor = 0;
+  let lapActive = false;
+  let lapWasValid = true;
+
+  const sectorTimes: (number | null)[] = [null, null, null];
+  const bestSectorTimes: (number | null)[] = [null, null, null];
+  const hudData: HudV2Data = {
+    speedKmh: 0,
+    gear: 1,
+    rpm: 0,
+    lap: 0,
+    currentLapTime: null,
+    lastLapTime: null,
+    bestLapTime: null,
+    sectorTimes,
+    bestSectorTimes,
+    deltaSeconds: null,
+    lapValid: true,
+  };
+
+  const carProgress = new TrackProgress(track.centerline);
+  const ghostState = createVehicleState(4);
+  const ghostQuat = new THREE.Quaternion();
+  const ghostWheel = new THREE.Vector3();
+  const GHOST_WHEEL_DROP = -0.06; // resting wheel centre below the chassis connection plane (ghost samples carry no wheel data)
+
+  const updateGhostCar = (lapTime: number | null): void => {
+    if (ghost === null || lapTime === null) {
+      ghostCar.root.visible = false;
+      return;
+    }
+    ghostAt(ghost, lapTime, ghostState.position, ghostState.rotation);
+    const p = ghostState.position;
+    const r = ghostState.rotation;
+    ghostQuat.set(r.x, r.y, r.z, r.w);
+    for (let i = 0; i < ghostState.wheels.length; i++) {
+      const wp = F4_CAR.wheelPositions[i];
+      ghostWheel.set(wp.x, GHOST_WHEEL_DROP, wp.z).applyQuaternion(ghostQuat);
+      const w = ghostState.wheels[i];
+      w.position.x = p.x + ghostWheel.x;
+      w.position.y = p.y + ghostWheel.y;
+      w.position.z = p.z + ghostWheel.z;
+    }
+    ghostCar.update(ghostState);
+    ghostCar.root.visible = true;
+  };
+
+  // Current lap time minus the ghost's time at the same track progress; null without a ghost.
+  const ghostDelta = (lapTime: number | null): number | null => {
+    if (ghost === null || ghostDist === null || lapTime === null) return null;
+    const d = carProgress.update(interp.position.x, interp.position.z).distance;
+    while (ghostCursor < ghostDist.length - 2 && ghostDist[ghostCursor + 1] <= d) ghostCursor++;
+    const j = Math.min(ghostCursor + 1, ghostDist.length - 1);
+    const a = ghost.samples[ghostCursor];
+    const b = ghost.samples[j];
+    const da = ghostDist[ghostCursor];
+    const db = ghostDist[j];
+    const u = db > da ? Math.min(1, Math.max(0, (d - da) / (db - da))) : 0;
+    return lapTime - (a[0] + (b[0] - a[0]) * u);
+  };
+
+  const handleLapEvents = (events: LapEvent[]): void => {
+    for (const ev of events) {
+      if (ev.type === 'lapStarted') {
+        ghostRecorder.start();
+        lapActive = true;
+        lapWasValid = true;
+        ghostCursor = 0;
+        sectorTimes[0] = null;
+        sectorTimes[1] = null;
+        sectorTimes[2] = null;
+      } else if (ev.type === 'sectorCompleted') {
+        const s = ev.sector - 1;
+        sectorTimes[s] = ev.sectorTime;
+        const best = bestSectorTimes[s];
+        if (best === null || ev.sectorTime < best) bestSectorTimes[s] = ev.sectorTime;
+      } else if (ev.type === 'lapInvalidated') {
+        lapWasValid = false;
+      } else if (ev.type === 'lapCompleted') {
+        lapActive = false;
+        const lap = ghostRecorder.finishLap(lapWasValid, ev.lapTime);
+        if (lap !== null && saveGhostIfFaster(window.localStorage, lap)) {
+          ghost = lap;
+          ghostDist = ghostDistances(lap, track.centerline);
+        }
+      }
+    }
+  };
+
+  let simInput: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
   const loop = new FixedStepLoop(
-    (dt) => game.step(keyboard.update(dt)),
+    (dt) => {
+      gamepad.update(dt);
+      simInput = mergeInputs(keyboard.update(dt), gamepad.getInput());
+      if (simInput.shiftUp) game.shiftUp();
+      if (simInput.shiftDown) game.shiftDown();
+      game.step(simInput);
+      if (lapActive) {
+        const state = game.getCurrentState();
+        ghostRecorder.record(FIXED_DT, state.position, state.rotation);
+      }
+      handleLapEvents(game.drainEvents());
+    },
     FIXED_DT,
     MAX_SIM_STEPS_PER_FRAME,
   );
   const interp = createVehicleState(4);
 
+  let autoGearbox = true;
   let paused = false;
   let running = true;
   let last = -1;
   let rafId = 0;
+  let fpsAvg = 0;
+  const frameStats = { fps: 0, drawCalls: 0 };
 
   const onResize = (): void => handle.resize(window.innerWidth, window.innerHeight, camera);
   const frameFn = (now: number): void => {
@@ -315,16 +488,36 @@ async function startGame(trackId: string): Promise<void> {
     if (last < 0) last = now;
     const frame = Math.min((now - last) / 1000, 2);
     last = now;
+    if (!audioResumed && anyGamepadPressed()) resumeAudio();
     // Paused: only the render keeps going, the fixed-step simulation must not advance.
     if (!paused) {
       const { alpha } = loop.advance(frame);
       interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
       car.update(interp);
-      chase.update(interp, frame);
+      cameraRig.update(interp, frame);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
-      hud.update({ speedKmh: Math.abs(interp.forwardSpeed) * MS_TO_KMH, ...game.getLapInfo() });
+      minimap.update(interp.position.x, interp.position.z);
+
+      const info = game.getLapInfo();
+      hudData.speedKmh = Math.abs(interp.forwardSpeed) * MS_TO_KMH;
+      hudData.gear = game.gear();
+      hudData.rpm = game.rpm();
+      hudData.lap = info.lap;
+      hudData.currentLapTime = info.currentLapTime;
+      hudData.lastLapTime = info.lastLapTime;
+      hudData.bestLapTime = info.bestLapTime;
+      hudData.lapValid = info.valid;
+      hudData.deltaSeconds = ghostDelta(info.currentLapTime);
+      hud.update(hudData);
+
+      updateGhostCar(info.currentLapTime);
+      engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
     }
+    if (frame > 0) fpsAvg += (1 / frame - fpsAvg) * 0.1;
+    frameStats.fps = fpsAvg;
+    frameStats.drawCalls = handle.renderer.info.render.calls;
+    fpsOverlay.update(frameStats);
     handle.renderer.render(scene, camera);
     rafId = requestAnimationFrame(frameFn);
   };
@@ -343,7 +536,15 @@ async function startGame(trackId: string): Promise<void> {
     }
     game.dispose();
     game = next;
-    chase.snap(game.getCurrentState());
+    autoGearbox = true;
+    lapActive = false;
+    lapWasValid = true;
+    ghostCursor = 0;
+    sectorTimes[0] = null;
+    sectorTimes[1] = null;
+    sectorTimes[2] = null;
+    // dt = 1 s makes the chase camera close the gap in one call (near-snap) after the reset.
+    cameraRig.update(game.getCurrentState(), 1);
     loop.reset();
   };
 
@@ -353,23 +554,41 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   const onKeydown = (event: KeyboardEvent): void => {
-    if (event.code !== 'Escape') return;
-    if (paused) {
-      resume();
+    if (event.code === 'Escape') {
+      if (paused) {
+        resume();
+        return;
+      }
+      paused = true;
+      menu?.showPause({
+        onResume: resume,
+        onRestart: () => {
+          restart()
+            .then(() => {
+              if (running) resume();
+            })
+            .catch(onError);
+        },
+        onChangeTrack: changeTrack,
+      });
       return;
     }
-    paused = true;
-    menu?.showPause({
-      onResume: resume,
-      onRestart: () => {
-        restart()
-          .then(() => {
-            if (running) resume();
-          })
-          .catch(onError);
-      },
-      onChangeTrack: changeTrack,
-    });
+    if (event.repeat) return;
+    switch (event.code) {
+      case 'KeyC':
+        cameraRig.next();
+        break;
+      case 'KeyQ':
+        game.shiftDown();
+        break;
+      case 'KeyE':
+        game.shiftUp();
+        break;
+      case 'KeyM':
+        autoGearbox = !autoGearbox;
+        game.setGearMode(autoGearbox ? 'auto' : 'manual');
+        break;
+    }
   };
 
   const dispose = (): void => {
@@ -379,6 +598,8 @@ async function startGame(trackId: string): Promise<void> {
     window.removeEventListener('resize', onResize);
     keyboard.dispose();
     hud.dispose();
+    minimap.dispose();
+    fpsOverlay.dispose();
     game.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();
@@ -414,6 +635,10 @@ async function startGame(trackId: string): Promise<void> {
       shadows: handle.renderer.shadowMap.enabled,
     }),
     drawCalls: () => handle.renderer.info.render.calls,
+    cameraMode: () => cameraRig.mode,
+    gear: () => game.gear(),
+    preset: () => preset,
+    teleportToIndex: (i: number) => game.teleportToIndex(i),
   };
 }
 
@@ -422,6 +647,10 @@ async function main(): Promise<void> {
   const menuRoot = document.getElementById('menu');
   if (!menuRoot) throw new Error('Missing #menu');
   menu = new Menu(menuRoot, window.localStorage);
+
+  engineAudio = new EngineAudio();
+  window.addEventListener('keydown', resumeAudio, { once: true });
+  document.addEventListener('click', resumeAudio, { once: true });
 
   const requested = new URLSearchParams(window.location.search).get('track');
   if (requested === null) {
