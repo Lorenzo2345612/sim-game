@@ -68,18 +68,18 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
-| 068 | Setup screen | pending | 058, 067, 044, 054 |
+| 068 | Setup screen | in progress | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | pending | 048, 065 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
-| 074 | Credits screen | pending | 044 |
+| 074 | Credits screen | in progress | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
-| 076 | GT3 D definition | pending | 072, 075 |
+| 076 | GT3 D definition | done | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
 | 078 | Add reverse gear | done | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
@@ -91,7 +91,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | done | 087, 058 |
-| 089 | AI driver controller | in progress | 087, 088 |
+| 089 | AI driver controller | waiting decision | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |

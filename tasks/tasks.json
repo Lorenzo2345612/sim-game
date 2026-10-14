@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -921,7 +921,7 @@
     {
       "num": "068",
       "title": "Setup screen",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "067",
@@ -1013,7 +1013,7 @@
     {
       "num": "074",
       "title": "Credits screen",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "044"
       ],
@@ -1039,7 +1039,7 @@
     {
       "num": "076",
       "title": "GT3 D definition",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "072",
         "075"
@@ -1193,7 +1193,7 @@
     {
       "num": "089",
       "title": "AI driver controller",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "087",
         "088"
