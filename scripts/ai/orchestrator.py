@@ -384,6 +384,12 @@ def provider_status():
     return {n: {"running": used.get(n, 0), "max": m} for n, m in provider_caps().items()}
 
 
+def at_cap(provider):
+    cap = provider_caps().get(provider)
+    with lock:
+        return bool(cap) and running_by_provider.get(provider, 0) >= cap
+
+
 @contextmanager
 def provider_slot(provider):
     sem = sems.get(provider)
@@ -437,6 +443,11 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         prov = fallback
     elif prov and fallback and prov != fallback and quota.low_5h(prov):
         event(num, "quota-route", f"{role}: {prov} < 10% left in 5h window -> {fallback}")
+        argv += ["--provider", fallback]
+        prov = fallback
+    elif (prov and fallback and prov != fallback and role in load_json(PROVIDERS).get("fallback", {}).get("overflowRoles", [])
+          and at_cap(prov) and not at_cap(fallback)):
+        event(num, "overflow-route", f"{role}: {prov} slots full -> {fallback}")
         argv += ["--provider", fallback]
         prov = fallback
     env = {**os.environ, "SIMGAME_WORKDIR": str(wt_path(num)), "E2E_PORT": str(E2E_BASE_PORT + slots.get(num, 0))}

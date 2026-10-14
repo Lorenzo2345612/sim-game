@@ -68,6 +68,12 @@
   "fallback": {
     "provider": "mimo",
     "model": "mimo-v2.6-flash",
-    "heavyModel": "mimo-v2.6-pro"
+    "heavyModel": "mimo-v2.6-pro",
+    "overflowRoles": [
+      "coder",
+      "acceptance",
+      "tester-pre",
+      "tester"
+    ]
   }
 }

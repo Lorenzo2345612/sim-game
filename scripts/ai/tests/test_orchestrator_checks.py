@@ -47,3 +47,14 @@ class BugfixFirstTest(unittest.TestCase):
                  {"num": "020", "deps": [], "status": "pending", "type": "bugfix"}]
         with mock.patch.object(o, "milestone_scope", return_value=None):
             self.assertEqual([t["num"] for t in o.ready_tasks(tasks, set(), {}, set(), None)], ["020", "010"])
+
+
+class OverflowTest(unittest.TestCase):
+    def test_at_cap(self):
+        from unittest import mock
+        from scripts.ai import orchestrator as o
+        with mock.patch.object(o, "provider_caps", return_value={"glm": 2, "mimo": 6}), \
+                mock.patch.dict(o.running_by_provider, {"glm": 2, "mimo": 1}, clear=True):
+            self.assertTrue(o.at_cap("glm"))
+            self.assertFalse(o.at_cap("mimo"))
+            self.assertFalse(o.at_cap("unknown"))
