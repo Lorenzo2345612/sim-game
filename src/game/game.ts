@@ -9,7 +9,7 @@ import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import type { GearboxMode } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle, type Telemetry } from '../physics/vehicle';
-import { F4_CAR } from '../physics/vehicleConfig';
+import { F4_SPEC } from '../physics/vehicleConfig';
 
 type World = ReturnType<typeof createPhysicsWorld>;
 
@@ -78,7 +78,7 @@ export class Game {
     await initPhysics();
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
-    const vehicle = new Vehicle(world, F4_CAR, spawn);
+    const vehicle = new Vehicle(world, F4_SPEC, spawn);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [

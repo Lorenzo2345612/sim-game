@@ -1,4 +1,6 @@
 import type { Vec3 } from '../core/types';
+import { parseCarSpec, type CarSpec } from './carSpec';
+import f4JsonRaw from '../../public/cars/f4.json?raw';
 
 export interface VehicleConfig {
   massKg: number;
@@ -73,3 +75,6 @@ export const F4_CAR: VehicleConfig = {
   dragAreaCdA: 0.9,
   liftAreaClA: 2.0,
 };
+
+// Parsed F4 CarSpec for the Vehicle constructor; single source is public/cars/f4.json.
+export const F4_SPEC: CarSpec = parseCarSpec(JSON.parse(f4JsonRaw) as unknown);
