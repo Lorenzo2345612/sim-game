@@ -836,6 +836,7 @@ def expected_missing(line, stems):
 
 
 IMPLICIT_ANY = ("TS7006", "TS7031")  # cascades from modules the task has not created yet
+NEW_API = ("TS2339", "TS2353", "TS2551", "TS2554")  # members/options the task adds to existing modules
 
 
 def lint_tests(num, spec):
@@ -854,7 +855,7 @@ def lint_tests(num, spec):
         stems = spec_stems(spec)
         bad = [ln for ln in (p.stdout + p.stderr).splitlines()
                if re.search(r"error TS\d+", ln) and any(ln.startswith(f) for f in files)
-               and not any(c in ln for c in IMPLICIT_ANY)
+               and not any(c in ln for c in IMPLICIT_ANY + NEW_API)
                and not (any(c in ln for c in MODULE_ERRORS) and expected_missing(ln, stems))]
         if bad:
             errors.append("tsc:\n" + "\n".join(bad)[-2000:])

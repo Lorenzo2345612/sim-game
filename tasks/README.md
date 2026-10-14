@@ -101,7 +101,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
-| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | in progress | 042 |
+| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | waiting decision | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
 | 101 | Tree field uses baked LODs | waiting decision | 100, 039 |
 | 102 | Satellite colour on distant terrain | in progress | 081 |
@@ -143,7 +143,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | pending | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
-| 142 | Kerbs on every corner with entry/exit extensions | pending | 098 |
+| 142 | Kerbs on every corner with entry/exit extensions | in progress | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
 | 144 | Damage model (pure) | pending | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |

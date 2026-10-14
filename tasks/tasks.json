@@ -1338,7 +1338,7 @@
     {
       "num": "099",
       "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "042"
       ],
@@ -1963,7 +1963,7 @@
     {
       "num": "142",
       "title": "Kerbs on every corner with entry/exit extensions",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "098"
       ],

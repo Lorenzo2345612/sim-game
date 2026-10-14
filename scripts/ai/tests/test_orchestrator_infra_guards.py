@@ -143,6 +143,11 @@ class InfraGuardsTest(Harness):
         self.run_tsc(self.tsc_error("../../../src/001", "TS2322"))
         self.assertEqual(self.decision("commit-tests")["category"], "tests", self.diag())
 
+    def test_tsc_new_api_on_existing_module_is_allowed(self):
+        self.run_tsc("tests/unit/acceptance/001-fake.test.ts(3,7): error TS2339: Property 'lodCounts' "
+                     "does not exist on type 'TreeField'.")
+        self.assertEqual(self.task_status("001"), "done", self.diag())
+
 
 if __name__ == "__main__":
     unittest.main()
