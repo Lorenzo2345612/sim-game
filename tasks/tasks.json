@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier (part 1)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -2143,7 +2143,7 @@
     {
       "num": "155",
       "title": "Close parallel sections: per-index half-widths and shared median wall",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "140",
         "141",
@@ -2152,7 +2152,7 @@
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/155-close-parallel-sections.md"
     },

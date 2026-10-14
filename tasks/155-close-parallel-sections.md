@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 142, 140, 141, 143
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Goal
@@ -23,7 +23,7 @@ Design in `docs/plans/m1.2c-realism.md` ("155 Close parallel sections"). Runs af
 - `src/track/markings.ts` — modify: `edgeLine` uses `halfWidthAt` per side.
 - `tools/track-builder/parallel.ts` — create.
 - `tools/track-builder/buildTrack.ts` — modify: call the new functions, write the arrays only when `parallel` has any masked index.
-- `public/tracks/*.json` — regenerate with `npm run build:tracks` for ALL ids in `tools/track-builder/tracks.json` (ten old ones plus baku, budapest, singapore, lasvegas, spielberg); every one must rebuild without error.
+- `public/tracks/*.json` — regenerate with `npm run build:tracks` for ALL ids in `tools/track-builder/tracks.json` (ten old ones plus baku, budapest, singapore, lasvegas, spielberg); every one must rebuild without error, except the known, accepted `elkhart: length deviation 1.16% exceeds 1%` line (exit 1; JSON still written; do not fix it).
 - `tests/unit/acceptance/155-close-parallel.test.ts` — create (acceptance worker).
 
 ## Steps
@@ -51,6 +51,10 @@ export function halfWidthAt(track: TrackDataV2, side: Side, i: number): number; 
 
 Conventions: distances in metres, no rounding except `median` (floor to 0.25 m); `d < widthMeters + 6` strict; wrapped indices; closed polyline; inputs not mutated; ties (equal d) keep the lowest j; `n < 3` returns all-default info (`any` false).
 
+## Acceptance writer: reading list
+
+Read only: this spec, `ai/guides/testing.md`, the exports/signatures (not bodies) of `src/core/types.ts` (`TrackDataV2`, `BarrierSegment`, `TrackSegment`), `src/track/surfaces.ts` (`buildTrackSurfaces`, `rightNormal`), `src/physics/trackColliders.ts` (`addTrackColliders`) and `src/physics/physicsWorld.ts` (`initPhysics`, `createPhysicsWorld`), plus one existing fixture `tests/unit/acceptance/022-fixture-trackdatav2.ts`. Do not read the builder internals or run probe scripts. Import the not-yet-existing `tools/track-builder/parallel.ts` functions per Steps; tests are expected to fail until coding. Write the test file within the first 10 minutes, then refine.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
@@ -65,7 +69,7 @@ Conventions: distances in metres, no rounding except `median` (floor to 0.25 m);
 
 - [ ] AT1-AT5 pass; `halfWidthLeft/Right` absent in monza/spa/silverstone JSON.
 - [ ] `halfWidthAt` falls back to `widthMeters/2` when the arrays are absent (old JSON still loads).
-- [ ] All fifteen ids rebuild; `npm test` green (only minimal edits to existing tests broken by regenerated tracks, each listed in the report).
+- [ ] All ids rebuild (elkhart length line accepted); `npm test` green (only minimal edits to existing tests broken by regenerated tracks, each listed in the report).
 
 ## Verification
 

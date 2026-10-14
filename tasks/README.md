@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier (part 1) | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier (part 1) | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
@@ -156,7 +156,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
-| 155 | Close parallel sections: per-index half-widths and shared median wall | in progress | 140, 141, 142, 143 |
+| 155 | Close parallel sections: per-index half-widths and shared median wall | waiting decision | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | pending | 081, 101, 106 |
 | 157 | City bake from OSM: buildings, old-city walls, water | pending | 106 |
 | 158 | City renderer: buildings, facades, water | pending | 099, 157 |
