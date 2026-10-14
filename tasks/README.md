@@ -101,9 +101,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
-| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | waiting decision | 042 |
+| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | in progress | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
-| 101 | Tree field uses baked LODs | waiting decision | 100, 039 |
+| 101 | Tree field uses baked LODs | in progress | 100, 039 |
 | 102 | Satellite colour on distant terrain | in progress | 081 |
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | in progress | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
@@ -143,7 +143,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | pending | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
-| 142 | Kerbs on every corner with entry/exit extensions | in progress | 098 |
+| 142 | Kerbs on every corner with entry/exit extensions | waiting decision | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
 | 144 | Damage model (pure) | pending | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
@@ -162,5 +162,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 158 | City renderer: buildings, facades, water | pending | 099, 157 |
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
-| 161 | Fix minimap stretched to full screen and engine audio playing while paused | pending | - |
+| 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
 | 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |

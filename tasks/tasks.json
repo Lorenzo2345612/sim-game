@@ -1338,7 +1338,7 @@
     {
       "num": "099",
       "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "042"
       ],
@@ -1362,7 +1362,7 @@
     {
       "num": "101",
       "title": "Tree field uses baked LODs",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "100",
         "039"
@@ -1963,7 +1963,7 @@
     {
       "num": "142",
       "title": "Kerbs on every corner with entry/exit extensions",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "098"
       ],
@@ -2224,7 +2224,7 @@
     {
       "num": "161",
       "title": "Fix minimap stretched to full screen and engine audio playing while paused",
-      "status": "pending",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
