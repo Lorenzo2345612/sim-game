@@ -791,8 +791,19 @@ def changed_files(num, base):
     return [f for f in dict.fromkeys([*tracked, *new]) if f]
 
 
+def tests_only_spec(num):
+    """True when every path in the spec's Files section is under tests/ (test-only task)."""
+    spec = spec_path(num)
+    text = spec.read_text() if spec else ""
+    m = re.search(r"^## Files\n(.*?)^## ", text, re.S | re.M)
+    paths = re.findall(r"^- `([^`]+)`", m.group(1), re.M) if m else []
+    return bool(paths) and all(p.startswith("tests/") for p in paths)
+
+
 def has_impl_changes(num):
     files = changed_files(num, base_commit(num))
+    if tests_only_spec(num):
+        return any(not f.startswith((".ai/", "node_modules")) for f in files)
     return any(not f.startswith(("tests/", ".ai/", "node_modules")) for f in files)
 
 
