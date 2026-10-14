@@ -109,19 +109,19 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 104 | Crowd sprite atlas and seated crowd | done | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | done | 099 |
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
-| 107 | Car sound data | pending | 058, 072 |
+| 107 | Car sound data | done | 058, 072 |
 | 108 | Engine synth DSP core | done | - |
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
 | 110 | Audio effects | pending | 109 |
 | 111 | Audio mix | pending | 110 |
-| 112 | Prototype models through the car pipeline | pending | 071, 075 |
+| 112 | Prototype models through the car pipeline | in progress | 071, 075 |
 | 113 | Prototype CarSpecs from the lab files | pending | 112, 072, 058 |
 | 114 | Car selection and credits list the prototypes | pending | 113, 073, 074 |
 | 115 | Cockpit data per car (eye, steering wheel anchor, lock) | pending | 058, 066, 072, 107, 113 |
 | 116 | Animated steering wheel in cockpit view | pending | 047, 054, 115 |
 | 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
 | 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
-| 119 | Livery data, palette and storage | pending | 072 |
+| 119 | Livery data, palette and storage | in progress | 072 |
 | 120 | Paint materials in the car pipeline and livery shader | pending | 075, 112, 119 |
 | 121 | Race number decals | pending | 120 |
 | 122 | Livery editor screen | pending | 044, 073, 074, 106, 114, 120, 121 |
@@ -145,7 +145,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
-| 144 | Damage model (pure) | pending | 058 |
+| 144 | Damage model (pure) | in progress | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
