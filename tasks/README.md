@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
@@ -103,11 +103,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
 | 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | done | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
-| 101 | Tree field uses baked LODs | in progress | 100, 039 |
-| 102 | Satellite colour on distant terrain | in progress | 081 |
+| 101 | Tree field uses baked LODs | waiting decision | 100, 039 |
+| 102 | Satellite colour on distant terrain | waiting decision | 081 |
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | in progress | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
-| 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
+| 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | in progress | 099 |
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
 | 107 | Car sound data | pending | 058, 072 |
 | 108 | Engine synth DSP core | done | - |

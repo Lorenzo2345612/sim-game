@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -1362,7 +1362,7 @@
     {
       "num": "101",
       "title": "Tree field uses baked LODs",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "100",
         "039"
@@ -1376,7 +1376,7 @@
     {
       "num": "102",
       "title": "Satellite colour on distant terrain",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "081"
       ],
@@ -1416,7 +1416,7 @@
     {
       "num": "105",
       "title": "Post-processing tiers: bloom, LUT, SMAA (GTAO high only)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "099"
       ],
