@@ -11,6 +11,7 @@ import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
+import { parseCarSpec } from './physics/carSpec';
 import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
@@ -33,6 +34,7 @@ import { HudV2, type HudV2Data } from './ui/hudV2';
 import { Menu } from './ui/menu';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
+import { SetupPanel } from './ui/setupPanel';
 
 export interface SceneStats {
   barriers: number;
@@ -247,6 +249,11 @@ async function startGame(trackId: string): Promise<void> {
   const res = await fetch(`/tracks/${trackId}.json`);
   if (!res.ok) throw new Error(`Could not load ${trackId}.json`);
   const track: TrackData | TrackDataV2 = await res.json();
+
+  // Task 070 replaces this fetch with its car loader; today it only feeds the setup panel.
+  const specRes = await fetch('/cars/f4.json');
+  if (!specRes.ok) throw new Error('Could not load f4.json');
+  const carSpec = parseCarSpec(await specRes.json());
 
   let game = await Game.create(track);
 
@@ -553,24 +560,47 @@ async function startGame(trackId: string): Promise<void> {
     showTrackSelect();
   };
 
+  const showPauseMenu = (): void => {
+    menu?.showPause({
+      onResume: resume,
+      onRestart: () => {
+        restart()
+          .then(() => {
+            if (running) resume();
+          })
+          .catch(onError);
+      },
+      onChangeTrack: changeTrack,
+      onSetup: openSetup,
+    });
+  };
+
+  const setupPanel = new SetupPanel(document.body, {
+    spec: carSpec,
+    carId: carSpec.id,
+    trackId: track.id,
+    storage: window.localStorage,
+    onApply: () => restart().catch(onError),
+    onClose: showPauseMenu,
+  });
+
+  const openSetup = (): void => {
+    menu?.hide();
+    setupPanel.open();
+  };
+
   const onKeydown = (event: KeyboardEvent): void => {
     if (event.code === 'Escape') {
+      if (setupPanel.visible) {
+        setupPanel.close();
+        return;
+      }
       if (paused) {
         resume();
         return;
       }
       paused = true;
-      menu?.showPause({
-        onResume: resume,
-        onRestart: () => {
-          restart()
-            .then(() => {
-              if (running) resume();
-            })
-            .catch(onError);
-        },
-        onChangeTrack: changeTrack,
-      });
+      showPauseMenu();
       return;
     }
     if (event.repeat) return;
@@ -600,6 +630,7 @@ async function startGame(trackId: string): Promise<void> {
     hud.dispose();
     minimap.dispose();
     fpsOverlay.dispose();
+    setupPanel.dispose();
     game.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();

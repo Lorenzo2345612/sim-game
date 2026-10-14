@@ -56,12 +56,18 @@ export class Menu {
     focus?.focus();
   }
 
-  showPause(handlers: { onResume(): void; onRestart(): void; onChangeTrack(): void }): void {
+  showPause(handlers: {
+    onResume(): void;
+    onRestart(): void;
+    onChangeTrack(): void;
+    onSetup?(): void;
+  }): void {
     const panel = this.doc.createElement('div');
     panel.className = 'menu-panel';
     panel.appendChild(this.heading('Paused'));
     panel.appendChild(this.action('Resume', handlers.onResume));
     panel.appendChild(this.action('Restart', handlers.onRestart));
+    if (handlers.onSetup) panel.appendChild(this.action('Setup', handlers.onSetup));
     panel.appendChild(this.action('Change track', handlers.onChangeTrack));
     panel.appendChild(this.creditsAction(() => this.showPause(handlers)));
     this.show(panel);
