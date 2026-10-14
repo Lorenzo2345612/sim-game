@@ -57,3 +57,17 @@
 | ground/spielberg.jpg (Sentinel-2 L2A TCI, scene S2A_33TVN_20260814_0_L2A, 2026-08-14, 2048² crop of terrain bounds) | `public/textures/ground/spielberg.jpg` | ESA / Copernicus. Contains modified Copernicus Sentinel data 2026 | Copernicus Sentinel data terms (free, open, attribution) | https://ewds.climate.copernicus.eu/licences/ec-sentinel | no (attribution) |
 | Kenney Animated Characters 2 (skins criminalMaleA, cyborgFemaleA, skaterFemaleA, skaterMaleA; FBX converted to GLB with FBX2glTF, idle clip + skin PNG embedded; offline crowd bake input, not shipped) | `assets/source/crowd/{criminalMaleA,cyborgFemaleA,skaterFemaleA,skaterMaleA}.glb` | Kenney (kenney.nl) | CC0 1.0 | https://opengameart.org/content/animated-characters-2 | no |
 | Kenney Animated Characters Survivors (skins survivorFemaleA, survivorMaleB; same conversion; offline crowd bake input, not shipped) | `assets/source/crowd/{survivorFemaleA,survivorMaleB}.glb` | Kenney (kenney.nl) | CC0 1.0 | https://www.kenney.nl/assets/animated-characters-survivors | no |
+| Facade001 (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/facade/glass-a/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Facade001 | no |
+| Facade018A (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/facade/glass-b/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Facade018A | no |
+| Facade020A (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/facade/glass-c/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Facade020A | no |
+| Bricks083 (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/facade/brick/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Bricks083 | no |
+| coral_fort_wall_01 | `public/textures/stone/old-wall/` | Poly Haven | CC0 1.0 | https://polyhaven.com/a/coral_fort_wall_01 | no |
+| Ground093A (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/ground/sand/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Ground093A | no |
+| Ground093B (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/ground/sand-b/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Ground093B | no |
+| Ground093C (color/normal GL/roughness/AO, 2K resized to 1024) | `public/textures/ground/sand-c/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Ground093C | no |
+| dry_ground_01 | `public/textures/ground/dry/` | Poly Haven | CC0 1.0 | https://polyhaven.com/a/dry_ground_01 | no |
+| concrete_pavement_02 | `public/textures/pavement/` | Poly Haven | CC0 1.0 | https://polyhaven.com/a/concrete_pavement_02 | no |
+| Exotic palms lowpoly style, Default variant (FBX converted to GLB with FBX2glTF, embedded texture) | `public/models/vegetation/palm-date.glb` | FabinhoSC | CC0 | https://opengameart.org/content/exotic-palms-lowpoly-style | no |
+| Exotic palms lowpoly style, Curve variant (same conversion) | `public/models/vegetation/palm-coconut.glb` | FabinhoSC | CC0 | https://opengameart.org/content/exotic-palms-lowpoly-style | no |
+| Kenney Nature Kit 2.1 (cactus_tall -> cactus.glb, plant_bush -> shrub-dry.glb) | `public/models/props/{cactus,shrub-dry}.glb` | Kenney (kenney.nl) | CC0 1.0 | https://kenney.nl/assets/nature-kit | no |
+| Kenney City Kit Roads 2.2 (light-square -> lamp.glb) | `public/models/props/lamp.glb` | Kenney (kenney.nl) | CC0 1.0 | https://kenney.nl/assets/city-kit-roads | no |
