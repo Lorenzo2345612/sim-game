@@ -51,6 +51,20 @@ export interface AxleSpec {
   arb: number;
 }
 
+export interface CarSound {
+  cylinders: number;
+  exhaustLengthM: number;
+  intakeMix: number;
+  crackle: number;
+}
+
+export const DEFAULT_CAR_SOUND: CarSound = {
+  cylinders: 4,
+  exhaustLengthM: 1.2,
+  intakeMix: 0.3,
+  crackle: 0.2,
+};
+
 export type CarCategory = 'open-wheel' | 'gt3' | 'gt4' | 'touring' | 'prototype';
 const CATEGORIES: readonly CarCategory[] = ['open-wheel', 'gt3', 'gt4', 'touring', 'prototype'];
 
@@ -99,6 +113,7 @@ export interface CarSpec {
     inertia: number;
     brakingTorque: number;
   };
+  sound: CarSound;
   gearbox: {
     ratios: number[];
     final: number;
@@ -255,6 +270,18 @@ function preset(root: unknown, name: PresetName): PresetSetup {
   };
 }
 
+function carSound(root: unknown): CarSound {
+  const cylinders = optNum(root, 'sound.cylinders') ?? DEFAULT_CAR_SOUND.cylinders;
+  if (!Number.isInteger(cylinders) || cylinders < 1 || cylinders > 12) fail('sound.cylinders');
+  const exhaustLengthM = optNum(root, 'sound.exhaustLengthM') ?? DEFAULT_CAR_SOUND.exhaustLengthM;
+  if (!(exhaustLengthM > 0 && exhaustLengthM <= 10)) fail('sound.exhaustLengthM');
+  const intakeMix = optNum(root, 'sound.intakeMix') ?? DEFAULT_CAR_SOUND.intakeMix;
+  if (intakeMix < 0 || intakeMix > 1) fail('sound.intakeMix');
+  const crackle = optNum(root, 'sound.crackle') ?? DEFAULT_CAR_SOUND.crackle;
+  if (crackle < 0 || crackle > 1) fail('sound.crackle');
+  return { cylinders, exhaustLengthM, intakeMix, crackle };
+}
+
 function boxInertia(massKg: number, half: Vec3): Vec3 {
   const w = half.x * 2;
   const h = half.y * 2;
@@ -333,6 +360,8 @@ export function parseCarSpec(json: unknown): CarSpec {
     brakingTorque: num(json, 'engine.brakingTorque'),
   };
 
+  const sound = carSound(json);
+
   const gearbox = {
     ratios: numArray(json, 'gearbox.ratios'),
     final: num(json, 'gearbox.final'),
@@ -394,6 +423,7 @@ export function parseCarSpec(json: unknown): CarSpec {
     tyres: { optPressureKpa, pressureKpa, compounds },
     aero,
     engine,
+    sound,
     gearbox,
     diff,
     brakes,

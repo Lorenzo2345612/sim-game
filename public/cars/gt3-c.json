@@ -197,6 +197,12 @@
     "inertia": 0.25,
     "brakingTorque": 60
   },
+  "sound": {
+    "cylinders": 8,
+    "exhaustLengthM": 1.5,
+    "intakeMix": 0.2,
+    "crackle": 0.6
+  },
   "gearbox": {
     "ratios": [
       2.75,
