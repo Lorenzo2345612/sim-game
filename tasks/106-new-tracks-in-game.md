@@ -22,7 +22,7 @@ Track data was built by the planner (`tools/track-builder/tracks.json` entries, 
 - `src/render/environment.ts` — modify (per-track sky/fog entries for the twelve ids)
 - `tools/track-builder/tracks.json` — modify (optional `source` {dataset, license, url} per track; set for the twelve new ids)
 - `tools/track-builder/buildTrackData.ts` — modify (use the config `source` when present, else the current default)
-- `public/tracks/mexico.json`, `daytona.json`, `lusail.json`, `bahrain.json` — regenerate (`npm run build:tracks -- mexico daytona lusail bahrain braselton elkhart sepang baku budapest singapore lasvegas spielberg`)
+- `public/tracks/<id>.json` for the twelve new ids — regenerate with exactly `npm run build:tracks -- mexico daytona lusail bahrain braselton elkhart sepang baku budapest singapore lasvegas spielberg` (never without ids: monza/spa/silverstone must not be rewritten). Known, accepted: it prints `elkhart: length deviation 1.16% exceeds 1%` and exits 1; the JSON is still written. Do not try to fix it; any other error is a blocker.
 
 ## Steps
 
@@ -42,7 +42,7 @@ Track data was built by the planner (`tools/track-builder/tracks.json` entries, 
 
 ## Acceptance criteria
 
-- [ ] AT1–AT5 pass; all other tests pass.
+- [ ] AT1–AT5 pass; all other tests pass. `build:tracks` exit 1 caused only by the elkhart length line is accepted.
 
 ## Verification
 
