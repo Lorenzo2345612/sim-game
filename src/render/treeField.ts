@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import type { TreeInstances, TreeSpecies, Vec3 } from '../core/types';
+import { bakedSpeciesFor, type BakedSpecies, type TreeModels } from './treeModels';
 
-export type TreeFactory = (preset: string, seed: number, leafFactor: number) => THREE.Group;
+export type Lod = 0 | 1 | 2;
 
 export interface TreeFieldOptions {
-  factory?: TreeFactory;
+  models: TreeModels;
   terrainY: (x: number, z: number) => number;
-  lodDistance?: number;
-  farDistance?: number;
+  minLod?: Lod;
 }
 
 export interface TreeField {
@@ -16,8 +16,9 @@ export interface TreeField {
   update(cameraPosition: Vec3): void;
   instanceCount(species: string): number;
   variantCount(species: string): number;
-  getInstanceLod(species: string, index: number): 0 | 1 | -1;
+  getInstanceLod(species: string, index: number): Lod | -1;
   getInstanceMatrix(species: string, index: number, out: THREE.Matrix4): THREE.Matrix4;
+  lodCounts(): readonly [number, number, number];
   dispose(): void;
 }
 
@@ -25,37 +26,24 @@ export function scaleForHeight(variantHeight: number, targetHeight: number): num
   return targetHeight / variantHeight;
 }
 
-const VARIANT_SEEDS = [1, 2, 3];
-const VARIANT_COUNT = VARIANT_SEEDS.length;
-const LOD_LEAF_FACTORS = [1, 0.5];
-const LOD_COUNT = LOD_LEAF_FACTORS.length;
-const DEFAULT_LOD_DISTANCE = 250;
-const DEFAULT_FAR_DISTANCE = 1500;
+const LOD_THRESHOLDS: readonly number[] = [80, 250];
+const LOD_HYSTERESIS = 10;
+const LOD_LEVELS = 3;
+const VARIANT_COUNT = 4;
 const STRIDE = 5; // x, y, z, scale, rotY
 
-// ez-tree loads its textures at module scope through TextureLoader, which needs a DOM.
-// Load it lazily so this module stays importable in Node-based tests.
-type EzTreeModule = typeof import('@dgreenheck/ez-tree');
-let ezTree: EzTreeModule | undefined;
-try {
-  ezTree = await import('@dgreenheck/ez-tree');
-} catch {
-  ezTree = undefined;
+// Coarser moves need threshold + hysteresis; finer moves and the no-current form use
+// the raw thresholds. Multi-level jumps happen when every level condition holds.
+export function lodFor(distance: number, current?: Lod): Lod {
+  if (current === undefined) {
+    return distance < LOD_THRESHOLDS[0] ? 0 : distance < LOD_THRESHOLDS[1] ? 1 : 2;
+  }
+  let lod = current;
+  while (lod > 0 && distance < LOD_THRESHOLDS[lod - 1]) lod--;
+  while (lod < LOD_LEVELS - 1 && distance >= LOD_THRESHOLDS[lod] + LOD_HYSTERESIS) lod++;
+  return lod as Lod;
 }
 
-function defaultFactory(preset: string, seed: number, leafFactor: number): THREE.Group {
-  if (!ezTree) throw new Error('EZ-Tree unavailable: pass options.factory');
-  const tree = new ezTree.Tree();
-  const presets = ezTree.TreePreset as unknown as Record<string, Parameters<typeof tree.options.copy>[0] | undefined>;
-  const json = presets[preset];
-  if (json) tree.options.copy(json);
-  tree.options.seed = seed;
-  tree.options.leaves.count = Math.max(1, Math.round(tree.options.leaves.count * leafFactor));
-  tree.generate();
-  return tree;
-}
-
-const TEMP_BOX = new THREE.Box3();
 const TEMP_MATRIX = new THREE.Matrix4();
 const TEMP_POSITION = new THREE.Vector3();
 const TEMP_QUATERNION = new THREE.Quaternion();
@@ -77,19 +65,12 @@ function composeMatrix(
   return out.compose(TEMP_POSITION, TEMP_QUATERNION, TEMP_SCALE);
 }
 
-function groupHeight(group: THREE.Object3D): number {
-  TEMP_BOX.setFromObject(group);
-  const height = TEMP_BOX.max.y - TEMP_BOX.min.y;
-  return height > 0 ? height : 1;
-}
-
-function collectParts(group: THREE.Object3D): THREE.Mesh[] {
-  const parts: THREE.Mesh[] = [];
-  group.traverse((object) => {
-    const mesh = object as THREE.Mesh;
-    if (mesh.isMesh) parts.push(mesh);
-  });
-  return parts;
+function collectMaterials(material: THREE.Material | THREE.Material[], out: Set<THREE.Material>): void {
+  if (Array.isArray(material)) {
+    for (const part of material) out.add(part);
+  } else {
+    out.add(material);
+  }
 }
 
 interface Variant {
@@ -97,12 +78,54 @@ interface Variant {
   lods: InstancedMesh2[][]; // [lod][part]
 }
 
+// One mesh set per baked species; track species sharing a bake share the set, so each
+// instance gets a global slot (offset + i) inside it: variant = slot % 4.
+interface Group {
+  variants: Variant[];
+  next: number;
+}
+
 interface SpeciesState {
   count: number;
+  offset: number;
   data: Float32Array;
   lods: Int8Array;
   uniformScales: Float32Array;
   variants: Variant[];
+}
+
+function createVariants(
+  model: TreeModels[BakedSpecies],
+  total: number,
+  baked: string,
+  object: THREE.Object3D,
+  meshes: InstancedMesh2[],
+): Variant[] {
+  const variants: Variant[] = [];
+  for (let v = 0; v < VARIANT_COUNT; v++) {
+    const source = model[v];
+    const capacity = total > v ? Math.ceil((total - v) / VARIANT_COUNT) : 0;
+    const levels: InstancedMesh2[][] = [];
+    for (let l = 0; l < LOD_LEVELS; l++) {
+      const level: InstancedMesh2[] = [];
+      const parts = source.lods[l];
+      for (let p = 0; p < parts.length; p++) {
+        const part = parts[p];
+        const mesh = new InstancedMesh2(part.geometry, part.material, { capacity: Math.max(capacity, 1) });
+        mesh.name = `${baked}-v${v}-lod${l}-p${p}`;
+        if (capacity > 0) {
+          mesh.addInstances(capacity);
+          for (let i = 0; i < capacity; i++) mesh.setVisibilityAt(i, l === 0);
+        }
+        object.add(mesh);
+        meshes.push(mesh);
+        level.push(mesh);
+      }
+      levels.push(level);
+    }
+    variants.push({ height: source.height > 0 ? source.height : 1, lods: levels });
+  }
+  return variants;
 }
 
 export function createTreeField(
@@ -110,55 +133,67 @@ export function createTreeField(
   species: TreeSpecies[],
   options: TreeFieldOptions,
 ): TreeField {
-  const factory = options.factory ?? defaultFactory;
-  const { terrainY } = options;
-  const lodDistance = options.lodDistance ?? DEFAULT_LOD_DISTANCE;
-  const farDistance = options.farDistance ?? DEFAULT_FAR_DISTANCE;
+  const { models, terrainY } = options;
+  const minLod: Lod = options.minLod ?? 0;
 
   const object = new THREE.Group();
   object.name = 'TreeField';
-  const geometries: THREE.BufferGeometry[] = [];
-  const materials: THREE.Material[] = [];
   const meshes: InstancedMesh2[] = [];
-  const states = new Map<string, SpeciesState>();
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const counts: [number, number, number] = [0, 0, 0];
 
+  for (const variants of Object.values(models)) {
+    for (const variant of variants) {
+      for (const lod of variant.lods) {
+        for (const part of lod) {
+          if (part.geometry) geometries.add(part.geometry);
+          collectMaterials(part.material, materials);
+        }
+      }
+    }
+  }
+
+  const presentSpecies: TreeSpecies[] = [];
+  const countOf = new Map<string, number>();
   for (const spec of species) {
+    // One mesh set per species present in the track: any batch counts, even an empty one.
+    if (!trees.some((batch) => batch.species === spec.name)) continue;
     let count = 0;
     for (const batch of trees) {
       if (batch.species === spec.name) count += Math.floor(batch.data.length / 4);
     }
-    const data = new Float32Array(count * STRIDE);
-    const lods = new Int8Array(count).fill(-1);
-    const uniformScales = new Float32Array(count);
+    presentSpecies.push(spec);
+    countOf.set(spec.name, count);
+  }
 
-    const variants: Variant[] = [];
-    for (let v = 0; v < VARIANT_COUNT; v++) {
-      const variantCount = count > v ? Math.ceil((count - v) / VARIANT_COUNT) : 0;
-      const levels: InstancedMesh2[][] = [];
-      let height = 1;
-      for (let l = 0; l < LOD_COUNT; l++) {
-        const group = factory(spec.preset, VARIANT_SEEDS[v], LOD_LEAF_FACTORS[l]);
-        const parts = collectParts(group);
-        for (const part of parts) {
-          if (part.geometry) geometries.push(part.geometry);
-          if (Array.isArray(part.material)) materials.push(...part.material);
-          else if (part.material) materials.push(part.material);
-        }
-        if (l === 0) height = groupHeight(group);
-        const level: InstancedMesh2[] = [];
-        for (let p = 0; p < parts.length; p++) {
-          const source = parts[p];
-          const mesh = new InstancedMesh2(source.geometry, source.material, { capacity: Math.max(variantCount, 1) });
-          mesh.name = `${spec.name}-v${v}-lod${l}-p${p}`;
-          if (variantCount > 0) mesh.addInstances(variantCount);
-          object.add(mesh);
-          meshes.push(mesh);
-          level.push(mesh);
-        }
-        levels.push(level);
-      }
-      variants.push({ height, lods: levels });
+  const totals = new Map<BakedSpecies, number>();
+  for (const spec of presentSpecies) {
+    const baked = bakedSpeciesFor(spec.name);
+    totals.set(baked, (totals.get(baked) ?? 0) + countOf.get(spec.name)!);
+  }
+
+  const groups = new Map<BakedSpecies, Group>();
+  for (const spec of presentSpecies) {
+    const baked = bakedSpeciesFor(spec.name);
+    if (!groups.has(baked)) {
+      groups.set(baked, {
+        variants: createVariants(models[baked], totals.get(baked)!, baked, object, meshes),
+        next: 0,
+      });
     }
+  }
+
+  const states = new Map<string, SpeciesState>();
+  for (const spec of presentSpecies) {
+    const group = groups.get(bakedSpeciesFor(spec.name))!;
+    const count = countOf.get(spec.name)!;
+    counts[0] += count;
+    const offset = group.next;
+    const data = new Float32Array(count * STRIDE);
+    const lods = new Int8Array(count); // instances start at the finest level
+    const uniformScales = new Float32Array(count);
+    const variants = group.variants;
 
     let index = 0;
     for (const batch of trees) {
@@ -170,7 +205,9 @@ export function createTreeField(
         const instanceScale = batch.data[k * 4 + 2];
         const rotY = batch.data[k * 4 + 3];
         const y = terrainY(x, z);
-        const uniform = instanceScale * scaleForHeight(variants[index % VARIANT_COUNT].height, spec.heightMeters);
+        const variant = (offset + index) % VARIANT_COUNT;
+        const local = (offset + index - variant) / VARIANT_COUNT;
+        const uniform = instanceScale * scaleForHeight(variants[variant].height, spec.heightMeters);
         const base = index * STRIDE;
         data[base] = x;
         data[base + 1] = y;
@@ -178,19 +215,15 @@ export function createTreeField(
         data[base + 3] = instanceScale;
         data[base + 4] = rotY;
         uniformScales[index] = uniform;
-        const variant = index % VARIANT_COUNT;
-        const local = Math.floor(index / VARIANT_COUNT);
         composeMatrix(x, y, z, uniform, rotY, TEMP_MATRIX);
         for (const level of variants[variant].lods) {
-          for (const mesh of level) {
-            mesh.setMatrixAt(local, TEMP_MATRIX);
-            mesh.setVisibilityAt(local, false);
-          }
+          for (const mesh of level) mesh.setMatrixAt(local, TEMP_MATRIX);
         }
       }
     }
 
-    states.set(spec.name, { count, data, lods, uniformScales, variants });
+    group.next += count;
+    states.set(spec.name, { count, offset, data, lods, uniformScales, variants });
   }
 
   let disposed = false;
@@ -198,18 +231,22 @@ export function createTreeField(
     object,
     update(cameraPosition: Vec3): void {
       for (const state of states.values()) {
-        const { data: d, lods: level, variants: vs } = state;
+        const { data: d, lods: level, variants: vs, offset } = state;
         for (let i = 0; i < state.count; i++) {
           const dx = d[i * STRIDE] - cameraPosition.x;
           const dz = d[i * STRIDE + 2] - cameraPosition.z;
-          const distance = Math.sqrt(dx * dx + dz * dz);
-          const lod = distance < lodDistance ? 0 : distance < farDistance ? 1 : -1;
-          if (lod === level[i]) continue;
-          level[i] = lod;
-          const variant = i % VARIANT_COUNT;
-          const local = Math.floor(i / VARIANT_COUNT);
-          for (let l = 0; l < LOD_COUNT; l++) {
-            for (const mesh of vs[variant].lods[l]) mesh.setVisibilityAt(local, l === lod);
+          const lod = lodFor(Math.sqrt(dx * dx + dz * dz), level[i] as Lod);
+          const target = lod > minLod ? lod : minLod;
+          if (target === level[i]) continue;
+          counts[level[i]]--;
+          counts[target]++;
+          level[i] = target;
+          const variant = (offset + i) % VARIANT_COUNT;
+          const local = (offset + i - variant) / VARIANT_COUNT;
+          const levels = vs[variant].lods;
+          for (let l = 0; l < LOD_LEVELS; l++) {
+            const visible = l === target;
+            for (const mesh of levels[l]) mesh.setVisibilityAt(local, visible);
           }
         }
       }
@@ -220,10 +257,10 @@ export function createTreeField(
     variantCount(speciesName: string): number {
       return states.has(speciesName) ? VARIANT_COUNT : 0;
     },
-    getInstanceLod(speciesName: string, index: number): 0 | 1 | -1 {
+    getInstanceLod(speciesName: string, index: number): Lod | -1 {
       const state = states.get(speciesName);
       if (!state || index < 0 || index >= state.count) return -1;
-      return state.lods[index] as 0 | 1 | -1;
+      return state.lods[index] as Lod;
     },
     getInstanceMatrix(speciesName: string, index: number, out: THREE.Matrix4): THREE.Matrix4 {
       const state = states.get(speciesName);
@@ -237,6 +274,9 @@ export function createTreeField(
         state.data[base + 4],
         out,
       );
+    },
+    lodCounts(): readonly [number, number, number] {
+      return counts;
     },
     dispose(): void {
       if (disposed) return;

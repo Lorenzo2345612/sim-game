@@ -21,7 +21,8 @@ import { createTerrainMaterial, terrainTrackDistance } from './render/terrainMat
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
-import { createTreeField, type TreeFactory, type TreeField } from './render/treeField';
+import { createTreeField, type TreeField } from './render/treeField';
+import { loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
 import { applyEnvironment, ShadowRig } from './render/environment';
@@ -199,24 +200,8 @@ function makeTerrainY(t: Terrain): (x: number, z: number) => number {
   };
 }
 
-// SwiftShader (CI e2e) vertex-shades ez-tree geometry at ~1 µs/vertex, so the designed
-// 1500 m far range costs seconds per frame there. Swap in a low-poly conifer through
-// createTreeField's factory option — same instances, LODs and counts, ~1/100 the
-// vertices. Real GPUs keep the 039 ez-tree variants.
-function makeCheapTreeFactory(): TreeFactory {
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x4a3a28 });
-  const leafMat = new THREE.MeshLambertMaterial({ color: 0x2f4a1c });
-  return (_preset, _seed, leafFactor) => {
-    const group = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 3, 5), trunkMat);
-    trunk.position.y = 1.5;
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(1.8, 7 * (0.6 + 0.4 * leafFactor), 6), leafMat);
-    crown.position.y = 3 + (3.5 * (0.6 + 0.4 * leafFactor));
-    group.add(trunk, crown);
-    return group;
-  };
-}
-
+// SwiftShader (CI e2e) vertex-shades the baked lod0 foliage at a cost the CPU rasterizer
+// cannot carry, so it starts at lod1 and skips the finest level entirely.
 function isSoftwareGl(renderer: THREE.WebGLRenderer): boolean {
   const gl = renderer.getContext();
   const info = gl.getExtension('WEBGL_debug_renderer_info') as { UNMASKED_RENDERER_WEBGL: GLenum } | null;
@@ -349,10 +334,14 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(barriers.group);
     disposables.push(barriers);
 
+    // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
+    // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
+    // quads) being the farthest level.
+    const treeModels = await loadTreeModels();
     const trees = createTreeField(track.trees, track.treeSpecies, {
+      models: treeModels,
       terrainY: makeTerrainY(track.terrain),
-      farDistance: settings.treeFarDistance,
-      factory: softwareGl ? makeCheapTreeFactory() : undefined,
+      minLod: softwareGl ? 1 : 0,
     });
     treeField = trees;
     scene.add(trees.object);
