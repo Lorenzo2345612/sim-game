@@ -142,7 +142,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | done | 098, 142 |
-| 141 | Render and colliders for escape roads and foam block barriers | waiting decision | 140, 103 |
+| 141 | Render and colliders for escape roads and foam block barriers | done | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
