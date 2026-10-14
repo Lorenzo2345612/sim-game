@@ -1433,7 +1433,9 @@
       "deps": [
         "044",
         "099",
-        "102"
+        "102",
+        "141",
+        "143"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -1928,6 +1930,60 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/139-weather-in-races.md"
+    },
+    {
+      "num": "140",
+      "title": "Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement",
+      "status": "pending",
+      "deps": [
+        "098",
+        "142"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/140-paved-runoffs-escape-roads.md"
+    },
+    {
+      "num": "141",
+      "title": "Render and colliders for escape roads and foam block barriers",
+      "status": "pending",
+      "deps": [
+        "140",
+        "103"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/141-escape-road-foam-render-colliders.md"
+    },
+    {
+      "num": "142",
+      "title": "Kerbs on every corner with entry/exit extensions",
+      "status": "pending",
+      "deps": [
+        "098"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/142-kerbs-every-corner.md"
+    },
+    {
+      "num": "143",
+      "title": "Distance-to-corner boards (builder data + rendering)",
+      "status": "pending",
+      "deps": [
+        "140"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/143-distance-boards.md"
     }
   ]
 }

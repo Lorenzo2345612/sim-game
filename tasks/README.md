@@ -108,7 +108,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
-| 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102 |
+| 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143 |
 | 107 | Car sound data | pending | 058, 072 |
 | 108 | Engine synth DSP core | done | - |
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
@@ -141,3 +141,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 137 | Rain and track wetness model, wet compounds | pending | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
+| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | pending | 098, 142 |
+| 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
+| 142 | Kerbs on every corner with entry/exit extensions | pending | 098 |
+| 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
