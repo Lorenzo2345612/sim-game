@@ -1984,6 +1984,149 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/143-distance-boards.md"
+    },
+    {
+      "num": "144",
+      "title": "Damage model (pure)",
+      "status": "pending",
+      "deps": [
+        "058"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/144-damage-model.md"
+    },
+    {
+      "num": "145",
+      "title": "Contact impacts from Rapier into the damage model",
+      "status": "pending",
+      "deps": [
+        "144"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/145-contact-impacts.md"
+    },
+    {
+      "num": "146",
+      "title": "Damage effects on the vehicle (aero, toe, grip, lost wheel)",
+      "status": "pending",
+      "deps": [
+        "144"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/146-damage-effects.md"
+    },
+    {
+      "num": "147",
+      "title": "Debris: detached wings and wheels as physics bodies",
+      "status": "pending",
+      "deps": [
+        "145"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/147-debris.md"
+    },
+    {
+      "num": "148",
+      "title": "Damage HUD, setting, pit repair time, AI reaction",
+      "status": "pending",
+      "deps": [
+        "145"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/148-damage-hud-settings-ai.md"
+    },
+    {
+      "num": "149",
+      "title": "Sausage kerb placement (builder)",
+      "status": "pending",
+      "deps": [
+        "140"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/149-sausage-kerb-placement.md"
+    },
+    {
+      "num": "150",
+      "title": "Sausage kerb render and colliders",
+      "status": "pending",
+      "deps": [
+        "149"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/150-sausage-kerb-render-colliders.md"
+    },
+    {
+      "num": "151",
+      "title": "Performance harness and budgets",
+      "status": "pending",
+      "deps": [
+        "093"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/151-performance-harness.md"
+    },
+    {
+      "num": "152",
+      "title": "Render cost: draw calls, culling, shadows",
+      "status": "pending",
+      "deps": [
+        "151"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/152-render-cost.md"
+    },
+    {
+      "num": "153",
+      "title": "Simulation cost with 16 cars",
+      "status": "pending",
+      "deps": [
+        "151"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/153-simulation-cost.md"
+    },
+    {
+      "num": "154",
+      "title": "Adaptive quality (dynamic resolution, auto preset)",
+      "status": "pending",
+      "deps": [
+        "151"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/154-adaptive-quality.md"
     }
   ]
 }
