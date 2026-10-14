@@ -6,17 +6,46 @@ import {
   createPhysicsWorld,
   RAPIER,
 } from '../../../src/physics/physicsWorld';
-import { Vehicle, type Telemetry } from '../../../src/physics/vehicle';
+import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT, GRAVITY, MS_TO_KMH } from '../../../src/core/constants';
 import type {
   DriverInput,
   Quat,
   SpawnPose,
+  Surface,
   VehicleState,
 } from '../../../src/core/types';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+// Target API per task 065 (the coder lands it in src/physics/vehicle.ts). Declared
+// here and cast so typecheck stays green pre-implementation; calls still fail at
+// runtime until the methods exist.
+interface WheelTelemetry {
+  fz: number;
+  kappa: number;
+  alpha: number;
+  tempC: number;
+  wear: number;
+  surface: Surface;
+}
+interface Telemetry {
+  wheels: WheelTelemetry[];
+  fuelKg: number;
+  rpm: number;
+  gear: number;
+}
+interface VehicleModel extends Vehicle {
+  getTelemetry(out?: Telemetry): Telemetry;
+  setCompound(name: 'soft' | 'medium' | 'hard'): void;
+  setMultipliers(wear: number, fuel: number): void;
+}
+const VehicleCtor = Vehicle as unknown as new (
+  world: World,
+  spec: CarSpec,
+  spawn: SpawnPose,
+) => VehicleModel;
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -107,7 +136,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT1: ride height within 5 mm of static after 2 s idle from a 0.02 m spawn', () => {
     world = createPhysicsWorld();
-    const vehicle = new Vehicle(world, SPEC, spawn(STATIC_Y + 0.02));
+    const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y + 0.02));
     run(vehicle, world, 2, IDLE);
     const state = vehicle.getState();
     expect(isFiniteState(state)).toBe(true);
@@ -116,7 +145,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT2: standstill on flat ground drifts less than 1 cm in 10 s', () => {
     world = createPhysicsWorld();
-    const vehicle = new Vehicle(world, SPEC, spawn(STATIC_Y));
+    const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y));
     run(vehicle, world, 2, IDLE);
     const before = vehicle.getState();
     run(vehicle, world, 10, IDLE);
@@ -126,7 +155,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT3: full brake on a 5% slope drifts less than 5 cm in 10 s', () => {
     world = createSlopeWorld();
-    const vehicle = new Vehicle(world, SPEC, {
+    const vehicle = new VehicleCtor(world, SPEC, {
       position: {
         x: 0,
         y: STATIC_Y * Math.cos(SLOPE),
@@ -149,7 +178,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT4: drop from 0.5 m settles upright with no NaN in 3 s', () => {
     world = createPhysicsWorld();
-    const vehicle = new Vehicle(world, SPEC, spawn(STATIC_Y + 0.5));
+    const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y + 0.5));
     run(vehicle, world, 3, IDLE);
     const state = vehicle.getState();
     expect(isFiniteState(state)).toBe(true);
@@ -159,7 +188,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT5: full throttle exceeds 100 km/h in 6 s with finite wheel kappa', () => {
     world = createPhysicsWorld();
-    const vehicle = new Vehicle(world, SPEC, spawn(STATIC_Y));
+    const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y));
     run(vehicle, world, 6, input(1));
     const state = vehicle.getState();
     expect(state.forwardSpeed * MS_TO_KMH).toBeGreaterThan(100);
@@ -172,7 +201,7 @@ describe('065 vehicle model acceptance', () => {
 
   it('AT6: at rest 4 wheels report fz >= 0 summing to (m+fuel)*g within 5%', () => {
     world = createPhysicsWorld();
-    const vehicle = new Vehicle(world, SPEC, spawn(STATIC_Y));
+    const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y));
     run(vehicle, world, 2, IDLE);
     const expected =
       (SPEC.chassis.massKg + SPEC.fuel.startL * SPEC.fuel.densityKgL) *
