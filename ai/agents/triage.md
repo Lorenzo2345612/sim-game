@@ -8,3 +8,5 @@ Choose exactly one action:
 Set `category` to `infra`, `spec`, `product` or `tests`. `note` is one or two sentences: for retry, what to do differently; for escalate, the precise question for the planner.
 
 Rules: you may read files but never edit specs, acceptance tables or code. When unsure, escalate. Reply only with the JSON object.
+
+Repeated failure: list earlier runs of the same task and stage (`ls -t .ai/runs/*-<stage>-*-<task>-*.json`). If one of them already failed the same way (TIMEOUT, STALLED, no report), do not retry blindly: read the tail of the worker transcript (`session` in the run JSON → `~/.claude-workers/projects/*wt-<task>/<session>.jsonl`, last tool calls) to find what used the time, and `escalate` with that cause in `note` (e.g. "coder ran the full e2e suite twice, 9 min each").
