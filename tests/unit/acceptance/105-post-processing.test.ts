@@ -5,8 +5,8 @@ import { generateCubeLut } from '../../../tools/assets/buildLut';
 describe('105 post-processing acceptance', () => {
   it('AT1: passesFor returns [] for low, the pass chains for medium and high', () => {
     expect(passesFor('low')).toEqual([]);
-    expect(passesFor('medium')).toEqual(['render', 'bloom', 'lut', 'smaa', 'output']);
-    expect(passesFor('high')).toEqual(['render', 'gtao', 'bloom', 'lut', 'smaa', 'output']);
+    expect(passesFor('medium')).toEqual(['render', 'clamp', 'bloom', 'lut', 'smaa', 'output']);
+    expect(passesFor('high')).toEqual(['render', 'clamp', 'gtao', 'bloom', 'lut', 'smaa', 'output']);
   });
 
   it('AT2: generated .cube parses to 33³ entries, identity ±0.05 on greys, R−B ≥ 0.01 at 0.9 grey', () => {

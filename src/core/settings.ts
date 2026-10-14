@@ -39,6 +39,11 @@ function isPreset(value: unknown): value is Preset {
   return value === 'low' || value === 'medium' || value === 'high';
 }
 
+export function parseQuality(search: string): Preset | null {
+  const requested = new URLSearchParams(search).get('quality');
+  return isPreset(requested) ? requested : null;
+}
+
 export function loadPreset(storage: KeyValueStorage): Preset {
   const raw = storage.getItem(SETTINGS_KEY);
   if (raw == null) return 'high';

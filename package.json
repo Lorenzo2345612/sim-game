@@ -17,7 +17,8 @@
     "build:f4": "tsx tools/assets/buildF4.ts",
     "build:cars": "tsx tools/assets/buildCar.ts",
     "build:trees": "tsx tools/assets/buildTrees.ts",
-    "build:credits": "tsx tools/assets/buildCredits.ts"
+    "build:credits": "tsx tools/assets/buildCredits.ts",
+    "build:lut": "tsx tools/assets/buildLut.ts"
   },
   "dependencies": {
     "@dgreenheck/ez-tree": "1.1.0",

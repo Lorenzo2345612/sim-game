@@ -5,7 +5,7 @@ import { EngineAudio } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
-import { loadPreset, presetSettings, type Preset } from './core/settings';
+import { loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
 import type { DriverInput, LapEvent, Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
@@ -14,6 +14,7 @@ import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec } from './physics/carSpec';
 import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
+import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
@@ -66,7 +67,7 @@ declare global {
       /** Car yaw in radians: 0 facing -Z, positive turning left (CCW seen from +Y). */
       getHeading(): number;
       sceneStats(): SceneStats;
-      renderStats(): { toneMapping: string };
+      renderStats(): { toneMapping: string; passes: PassName[] };
       drawCalls(): number;
       cameraMode(): CameraMode;
       gear(): number;
@@ -241,6 +242,16 @@ function presetFromQuery(storage: Storage): Preset {
     : loadPreset(storage);
 }
 
+async function loadGradeLut(): Promise<{ size: number; data: Float32Array } | null> {
+  try {
+    const res = await fetch('/luts/grade.cube');
+    if (!res.ok) return null;
+    return parseCube(await res.text());
+  } catch {
+    return null; // a missing or malformed LUT drops the lut pass
+  }
+}
+
 async function startGame(trackId: string): Promise<void> {
   endSession();
   menu?.hide();
@@ -265,7 +276,8 @@ async function startGame(trackId: string): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
   const handle = rendererHandle;
-  const preset = presetFromQuery(window.localStorage);
+  // ?quality= (105) wins; ?preset= (054) and the saved preset are the fallbacks.
+  const preset = parseQuality(window.location.search) ?? presetFromQuery(window.localStorage);
   const settings = presetSettings(preset, window.devicePixelRatio);
   handle.renderer.setPixelRatio(settings.pixelRatio);
   const softwareGl = isSoftwareGl(handle.renderer);
@@ -512,7 +524,18 @@ async function startGame(trackId: string): Promise<void> {
   let fpsAvg = 0;
   const frameStats = { fps: 0, drawCalls: 0 };
 
-  const onResize = (): void => handle.resize(window.innerWidth, window.innerHeight, camera);
+  const post = createPostProcessing(
+    handle.renderer,
+    scene,
+    camera,
+    preset,
+    preset === 'low' ? null : await loadGradeLut(),
+  );
+
+  const onResize = (): void => {
+    handle.resize(window.innerWidth, window.innerHeight, camera);
+    post.resize(window.innerWidth, window.innerHeight);
+  };
   const frameFn = (now: number): void => {
     if (!running) return;
     if (last < 0) last = now;
@@ -548,7 +571,7 @@ async function startGame(trackId: string): Promise<void> {
     frameStats.fps = fpsAvg;
     frameStats.drawCalls = handle.renderer.info.render.calls;
     fpsOverlay.update(frameStats);
-    handle.renderer.render(scene, camera);
+    post.render(frame);
     rafId = requestAnimationFrame(frameFn);
   };
 
@@ -659,6 +682,7 @@ async function startGame(trackId: string): Promise<void> {
     game.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();
+    post.dispose();
     disposeScene(scene);
     window.__SIMGAME__ = undefined;
   };
@@ -699,6 +723,7 @@ async function startGame(trackId: string): Promise<void> {
     },
     renderStats: () => ({
       toneMapping: TONE_MAPPING_NAMES[handle.renderer.toneMapping] ?? 'Custom',
+      passes: post.passes,
     }),
     drawCalls: () => handle.renderer.info.render.calls,
     cameraMode: () => cameraRig.mode,
