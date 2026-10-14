@@ -8,7 +8,7 @@ import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle } from '../physics/vehicle';
-import { PLACEHOLDER_CAR } from '../physics/vehicleConfig';
+import { F4_CAR } from '../physics/vehicleConfig';
 
 type World = ReturnType<typeof createPhysicsWorld>;
 
@@ -74,7 +74,7 @@ export class Game {
     await initPhysics();
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
-    const vehicle = new Vehicle(world, PLACEHOLDER_CAR, spawn);
+    const vehicle = new Vehicle(world, F4_CAR, spawn);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [

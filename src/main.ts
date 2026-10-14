@@ -21,6 +21,7 @@ import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
+import { F4_CAR } from './physics/vehicleConfig';
 import { ChaseCamera } from './render/chaseCamera';
 import { Hud } from './ui/hud';
 import { Menu } from './ui/menu';
@@ -281,7 +282,8 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(trackObj.group);
   }
 
-  const car = await CarRenderer.load('/models/race.glb');
+  // Body origin sits on the ground; drop it so the model's contact plane meets the tyres at rest.
+  const car = await CarRenderer.load('/models/f4.glb', -(F4_CAR.suspensionRestLength + F4_CAR.wheelRadius));
   car.root.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (mesh.isMesh) mesh.castShadow = true;

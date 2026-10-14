@@ -31,12 +31,12 @@ export function computeWheelQuaternion(
 }
 
 export class CarRenderer {
-  static async load(url: string): Promise<CarRenderer> {
+  static async load(url: string, bodyOffsetY = 0): Promise<CarRenderer> {
     const gltf = await new GLTFLoader().loadAsync(url);
-    return CarRenderer.fromGltfScene(gltf.scene);
+    return CarRenderer.fromGltfScene(gltf.scene, bodyOffsetY);
   }
 
-  static fromGltfScene(scene: THREE.Object3D): CarRenderer {
+  static fromGltfScene(scene: THREE.Object3D, bodyOffsetY = 0): CarRenderer {
     const body = scene.getObjectByName('body');
     if (!body) throw new Error('Missing node: body');
     const wheels = WHEEL_NODE_NAMES.map((name) => {
@@ -48,10 +48,8 @@ export class CarRenderer {
     const root = new THREE.Group();
     const carBody = new THREE.Group();
     const bodyPivot = new THREE.Group();
-    bodyPivot.rotation.y = Math.PI;
-    bodyPivot.position.y = -0.45;
+    bodyPivot.position.y = bodyOffsetY;
     body.removeFromParent();
-    body.scale.setScalar(1.6);
     bodyPivot.add(body);
     carBody.add(bodyPivot);
     root.add(carBody);
@@ -59,7 +57,6 @@ export class CarRenderer {
     const wheelGroups = wheels.map((wheel) => {
       wheel.removeFromParent();
       wheel.position.set(0, 0, 0);
-      wheel.scale.setScalar(1.1);
       const group = new THREE.Group();
       group.add(wheel);
       root.add(group);
