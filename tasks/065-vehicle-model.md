@@ -18,7 +18,7 @@ Design: `ai/guides/vehicle-dynamics.md` (read all). **Reference implementation: 
 
 ## Files
 
-- `src/physics/vehicleModel.ts` — create.
+- `src/physics/vehicleModel.ts` — create. In the task worktree it already holds a draft from a previous attempt (class still named `Vehicle`, F4 spec): rename the class to `VehicleModel`, keep its exported types, and finish it; do not start over. The test files also import `Telemetry`/types from `vehicle` where needed: point those at `vehicleModel` in the same import edit.
 - Planner-authorised edit (only this): `tests/unit/acceptance/065-vehicle-model.test.ts:9` and `tests/unit/edge/065-vehicle-model-edge.test.ts:5` import becomes `import { VehicleModel as Vehicle } from '../../../src/physics/vehicleModel';`.
 - Do NOT modify `src/physics/vehicle.ts`, `vehicleConfig.ts`, callers, or any other test (that is task 169).
 
