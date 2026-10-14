@@ -123,7 +123,7 @@
         "055",
         "078"
       ],
-      "status": "open",
+      "status": "approved",
       "prefetch": [
         "045",
         "046",
@@ -133,7 +133,11 @@
         "051",
         "052",
         "054"
-      ]
+      ],
+      "builtAt": "2026-10-13T22:17:07",
+      "commit": "93f69b9",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.4",
@@ -142,16 +146,21 @@
         "053",
         "057"
       ],
-      "status": "open",
+      "status": "built",
       "prefetch": [
         "053",
         "057"
-      ]
+      ],
+      "builtAt": "2026-10-13T22:23:42",
+      "commit": "197ece7",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.2c",
       "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake, Sepang",
       "tasks": [
+        "161",
         "099",
         "100",
         "101",
@@ -168,6 +177,7 @@
       ],
       "status": "open",
       "prefetch": [
+        "161",
         "100",
         "099",
         "101",
