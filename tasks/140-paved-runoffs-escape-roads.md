@@ -60,7 +60,7 @@ Conventions: indices wrap with positive modulo; arc length in metres; width roun
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | rounded square: 4 straights 600 m + 4 arcs R 30 (90°), spacing 2 m, width 12, no OSM areas | build run-offs/barriers | exactly 4 paved `runoff` segments, all on the outside, width 30, each spanning its arc run start − 25 … end + 10 (± 1 index); outside barrier type `foam` over start − 15 … end + 10 (± 1) |
-| AT2 | rounded square with arcs R 150 | same | no paved run-off, no `foam` |
+| AT2 | rounded square with arcs R 200 | same | no paved run-off, no `foam` |
 | AT3 | fixture: straight 500 m along −Z, left arc R 40 (60°), 50 m straight, right arc R 40 (60°), straight 500 m, closed by a large loop (R 300) | build | exactly one escape road, width 8; first point within 1 m of the centerline point 10 samples before the left arc; last point within 1 m of the centerline point at the right arc's end; points before K lie within 0.5 m of the approach straight's line |
 | AT4 | rebuilt monza.json | read | ≥ 2 paved run-offs from the heavy rule, ≥ 1 escape road starting within the first 1500 m, ≥ 1 `foam` barrier segment |
 | AT5 | rebuilt monza/spa/silverstone vs previous JSON (after 142) | compare | centerline, elevation, kerbs, pit identical; gravel segments not overlapping a heavy-corner span identical |
