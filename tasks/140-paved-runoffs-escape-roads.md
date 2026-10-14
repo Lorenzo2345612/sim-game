@@ -26,6 +26,7 @@ M1.2c. Design: `docs/plans/m1.2c-realism.md` ("140–141"), research `docs/resea
 - `tools/track-builder/buildTrack.ts` — modify: call the new functions, write `escapeRoads` (always, `[]` if none).
 - `public/tracks/*.json` — regenerate with `npm run build:tracks` for ALL ten ids in `tools/track-builder/tracks.json` (monza, spa, silverstone, mexico, daytona, lusail, bahrain, braselton, elkhart, sepang); every one must rebuild without error.
 - `tests/unit/acceptance/140-paved-runoffs.test.ts` — create (acceptance worker).
+- Planner-authorised fixture fix: `tests/unit/edge/140-paved-runoffs-edge.test.ts:238` EDGE5 `b4` becomes `{ start: 0, end: 99, side: 'left', type: 'armco', offsetMeters: 9 }` (pins lap size n = 100; lap size in `applyFoamBarriers` is inferred as max index + 1).
 - Minimal planner-authorised edits to existing tests that fail only because of regenerated tracks (new `escapeRoads` field, foam types, fewer gravel/changed run-offs). Candidates: `tests/unit/acceptance/097-terrain-below-strips.test.ts` (AT3 field list: also ignore `escapeRoads`), `tests/unit/acceptance/098-osm-runoffs.test.ts`, `tests/unit/edge/098-osm-runoffs.post.test.ts`, `tests/unit/track/osmRunoffs.test.ts`, `tests/unit/acceptance/077-track-verges.test.ts`, `tests/unit/edge/086-barrier-continuity*.test.ts`, `tests/unit/acceptance/096-surface-transitions.test.ts`. Run `npm test`, fix only failing ones, list every edit in the report.
 
 ## Steps
@@ -76,7 +77,7 @@ Previous runs timed out reading existing tests without writing code. Follow this
 ## Acceptance criteria
 
 - [ ] AT1–AT6 pass; all ten `public/tracks/*.json` regenerated and contain `escapeRoads`.
-- [ ] `npm run build:tracks` exits 0; `npm run typecheck`, `lint`, `test` pass (edits to old tests only as listed, all reported).
+- [ ] `npm run build:tracks` regenerates every track; the only accepted failure is the pre-existing elkhart length check (1.16 % > 1 %, unchanged data); `npm run typecheck`, `lint`, `test` pass (edits to old tests only as listed, all reported).
 
 ## Verification
 
