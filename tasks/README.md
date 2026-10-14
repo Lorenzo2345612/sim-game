@@ -106,7 +106,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 101 | Tree field uses baked LODs | done | 100, 039 |
 | 102 | Satellite colour on distant terrain | done | 081 |
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | done | 083, 086 |
-| 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
+| 104 | Crowd sprite atlas and seated crowd | waiting decision | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | done | 099 |
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
 | 107 | Car sound data | pending | 058, 072 |
