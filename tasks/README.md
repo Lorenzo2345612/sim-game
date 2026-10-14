@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier (part 1) | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier (part 1) | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
@@ -144,7 +144,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | done | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | in progress | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
-| 143 | Distance-to-corner boards (builder data + rendering) | in progress | 140 |
+| 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |

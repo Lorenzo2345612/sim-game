@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier (part 1)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -1980,7 +1980,7 @@
     {
       "num": "143",
       "title": "Distance-to-corner boards (builder data + rendering)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "140"
       ],
