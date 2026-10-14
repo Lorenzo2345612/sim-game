@@ -1435,7 +1435,8 @@
         "099",
         "102",
         "141",
-        "143"
+        "143",
+        "155"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -2134,6 +2135,22 @@
       "models": "standard",
       "phase": 3,
       "spec": "tasks/154-adaptive-quality.md"
+    },
+    {
+      "num": "155",
+      "title": "Close parallel sections: per-index half-widths and shared median wall",
+      "status": "pending",
+      "deps": [
+        "140",
+        "141",
+        "142",
+        "143"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/155-close-parallel-sections.md"
     }
   ]
 }

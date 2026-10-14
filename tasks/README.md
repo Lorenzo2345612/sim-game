@@ -108,7 +108,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
-| 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143 |
+| 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
 | 107 | Car sound data | pending | 058, 072 |
 | 108 | Engine synth DSP core | done | - |
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
@@ -156,3 +156,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
+| 155 | Close parallel sections: per-index half-widths and shared median wall | pending | 140, 141, 142, 143 |
