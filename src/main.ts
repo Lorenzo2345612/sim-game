@@ -48,6 +48,7 @@ export interface SceneStats {
   ibl: boolean;
   horizonColor: [number, number, number];
   fogColor: [number, number, number];
+  groundTexture: string | null;
 }
 
 declare global {
@@ -307,6 +308,7 @@ async function startGame(trackId: string): Promise<void> {
     ibl: false,
     horizonColor: [0, 0, 0],
     fogColor: [0, 0, 0],
+    groundTexture: null,
   };
 
   if ('version' in track) {
@@ -319,10 +321,17 @@ async function startGame(trackId: string): Promise<void> {
     shadows.setEnabled(handle.renderer, settings.shadows);
     if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
 
-    const trackDist = terrainTrackDistance(track.terrain, track.centerline);
-    const terrain = createTerrainMesh(track.terrain, createTerrainMaterial(), trackDist);
+    const groundUrl = `textures/ground/${track.id}.jpg`;
+    // Cap 600 so trackDist reaches the satellite fade's full-weight distance (081's default 200 would hide it).
+    const trackDist = terrainTrackDistance(track.terrain, track.centerline, 600);
+    const terrain = createTerrainMesh(
+      track.terrain,
+      createTerrainMaterial(undefined, { url: groundUrl, rect: track.terrain }),
+      trackDist,
+    );
     terrain.receiveShadow = true;
     scene.add(terrain);
+    stats.groundTexture = groundUrl;
 
     const surfaces = createTrackSurfaceObject(buildTrackSurfaces(track));
     surfaces.group.traverse((o) => {

@@ -60,6 +60,27 @@ export function terrainTrackDistance(
   return out;
 }
 
+export type GroundRect = Pick<Terrain, 'originX' | 'originZ' | 'sizeX' | 'sizeZ'>;
+
+export interface GroundOverlay {
+  url: string;
+  rect: GroundRect;
+}
+
+/** Image uv of a world point: (0,0) at the terrain min corner, (1,1) at the max. */
+export function groundUv(rect: GroundRect, x: number, z: number): [number, number] {
+  return [
+    (x - (rect.originX - rect.sizeX / 2)) / rect.sizeX,
+    (z - (rect.originZ - rect.sizeZ / 2)) / rect.sizeZ,
+  ];
+}
+
+// GLSL smoothstep(300, 600): 0 near the track, 1 in the far band where the satellite image takes over.
+export function satelliteWeight(trackDist: number): number {
+  const t = Math.min(1, Math.max(0, (trackDist - 300) / 300));
+  return t * t * (3 - 2 * t);
+}
+
 const VERTEX_PARS = /* glsl */ `
 attribute float trackDist;
 varying float vTrackDist;
@@ -106,7 +127,19 @@ if ( terrainDirtW > 0.0 ) {
 	vec3 terrainDirt = terrainAntiTiled( uDirt, vMapUv, terrainUvB, terrainMacroR, terrainMacroG, uSaturation, uTint );
 	terrainAlbedo = mix( terrainGrass, terrainDirt, terrainDirtW );
 }
-sampledDiffuseColor.rgb = terrainAlbedo;
+sampledDiffuseColor.rgb = terrainAlbedo;`;
+
+// Satellite overlay: same uv formula as groundUv, uv clamped, albedo fades to the image by trackDist.
+const GROUND_PARS = /* glsl */ `
+uniform sampler2D uGround;
+uniform vec4 uGroundRect;`;
+
+const GROUND_ALBEDO = /* glsl */ `
+vec2 terrainGroundUv = clamp( ( vSurfaceWorldXz - uGroundRect.xy ) / uGroundRect.zw, 0.0, 1.0 );
+vec3 terrainGround = texture2D( uGround, terrainGroundUv ).rgb;
+sampledDiffuseColor.rgb = mix( terrainAlbedo, terrainGround, smoothstep( 300.0, 600.0, trackDist ) );`;
+
+const ALBEDO_TAIL = /* glsl */ `
 diffuseColor *= sampledDiffuseColor;`;
 
 // normal_fragment_maps with the tangent-space branch blending the dirt normal by the
@@ -173,6 +206,7 @@ float roughnessFactor = roughness;
 
 export function createTerrainMaterial(
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
+  ground?: GroundOverlay,
 ): THREE.MeshStandardMaterial {
   const sets = SET_DIRS.map((dir) => ({
     color: loadTexture(`textures/${dir}/color.jpg`),
@@ -181,9 +215,21 @@ export function createTerrainMaterial(
   }));
   const [grassA, grassB, grassC, dirt] = sets;
   const macro = loadTexture(MACRO_URL);
-  const owned = [...sets.flatMap((set) => [set.color, set.normal, set.roughness]), macro];
+  const groundTexture = ground ? loadTexture(ground.url) : null;
+  if (groundTexture) {
+    groundTexture.colorSpace = THREE.SRGBColorSpace;
+    groundTexture.wrapS = THREE.ClampToEdgeWrapping;
+    groundTexture.wrapT = THREE.ClampToEdgeWrapping;
+    groundTexture.flipY = false;
+  }
+  const owned = [
+    ...sets.flatMap((set) => [set.color, set.normal, set.roughness]),
+    macro,
+    ...(groundTexture ? [groundTexture] : []),
+  ];
   for (const set of sets) set.color.colorSpace = THREE.SRGBColorSpace;
   for (const texture of owned) {
+    if (texture === groundTexture) continue;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
   }
@@ -209,6 +255,17 @@ export function createTerrainMaterial(
     uSaturation: { value: 0.9 },
     uTint: { value: 0.6 },
   };
+  if (groundTexture && ground) {
+    uniforms.uGround = { value: groundTexture };
+    uniforms.uGroundRect = {
+      value: new THREE.Vector4(
+        ground.rect.originX - ground.rect.sizeX / 2,
+        ground.rect.originZ - ground.rect.sizeZ / 2,
+        ground.rect.sizeX,
+        ground.rect.sizeZ,
+      ),
+    };
+  }
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${VERTEX_PARS}`)
@@ -216,12 +273,15 @@ export function createTerrainMaterial(
       .replace('#include <project_vertex>', '#include <project_vertex>\n\tvTrackDist = trackDist;');
     applyAntiTiling(shader, uniforms);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${FRAGMENT_PARS}`)
-      .replace('diffuseColor *= sampledDiffuseColor;', TERRAIN_ALBEDO)
+      .replace('#include <common>', `#include <common>\n${FRAGMENT_PARS}${groundTexture ? GROUND_PARS : ''}`)
+      .replace(
+        'diffuseColor *= sampledDiffuseColor;',
+        `${TERRAIN_ALBEDO}${groundTexture ? GROUND_ALBEDO : ''}${ALBEDO_TAIL}`,
+      )
       .replace('#include <roughnessmap_fragment>', TERRAIN_ROUGHNESS)
       .replace('#include <normal_fragment_maps>', TERRAIN_NORMAL);
   };
-  material.customProgramCacheKey = () => 'terrain-splat';
+  material.customProgramCacheKey = () => (groundTexture ? 'terrain-splat-ground' : 'terrain-splat');
   material.userData = { textures: owned };
   return material;
 }
