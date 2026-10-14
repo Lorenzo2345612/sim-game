@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 042
 Complexity: simple
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer
 
 ## Goal
