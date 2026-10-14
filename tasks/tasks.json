@@ -2272,7 +2272,7 @@
     {
       "num": "165",
       "title": "Gamepad rumble",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "164"
       ],

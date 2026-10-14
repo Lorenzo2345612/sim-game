@@ -166,7 +166,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
-| 165 | Gamepad rumble | in progress | 164 |
+| 165 | Gamepad rumble | done | 164 |
 | 166 | Dirty tyres | pending | 065, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
