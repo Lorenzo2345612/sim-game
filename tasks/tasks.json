@@ -2003,6 +2003,8 @@
       "title": "Contact impacts from Rapier into the damage model",
       "status": "pending",
       "deps": [
+        "070",
+        "093",
         "144"
       ],
       "complexity": "complex",
@@ -2016,6 +2018,7 @@
       "title": "Damage effects on the vehicle (aero, toe, grip, lost wheel)",
       "status": "pending",
       "deps": [
+        "070",
         "144"
       ],
       "complexity": "complex",
@@ -2029,7 +2032,8 @@
       "title": "Debris: detached wings and wheels as physics bodies",
       "status": "pending",
       "deps": [
-        "145"
+        "145",
+        "146"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -2042,7 +2046,9 @@
       "title": "Damage HUD, setting, pit repair time, AI reaction",
       "status": "pending",
       "deps": [
-        "145"
+        "094",
+        "145",
+        "146"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -2068,6 +2074,7 @@
       "title": "Sausage kerb render and colliders",
       "status": "pending",
       "deps": [
+        "141",
         "149"
       ],
       "complexity": "complex",

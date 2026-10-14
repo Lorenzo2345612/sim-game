@@ -146,12 +146,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 142 | Kerbs on every corner with entry/exit extensions | pending | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
 | 144 | Damage model (pure) | pending | 058 |
-| 145 | Contact impacts from Rapier into the damage model | pending | 144 |
-| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 144 |
-| 147 | Debris: detached wings and wheels as physics bodies | pending | 145 |
-| 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 145 |
+| 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
+| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
+| 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
+| 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | pending | 140 |
-| 150 | Sausage kerb render and colliders | pending | 149 |
+| 150 | Sausage kerb render and colliders | pending | 141, 149 |
 | 151 | Performance harness and budgets | pending | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
