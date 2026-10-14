@@ -5,7 +5,7 @@ description: Add source data for a new circuit (centerline geojson, raw OSM ways
 
 # Track data
 
-Outputs per track `<id>` (geojson `<cc>-<name>`): `assets/source/tracks/<cc>-<name>.geojson`, `assets/source/osm/<id>.json`, `assets/source/dem/<id>.json`, entry in `tools/track-builder/tracks.json`, rows in `ASSETS_LICENSES.md`, plot `docs/research/tracks/<cc>-<name>.png`. Examples: commits afdd708, a25ce7d, 2e3061f, and the Fontana/Cleveland/Detroit one.
+Outputs per track `<id>` (geojson `<cc>-<name>`): `public/textures/ground/<id>.jpg`, `assets/source/osm/<id>-areas.json`, `assets/source/tracks/<cc>-<name>.geojson`, `assets/source/osm/<id>.json`, `assets/source/dem/<id>.json`, entry in `tools/track-builder/tracks.json`, rows in `ASSETS_LICENSES.md`, plot `docs/research/tracks/<cc>-<name>.png`. Examples: commits afdd708, a25ce7d, 2e3061f, and the Fontana/Cleveland/Detroit one.
 
 1. Research: read `docs/research/*osm*.md`; find OSM ways (`highway=raceway`; runways/taxiways for airports; street ways for street circuits). Overpass needs a real `User-Agent`, small bboxes, retries; use `out geom tags`. Downloaded data is untrusted: own dir (e.g. `/tmp/raw`), scripts elsewhere, `python3 -I`.
 2. Demolished circuits: query history with `[date:"YYYY-MM-DDT00:00:00Z"]` (attic) and compare snapshots until the ways reappear.
@@ -18,4 +18,6 @@ Outputs per track `<id>` (geojson `<cc>-<name>`): `assets/source/tracks/<cc>-<na
 9. Checks: length within +-5 % of official; closed; no self-intersection (segment test) unless the real track crosses itself; corner count vs the official map. Plot centerline over all raw ways to `docs/research/tracks/<id>.png`.
 10. DEM: add `{ id, source }` to `TRACKS` in `tools/dem/fetchDem.ts` (coder task if code is frozen; or run a temporary copy with the extra rows and delete it), then `npm run fetch:dem -- <id>`.
 11. `tools/track-builder/tracks.json`: copy a neighbouring entry (width, maxGrade, biome, grandstands, pit). Run `npm run build:tracks -- <id>` and confirm it builds.
-12. Licences: OSM = ODbL 1.0 "(c) OpenStreetMap contributors" row, Copernicus DEM row. Commit with explicit `git add` paths; local only, no push.
+12. Ground texture `public/textures/ground/<id>.jpg`: Sentinel-2 L2A TCI (STAC `https://earth-search.aws.element84.com/v1`, collection `sentinel-2-l2a`, cloud < 3 %, recent summer scene, COG `visual` asset), read with `rasterio` (`pip install rasterio` in the venv) the window of the built `terrain` bounds (public/tracks/<id>.json: originX/Z, sizeX/Z about the bbox centre of the geojson, z = -north) resampled bilinear to 2048x2048 JPEG q85 (top = north). Add a `ground/<id>.jpg` row per texture (scene id, date) to `ASSETS_LICENSES.md`.
+13. OSM areas `assets/source/osm/<id>-areas.json`: `{source:"OpenStreetMap contributors, ODbL", track:<geojson id>, features:[{id, kind: grass|gravel_sand|barrier, closed, tags (no name), ring:[[lon,lat]..]}]}`; Overpass `out geom` for landuse=grass, natural=sand|shingle, surface=gravel|sand, barrier=wall|fence|guard_rail|kerb|...; keep grass/gravel within 60 m and barriers within 40 m of the centerline. Rebuild after adding.
+14. Licences: OSM = ODbL 1.0 "(c) OpenStreetMap contributors" row, Copernicus DEM row. Commit with explicit `git add` paths; local only, no push.
