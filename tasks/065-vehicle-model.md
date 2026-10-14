@@ -32,6 +32,7 @@ Design: `ai/guides/vehicle-dynamics.md` (read all). **Reference implementation: 
   - `edge/011-vehicle-physics.test.ts` (round 2, all F4 `SPEC` = parsed f4.json): EDGE1 :80 band → y > 0.2; EDGE2 :106 advance 10 → 40 steps; EDGE6 :187-190 lo = `SPEC.steering.maxAngleLow` × 0.85, check after 40 steps; EDGE6 :202-203 run 2 → 40 steps (band unchanged); EDGE7 :222-229 hub offsets from `SPEC.wheels.positions`, wheel y band 0.28 ± 0.05; EDGE10 :280 run 40 steps before the steering assertion.
   - `edge/033-surface-grip.post.test.ts:117` and `:128`: delete both assertions (old-model drag isolation; superseded by 065 and 162 coast tests).
   - `edge/045-gearbox.post.test.ts:82` expected rpm from f4.json (r 0.28, ratio[0] 2.3, final 3.5, idle 1200) with the same formula; `:93` expect ≈ `SPEC.engine.idleRpm` (± 100).
+  - `tests/unit/physics/surfaceGrip.test.ts`: constructor :54 → F4 `CarSpec`; delete `controllerOf` (:63); the two `frictionSlip` tests (:93 asphalt, :118 grass) become `getTelemetry().wheels[i].surface` equal to `'asphalt'` / `'grass'` for all 4 wheels; other tests unchanged.
   - `tests/unit/physics/vehicle.test.ts`: constructor → F4 `CarSpec`; bands same as the new acceptance/011 values.
 
 ## Steps
@@ -63,7 +64,7 @@ Previous runs (GLM and MiMo) timed out after reading ~30 files without writing c
 1. Read only this spec, `ai/guides/vehicle-dynamics.md`, `ai/lab/vehicle-model.mjs`, the current `src/physics/vehicle.ts`, and the exports of the 058–064 modules you call. Start editing `src/physics/vehicle.ts` before the 12th tool call.
 2. Make `tests/unit/acceptance/065-*.test.ts` pass; run only that file in this phase.
 3. Apply the planner-authorised test edits listed in Files, mechanically, then run `npm test`.
-4. Commit progress with `git commit` after each phase so a timeout keeps the work.
+4. Context is tight: read large files (lab, guide, tests) only in the ranges you need; after a context summary do not re-read files already summarised. Edit test files with targeted Edit calls at the listed lines, not by reading them whole.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
