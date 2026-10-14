@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 1
-Depends on: 065
+Depends on: 065, 169
 Complexity: simple
 Type: bugfix
 Models: standard

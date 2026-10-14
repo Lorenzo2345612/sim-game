@@ -870,8 +870,8 @@
     },
     {
       "num": "065",
-      "title": "Vehicle model on Rapier",
-      "status": "waiting decision",
+      "title": "Vehicle model on Rapier (part 1)",
+      "status": "pending",
       "deps": [
         "058",
         "059",
@@ -897,7 +897,8 @@
       "status": "pending",
       "deps": [
         "058",
-        "065"
+        "065",
+        "169"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -940,7 +941,8 @@
       "status": "pending",
       "deps": [
         "048",
-        "065"
+        "065",
+        "169"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -957,6 +959,7 @@
         "057",
         "058",
         "065",
+        "169",
         "066",
         "067",
         "068",
@@ -1247,6 +1250,7 @@
         "008",
         "043",
         "065",
+        "169",
         "070",
         "073",
         "087",
@@ -1949,7 +1953,7 @@
     {
       "num": "141",
       "title": "Render and colliders for escape roads and foam block barriers",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "140",
         "103"
@@ -1976,7 +1980,7 @@
     {
       "num": "143",
       "title": "Distance-to-corner boards (builder data + rendering)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "140"
       ],
@@ -2237,7 +2241,8 @@
       "title": "Speed-dependent rolling drag on grass and gravel",
       "status": "pending",
       "deps": [
-        "065"
+        "065",
+        "169"
       ],
       "complexity": "simple",
       "type": "bugfix",
@@ -2288,6 +2293,7 @@
       "status": "pending",
       "deps": [
         "065",
+        "169",
         "162"
       ],
       "complexity": "simple",
@@ -2302,7 +2308,8 @@
       "status": "pending",
       "deps": [
         "165",
-        "065"
+        "065",
+        "169"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -2324,6 +2331,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/168-us-tracks-in-game.md"
+    },
+    {
+      "num": "169",
+      "title": "Vehicle model swap-in and old-test migration",
+      "status": "pending",
+      "deps": [
+        "065"
+      ],
+      "complexity": "standard",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/169-vehicle-swap.md"
     }
   ]
 }

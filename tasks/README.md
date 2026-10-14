@@ -68,12 +68,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
-| 066 | Calibration suite and F4 tuning | pending | 058, 065 |
+| 065 | Vehicle model on Rapier (part 1) | pending | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 066 | Calibration suite and F4 tuning | pending | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
-| 069 | HUD tyres and fuel widget | pending | 048, 065 |
-| 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 066, 067, 068, 069 |
+| 069 | HUD tyres and fuel widget | pending | 048, 065, 169 |
+| 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
@@ -95,7 +95,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 090 | AI traffic decisions and difficulty | done | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
-| 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
+| 093 | Multi-car race game | pending | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
@@ -142,9 +142,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | done | 098, 142 |
-| 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
+| 141 | Render and colliders for escape roads and foam block barriers | in progress | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
-| 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
+| 143 | Distance-to-corner boards (builder data + rendering) | in progress | 140 |
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
@@ -163,10 +163,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
-| 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
+| 162 | Speed-dependent rolling drag on grass and gravel | pending | 065, 169 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
-| 166 | Dirty tyres | pending | 065, 162 |
-| 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |
+| 166 | Dirty tyres | pending | 065, 169, 162 |
+| 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
+| 169 | Vehicle model swap-in and old-test migration | pending | 065 |

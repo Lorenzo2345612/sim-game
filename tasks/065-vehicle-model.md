@@ -1,4 +1,4 @@
-# 065 — Vehicle model on Rapier
+# 065 — Vehicle model on Rapier (part 1: new model class)
 
 Status: pending
 Phase: 1
@@ -10,7 +10,7 @@ Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Goal
 
-`Vehicle` runs the in-house model (own suspension, tyres, powertrain, aids, fuel) on a Rapier rigid body instead of `DynamicRayCastVehicleController`, keeping its public API.
+New class `VehicleModel` in `src/physics/vehicleModel.ts` runs the in-house model (own suspension, tyres, powertrain, aids, fuel) on a Rapier rigid body, with the same public API as today's `Vehicle` plus telemetry. Today's `Vehicle` stays untouched; task 169 swaps it in and migrates old tests.
 
 ## Context
 
@@ -18,22 +18,9 @@ Design: `ai/guides/vehicle-dynamics.md` (read all). **Reference implementation: 
 
 ## Files
 
-- `src/physics/vehicle.ts` — modify (replace controller; keep file's exports)
-- `src/physics/vehicleConfig.ts` — modify (only what the new constructor needs; keep exports used elsewhere)
-- `tests/unit/physics/vehicleModel.test.ts` — create
-
-- Planner-authorised edits to superseded tests (coder applies exactly these, nothing else; load the car with `parseCarSpec(JSON.parse(readFileSync('public/cars/f4.json','utf8')))`):
-  - Constructor call sites passing `PLACEHOLDER_CAR`/a `VehicleConfig` become the parsed F4 `CarSpec`: `acceptance/011-vehicle-physics.test.ts:72`, `acceptance/032-physics-track-colliders.test.ts:156`, `acceptance/033-surface-grip.test.ts:48`, `acceptance/045-gearbox.test.ts:80`, `edge/011-vehicle-physics.test.ts:59`, `edge/011-vehicle-physics.post.test.ts:32-36`, `edge/033-surface-grip.post.test.ts:61`, `edge/033-surface-grip-edge.test.ts:75,128,130`, `edge/045-gearbox-edge.test.ts:35`, `edge/045-gearbox.post.test.ts:71,87,122`.
-  - `acceptance/011` AT1: replace the y band 0.33-0.45 with: y finite and |Δy| < 5 mm over the last 0.5 s; 4 wheels in contact stays. AT2: band becomes 3.0-5.0 s. AT3: unchanged (55-66 m/s). AT4: band becomes 10-20 m/s².
-  - `edge/011-vehicle-physics.post.test.ts`: POST3 → `brakes.maxTorque = 0` (same assertion); POST4 → delete; POST5 → every torqueCurve torque × 0.25, assert speed after 30 s is < 0.85 × the unmodified F4's; POST6 → `aero.cda` 0 vs 0.8 (same assertion).
-  - `edge/033-surface-grip.post.test.ts:70-96`: replace `controller.wheelFrictionSlip(i)` checks with `getTelemetry().wheels[i].surface` equal to the surface under that wheel; keep the ordering asphalt grip > grass/gravel via the existing surface factor table.
-  - `acceptance/045-gearbox.test.ts:78-93` (AT5), `edge/045-gearbox-edge.test.ts:128-148` (EDGE7/EDGE8): expected rpm/upshift/limiter values recomputed from f4.json (wheel radius 0.28, ratios, final 3.5, idleRpm 1200, upRpm 6400, limiterRpm 6900) using the same formulas; pure `Gearbox` class rows keep their defaults.
-  - Do not touch `acceptance/010` AT4 or `057` AT1.
-  - `edge/011-vehicle-physics.test.ts` (round 2, all F4 `SPEC` = parsed f4.json): EDGE1 :80 band → y > 0.2; EDGE2 :106 advance 10 → 40 steps; EDGE6 :187-190 lo = `SPEC.steering.maxAngleLow` × 0.85, check after 40 steps; EDGE6 :202-203 run 2 → 40 steps (band unchanged); EDGE7 :222-229 hub offsets from `SPEC.wheels.positions`, wheel y band 0.28 ± 0.05; EDGE10 :280 run 40 steps before the steering assertion.
-  - `edge/033-surface-grip.post.test.ts:117` and `:128`: delete both assertions (old-model drag isolation; superseded by 065 and 162 coast tests).
-  - `edge/045-gearbox.post.test.ts:82` expected rpm from f4.json (r 0.28, ratio[0] 2.3, final 3.5, idle 1200) with the same formula; `:93` expect ≈ `SPEC.engine.idleRpm` (± 100).
-  - `tests/unit/physics/surfaceGrip.test.ts`: constructor :54 → F4 `CarSpec`; delete `controllerOf` (:63); the two `frictionSlip` tests (:93 asphalt, :118 grass) become `getTelemetry().wheels[i].surface` equal to `'asphalt'` / `'grass'` for all 4 wheels; other tests unchanged.
-  - `tests/unit/physics/vehicle.test.ts`: constructor → F4 `CarSpec`; bands same as the new acceptance/011 values.
+- `src/physics/vehicleModel.ts` — create.
+- Planner-authorised edit (only this): `tests/unit/acceptance/065-vehicle-model.test.ts:9` and `tests/unit/edge/065-vehicle-model-edge.test.ts:5` import becomes `import { VehicleModel as Vehicle } from '../../../src/physics/vehicleModel';`.
+- Do NOT modify `src/physics/vehicle.ts`, `vehicleConfig.ts`, callers, or any other test (that is task 169).
 
 ## Steps
 
@@ -42,8 +29,8 @@ import type { CarSpec } from './carSpec';
 import type { Surface, SpawnPose, VehicleState } from '../core/types';
 export interface WheelTelemetry { fz: number; kappa: number; alpha: number; tempC: number; wear: number; surface: Surface }
 export interface Telemetry { wheels: WheelTelemetry[]; fuelKg: number; rpm: number; gear: number }
-class Vehicle {
-  constructor(world: RAPIER.World, spec: CarSpec, spawn: SpawnPose); // was VehicleConfig
+export class VehicleModel {
+  constructor(world: RAPIER.World, spec: CarSpec, spawn: SpawnPose); 
   // unchanged: body, setInput, prePhysicsStep(dt), getWheelSurfaces, getState(out?), reset(spawn), gear/rpm/shiftUp/shiftDown/setGearMode
   getTelemetry(out?: Telemetry): Telemetry;
   setCompound(name: 'soft' | 'medium' | 'hard'): void;  // default 'medium'; resets tyre state
@@ -54,17 +41,15 @@ class Vehicle {
 - `prePhysicsStep` order per the guide: rays and suspension, slip with gravity-predicted velocity, powertrain/aids, `solveWheel` per wheel, aero, impulses. One sub-step per tick, `FIXED_DT`.
 - `getState` keeps `VehicleState` (wheel position, steering, rotation, inContact) from the model's own wheel state.
 - Telemetry arrays reused when `out` is passed (no per-frame allocation). Tyre state per wheel uses `updateTyreState`/`gripFactor` (060); aero via 061; fuel/aids 063; compound defaults to `medium`; pressure for `pressureFactor`/`updateTyreState` is `spec.tyres.pressureKpa`.
-- Callers of the old `VehicleConfig` constructor (also edited by 054/057, hence those dependencies) are updated minimally to pass `CarSpec` loaded from `public/cars/f4.json` (tests may import the JSON).
+- `unchanged` methods copy the signatures and semantics of today's `Vehicle` in `src/physics/vehicle.ts` (read it for its public API only).
 
 Conventions: SI units; wheel order FL, FR, RL, RR; positive steer = left; `dt <= 0` or non-finite is ignored; NaN input clamps to 0.
 
 ## Work order
 
-Previous runs (GLM and MiMo) timed out after reading ~30 files without writing code. Follow strictly:
-1. Read only this spec, `ai/guides/vehicle-dynamics.md`, `ai/lab/vehicle-model.mjs`, the current `src/physics/vehicle.ts`, and the exports of the 058–064 modules you call. Start editing `src/physics/vehicle.ts` before the 12th tool call.
-2. Make `tests/unit/acceptance/065-*.test.ts` pass; run only that file in this phase.
-3. Apply the planner-authorised test edits listed in Files, mechanically, then run `npm test`.
-4. Context is tight: read large files (lab, guide, tests) only in the ranges you need; after a context summary do not re-read files already summarised. Edit test files with targeted Edit calls at the listed lines, not by reading them whole.
+1. Read only: this spec, `ai/guides/vehicle-dynamics.md`, `ai/lab/vehicle-model.mjs`, the exports of the 058–064 modules and `carSpec.ts`, the public API of `src/physics/vehicle.ts`. Read large files in ranges. After a context summary do not re-read files already summarised.
+2. Write `vehicleModel.ts` early, then iterate against `npx vitest run tests/unit/acceptance/065-vehicle-model.test.ts tests/unit/edge/065-vehicle-model-edge.test.ts`.
+3. Run `npm run typecheck`, `npm run lint`, `npm test` (other tests must still pass untouched).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
@@ -76,22 +61,20 @@ Previous runs (GLM and MiMo) timed out after reading ~30 files without writing c
 | AT4 | drop from 0.5 m | 3 s | settles, no NaN, not flipped |
 | AT5 | full throttle on flat | 6 s | speed > 100 km/h; wheels' kappa finite |
 | AT6 | telemetry | any tick | 4 wheels with fz ≥ 0 summing to (m+fuel)·g ± 5 % at rest |
-| AT7 | existing Phase 0/1 vehicle and e2e tests | run | pass (update thresholds only where the spec's new targets replace them) — verification gate only (npm test + test:e2e), no new acceptance test |
 
 ## Acceptance criteria
 
-- [ ] All AT rows pass; `npm test` and `npm run test:e2e` green.
-- [ ] `grep -rn DynamicRayCastVehicleController src` returns nothing.
+- [ ] AT1–AT6 and the 065 edge tests pass against `VehicleModel`; `npm test` green with no other test edited.
 
 ## Verification
 
 ```
 npm run typecheck
 npm run lint
+npx vitest run tests/unit/acceptance/065-vehicle-model.test.ts tests/unit/edge/065-vehicle-model-edge.test.ts
 npm test
-npx playwright test 065-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope
 
-- Setup application and UI (067/068), HUD (069), game wiring and `__SIMGAME__.telemetry` (070), F4 retuning (066), damage, AWD/FWD.
+- Replacing `Vehicle`, callers and old-test migration (169). Setup/UI (067/068), HUD (069), game wiring (070), F4 retuning (066), damage, AWD/FWD.
