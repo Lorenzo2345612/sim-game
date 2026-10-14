@@ -157,7 +157,7 @@ export class HudV2 {
     const kmh = Number.isFinite(data.speedKmh) ? Math.round(data.speedKmh) : 0;
     this.setText(this.speedEl, `${kmh} km/h`);
     this.setText(this.lapEl, data.lap <= 0 ? 'Lap -' : `Lap ${data.lap}`);
-    this.setText(this.gearEl, String(data.gear));
+    this.setText(this.gearEl, data.gear === -1 ? 'R' : String(data.gear));
 
     const rpm = Number.isFinite(data.rpm) ? data.rpm : 0;
     const pct = Math.min(100, Math.max(0, (rpm / HUD_MAX_RPM) * 100));

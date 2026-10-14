@@ -124,17 +124,18 @@ export class Vehicle {
     this.controller.setWheelSteering(0, steer);
     this.controller.setWheelSteering(1, steer);
 
-    this.gearbox.update(forwardSpeed);
-    const F =
-      this.input.throttle *
-      Math.min(config.maxDriveForceN, config.enginePowerW / Math.max(forwardSpeed, 1)) *
-      this.gearbox.driveScale(forwardSpeed);
+    this.gearbox.update(forwardSpeed, dt, this.input);
+    const forceCap = Math.min(config.maxDriveForceN, config.enginePowerW / Math.max(forwardSpeed, 1));
+    const reverse = this.gearbox.gear === -1;
+    const F = reverse
+      ? -this.input.brake * forceCap
+      : this.input.throttle * forceCap * this.gearbox.driveScale(forwardSpeed);
     this.controller.setWheelEngineForce(0, 0);
     this.controller.setWheelEngineForce(1, 0);
     this.controller.setWheelEngineForce(2, F / 2);
     this.controller.setWheelEngineForce(3, F / 2);
 
-    const brake = this.input.brake * config.brakeMax;
+    const brake = this.gearbox.brakeRequest(this.input) * config.brakeMax;
     for (let i = 0; i < 4; i++) {
       this.controller.setWheelBrake(i, brake);
     }

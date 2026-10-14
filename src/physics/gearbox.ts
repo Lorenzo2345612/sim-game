@@ -14,8 +14,13 @@ export const DOWNSHIFT_RPM = 5000;
 const WHEEL_RADIUS_M = 0.33;
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const MIN_GEAR = 1;
+const REVERSE_RATIO = 3.0;
+const REVERSE_MAX_SPEED_MS = 30 / 3.6;
+const STOP_SPEED_MS = 0.5;
+const REVERSE_HOLD_S = 0.4;
 
 export type GearboxMode = 'auto' | 'manual';
+export type PedalInput = { throttle: number; brake: number };
 
 export function rpmFor(speedMs: number, gear: number): number {
   const ratio = GEAR_RATIOS[Math.min(Math.max(gear, MIN_GEAR), GEAR_RATIOS.length) - 1];
@@ -36,6 +41,8 @@ export class Gearbox {
   private readonly idleRpm: number;
   private readonly limiterRpm: number;
   private shiftT = 0;
+  private lastSpeedMs = 0;
+  private reverseHoldT = 0;
 
   constructor(
     params?: GearboxParams,
@@ -58,20 +65,40 @@ export class Gearbox {
 
   shiftUp(): void {
     if (this.mode !== 'manual') return;
-    this.setGear(Math.min(this.ratios.length, this.gear + 1));
+    this.setGear(Math.min(this.ratios.length, this.gear < MIN_GEAR ? MIN_GEAR : this.gear + 1));
   }
 
   shiftDown(): void {
     if (this.mode !== 'manual') return;
+    if (this.gear === MIN_GEAR && Math.abs(this.lastSpeedMs) < STOP_SPEED_MS) {
+      this.setGear(-1);
+      return;
+    }
+    // At -1 the max clamp brings the box back to gear 1.
     this.setGear(Math.max(MIN_GEAR, this.gear - 1));
   }
 
-  update(speedMs: number, dt: number = FIXED_DT): void {
+  update(speedMs: number, dt: number = FIXED_DT, input?: PedalInput): void {
     if (this.shiftT > 0) this.shiftT = Math.max(0, this.shiftT - dt);
-    if (this.mode !== 'auto') return;
-    if (speedMs < 0) {
-      this.gear = MIN_GEAR;
+    this.lastSpeedMs = speedMs;
+    if (this.gear === -1) {
+      if (input && input.throttle >= 0.5 && Math.abs(speedMs) < STOP_SPEED_MS) this.setGear(MIN_GEAR);
       return;
+    }
+    if (this.mode !== 'auto') return;
+    const hold =
+      input !== undefined &&
+      Math.abs(speedMs) < STOP_SPEED_MS &&
+      input.brake >= 0.5 &&
+      input.throttle < 0.05;
+    if (!hold) this.reverseHoldT = 0;
+    else {
+      this.reverseHoldT += dt;
+      if (this.reverseHoldT >= REVERSE_HOLD_S) {
+        this.setGear(-1);
+        this.reverseHoldT = 0;
+        return;
+      }
     }
     if (this.shiftT > 0) return;
     const rpm = this.rpm(speedMs);
@@ -80,9 +107,25 @@ export class Gearbox {
   }
 
   rpm(speedMs: number): number {
-    const ratio = this.ratios[Math.min(Math.max(this.gear, MIN_GEAR), this.ratios.length) - 1];
+    const ratio =
+      this.gear === -1
+        ? REVERSE_RATIO
+        : this.ratios[Math.min(Math.max(this.gear, MIN_GEAR), this.ratios.length) - 1];
     const raw = (Math.abs(speedMs) / this.wheelRadius) * ratio * this.final * RPM_PER_RPS;
     return raw < this.idleRpm ? this.idleRpm : raw;
+  }
+
+  driveTorque(engineTorqueNm: number, input: PedalInput, speedMs: number): number {
+    if (this.gear === -1) {
+      if (speedMs <= -REVERSE_MAX_SPEED_MS) return 0;
+      return -engineTorqueNm * input.brake * REVERSE_RATIO * this.final;
+    }
+    const ratio = this.ratios[Math.min(Math.max(this.gear, MIN_GEAR), this.ratios.length) - 1];
+    return engineTorqueNm * input.throttle * ratio * this.final;
+  }
+
+  brakeRequest(input: PedalInput): number {
+    return this.gear === -1 ? input.throttle : input.brake;
   }
 
   driveScale(speedMs: number): number {

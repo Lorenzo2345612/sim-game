@@ -19,16 +19,16 @@ describe('gearbox', () => {
     expect(gb.mode).toBe('auto');
   });
 
-  it('reversing forces gear 1 in auto mode', () => {
+  it('auto mode no longer forces gear 1 while reversing', () => {
     const gb = new Gearbox();
     for (let i = 0; i < 6; i++) gb.update(90);
     expect(gb.gear).toBe(6);
+    // Backwards speed reads rpm by magnitude; the idle clamp just downshifts.
     gb.update(-1);
-    expect(gb.gear).toBe(1);
+    expect(gb.gear).toBe(5);
     expect(gb.rpm(-1)).toBeCloseTo(IDLE_RPM, 0);
-    // Backwards speed reads rpm by magnitude but never shifts up again.
-    gb.update(-40);
-    expect(gb.gear).toBe(1);
+    gb.update(-1);
+    expect(gb.gear).toBe(4);
   });
 
   it('auto shifts at most one gear per update and stays in 1..6 at extreme speed', () => {
