@@ -37,6 +37,7 @@
 | leaf-pine PineNeedles001 (1K, re-encoded) | `public/textures/foliage/leaf-pine/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/PineNeedles001 | no |
 | bark-plane bark_platanus (1K, re-encoded) | `public/textures/bark/plane/` | Dimitrios Savva, Poly Haven | CC0 1.0 | https://polyhaven.com/a/bark_platanus | no |
 | bark-pine pine_bark (1K, re-encoded) | `public/textures/bark/pine/` | Dimitrios Savva, Poly Haven | CC0 1.0 | https://polyhaven.com/a/pine_bark | no |
+| Tree LOD models ({oak,plane,pine}-{0..3}.glb, generated with EZ-Tree; textures per their own rows) | `public/models/trees/` | project-generated (EZ-Tree 1.1.0) | MIT | https://github.com/dgreenheck/ez-tree | no |
 | rubber Rubber004 (1K, re-encoded) | `public/textures/rubber/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Rubber004 | no |
 | fence Fence003 (1K, re-encoded) | `public/textures/fence/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Fence003 | no |
 | ground/monza.jpg (Sentinel-2 L2A TCI, scene S2C_32TNR_20250813_0_L2A, 2025-08-13, 2048² crop of terrain bounds) | `public/textures/ground/monza.jpg` | ESA / Copernicus. Contains modified Copernicus Sentinel data 2025 | Copernicus Sentinel data terms (free, open, attribution) | https://ewds.climate.copernicus.eu/licences/ec-sentinel | no (attribution) |
