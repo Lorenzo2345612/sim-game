@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -921,7 +921,7 @@
     {
       "num": "068",
       "title": "Setup screen",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "067",
@@ -1338,7 +1338,7 @@
     {
       "num": "099",
       "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "042"
       ],
