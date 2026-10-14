@@ -105,7 +105,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
 | 101 | Tree field uses baked LODs | done | 100, 039 |
 | 102 | Satellite colour on distant terrain | done | 081 |
-| 103 | Real-size tyre walls, W-beam armco with posts, catch fences | in progress | 083, 086 |
+| 103 | Real-size tyre walls, W-beam armco with posts, catch fences | done | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | in progress | 099 |
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
