@@ -569,6 +569,10 @@ def render_decision(d):
 def write_decision(d):
     with lock:
         DECISIONS.mkdir(parents=True, exist_ok=True)
+        stale = DECISIONS / f"{d['num']}-{d['stage']}.resolved.md"
+        if stale.exists():  # an old resolution would resume the new decision at once
+            (DECISIONS / "archive").mkdir(exist_ok=True)
+            stale.replace(DECISIONS / "archive" / f"{d['num']}-{d['stage']}.{int(time.time())}.resolved.md")
         (DECISIONS / f"{d['num']}-{d['stage']}.md").write_text(render_decision(d))
         (DECISIONS / f"{d['num']}-{d['stage']}.json").write_text(json.dumps(d, indent=2) + "\n")
 

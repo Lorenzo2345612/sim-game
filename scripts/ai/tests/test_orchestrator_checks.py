@@ -58,3 +58,17 @@ class OverflowTest(unittest.TestCase):
             self.assertTrue(o.at_cap("glm"))
             self.assertFalse(o.at_cap("mimo"))
             self.assertFalse(o.at_cap("unknown"))
+
+
+class StaleResolutionTest(unittest.TestCase):
+    def test_new_decision_archives_old_resolution(self):
+        import tempfile
+        from unittest import mock
+        from scripts.ai import orchestrator as o
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(o, "DECISIONS", Path(d)), \
+                mock.patch.object(o, "render_decision", return_value="x"):
+            (Path(d) / "007-merge.resolved.md").write_text("old")
+            o.write_decision({"num": "007", "stage": "merge"})
+            self.assertFalse((Path(d) / "007-merge.resolved.md").exists())
+            self.assertTrue((Path(d) / "007-merge.md").exists())
+            self.assertEqual(len(list((Path(d) / "archive").glob("007-merge.*.resolved.md"))), 1)
