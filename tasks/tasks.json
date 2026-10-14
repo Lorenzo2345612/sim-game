@@ -710,7 +710,7 @@
     {
       "num": "054",
       "title": "Wire gameplay features into the game",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "034",
         "042",
