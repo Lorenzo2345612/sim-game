@@ -1,3 +1,5 @@
+import type { CreditEntry } from '../../tools/assets/buildCredits';
+
 export interface TrackChoice {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export const LAST_TRACK_KEY = 'lastTrack';
 export class Menu {
   private readonly doc: Document;
   private shown = false;
+  private creditsEsc: ((event: KeyboardEvent) => void) | null = null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -48,6 +51,7 @@ export class Menu {
       });
       panel.appendChild(button);
     }
+    panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
     this.show(panel);
     focus?.focus();
   }
@@ -59,7 +63,34 @@ export class Menu {
     panel.appendChild(this.action('Resume', handlers.onResume));
     panel.appendChild(this.action('Restart', handlers.onRestart));
     panel.appendChild(this.action('Change track', handlers.onChangeTrack));
+    panel.appendChild(this.creditsAction(() => this.showPause(handlers)));
     this.show(panel);
+  }
+
+  showCredits(onClose: () => void): void {
+    const panel = this.doc.createElement('div');
+    panel.className = 'menu-panel';
+    panel.id = 'credits-panel';
+    panel.style.maxWidth = '720px';
+    panel.appendChild(this.heading('Credits'));
+    const list = this.doc.createElement('div');
+    list.style.maxHeight = '60vh';
+    list.style.overflowY = 'auto';
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '8px';
+    list.textContent = 'Loading…';
+    panel.appendChild(list);
+    this.show(panel);
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.code !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeCredits(onClose);
+    };
+    this.creditsEsc = onKey;
+    this.doc.addEventListener('keydown', onKey);
+    void this.fillCredits(list);
   }
 
   hide(): void {
@@ -86,5 +117,42 @@ export class Menu {
     button.textContent = label;
     button.addEventListener('click', onClick);
     return button;
+  }
+
+  private creditsAction(onClose: () => void): HTMLButtonElement {
+    const button = this.action('Credits', () => this.showCredits(onClose));
+    button.id = 'credits-btn';
+    return button;
+  }
+
+  private closeCredits(onClose: () => void): void {
+    if (this.creditsEsc) {
+      this.doc.removeEventListener('keydown', this.creditsEsc);
+      this.creditsEsc = null;
+    }
+    this.hide();
+    onClose();
+  }
+
+  private async fillCredits(list: HTMLElement): Promise<void> {
+    try {
+      const res = await fetch('/credits.json');
+      if (!res.ok) throw new Error(`credits.json HTTP ${res.status}`);
+      const entries = (await res.json()) as CreditEntry[];
+      list.replaceChildren();
+      for (const entry of entries) {
+        const row = this.doc.createElement('div');
+        const link = this.doc.createElement('a');
+        link.href = entry.url;
+        link.textContent = entry.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.color = '#7ab8ff';
+        row.append(`${entry.asset} — ${entry.author} — ${entry.license} — `, link);
+        list.appendChild(row);
+      }
+    } catch (err) {
+      list.textContent = err instanceof Error ? err.message : String(err);
+    }
   }
 }
