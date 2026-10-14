@@ -58,7 +58,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 052 | Graphics presets and FPS overlay | done | - |
 | 053 | F4 car model pipeline (offline asset build) | done | - |
 | 054 | Wire gameplay features into the game | done | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
-| 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
+| 055 | Phase 1 end-to-end checks on three tracks | in progress | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | done | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | done | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
@@ -81,7 +81,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
-| 078 | Add reverse gear | pending | 054 |
+| 078 | Add reverse gear | in progress | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | done | 077 |
 | 081 | Terrain splat material with track-distance mown stripes | done | 080 |
@@ -90,7 +90,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 085 | Smooth the track elevation profile and limit its grade | done | 079 |
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
-| 088 | Speed profile and car limits | in progress | 087, 058 |
+| 088 | Speed profile and car limits | done | 087, 058 |
 | 089 | AI driver controller | pending | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
