@@ -52,3 +52,5 @@ npm run test:e2e
 
 - Changing anything in `src/`, performance tuning, visual regression baselines.
 
+
+Planner note (timeouts): the acceptance e2e already passes (8/8, 3.3 min, planner run 2026-10-13). Run only `npx playwright test tests/e2e/acceptance/055-*.spec.ts tests/e2e/phase1.spec.ts`, never the whole e2e suite; finish and report.
