@@ -52,9 +52,15 @@ Executable contract. Every row must be producible through the signatures in Step
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | unit: `passesFor(tier)` | low / medium / high | [] / ['render','bloom','lut','smaa','output'] / ['render','gtao','bloom','lut','smaa','output'] |
+| AT1 | unit: `passesFor(tier)` | low / medium / high | [] / ['render','clamp','bloom','lut','smaa','output'] / ['render','clamp','gtao','bloom','lut','smaa','output'] |
 | AT2 | unit: generated LUT `.cube` | parse | 33³ entries, identity ± 0.05 on neutral greys, warm shift on highlights (R − B ≥ 0.01 at 0.9 grey) |
 | AT3 | e2e `/?track=monza&quality=medium` vs `quality=low` | screenshots | differ in ≥ 2 % of pixels; no console errors |
+
+## Planner decision (2026-10-14, after coder timeouts)
+
+- HDR overflow: the HDRI sun exceeds the half-float max (65504), producing Inf and then NaN that bloom spreads (white canvas, real GPUs too). Add a `clamp` ShaderPass right after `render`: non-finite → 0, then `min(rgb, 64.0)`. Keep the HalfFloat targets.
+- Planner-authorised edit: `tests/unit/acceptance/105-post-processing.test.ts` AT1 expected lists gain `'clamp'` after `'render'` (as in the table).
+- Debug budget: if AT3 still fails after one fix attempt, stop and report BLOCKED with the pixel stats; do not keep debugging SwiftShader.
 
 ## Acceptance criteria
 
