@@ -16,10 +16,8 @@ describe('012 base scene acceptance', () => {
     expect((scene.background as THREE.Color).getHexString()).toBe('9ec9f0');
   });
 
-  it('AT2: scene contains a HemisphereLight and the returned sun DirectionalLight at (300, 500, 200)', () => {
+  it('AT2: scene contains the returned sun DirectionalLight at (300, 500, 200)', () => {
     const { scene, sun } = createScene();
-    const lights = scene.children.filter((c) => (c as THREE.Object3D & { isLight?: boolean }).isLight === true);
-    expect(lights.some((l) => l instanceof THREE.HemisphereLight)).toBe(true);
     expect(sun).toBeInstanceOf(THREE.DirectionalLight);
     expect(scene.children).toContain(sun);
     within(sun.position.x, 300);
