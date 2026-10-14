@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 2
-Depends on: 057, 092, 093
+Depends on: 057, 092, 093, 119
 Complexity: simple
 Type: feature
 Models: standard
@@ -25,7 +25,6 @@ Wiring of `RaceGame` (093) in `src/main.ts`. Existing: `CarRenderer` (`src/rende
 ## Steps
 
 ```ts
-export const LIVERY_PALETTE: readonly string[]; // 16 distinct '#rrggbb'
 export interface RaceHudData { standings: readonly Standing[]; playerCar: number; laps: number }
 export class RaceHud {
   constructor(parent: HTMLElement);
@@ -37,7 +36,7 @@ export class RaceHud {
 
 `Standing` from `src/race/classification`. `CarRenderer`: clone materials per instance so a livery colour never leaks to other cars (dispose them with the car); a model without a `livery` material (e.g. gt3-d) is left unchanged.
 
-1. Car k uses `LIVERY_PALETTE[k % 16]`; player is car 0.
+1. AI car k (k ≥ 1) is tinted with `defaultLivery(k).primary` from `src/game/livery.ts` (task 119, which owns `LIVERY_PALETTE`). Car 0 (player) is not tinted here: its livery comes from `main.ts` (120/122), or the model default.
 2. Elements: `#race-pos` text `P3/12`; `#race-lap` text `Lap 2/5` (lap clamped to `laps`); `#race-tower` with one row per car for the top 10 plus the player if outside it (max 11 rows); row = position, name (`You` for the player, `AI n` for car n, n from 1), gap: leader empty, others `+1.234` (seconds, 3 decimals) or `+1 lap` when `gapToLeader` is null. Player row has class `player`.
 3. Start lights: each frame `setLights(game.startLights())` for the gantry; `sceneStats().startLightsOn` = number currently lit; `sceneStats().cars` = number of car roots in the scene (1 outside races).
 4. HUD hidden (`display: none`) when no `RaceGame` is active.

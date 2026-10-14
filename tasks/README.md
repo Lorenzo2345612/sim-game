@@ -60,7 +60,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 054 | Wire gameplay features into the game | in progress | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | done | 030, 032, 033, 034, 035, 036, 037 |
-| 057 | Use the F4 car in the game and remove the Kenney placeholder | waiting decision | 053, 056 |
+| 057 | Use the F4 car in the game and remove the Kenney placeholder | in progress | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | done | 058 |
 | 060 | Tyre temperature, wear and pressure | done | 058 |
@@ -96,7 +96,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
 | 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
-| 094 | Race HUD and AI car rendering | pending | 057, 092, 093 |
+| 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
@@ -117,3 +117,28 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 112 | Prototype models through the car pipeline | pending | 071, 075 |
 | 113 | Prototype CarSpecs from the lab files | pending | 112, 072, 058 |
 | 114 | Car selection and credits list the prototypes | pending | 113, 073, 074 |
+| 115 | Cockpit data per car (eye, steering wheel anchor, lock) | pending | 058, 066, 072, 107, 113 |
+| 116 | Animated steering wheel in cockpit view | pending | 047, 054, 115 |
+| 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
+| 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
+| 119 | Livery data, palette and storage | pending | 072 |
+| 120 | Paint materials in the car pipeline and livery shader | pending | 075, 112, 119 |
+| 121 | Race number decals | pending | 120 |
+| 122 | Livery editor screen | pending | 044, 073, 074, 106, 114, 120, 121 |
+| 123 | Driving line overlay coloured by action | pending | 088, 093, 118 |
+| 124 | Braking marker boards | pending | 088, 123 |
+| 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
+| 126 | Driving school lessons | pending | 123, 124, 125, 044 |
+| 127 | Track limits strikes | pending | 092, 093 |
+| 128 | Yellow and blue flags | pending | 092, 093 |
+| 129 | Virtual safety car | pending | 088, 092, 093 |
+| 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
+| 131 | Telemetry recorder and store | pending | 050, 070 |
+| 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
+| 133 | Replay recorder (all cars) | pending | 093 |
+| 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
+| 135 | Time of day presets | pending | 093, 099, 106, 130 |
+| 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
+| 137 | Rain and track wetness model, wet compounds | pending | 058, 115 |
+| 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
+| 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |

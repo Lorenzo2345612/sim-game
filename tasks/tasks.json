@@ -766,7 +766,7 @@
     {
       "num": "057",
       "title": "Use the F4 car in the game and remove the Kenney placeholder",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "053",
         "056"
@@ -1269,7 +1269,8 @@
       "deps": [
         "057",
         "092",
-        "093"
+        "093",
+        "119"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -1550,6 +1551,397 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/114-prototype-selection.md"
+    },
+    {
+      "num": "115",
+      "title": "Cockpit data per car (eye, steering wheel anchor, lock)",
+      "status": "pending",
+      "deps": [
+        "058",
+        "066",
+        "072",
+        "107",
+        "113"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/115-cockpit-data.md"
+    },
+    {
+      "num": "116",
+      "title": "Animated steering wheel in cockpit view",
+      "status": "pending",
+      "deps": [
+        "047",
+        "054",
+        "115"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/116-steering-wheel.md"
+    },
+    {
+      "num": "117",
+      "title": "Virtual rear-view mirror",
+      "status": "pending",
+      "deps": [
+        "047",
+        "054",
+        "070",
+        "099",
+        "105",
+        "111"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/117-virtual-mirror.md"
+    },
+    {
+      "num": "118",
+      "title": "Cockpit head motion and FOV setting",
+      "status": "pending",
+      "deps": [
+        "047",
+        "115",
+        "117"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/118-head-motion-fov.md"
+    },
+    {
+      "num": "119",
+      "title": "Livery data, palette and storage",
+      "status": "pending",
+      "deps": [
+        "072"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/119-livery-data.md"
+    },
+    {
+      "num": "120",
+      "title": "Paint materials in the car pipeline and livery shader",
+      "status": "pending",
+      "deps": [
+        "075",
+        "112",
+        "119"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/120-livery-shader.md"
+    },
+    {
+      "num": "121",
+      "title": "Race number decals",
+      "status": "pending",
+      "deps": [
+        "120"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/121-number-decals.md"
+    },
+    {
+      "num": "122",
+      "title": "Livery editor screen",
+      "status": "pending",
+      "deps": [
+        "044",
+        "073",
+        "074",
+        "106",
+        "114",
+        "120",
+        "121"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/122-livery-editor.md"
+    },
+    {
+      "num": "123",
+      "title": "Driving line overlay coloured by action",
+      "status": "pending",
+      "deps": [
+        "088",
+        "093",
+        "118"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/123-driving-line.md"
+    },
+    {
+      "num": "124",
+      "title": "Braking marker boards",
+      "status": "pending",
+      "deps": [
+        "088",
+        "123"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/124-braking-boards.md"
+    },
+    {
+      "num": "125",
+      "title": "Assist presets and braking assist",
+      "status": "pending",
+      "deps": [
+        "054",
+        "057",
+        "070",
+        "088",
+        "089",
+        "122",
+        "123"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/125-assist-presets.md"
+    },
+    {
+      "num": "126",
+      "title": "Driving school lessons",
+      "status": "pending",
+      "deps": [
+        "123",
+        "124",
+        "125",
+        "044"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/126-driving-school.md"
+    },
+    {
+      "num": "127",
+      "title": "Track limits strikes",
+      "status": "pending",
+      "deps": [
+        "092",
+        "093"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/127-track-limits.md"
+    },
+    {
+      "num": "128",
+      "title": "Yellow and blue flags",
+      "status": "pending",
+      "deps": [
+        "092",
+        "093"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/128-flags.md"
+    },
+    {
+      "num": "129",
+      "title": "Virtual safety car",
+      "status": "pending",
+      "deps": [
+        "088",
+        "092",
+        "093"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/129-virtual-safety-car.md"
+    },
+    {
+      "num": "130",
+      "title": "Penalty book, HUD messages and wiring of rules",
+      "status": "pending",
+      "deps": [
+        "089",
+        "092",
+        "093",
+        "094",
+        "095",
+        "127",
+        "128",
+        "129"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/130-penalty-book-and-rules-wiring.md"
+    },
+    {
+      "num": "131",
+      "title": "Telemetry recorder and store",
+      "status": "pending",
+      "deps": [
+        "050",
+        "070"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/131-telemetry-recorder.md"
+    },
+    {
+      "num": "132",
+      "title": "Telemetry screen (charts and delta)",
+      "status": "pending",
+      "deps": [
+        "044",
+        "095",
+        "126",
+        "130",
+        "131"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/132-telemetry-screen.md"
+    },
+    {
+      "num": "133",
+      "title": "Replay recorder (all cars)",
+      "status": "pending",
+      "deps": [
+        "093"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/133-replay-recorder.md"
+    },
+    {
+      "num": "134",
+      "title": "Replay player and TV cameras",
+      "status": "pending",
+      "deps": [
+        "047",
+        "093",
+        "095",
+        "132",
+        "133"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/134-replay-player-tv-cameras.md"
+    },
+    {
+      "num": "135",
+      "title": "Time of day presets",
+      "status": "pending",
+      "deps": [
+        "093",
+        "099",
+        "106",
+        "130"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/135-time-of-day.md"
+    },
+    {
+      "num": "136",
+      "title": "Night lighting: floodlights, headlights",
+      "status": "pending",
+      "deps": [
+        "102",
+        "103",
+        "135"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/136-night-lighting.md"
+    },
+    {
+      "num": "137",
+      "title": "Rain and track wetness model, wet compounds",
+      "status": "pending",
+      "deps": [
+        "058",
+        "115"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/137-rain-and-wetness.md"
+    },
+    {
+      "num": "138",
+      "title": "Wet visuals: rain, wet road, spray",
+      "status": "pending",
+      "deps": [
+        "080",
+        "136",
+        "137"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/138-wet-visuals.md"
+    },
+    {
+      "num": "139",
+      "title": "Weather in races: config, forecast HUD, grip wiring, AI pace",
+      "status": "pending",
+      "deps": [
+        "078",
+        "093",
+        "130",
+        "135",
+        "137",
+        "138"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/139-weather-in-races.md"
     }
   ]
 }

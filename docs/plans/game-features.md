@@ -128,7 +128,7 @@ Menu "Livery": car selector, 3 colour inputs, 4 pattern buttons, number input, l
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | speeds [50,50,40,30,30,30,40,50] (closed), dist spacing 10 | lineActions | [throttle, brake, brake, coast, coast, throttle, throttle, brake] |
+| AT1 | speeds [50,50,40,30,30,30,40,50] (closed), dist spacing 10 | lineActions | [throttle, brake, brake, coast, coast, throttle, throttle, throttle] |
 | AT2 | constant speeds = vMax | lineActions | all throttle |
 | AT3 | e2e monza, drivingLine full | sceneStats().drivingLine | visible, vertex count ≥ 2 × line points |
 | AT4 | e2e drivingLine off | same | not visible |
@@ -233,7 +233,7 @@ Pause menu and results gain "Telemetry": canvas 2D charts (no library): speed, t
 | AT2 | e2e mouse over the speed chart at x = 50 % | DOM | `#telemetry-cursor` shows distance ≈ 50 % of lap ± 2 % and the speed value of that sample |
 
 ### 133 — Replay recorder
-`src/game/replay.ts`: `ReplayRecorder(carCount, hz = 30, maxSeconds = 3600)` stores per car position (Float32 ×3), quaternion (Int16 normalised ×4), speed (Float32), steer (Int8), wheel spin angle (Float32) in preallocated typed arrays; `sampleAt(t, car, out)` interpolates (slerp for rotation); memory ≤ 32 MB for 16 cars × 3600 s.
+`src/game/replay.ts`: `ReplayRecorder(carCount, hz = 20, maxSeconds = 3600)` stores per car position (Float32 ×3), quaternion (Int16 normalised ×4), speed (Float32), steer (Int8), wheel spin angle (Float32) in preallocated typed arrays; `sampleAt(t, car, out)` interpolates (slerp for rotation); memory ≤ 32 MB for 16 cars × 3600 s.
 
 | ID | Given | When | Then |
 |---|---|---|---|
@@ -248,7 +248,7 @@ Replay mode after a session (results "Replay"): play/pause, speed ×0.25/×1/×4
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | monza.json | tvCameraPositions | count = floor(length/250) ± 1; each ≥ 20 m from the centerline |
-| AT2 | distances 0, 249, 251 | tvCameraFor | index 0, 0 or 1 per rule (nearest ahead), switches exactly once crossing a camera |
+| AT2 | distances 0, 249, 251 | tvCameraFor | index 0, 0, 1 (last camera at or behind the car); the index changes exactly once when crossing a camera position |
 | AT3 | e2e replay of a 20 s recorded race | play ×4 for 5 s | `__SIMGAME__.replayTime()` advanced 20 ± 1 s; no console errors |
 | AT4 | e2e scrub to 50 % | car position | equals recorder sampleAt at that time ± 0.05 m |
 

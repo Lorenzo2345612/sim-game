@@ -100,8 +100,12 @@
         "083",
         "098"
       ],
-      "status": "open",
-      "prefetch": []
+      "status": "approved",
+      "prefetch": [],
+      "builtAt": "2026-10-13T15:43:26",
+      "commit": "cb9a067",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.3",
@@ -146,7 +150,7 @@
     },
     {
       "id": "M1.2c",
-      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail",
+      "title": "Visual realism and new tracks: HDRI sky, realistic trees, satellite ground, real-size trackside, crowd, post-processing, Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake, Sepang",
       "tasks": [
         "099",
         "100",
@@ -237,6 +241,28 @@
       ]
     },
     {
+      "id": "M1.8",
+      "title": "Cockpit: steering wheel, mirror, head motion, FOV",
+      "tasks": [
+        "115",
+        "116",
+        "117",
+        "118"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M1.9",
+      "title": "Liveries: data, paint shader, number decals, editor",
+      "tasks": [
+        "119",
+        "120",
+        "121",
+        "122"
+      ],
+      "status": "open"
+    },
+    {
       "id": "M2.1",
       "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
       "tasks": [
@@ -259,6 +285,51 @@
         "091",
         "092"
       ]
+    },
+    {
+      "id": "M2.1b",
+      "title": "Driving school: driving line, braking boards, assists, lessons",
+      "tasks": [
+        "123",
+        "124",
+        "125",
+        "126"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M2.1c",
+      "title": "Race rules: track limits, flags, VSC, penalties",
+      "tasks": [
+        "127",
+        "128",
+        "129",
+        "130"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M2.1d",
+      "title": "Replays and telemetry",
+      "tasks": [
+        "131",
+        "132",
+        "133",
+        "134"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M2.2b",
+      "title": "Weather and time of day",
+      "tasks": [
+        "135",
+        "136",
+        "137",
+        "138",
+        "139"
+      ],
+      "status": "open"
     }
   ]
 }
