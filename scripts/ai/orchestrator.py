@@ -979,6 +979,7 @@ def merge_task(num, title):
         if git("merge-base", "--is-ancestor", f"task/{num}", "HEAD").returncode == 0:
             return None
         path = ensure_worktree(num)
+        commit(["tasks/tasks.json", "tasks/README.md"], "chore: tasks status sync")
         head = git("rev-parse", "HEAD").stdout.strip()
         r = git("rebase", head, cwd=path)
         if r.returncode != 0:
