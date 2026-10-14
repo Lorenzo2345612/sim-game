@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
@@ -141,7 +141,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 137 | Rain and track wetness model, wet compounds | pending | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
-| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | in progress | 098, 142 |
+| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | done | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |

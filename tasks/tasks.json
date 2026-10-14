@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -1935,7 +1935,7 @@
     {
       "num": "140",
       "title": "Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "098",
         "142"
