@@ -1148,7 +1148,7 @@ def ready_tasks(tasks, done, running, waiting, only):
     out = []
     scope = milestone_scope()
     early = prefetch_set() if scope is not None else set()
-    for t in sorted(tasks, key=lambda t: (t["num"] in early, t["num"])):
+    for t in sorted(tasks, key=lambda t: (t["num"] in early, t.get("type") != "bugfix", t["num"])):  # bugfixes first
         if scope is not None and t["num"] not in scope:
             continue
         if t["num"] in done or t["num"] in running or t["num"] in waiting:
