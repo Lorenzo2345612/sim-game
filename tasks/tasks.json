@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -1207,7 +1207,7 @@
     {
       "num": "090",
       "title": "AI traffic decisions and difficulty",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "089"
       ],
@@ -1362,7 +1362,7 @@
     {
       "num": "101",
       "title": "Tree field uses baked LODs",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "100",
         "039"
@@ -2248,7 +2248,7 @@
     {
       "num": "163",
       "title": "Surface feedback signal (pure)",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
