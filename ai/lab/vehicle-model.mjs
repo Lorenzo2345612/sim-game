@@ -12,6 +12,8 @@ if (process.env.SPEC_PATCH) merge(BASE, JSON.parse(process.env.SPEC_PATCH));
 const TG = { accel: [3.4, 4.2], vmax: [215, 235], brakeKmh: 150, brakeM: 60, skid: [1.5, 2.2], stintT: [70, 120], stintFuelKg: [0.1, 2], ...(BASE.lab?.targets ?? {}) };
 const DT = 1 / 120, RHO = 1.225, G = 9.81, V_LOW = BASE.lab?.vLow ?? 1.5, RELAX = BASE.lab?.relax ?? 0.25, AMBIENT = 25;
 const RPM = 30 / Math.PI; // rad/s -> rpm
+// SURF='{"grip":0.45,"c0":0.08,"c1":0.012}': off-track surface under every wheel (grip multiplier, rolling drag (c0 + c1*v)*Fz).
+const SURF = process.env.SURF ? JSON.parse(process.env.SURF) : { grip: 1, c0: 0, c1: 0 };
 await RAPIER.init();
 
 // ---- vector helpers (lab code: allocation is fine) ----
@@ -199,7 +201,7 @@ function step(c, inp) {
       const vc = add(Vp, cross(Ww, sub(add(w.cp, mul(up, R)), Pw))); // slip velocity at the hub, not at the ground point
       const vl = dot(vc, f), vt = dot(vc, rt), Ve = Math.max(Math.abs(vl), V_LOW);
       w.alphaS += (Math.atan2(vt, Ve) - w.alphaS) * (1 - Math.exp(-DT * Ve / RELAX));
-      w.grip = tempFactor(P, w.T) * wearFactor(P, w.W) * pressureFactor(spec, c.press);
+      w.grip = tempFactor(P, w.T) * wearFactor(P, w.W) * pressureFactor(spec, c.press) * SURF.grip;
       const kap = (om) => (om * R - vl) / Ve;
       const Fx = (sl) => tyreForces(P, w.fz, w.grip, sl / Ve, w.alphaS, ft)[0];
       // Longitudinal slip is stiff (>1000/s at low speed): solve the implicit step  s1 = sFree - dt*c*Fx(s1)  by bisection on [0, sFree].
@@ -221,6 +223,8 @@ function step(c, inp) {
       const mw = mass / 4;
       if (fx * vl < 0) fx = Math.sign(fx) * Math.min(Math.abs(fx), mw * Math.abs(vl) / DT);
       if (fy * vt < 0) fy = Math.sign(fy) * Math.min(Math.abs(fy), mw * Math.abs(vt) / DT);
+      const rr = (SURF.c0 + SURF.c1 * Math.abs(vl)) * w.fz;
+      if (rr > 0) fx -= Math.sign(vl) * Math.min(rr, mw * Math.abs(vl) / DT);
       w.fx = fx; w.fy = fy;
       const F = add(add(mul(n, w.fz), mul(f, fx)), mul(rt, fy));
       body.applyImpulseAtPoint(V3(mul(F, DT)), V3(w.cp), true);
@@ -408,7 +412,17 @@ function tStress(spec) {
   }
   rec('stress chirp steer + brake/throttle 40 s', bad ? 'NaN' : 'finite', '', !bad && !flipped, `flipped ${flipped}, max yaw ${maxYaw.toFixed(2)} rad/s, final ${(sense(c).speed * KMH).toFixed(0)} km/h`);
 }
-const TESTS = { stress: tStress, accel: tAccel, brake: tBrake, skid: tSkid, brakesteer: tBrakeSteer, standstill: tStandstill, slope: tSlope, ride: tRide, lowspeed: tLowSpeed, drop: tDrop, stint: tStint };
+// Off-track (run with SURF=...): flat out from 0 for 20 s; coast from 200 km/h until < 5 km/h.
+function tOff(spec) {
+  let c = makeCar(spec, { T0: 90 }), t100 = null;
+  for (let k = 0; k < 120 * 20; k++) { step(c, { throttle: 1, brake: 0, steer: 0 }); if (t100 === null && sense(c).vfwd >= 100 / KMH) t100 = c.t; }
+  rec('flat out 20 s', (sense(c).vfwd * KMH).toFixed(1), 'km/h', true, `0-100 ${t100?.toFixed(2) ?? '-'} s`);
+  c = makeCar(spec, { v0: 200 / KMH, T0: 90 });
+  const p0 = sense(c).p; let n = 0;
+  while (sense(c).vfwd > 5 / KMH && n < 120 * 40) { step(c, { throttle: 0, brake: 0, steer: 0 }); n++; }
+  rec('coast 200->5', norm(sub(sense(c).p, p0)).toFixed(1), 'm', true, `t=${(n * DT).toFixed(1)} s`);
+}
+const TESTS = { off: tOff, stress: tStress, accel: tAccel, brake: tBrake, skid: tSkid, brakesteer: tBrakeSteer, standstill: tStandstill, slope: tSlope, ride: tRide, lowspeed: tLowSpeed, drop: tDrop, stint: tStint };
 const want = process.argv.slice(2);
 for (const [name, fn] of Object.entries(TESTS)) if (!want.length || want.includes(name)) fn(clone(BASE));
 const w = Math.max(...results.map((r) => r.name.length));

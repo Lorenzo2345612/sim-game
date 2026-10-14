@@ -1376,7 +1376,7 @@
     {
       "num": "102",
       "title": "Satellite colour on distant terrain",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "081"
       ],
@@ -1389,7 +1389,7 @@
     {
       "num": "103",
       "title": "Real-size tyre walls, W-beam armco with posts, catch fences",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "083",
         "086"
@@ -2231,6 +2231,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/161-fix-minimap-size-and-pause-audio.md"
+    },
+    {
+      "num": "162",
+      "title": "Speed-dependent rolling drag on grass and gravel",
+      "status": "pending",
+      "deps": [
+        "065"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/162-offtrack-rolling-drag.md"
     }
   ]
 }
