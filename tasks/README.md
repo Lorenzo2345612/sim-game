@@ -81,7 +81,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
 | 076 | GT3 D definition | pending | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
-| 078 | Add reverse gear | in progress | 054 |
+| 078 | Add reverse gear | done | 054 |
 | 079 | Remove tree canopy from the DEM before building tracks | done | - |
 | 080 | PBR surface materials with anti-tiling for track strips | done | 077 |
 | 081 | Terrain splat material with track-distance mown stripes | done | 080 |
@@ -91,7 +91,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | done | 087, 058 |
-| 089 | AI driver controller | pending | 087, 088 |
+| 089 | AI driver controller | in progress | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |

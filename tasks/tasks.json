@@ -1064,7 +1064,7 @@
     {
       "num": "078",
       "title": "Add reverse gear",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "054"
       ],
@@ -1193,7 +1193,7 @@
     {
       "num": "089",
       "title": "AI driver controller",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "087",
         "088"
