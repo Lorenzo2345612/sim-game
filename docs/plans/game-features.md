@@ -257,7 +257,7 @@ Replay mode after a session (results "Replay"): play/pause, speed ×0.25/×1/×4
 ## M2.2b Weather and time of day
 
 ### 135 — Time of day
-`TimeOfDay = 'day' | 'sunset' | 'night'`; per preset: HDRI (day = the track's current one, sunset/night = new Poly Haven HDRIs), sun direction/intensity, ambient scale, fog colour from the HDRI horizon (099). Track default: lusail and bahrain 'night', others 'day'; race config and `?tod=` override.
+`TimeOfDay = 'day' | 'sunset' | 'night'`; per preset: HDRI (day = the track's current one, sunset/night = new Poly Haven HDRIs), sun direction/intensity, ambient scale, fog colour from the HDRI horizon (099). Track default: lusail, bahrain, singapore and lasvegas 'night', others 'day'; race config and `?tod=` override.
 
 | ID | Given | When | Then |
 |---|---|---|---|

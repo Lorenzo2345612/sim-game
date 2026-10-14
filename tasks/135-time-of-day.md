@@ -28,7 +28,7 @@ Design: `docs/plans/game-features.md` section 135. Extends `applyEnvironment`, `
 ```ts
 // src/core/timeOfDay.ts
 export type TimeOfDay = 'day' | 'sunset' | 'night';
-export const TRACK_DEFAULT_TOD: Record<string, TimeOfDay>; // lusail, bahrain: 'night'
+export const TRACK_DEFAULT_TOD: Record<string, TimeOfDay>; // lusail, bahrain, singapore, lasvegas: 'night'
 export function defaultTimeOfDay(trackId: string): TimeOfDay; // table or 'day'
 export function parseTimeOfDay(value: string | null | undefined): TimeOfDay | null; // exact lowercase match else null
 // src/render/environment.ts (imports TimeOfDay)
