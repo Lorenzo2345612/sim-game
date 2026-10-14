@@ -35,13 +35,17 @@ export function createGrandstand(g: Grandstand, loadTexture?: (url: string) => T
 ```
 
 1. Tool output: `public/textures/crowd/atlas.png` (1024×1024 RGBA, 8×8 cells of 128×128, row 0 at top) and `public/textures/crowd/atlas.json` `{ cells: boolean[64]; meanSaturation: number }` (cells = non-empty, i.e. any pixel alpha > 0; saturation = HSV mean over opaque pixels, computed in the page before encoding).
-2. Cell i: character file `files[i % N]` (files sorted by name, N = file count), variant `floor(i / N)`; variant picks a seeded (mulberry32, seed i) desaturated clothing tint (saturation ≤ 0.3) and horizontal mirror on odd variants. If the GLB has a clip named like `/sit|idle/i` pose it at t = 0, else bind pose. Orthographic front camera framed waist-up, transparent background, fixed lights. All 64 cells filled; ≥ 48 required. Mean saturation < 0.35.
+2. Cell i: character file `files[i % N]` (files sorted by name, N = file count), variant `floor(i / N)`; variant picks a seeded (mulberry32, seed i) desaturated clothing tint (saturation ≤ 0.3) and horizontal mirror on odd variants. Bind pose only: no animation clips, no mixer, no bone edits. Orthographic front camera framed waist-up, transparent background, fixed lights. All 64 cells filled; ≥ 48 required. Mean saturation < 0.35.
 3. Deterministic: fixed viewport and device scale factor 1, no timestamps; two runs give byte-identical `atlas.png`.
 4. Crowd: ONE `InstancedMesh` named `crowd` per grandstand, count `round(0.85 · rows · perRow)` (perRow = seats per row); the occupied seats are the first N of a mulberry32-seeded (same seed as today) shuffle of `seatPositions`. Instance translation equals its seat position exactly (quad origin at bottom centre).
 5. Each person is a 0.9 × 0.9 m quad facing local −Z (toward the track, no billboarding), material `MeshStandardMaterial` with the atlas as `map` (SRGB, name = url, default `loadTexture` = `TextureLoader`, url `/textures/crowd/atlas.png`), `alphaTest` 0.5, `roughness` 0.9, per-instance cell via an instanced attribute used to offset the uv by (col, row)/8 (patched with `onBeforeCompile`), and a seeded per-instance tint with `setColorAt` (HSL s 0.3–0.6, l 0.45–0.7). No per-frame work.
 6. `disposeGrandstand` also disposes the atlas texture; zero seats or zero rows creates no `crowd` mesh.
 
 Conventions: `round` is half-up; count tolerance ±1 is for the tests only, the code must give exactly `Math.round(0.85 * rows * perRow)`; `seatPositions` is in grandstand-local metres, y = tier top; inputs not mutated.
+
+## Debug budget
+
+The bake already works in the worktree (`tools/assets/buildCrowd.ts` from the previous run produces a full atlas): keep it, remove the clip/mixer code, check AT1–AT2 once, then go straight to `grandstand.ts` and the tests. Do not debug SwiftShader or three.js internals; if the bake fails for a reason not fixed in one attempt, report BLOCKED.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
