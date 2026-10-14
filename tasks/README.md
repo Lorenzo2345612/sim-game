@@ -60,7 +60,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 054 | Wire gameplay features into the game | in progress | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
 | 055 | Phase 1 end-to-end checks on three tracks | pending | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | done | 030, 032, 033, 034, 035, 036, 037 |
-| 057 | Use the F4 car in the game and remove the Kenney placeholder | in progress | 053, 056 |
+| 057 | Use the F4 car in the game and remove the Kenney placeholder | done | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
 | 059 | Tyre forces | done | 058 |
 | 060 | Tyre temperature, wear and pressure | done | 058 |

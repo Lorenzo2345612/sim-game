@@ -766,7 +766,7 @@
     {
       "num": "057",
       "title": "Use the F4 car in the game and remove the Kenney placeholder",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "053",
         "056"
