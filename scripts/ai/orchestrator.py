@@ -438,7 +438,7 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         argv += ["--note", note]
     prov = provider_of(role, num)
     fallback = load_json(PROVIDERS).get("fallback", {}).get("provider")
-    if fallback and prov != fallback and num in prefetch_set() and num not in PRIMARY_LANE:
+    if fallback and prov != fallback and num in prefetch_set() and num not in PRIMARY_LANE and (at_cap(prov) or quota.low_5h(prov)):
         argv += ["--provider", fallback]  # prefetched work stays off the active milestone's providers
         prov = fallback
     elif prov and fallback and prov != fallback and quota.low_5h(prov):
