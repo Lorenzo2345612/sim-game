@@ -57,6 +57,14 @@ class Vehicle {
 
 Conventions: SI units; wheel order FL, FR, RL, RR; positive steer = left; `dt <= 0` or non-finite is ignored; NaN input clamps to 0.
 
+## Work order
+
+Previous runs (GLM and MiMo) timed out after reading ~30 files without writing code. Follow strictly:
+1. Read only this spec, `ai/guides/vehicle-dynamics.md`, `ai/lab/vehicle-model.mjs`, the current `src/physics/vehicle.ts`, and the exports of the 058–064 modules you call. Start editing `src/physics/vehicle.ts` before the 12th tool call.
+2. Make `tests/unit/acceptance/065-*.test.ts` pass; run only that file in this phase.
+3. Apply the planner-authorised test edits listed in Files, mechanically, then run `npm test`.
+4. Commit progress with `git commit` after each phase so a timeout keeps the work.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
