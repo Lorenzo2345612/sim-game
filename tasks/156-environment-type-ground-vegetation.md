@@ -14,6 +14,8 @@ Every track has an `environment` type; desert and tropical tracks get their own 
 
 ## Context
 
+Installed assets: palms `public/models/vegetation/palm-{date,coconut}.glb` (2022 tris, no LODs, world scale unchecked: normalise to the target heights by bounding box), props `public/models/props/{cactus,shrub-dry,lamp}.glb` (shrub-dry is a green Kenney bush: tint it dry for desert).
+
 M1.2d, design `docs/plans/m1.2d-environments.md`, research `docs/research/environments.md`. Read the current code first: this task runs after 081 (terrain material), 101 (tree LODs) and 106 (new tracks); adapt file names to what exists, keep the public contract. Textures (`public/textures/ground/{sand,dry}/{color,normal,roughness}.jpg`) and models (`public/models/vegetation/palm-{date,coconut}.glb`, `public/models/props/{cactus,shrub-dry}.glb`) are installed by the planner; this task only consumes them. Mapping: city baku, singapore, lasvegas; desert bahrain, lusail; tropical sepang, daytona; forest spa; parkland monza, silverstone, mexico, braselton, elkhart, budapest, spielberg. Guides: `ai/guides/architecture.md`, `ai/guides/testing.md`.
 
 ## Files
@@ -50,7 +52,7 @@ Conventions: unknown type → parkland palette; missing `environment` → 'parkl
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | every track JSON in public/tracks | read `environment` | matches the mapping above |
-| AT2 | unit groundPalette('desert') / ('parkland') | call | texture dirs [ground/sand, ground/dry, ground/dry] and stripes false / the current grass sets and stripes true |
+| AT2 | unit groundPalette('desert') / ('parkland') | call | texture dirs [ground/sand, ground/dry, ground/sand-b] and stripes false / the current grass sets and stripes true |
 | AT3 | e2e `/?track=bahrain` | ready | `sceneStats().environmentType` 'desert'; `sceneStats().treeSpecies` includes 'palm-date'; no console errors |
 | AT4 | e2e `/?track=monza` | ready | environmentType 'parkland'; treeSpecies has no palm |
 | AT5 | e2e bahrain start screenshot, band y 200–330 | pixels | ≥ 40 % have R > G (sand), mean saturation < 0.45 |
