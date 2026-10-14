@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { detectKerbs, detectRunoffs, radii } from '../../../tools/track-builder/corners';
-import { CORNER_RADIUS, KERB_RADIUS } from '../../../src/core/constants';
+import { CORNER_RADIUS } from '../../../src/core/constants';
 import type { Point2 } from '../../../src/track/geo';
 import type { RunoffSegment, Side, TrackSegment } from '../../../src/core/types';
 
@@ -118,16 +118,53 @@ function specRuns(pts: Point2[], threshold: number): Run[] {
 
 const opp = (s: Side): Side => (s === 'left' ? 'right' : 'left');
 
+// Spec-142 ground truth: per qualifying run (minRadius < 400, >= 4 points) an inside kerb
+// [start-15, end+15], an outside exit [end-5, end+20] and, below 150 m, an outside entry
+// [start-20, start+5]; per side, touching/overlapping kerbs merge (full ring -> [0, n-1]).
 function specKerbs(pts: Point2[]): TrackSegment[] {
   const n = pts.length;
-  const out: TrackSegment[] = [];
-  for (const run of specRuns(pts, KERB_RADIUS)) {
-    if (((run.end - run.start + n) % n) + 1 < 8) continue;
-    const end = (run.end + 10) % n;
-    out.push({ start: (run.start - 10 + n) % n, end, side: run.side });
-    out.push({ start: (end - 14 + n) % n, end, side: opp(run.side) });
+  const mask: Record<Side, boolean[]> = {
+    left: new Array<boolean>(n).fill(false),
+    right: new Array<boolean>(n).fill(false),
+  };
+  const w = (v: number) => ((v % n) + n) % n;
+  const paint = (side: Side, start: number, len: number) => {
+    for (let j = 0; j < Math.min(len, n); j++) mask[side][w(start + j)] = true;
+  };
+  for (const run of specRuns(pts, CORNER_RADIUS)) {
+    const len = ((run.end - run.start + n) % n) + 1;
+    if (len < 4) continue;
+    paint(run.side, run.start - 15, len + 31);
+    paint(opp(run.side), run.end - 5, 26);
+    if (run.minRadius < 150) paint(opp(run.side), run.start - 20, 26);
   }
-  return out;
+  const out: TrackSegment[] = [];
+  for (const side of ['left', 'right'] as const) {
+    const m = mask[side];
+    let gap = -1;
+    for (let i = 0; i < n; i++) {
+      if (!m[i]) {
+        gap = i;
+        break;
+      }
+    }
+    if (gap < 0) {
+      out.push({ start: 0, end: n - 1, side });
+      continue;
+    }
+    let start = -1;
+    for (let k = 1; k <= n; k++) {
+      const i = (gap + k) % n;
+      if (m[i]) {
+        if (start < 0) start = i;
+      } else if (start >= 0) {
+        out.push({ start, end: (i - 1 + n) % n, side });
+        start = -1;
+      }
+    }
+    if (start >= 0) out.push({ start, end: (gap - 1 + n) % n, side });
+  }
+  return out.sort((a, b) => a.start - b.start || (a.side === 'left' ? -1 : 1));
 }
 
 function specRunoffs(pts: Point2[]): RunoffSegment[] {
@@ -153,7 +190,7 @@ const canon = (segs: object[]): string[] =>
 function hasAdjacentFlip(pts: Point2[]): boolean {
   const n = pts.length;
   const r = radii(pts);
-  const s = (i: number) => (r[i] < KERB_RADIUS ? turnDir(pts, i) : null);
+  const s = (i: number) => (r[i] < CORNER_RADIUS ? turnDir(pts, i) : null);
   for (let i = 0; i < n; i++) {
     const a = s(i), b = s((i + 1) % n);
     if (a === 'left' && b === 'right' || a === 'right' && b === 'left') return true;
@@ -197,12 +234,15 @@ describe('026 corner analysis post-coder gaps', () => {
     }
   });
 
-  it('thresholds are strict: R = 450 loop is neither corner nor kerb, R = 260 gets no kerbs and no run-off (098)', () => {
+  it('thresholds are strict: R = 450 loop is neither corner nor kerb, R = 260 gets inside and outside exit kerbs but no run-off (098)', () => {
     const wide = circle(450, 1414); // ~2 m spacing, radius >= CORNER_RADIUS (400)
     expect(detectKerbs(wide)).toEqual([]);
     expect(detectRunoffs(wide)).toEqual([]);
-    const mid = circle(260, 817); // >= KERB_RADIUS (250), < CORNER_RADIUS, min radius >= 150
-    expect(detectKerbs(mid)).toEqual([]);
+    const mid = circle(260, 817); // < CORNER_RADIUS, min radius >= 150: no entry kerb, no run-off
+    expect(detectKerbs(mid)).toEqual([
+      { start: 0, end: 816, side: 'left' }, // inside covers every index: full-ring kerb
+      { start: 811, end: 19, side: 'right' }, // outside exit [end-5, end+20]
+    ]);
     expect(detectRunoffs(mid)).toEqual([]); // 098: sweeper, no run-off
   });
 
@@ -222,8 +262,8 @@ describe('026 corner analysis post-coder gaps', () => {
   it('all-qualifying loop is one run anchored at index 0 with exact extension bounds', () => {
     const pts = circle(100, 314);
     expect(detectKerbs(pts)).toEqual([
-      { start: 304, end: 9, side: 'left' }, // inside: 0-10 .. 313+10, wrapped
-      { start: 309, end: 9, side: 'right' }, // exit: last 15 points of the extended run
+      { start: 0, end: 313, side: 'left' }, // inside spans the whole loop: full-ring kerb
+      { start: 294, end: 19, side: 'right' }, // entry [294,5] and exit [308,19] merge on the outside
     ]);
     expect(detectRunoffs(pts)).toEqual([
       { start: 299, end: 14, side: 'right', surface: 'gravel', widthMeters: 18 },
@@ -265,14 +305,14 @@ describe('026 corner analysis post-coder gaps', () => {
     expect(src).not.toMatch(/\bdocument\b|\bwindow\b/);
   });
 
-  it('the kerb minimum run length is exactly 8: a loop of 8 qualifying points gets a kerb pair, a loop of 7 gets none but keeps its run-off', () => {
-    const eight = detectKerbs(circle(100, 8));
-    expect(eight).toHaveLength(2);
-    expect(new Set(eight.map(k => k.side))).toEqual(new Set<TrackSegment['side']>(['left', 'right']));
-    expect(eight[0].end).toBe(eight[1].end); // inside and exit kerb of the same run share their end
-    const seven = detectKerbs(circle(100, 7));
-    expect(seven).toEqual([]);
-    for (const n of [7, 8]) {
+  it('the kerb minimum run length is exactly 4: a loop of 4 qualifying points gets a kerb pair, a loop of 3 gets none but keeps its run-off', () => {
+    const four = detectKerbs(circle(100, 4));
+    expect(four).toHaveLength(2);
+    expect(new Set(four.map(k => k.side))).toEqual(new Set<TrackSegment['side']>(['left', 'right']));
+    for (const k of four) expect(k).toEqual({ start: 0, end: 3, side: k.side }); // extensions cover the ring
+    const three = detectKerbs(circle(100, 3));
+    expect(three).toEqual([]);
+    for (const n of [3, 4]) {
       const runoff = detectRunoffs(circle(100, n));
       expect(runoff).toHaveLength(1); // no minimum length applies to run-offs
       expect(runoff[0].start).toBeGreaterThanOrEqual(0);
@@ -282,14 +322,20 @@ describe('026 corner analysis post-coder gaps', () => {
     }
   });
 
-  it('threshold comparisons are strict near the constants: 248 gets kerbs but 252 none, 398 and 402 get no run-off, 148 is paved but 152 none (098)', () => {
-    expect(detectKerbs(circle(248, 777))).toHaveLength(2);
+  it('threshold comparisons are strict near the constants: 248 and 252 get kerbs but 402 none, 398 and 402 get no run-off, 148 is paved but 152 none (098)', () => {
+    expect(detectKerbs(circle(248, 777))).toEqual([
+      { start: 0, end: 776, side: 'left' }, // inside covers the whole ring at R 248
+      { start: 771, end: 19, side: 'right' },
+    ]);
     expect(detectRunoffs(circle(248, 777))).toEqual([]); // 098: min radius >= 150
-    expect(detectKerbs(circle(252, 792))).toEqual([]);
+    expect(detectKerbs(circle(252, 792))).toEqual([
+      { start: 0, end: 791, side: 'left' },
+      { start: 786, end: 19, side: 'right' },
+    ]);
     expect(detectRunoffs(circle(252, 792))).toEqual([]);
     expect(detectRunoffs(circle(398, 1250))).toEqual([]);
     expect(detectRunoffs(circle(402, 1263))).toEqual([]);
-    expect(detectKerbs(circle(402, 1263))).toEqual([]);
+    expect(detectKerbs(circle(402, 1263))).toEqual([]); // >= CORNER_RADIUS: no kerbs
     const tight = detectRunoffs(circle(148, 465));
     expect(tight).toHaveLength(1); // 098: below 150 keeps a run-off
     expect(tight[0].surface).toBe('runoff'); // but 148 >= 100, so paved
@@ -297,42 +343,50 @@ describe('026 corner analysis post-coder gaps', () => {
     expect(detectRunoffs(circle(152, 478))).toEqual([]); // 098: min radius >= 150
   });
 
-  it('a loop whose turning side flips with no straight between the arcs splits into two runs, one kerb pair each', () => {
+  it('a loop whose turning side flips with no straight between the arcs splits into two runs whose kerbs merge into one per side', () => {
     const pts = kinkLoop();
     const n = pts.length;
     expect(hasAdjacentFlip(pts)).toBe(true); // fixture really exercises the side-change split
     const kerbs = detectKerbs(pts);
     expect(canon(kerbs)).toEqual(canon(specKerbs(pts)));
     expect(canon(detectRunoffs(pts))).toEqual(canon(specRunoffs(pts)));
-    expect(kerbs).toHaveLength(6); // three runs (right, left, right), one inside + one exit each
+    expect(kerbs).toHaveLength(2); // inside, entry and exit kerbs of adjacent runs all touch and merge
     expect(detectRunoffs(pts)).toHaveLength(3);
     const span = (s: TrackSegment) => ((s.end - s.start + n) % n) + 1;
     const inside = kerbs.filter(k => span(k) > 15);
     const overlap = inside.some((a, i) =>
       inside.slice(i + 1).some(b => a.side !== b.side &&
         (b.start >= a.start && b.start <= a.end || a.start >= b.start && a.start <= b.end)));
-    expect(overlap).toBe(true); // the two opposite-side inside kerbs share points around the flip
+    expect(overlap).toBe(true); // the two opposite-side kerb chains share points around the flip
   });
 
-  it('a mixed-side loop with several corners yields one inside plus one exit kerb per qualifying run and one run-off per run, including a wrapped segment', () => {
+  it('a mixed-side loop with several corners yields an inside kerb per qualifying run and one run-off per run, including a wrapped segment', () => {
     const pts = rose();
+    const n = pts.length;
     const kerbs = detectKerbs(pts);
     const runoff = detectRunoffs(pts);
     expect(canon(kerbs)).toEqual(canon(specKerbs(pts)));
     expect(canon(runoff)).toEqual(canon(specRunoffs(pts)));
-    expect(kerbs.length % 2).toBe(0);
-    expect(kerbs.length / 2).toBeGreaterThanOrEqual(6); // at least 6 separate corner runs
+    const runs = specRuns(pts, CORNER_RADIUS).filter(r => ((r.end - r.start + n) % n) + 1 >= 4);
+    expect(runs.length).toBeGreaterThanOrEqual(6); // at least 6 separate corner runs
+    const klen = (k: TrackSegment) => ((k.end - k.start) % n + n) % n;
+    for (const run of runs) {
+      const from = (run.start - 15 + n) % n;
+      const reach = ((run.end + 15 - from) % n + n) % n;
+      expect(kerbs.some(k => k.side === run.side && (from - k.start + n) % n + reach <= klen(k)))
+        .toBe(true); // some inside-side kerb covers [start-15, end+15]
+    }
     expect(kerbs.filter(k => k.end < k.start).length).toBeGreaterThanOrEqual(1); // one spans index 0
     for (const side of ['left', 'right'] as const) {
       expect(kerbs.some(k => k.side === side)).toBe(true);
     }
-    expect(runoff.length).toBe(kerbs.length / 2);
+    expect(runoff.length).toBeGreaterThanOrEqual(runs.length); // one run-off per run
     expect(runoff.every(s => s.surface === 'runoff' && s.widthMeters === 12)).toBe(true); // 098: every run min radius in [100, 150)
   });
 
   it('segment indices shift exactly with a rotation of the input on every non-degenerate fixture', () => {
-    const sweeper = stadium(300, 471); // no kerbs and, since 098, no run-offs
-    expect(detectKerbs(sweeper)).toEqual([]);
+    const sweeper = stadium(300, 471); // since 098 no run-offs, but task 142 gives it kerbs
+    expect(detectKerbs(sweeper)).toHaveLength(4);
     expect(detectRunoffs(sweeper)).toEqual([]);
     const fixtures = [stadium(80, 126), manyCorners(50, 3, 20), rose(), kinkLoop()];
     for (const base of fixtures) {
@@ -343,7 +397,12 @@ describe('026 corner analysis post-coder gaps', () => {
       for (const shift of [1, 5, n - 1, Math.floor(n / 2)]) {
         const w = (v: number) => ((v - shift) % n + n) % n;
         const moved = (segs: TrackSegment[]) =>
-          segs.map(s => ({ ...s, start: w(s.start), end: w(s.end) }));
+          segs.map(s => {
+            const seg = { ...s, start: w(s.start), end: w(s.end) };
+            // a full-ring kerb is rotation-invariant: every rotation still paints [0, n-1]
+            if (((seg.end - seg.start + n) % n) + 1 === n) return { ...seg, start: 0, end: n - 1 };
+            return seg;
+          });
         expect(canon(detectKerbs(rot(base, shift)))).toEqual(canon(moved(k0)));
         expect(canon(detectRunoffs(rot(base, shift)))).toEqual(canon(moved(r0)));
       }

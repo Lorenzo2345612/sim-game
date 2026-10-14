@@ -35,10 +35,6 @@ function byStart<T extends TrackSegment>(segs: T[]): T[] {
   return [...segs].sort((a, b) => a.start - b.start);
 }
 
-function span(seg: TrackSegment, n: number): number {
-  return ((seg.end - seg.start + n) % n) + 1;
-}
-
 describe('026 corner analysis acceptance', () => {
   it('AT1: radii of a counter-clockwise circle of r = 100 m at 2 m spacing are 100 ±1 at every point', () => {
     const pts = circle(100, 314);
@@ -54,23 +50,29 @@ describe('026 corner analysis acceptance', () => {
     for (const v of r) expect(v).toBeCloseTo(1e6, 6);
   });
 
-  it('AT3: two 400 m straights + two 180° turns of r = 80 m yields 2 inside kerbs covering each turn ±12 points and 2 outside exit kerbs of 15 points', () => {
+  it('AT3: two 400 m straights + two 180° turns of r = 80 m yield per turn an inside kerb, an outside entry kerb and an outside exit kerb (task 142)', () => {
     const pts = stadium(80, 126);
-    const n = pts.length;
     const kerbs = detectKerbs(pts);
-    expect(kerbs).toHaveLength(4);
+    expect(kerbs).toHaveLength(6);
     const inside = byStart(kerbs.filter(k => k.side === 'right')); // turning side
-    const exit = byStart(kerbs.filter(k => k.side === 'left')); // outside
+    const outside = byStart(kerbs.filter(k => k.side === 'left')); // outside
     expect(inside).toHaveLength(2);
-    expect(exit).toHaveLength(2);
+    expect(outside).toHaveLength(2 + 2);
     inside.forEach((k, i) => {
       const [t0, t1] = TURN_80[i];
-      expect(k.start).toBeGreaterThanOrEqual(t0 - 12);
-      expect(k.start).toBeLessThanOrEqual(t0 - 10);
-      expect(k.end).toBeGreaterThanOrEqual(t1 + 10);
-      expect(k.end).toBeLessThanOrEqual(t1 + 12);
-      expect(exit[i].end).toBe(k.end); // exit kerb ends with the extended run
-      expect(span(exit[i], n)).toBe(15);
+      expect(k.start).toBeGreaterThanOrEqual(t0 - 17); // inside: [start-15, end+15]
+      expect(k.start).toBeLessThanOrEqual(t0 - 15);
+      expect(k.end).toBeGreaterThanOrEqual(t1 + 15);
+      expect(k.end).toBeLessThanOrEqual(t1 + 17);
+      const [entry, exit] = outside.filter(o => o.start >= t0 - 22 && o.end <= t1 + 22);
+      expect(entry.start).toBeGreaterThanOrEqual(t0 - 22); // outside entry: [start-20, start+5]
+      expect(entry.start).toBeLessThanOrEqual(t0 - 20);
+      expect(entry.end).toBeGreaterThanOrEqual(t0 + 3);
+      expect(entry.end).toBeLessThanOrEqual(t0 + 5);
+      expect(exit.start).toBeGreaterThanOrEqual(t1 - 6); // outside exit: [end-5, end+20]
+      expect(exit.start).toBeLessThanOrEqual(t1 - 4);
+      expect(exit.end).toBeGreaterThanOrEqual(t1 + 20);
+      expect(exit.end).toBeLessThanOrEqual(t1 + 22);
     });
   });
 
@@ -90,26 +92,28 @@ describe('026 corner analysis acceptance', () => {
     });
   });
 
-  it('AT5: same loop with r = 300 m turns yields no run-offs (sweepers, task 098) and no kerbs', () => {
+  it('AT5: same loop with r = 300 m turns yields no run-offs (sweepers, task 098) and 4 kerbs: inside and outside exit per turn (task 142)', () => {
     const pts = stadium(300, 471);
-    expect(detectKerbs(pts)).toHaveLength(0); // 300 > KERB_RADIUS
     expect(detectRunoffs(pts)).toHaveLength(0); // min radius >= 150: no run-off since 098
+    const kerbs = byStart(detectKerbs(pts));
+    expect(kerbs).toHaveLength(4); // 300 < CORNER_RADIUS: per turn an inside and an outside exit kerb
+    expect(kerbs.filter(k => k.side === 'right')).toHaveLength(2);
+    expect(kerbs.filter(k => k.side === 'left')).toHaveLength(2);
   });
 
-  it('AT6: loop crossing index 0 inside a turn yields one wrapping kerb segment (end < start) instead of a split', () => {
+  it('AT6: loop crossing index 0 inside a turn yields wrapping kerb segments (end < start) instead of a split', () => {
     const pts = stadium(80, 126);
     const n = pts.length;
     const shift = TURN_80[0][0]; // first turn now starts at index 0
     const rot = Array.from({ length: n }, (_, i): Point2 => pts[(i + shift) % n]);
     const kerbs = detectKerbs(rot);
-    expect(kerbs).toHaveLength(4); // inside kerb not split in two
+    expect(kerbs).toHaveLength(6); // inside kerbs not split in two
     const wrapping = kerbs.filter(k => k.end < k.start);
-    expect(wrapping).toHaveLength(1);
-    const k = wrapping[0];
-    expect(k.side).toBe('right'); // inside kerb of the turn spanning [0, 126]
-    expect(k.start).toBeGreaterThanOrEqual(n - 12);
-    expect(k.start).toBeLessThanOrEqual(n - 10);
-    expect(k.end).toBeGreaterThanOrEqual(126 + 10);
-    expect(k.end).toBeLessThanOrEqual(126 + 12);
+    expect(wrapping).toHaveLength(2); // inside kerb and outside entry kerb of the turn spanning [0, 126]
+    const inside = wrapping.find(k => k.side === 'right');
+    expect(inside?.start).toBeGreaterThanOrEqual(n - 17);
+    expect(inside?.start).toBeLessThanOrEqual(n - 15);
+    expect(inside?.end).toBeGreaterThanOrEqual(126 + 15);
+    expect(inside?.end).toBeLessThanOrEqual(126 + 17);
   });
 });

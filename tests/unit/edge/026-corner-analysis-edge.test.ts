@@ -24,7 +24,7 @@ function circle(R: number, n: number): Point2[] {
   });
 }
 
-// Closed loop of many tiny tangent corners: each corner's radius run is under 8 points.
+// Closed loop of many tiny tangent corners: neighbouring kerb extensions all touch.
 function manyCorners(nCorners: number, cornerR: number, straightLen: number): Point2[] {
   const pts: Point2[] = [];
   const arc = (2 * Math.PI) / nCorners;
@@ -46,10 +46,6 @@ function manyCorners(nCorners: number, cornerR: number, straightLen: number): Po
   return pts;
 }
 
-function span(seg: TrackSegment, n: number): number {
-  return ((seg.end - seg.start + n) % n) + 1;
-}
-
 function expectIndicesInRange(segs: TrackSegment[], n: number): void {
   for (const s of segs) {
     expect(s.start).toBeGreaterThanOrEqual(0);
@@ -60,22 +56,21 @@ function expectIndicesInRange(segs: TrackSegment[], n: number): void {
 }
 
 describe('026 corner analysis edge cases', () => {
-  it('EDGE1: counter-clockwise (left-turn) loop puts inside kerbs on the left, exit kerbs and run-offs on the right, all sorted by start', () => {
+  it('EDGE1: counter-clockwise (left-turn) loop puts inside kerbs on the left, entry/exit kerbs and run-offs on the right, all sorted by start', () => {
     const pts = stadium(80, 126).map(([x, z]): Point2 => [x, -z]);
-    const n = pts.length;
     const kerbs = detectKerbs(pts);
-    expect(kerbs).toHaveLength(4);
+    expect(kerbs).toHaveLength(6);
     expect(kerbs.map(k => k.start)).toEqual([...kerbs.map(k => k.start)].sort((a, b) => a - b));
     const inside = kerbs.filter(k => k.side === 'left');
-    const exit = kerbs.filter(k => k.side === 'right');
+    const outside = kerbs.filter(k => k.side === 'right');
     expect(inside).toHaveLength(2);
-    expect(exit).toHaveLength(2);
+    expect(outside).toHaveLength(4);
     const TURN = [100, 426];
     inside.forEach((k, i) => {
-      expect(k.start).toBeGreaterThanOrEqual(TURN[i] - 12);
-      expect(k.start).toBeLessThanOrEqual(TURN[i] - 10);
-      expect(exit[i].end).toBe(k.end);
-      expect(span(exit[i], n)).toBe(15);
+      expect(k.start).toBeGreaterThanOrEqual(TURN[i] - 17); // inside: [start-15, end+15]
+      expect(k.start).toBeLessThanOrEqual(TURN[i] - 15);
+      expect(k.end).toBeGreaterThanOrEqual(TURN[i] + 125 + 15);
+      expect(k.end).toBeLessThanOrEqual(TURN[i] + 126 + 17);
     });
     const runoff = detectRunoffs(pts);
     expect(runoff.map(s => s.start)).toEqual([...runoff.map(s => s.start)].sort((a, b) => a - b));
@@ -101,9 +96,14 @@ describe('026 corner analysis edge cases', () => {
     expect(runoff[0].surface).toBe('gravel');
   });
 
-  it('EDGE3: corner runs shorter than 8 points produce no kerbs but still produce run-offs', () => {
+  it('EDGE3: tightly packed short corner runs merge into full-ring kerbs but still produce per-run run-offs', () => {
     const pts = manyCorners(50, 3, 20);
-    expect(detectKerbs(pts)).toHaveLength(0);
+    const n = pts.length;
+    const kerbs = detectKerbs(pts);
+    expect(kerbs).toEqual([
+      { start: 0, end: n - 1, side: 'left' },
+      { start: 0, end: n - 1, side: 'right' },
+    ]);
     const runoff = detectRunoffs(pts);
     expect(runoff).toHaveLength(50);
     for (const s of runoff) {

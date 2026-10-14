@@ -152,12 +152,14 @@ describe('097 terrain below strips acceptance', () => {
     expect(failures.length, failures.slice(0, 12).join('; ')).toBe(0);
   }, 120000);
 
-  it('AT3: the regenerated tracks change only terrain.heights plus the fields task 098 owns (run-offs, barriers, trees); every other field matches the pre-task JSON', () => {
+  it('AT3: the regenerated tracks change only terrain.heights plus the fields tasks 098 and 142 own (run-offs, barriers, trees, kerbs); every other field matches the pre-task JSON', () => {
     const baseRev = execFileSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
     // 098 moved the run-off strips, so barriers/trees follow them and the strip clamp may
     // raise or lower terrain.heights; the 097 decrease-only invariant no longer applies.
+    // 142 re-rules the kerbs, which also feeds run-offs/barriers.
     const pin = (t: TrackDataV2): Record<string, unknown> => {
       const copy: Record<string, unknown> = { ...t, terrain: { ...t.terrain, heights: [] } };
+      delete copy.kerbs;
       delete copy.runoffs;
       delete copy.barriers;
       delete copy.trees;
@@ -170,7 +172,7 @@ describe('097 terrain below strips acceptance', () => {
       ) as TrackDataV2;
       expect(
         pin(now),
-        `${id}: fields other than run-offs/terrain.heights changed`,
+        `${id}: fields other than kerbs/run-offs/terrain.heights changed`,
       ).toEqual(pin(prev));
       expect(now.terrain.heights.length, `${id}: heights length`).toBe(prev.terrain.heights.length);
     }

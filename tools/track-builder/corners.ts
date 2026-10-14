@@ -1,10 +1,11 @@
 import type { Point2 } from '../../src/track/geo';
 import type { RunoffSegment, Side, TrackSegment } from '../../src/core/types';
-import { CORNER_RADIUS, KERB_RADIUS, KERB_WIDTH } from '../../src/core/constants';
+import { CORNER_RADIUS, KERB_WIDTH } from '../../src/core/constants';
 
 const OFFSET = 5;
 const CAP = 1e6;
-const MIN_KERB_RUN = 8;
+const KERB_MIN_RUN = 4;   // indices
+const KERB_TIGHT = 150;   // m: below this the outside gets an entry kerb too
 const GRAVEL_REACH = 40;
 const MIN_GRAVEL_RUN = 5;
 const MIN_EXTENT = 4;
@@ -82,19 +83,55 @@ function analyze(points: Point2[], threshold: number): Run[] {
 
 const opposite = (s: Side): Side => (s === 'left' ? 'right' : 'left');
 
+// Paints [start, start+len) cyclically; len is capped so a kerb longer than the loop covers it all.
+function paint(mask: boolean[], n: number, start: number, len: number): void {
+  for (let j = 0; j < Math.min(len, n); j++) mask[wrap(start + j, n)] = true;
+}
+
+// Maximal painted runs; a mask with no gap is one kerb [0, n-1].
+function maskRuns(mask: boolean[], n: number): { start: number; end: number }[] {
+  let gap = -1;
+  for (let i = 0; i < n; i++) {
+    if (!mask[i]) {
+      gap = i;
+      break;
+    }
+  }
+  if (gap < 0) return [{ start: 0, end: n - 1 }];
+  const out: { start: number; end: number }[] = [];
+  let start = -1;
+  for (let k = 1; k <= n; k++) {
+    const i = (gap + k) % n;
+    if (mask[i]) {
+      if (start < 0) start = i;
+    } else if (start >= 0) {
+      out.push({ start, end: (i - 1 + n) % n });
+      start = -1;
+    }
+  }
+  if (start >= 0) out.push({ start, end: (gap - 1 + n) % n });
+  return out;
+}
+
 export function detectKerbs(points: Point2[]): TrackSegment[] {
   const n = points.length;
-  if (n === 0) return [];
-  const out: TrackSegment[] = [];
-  for (const run of analyze(points, KERB_RADIUS)) {
+  if (n < 3) return [];
+  const mask: Record<Side, boolean[]> = {
+    left: new Array<boolean>(n).fill(false),
+    right: new Array<boolean>(n).fill(false),
+  };
+  for (const run of analyze(points, CORNER_RADIUS)) {
     const len = wrap(run.end - run.start, n) + 1;
-    if (len < MIN_KERB_RUN) continue;
-    const start = wrap(run.start - 10, n);
-    const end = wrap(run.end + 10, n);
-    out.push({ start, end, side: run.side });
-    out.push({ start: wrap(end - 14, n), end, side: opposite(run.side) });
+    if (len < KERB_MIN_RUN) continue;
+    paint(mask[run.side], n, run.start - 15, len + 31); // inside: [start-15, end+15]
+    paint(mask[opposite(run.side)], n, run.end - 5, 26); // outside exit: [end-5, end+20]
+    if (run.minRadius < KERB_TIGHT) paint(mask[opposite(run.side)], n, run.start - 20, 26); // outside entry
   }
-  return out.sort((a, b) => a.start - b.start);
+  const out: TrackSegment[] = [];
+  for (const side of ['left', 'right'] as const) {
+    for (const seg of maskRuns(mask[side], n)) out.push({ ...seg, side });
+  }
+  return out.sort((a, b) => a.start - b.start || (a.side === 'left' ? -1 : 1));
 }
 
 function covers(seg: TrackSegment, i: number, n: number): boolean {
