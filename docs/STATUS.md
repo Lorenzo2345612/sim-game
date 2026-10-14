@@ -5,7 +5,7 @@ Update this file when a phase starts/ends or a plan decision changes. Live task 
 ## Paused (2026-10-12 night, by the user)
 
 Orchestrator stopped with `orchestrator.py stop`; every task resumes from its saved stage. No open decisions.
-Relaunch: `setsid nohup python3 scripts/ai/orchestrator.py run --max-parallel 5 >> .ai/orchestrator-run.log 2>&1 < /dev/null &` (dashboard still up on 127.0.0.1:8765; if not, see pipeline-ops). Then re-arm the planner watcher (decisions or milestone build).
+Relaunch: `setsid nohup python3 scripts/ai/orchestrator.py run --max-parallel 6 >> .ai/orchestrator-run.log 2>&1 < /dev/null &` (dashboard still up on 127.0.0.1:8765; if not, see pipeline-ops). Then re-arm the planner watcher (decisions or milestone build).
 State: M1.1 approved. M1.2 open (043, 044, 077 kerb-lip verges, 079 DEM canopy filter (AT4 relaxed to realistic range), 085 elevation smoothing/grade cap). New M1.2b "Track look" (080 surface materials, 081 terrain splat, 082 markings, 083 barrier textures; CC0 textures already in public/textures). 078 reverse gear in M1.3. 064 runs heavy (MiMo Pro) after 4 flash timeouts.
 User feedback driving these: gravel looks bad, kerbs act as walls, invisible barriers (render lands with 043; barriers stay where they are), asphalt must be smooth not terrain-like, no reverse. Tracks are "inspired by", realistic grades (PRD §14).
 
@@ -48,7 +48,7 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 
 - Known geometry issue (2026-10-13, from 097): wide run-offs/verges of one section overlap a neighbouring section (Monza rows 319-325 verge over rows 343-346, Spa ~3340 left), ~0.2-0.7 m apart in height. Candidate fix: cap strip lateral extent where another section is closer (task after M1.2 review if visible).
 
-- 2026-10-13: WSL (14 GB) hit an OOM kill with --max-parallel 5 (workers + vitest Rapier track tests). Not caused by the pipeline (user side); keep --max-parallel 5. If the lock survives a crash, check `ps` and delete `.ai/orchestrator.lock`.
+- 2026-10-13: WSL (14 GB) hit an OOM kill with --max-parallel 6 (workers + vitest Rapier track tests). Not caused by the pipeline (user side); keep --max-parallel 6. If the lock survives a crash, check `ps` and delete `.ai/orchestrator.lock`.
 
 - 2026-10-13: M1.2 approved (944de0e). Review: no blocking issues; known: Monza far hills show few trees, Silverstone start lights look dark, tyre stacks look large up close, menu not covered by review shots. Old M0 handling (vmax 175, brake+steer spin) until M1.5.
 
