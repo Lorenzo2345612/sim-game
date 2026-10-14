@@ -28,7 +28,8 @@ describe('040 grandstands-crowd acceptance', () => {
 
   it('AT2: crowd is an InstancedMesh with rows * floor(length / 0.6) ±5 % instances and seeded random per-instance colours', () => {
     const crowd = crowdOf(createGrandstand(INPUT));
-    const expected = INPUT.rows * Math.floor(INPUT.lengthMeters / 0.6);
+    // Task 104: the crowd occupies round(0.85 * rows * seatsPerRow) seats.
+    const expected = Math.round(0.85 * INPUT.rows * Math.floor(INPUT.lengthMeters / 0.6));
     expect(Math.abs(crowd.count - expected)).toBeLessThanOrEqual(0.05 * expected);
     const colors = colorsOf(crowd);
     expect(colors).toHaveLength(crowd.count * 3);
