@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -1013,7 +1013,7 @@
     {
       "num": "074",
       "title": "Credits screen",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "044"
       ],

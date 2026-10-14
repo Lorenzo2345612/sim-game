@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | in progress | 058, 067, 044, 054 |
@@ -77,7 +77,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
-| 074 | Credits screen | in progress | 044 |
+| 074 | Credits screen | done | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
 | 076 | GT3 D definition | done | 072, 075 |
 | 077 | Add grass verges beside the track surfaces | done | - |
