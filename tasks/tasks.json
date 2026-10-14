@@ -1935,7 +1935,7 @@
     {
       "num": "140",
       "title": "Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "098",
         "142"
@@ -2309,6 +2309,21 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/167-surface-particles.md"
+    },
+    {
+      "num": "168",
+      "title": "Add Fontana, Cleveland and Detroit to the game",
+      "status": "pending",
+      "deps": [
+        "106",
+        "155",
+        "156"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/168-us-tracks-in-game.md"
     }
   ]
 }

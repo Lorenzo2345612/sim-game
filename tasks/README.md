@@ -141,7 +141,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 137 | Rain and track wetness model, wet compounds | pending | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
-| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | pending | 098, 142 |
+| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | in progress | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
@@ -169,3 +169,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 165 | Gamepad rumble | pending | 164 |
 | 166 | Dirty tyres | pending | 065, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |
+| 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
