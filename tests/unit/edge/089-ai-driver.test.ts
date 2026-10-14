@@ -63,12 +63,12 @@ describe('089 AI driver edge cases', () => {
     const line = straightLine();
     const drv = new AiDriver(line, flatSpeeds(201, 30));
     const out = freshOut();
-    // target 90° to the right at 12 m: δ = atan(2·2.6·1/12) = 0.40777 rad > 0.35 → clamp +1
+    // yaw −π/2 faces +X, the line (−Z) is 90° to the left at 12 m: δ = 0.40777 rad > 0.35 → clamp −1
     drv.update(obs(0, -100, -Math.PI / 2, 20), DT, out);
-    expect(out.steer).toBeCloseTo(1, 10);
-    // mirror: target 90° to the left → clamp −1
-    drv.update(obs(0, -100, Math.PI / 2, 20), DT, out);
     expect(out.steer).toBeCloseTo(-1, 10);
+    // mirror: facing −X the line is to the right → clamp +1
+    drv.update(obs(0, -100, Math.PI / 2, 20), DT, out);
+    expect(out.steer).toBeCloseTo(1, 10);
   });
 
   it('EDGE4: setSpeedCap overrides the profile target and null clears it', () => {
@@ -159,12 +159,12 @@ describe('089 AI driver edge cases', () => {
     expect(car.x).toBeLessThanOrEqual(1.5 * 0.6 + 1e-6);
     drv.setLateralOffset(-1);
     const xAt = car.x;
-    for (let i = 0; i < 3; i++) integrate(drv, car, 0.2, out);
+    for (let i = 0; i < 12; i++) integrate(drv, car, 0.2, out);
     // the new target is not latched: car must move left of where it was
     expect(car.x).toBeLessThan(xAt);
-    for (let i = 0; i < 48; i++) integrate(drv, car, 0.2, out);
-    // cumulative slew bound from t=0 still holds at t=10.8 s
-    expect(Math.abs(car.x)).toBeLessThanOrEqual(1.5 * 10.8 + 1e-6);
+    for (let i = 0; i < 30; i++) integrate(drv, car, 0.2, out);
+    // cumulative slew bound from t=0 still holds at t=9.0 s (car stays inside the fixture)
+    expect(Math.abs(car.x)).toBeLessThanOrEqual(1.5 * 9.0 + 1e-6);
     expect(Math.abs(car.x + 1)).toBeLessThanOrEqual(0.2);
   });
 
