@@ -14,13 +14,13 @@ describe('createScene', () => {
     expect((scene.background as THREE.Color).getHexString()).toBe('9ec9f0');
   });
 
-  it('scene has at least two lights', () => {
+  it('scene has only the sun light (IBL replaces the hemisphere light)', () => {
     const { scene, sun } = createScene();
     const lights = scene.children.filter(
       (c) => (c as THREE.Object3D & { isLight?: boolean }).isLight === true,
     );
-    expect(lights.length).toBeGreaterThanOrEqual(2);
-    expect(lights.some((l) => l instanceof THREE.HemisphereLight)).toBe(true);
+    expect(lights).toHaveLength(1);
+    expect(lights[0]).toBe(sun);
     expect(sun.position.x).toBe(300);
     expect(sun.position.y).toBe(500);
     expect(sun.position.z).toBe(200);
@@ -68,14 +68,6 @@ describe('createScene', () => {
     expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
     expect(material.color.getHexString()).toBe('4f7a3a');
     expect(material.roughness).toBe(1);
-  });
-
-  it('hemisphere light has expected sky, ground and intensity', () => {
-    const { scene } = createScene();
-    const hemi = scene.children.find((c) => c instanceof THREE.HemisphereLight) as THREE.HemisphereLight;
-    expect(hemi.color.getHexString()).toBe('cfe8ff');
-    expect(hemi.groundColor.getHexString()).toBe('5a7a3a');
-    expect(hemi.intensity).toBe(0.8);
   });
 
   it('each createScene call returns independent objects', () => {

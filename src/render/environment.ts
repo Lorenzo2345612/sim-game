@@ -1,41 +1,100 @@
 import * as THREE from 'three';
-import { Sky } from 'three/addons/objects/Sky.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import type { Vec3 } from '../core/types';
 
-export const FOG_TABLE: Record<string, { color: string; density: number }> = {
-  monza: { color: '#b8c9d9', density: 0.00055 },
-  spa: { color: '#9aa7b0', density: 0.0011 },
-  silverstone: { color: '#a9b3bb', density: 0.0008 },
+export const FOG_TABLE: Record<string, { density: number }> = {
+  monza: { density: 0.00055 },
+  spa: { density: 0.0011 },
+  silverstone: { density: 0.0008 },
 };
 
-const SUN_ELEVATION_DEG = 35;
-const SUN_AZIMUTH_DEG = 150;
+export const ENV_TABLE: Record<string, string> = {
+  monza: 'kloofendal_48d_partly_cloudy_puresky',
+  spa: 'kloofendal_overcast_puresky',
+  silverstone: 'kloofendal_overcast_puresky',
+};
 
-function sunDirection(target: THREE.Vector3): THREE.Vector3 {
-  const phi = THREE.MathUtils.degToRad(90 - SUN_ELEVATION_DEG);
-  const theta = THREE.MathUtils.degToRad(SUN_AZIMUTH_DEG);
-  return target.setFromSphericalCoords(1, phi, theta);
+export interface EnvironmentInfo {
+  name: string;
+  horizon: [number, number, number];
 }
 
-export function applyEnvironment(scene: THREE.Scene, trackId: string): void {
-  const previous = scene.getObjectByName('sky');
-  if (previous) {
-    scene.remove(previous);
-    const mesh = previous as THREE.Mesh;
+const HORIZON_BAND_DEG = 5;
+
+// Equirect RGBA float32 with row 0 = zenith; mean RGB over rows within ±5° of the horizon.
+export function horizonColor(
+  data: Float32Array,
+  width: number,
+  height: number,
+): [number, number, number] {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+  for (let row = 0; row < height; row++) {
+    const lat = (0.5 - (row + 0.5) / height) * 180;
+    if (Math.abs(lat) > HORIZON_BAND_DEG) continue;
+    const base = row * width * 4;
+    for (let x = 0; x < width; x++) {
+      const i = base + x * 4;
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count++;
+    }
+  }
+  if (count === 0) return [0, 0, 0];
+  return [r / count, g / count, b / count];
+}
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+// The PMREM render target behind scene.environment, kept so a re-call can free it.
+let environmentTarget: THREE.WebGLRenderTarget | null = null;
+
+export async function applyEnvironment(
+  scene: THREE.Scene,
+  trackId: string,
+  renderer: THREE.WebGLRenderer,
+): Promise<EnvironmentInfo> {
+  const oldSky = scene.getObjectByName('sky');
+  if (oldSky) {
+    scene.remove(oldSky);
+    const mesh = oldSky as THREE.Mesh;
     mesh.geometry.dispose();
     (mesh.material as THREE.Material).dispose();
   }
 
-  const sky = new Sky();
-  sky.name = 'sky';
-  sky.scale.setScalar(4500);
-  const uniforms = (sky.material as THREE.ShaderMaterial).uniforms;
-  sunDirection(uniforms.sunPosition.value as THREE.Vector3);
-  scene.add(sky);
+  const name = ENV_TABLE[trackId] ?? ENV_TABLE.monza;
+  const loader = new RGBELoader();
+  loader.setDataType(THREE.FloatType);
+  const texture = await loader.loadAsync(`/hdri/${name}_2k.hdr`);
+  const image = texture.image as { data: Float32Array; width: number; height: number };
+  const raw = horizonColor(image.data, image.width, image.height);
+  const horizon: [number, number, number] = [clamp01(raw[0]), clamp01(raw[1]), clamp01(raw[2])];
+
+  const previousBackground = scene.background;
+
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = texture;
+  scene.backgroundIntensity = 1;
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const target = pmrem.fromEquirectangular(texture);
+  pmrem.dispose();
+  scene.environment = target.texture;
+  scene.environmentIntensity = 0.7;
+
+  environmentTarget?.dispose();
+  environmentTarget = target;
+  if (previousBackground instanceof THREE.Texture) previousBackground.dispose();
 
   const fog = FOG_TABLE[trackId] ?? FOG_TABLE.monza;
-  scene.fog = new THREE.FogExp2(fog.color, fog.density);
-  scene.background = null;
+  scene.fog = new THREE.FogExp2(new THREE.Color(horizon[0], horizon[1], horizon[2]), fog.density);
+
+  return { name, horizon };
 }
 
 const SUN_OFFSET = new THREE.Vector3(150, 200, 100);

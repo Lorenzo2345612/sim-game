@@ -44,6 +44,10 @@ export interface SceneStats {
   startGantries: number;
   sky: boolean;
   shadows: boolean;
+  environment: string;
+  ibl: boolean;
+  horizonColor: [number, number, number];
+  fogColor: [number, number, number];
 }
 
 declare global {
@@ -60,6 +64,7 @@ declare global {
       /** Car yaw in radians: 0 facing -Z, positive turning left (CCW seen from +Y). */
       getHeading(): number;
       sceneStats(): SceneStats;
+      renderStats(): { toneMapping: string };
       drawCalls(): number;
       cameraMode(): CameraMode;
       gear(): number;
@@ -95,6 +100,17 @@ let engineAudio: EngineAudio | null = null;
 let audioResumed = false;
 
 const NO_SLIP: readonly number[] = [0, 0, 0, 0];
+
+const TONE_MAPPING_NAMES: Record<number, string> = {
+  [THREE.NoToneMapping]: 'None',
+  [THREE.LinearToneMapping]: 'Linear',
+  [THREE.ReinhardToneMapping]: 'Reinhard',
+  [THREE.CineonToneMapping]: 'Cineon',
+  [THREE.ACESFilmicToneMapping]: 'ACESFilmic',
+  [THREE.CustomToneMapping]: 'Custom',
+  [THREE.AgXToneMapping]: 'AgX',
+  [THREE.NeutralToneMapping]: 'Neutral',
+};
 
 function resumeAudio(): void {
   audioResumed = true;
@@ -287,12 +303,18 @@ async function startGame(trackId: string): Promise<void> {
     startGantries: 0,
     sky: false,
     shadows: false,
+    environment: '',
+    ibl: false,
+    horizonColor: [0, 0, 0],
+    fogColor: [0, 0, 0],
   };
 
   if ('version' in track) {
     // v2: elevated terrain + textured surfaces + scenery replace the flat Phase 0 ground.
     ground.visible = false;
-    applyEnvironment(scene, track.id);
+    const env = await applyEnvironment(scene, track.id, handle.renderer);
+    stats.environment = env.name;
+    stats.horizonColor = env.horizon;
     shadows = new ShadowRig(scene);
     shadows.setEnabled(handle.renderer, settings.shadows);
     if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
@@ -665,10 +687,20 @@ async function startGame(trackId: string): Promise<void> {
     surfaceUnderCar: () => game.surfaceUnderCar(),
     trackHeightUnderCar: () => game.trackHeightUnderCar(),
     getHeading: () => headingOf(game.getCurrentState().rotation),
-    sceneStats: () => ({
-      ...stats,
-      sky: scene.getObjectByName('sky') !== undefined,
-      shadows: handle.renderer.shadowMap.enabled,
+    sceneStats: () => {
+      const fog = scene.fog;
+      return {
+        ...stats,
+        sky: scene.background !== null,
+        shadows: handle.renderer.shadowMap.enabled,
+        ibl: scene.environment !== null,
+        fogColor: fog
+          ? ([fog.color.r, fog.color.g, fog.color.b] as [number, number, number])
+          : ([0, 0, 0] as [number, number, number]),
+      };
+    },
+    renderStats: () => ({
+      toneMapping: TONE_MAPPING_NAMES[handle.renderer.toneMapping] ?? 'Custom',
     }),
     drawCalls: () => handle.renderer.info.render.calls,
     cameraMode: () => cameraRig.mode,

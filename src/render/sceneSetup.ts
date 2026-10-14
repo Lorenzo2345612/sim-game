@@ -20,8 +20,6 @@ export function createScene(): SceneParts {
   scene.background = new THREE.Color(SKY_COLOR);
   scene.fog = new THREE.Fog(SKY_COLOR, 300, 2500);
 
-  scene.add(new THREE.HemisphereLight('#cfe8ff', '#5a7a3a', 0.8));
-
   const sun = new THREE.DirectionalLight('#ffffff', 2.0);
   sun.position.set(300, 500, 200);
   sun.castShadow = false;
@@ -48,7 +46,7 @@ export function createRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = THREE.NeutralToneMapping;
 
   return {
     renderer,
