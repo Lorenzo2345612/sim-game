@@ -15,8 +15,14 @@ import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMa
 
 export interface BarrierObject {
   group: THREE.Group;
+  foamBlocks: number;
   dispose(): void;
 }
+
+export const FOAM_PITCH = 1.0;
+export const FOAM_HEIGHT = 1.0;
+export const FOAM_DEPTH = 0.6;
+export const FOAM_WIDTH = 0.96;
 
 // One metal tile every 2 m of rail; fence tile every 3 m; wall uv is metres / 10.
 const RAIL_UV_SCALE = 1 / 2;
@@ -30,6 +36,8 @@ const POST_DEPTH = 0.12;
 const POST_BEHIND = 0.1;
 const TYRE_COLOR_A = new THREE.Color(0.9, 0.9, 0.9);
 const TYRE_COLOR_B = new THREE.Color(0.75, 0.1, 0.1);
+const FOAM_COLORS = [0x1f4fbf, 0xcc2222, 0xf0f0f0];
+const FOAM_NAMES = ['foamBlue', 'foamRed', 'foamWhite'];
 
 function defaultLoadTexture(url: string): THREE.Texture {
   // TextureLoader needs a DOM; fall back to a plain texture under Node.
@@ -292,6 +300,8 @@ export function createBarrierObject(
   const wallIndices: number[] = [];
   const posts: InstanceSpot[] = [];
   const tyres: InstanceSpot[] = [];
+  const foamSpots: InstanceSpot[][] = [[], [], []];
+  let foamTotal = 0;
   let hasArmco = false;
   let hasTyres = false;
   let hasWall = false;
@@ -342,6 +352,24 @@ export function createBarrierObject(
                 yaw: 0,
               });
             }
+          }
+        } else if (span.type === 'foam') {
+          // Colour runs over the whole object, so blocks of one span carry into the next.
+          const count = Math.floor(length / FOAM_PITCH);
+          for (let k = 0; k < count; k++) {
+            const s = (k + 0.5) * FOAM_PITCH;
+            pointAt(path, s, at);
+            const i = pathIndexAt(path, s);
+            const [nx, nz] = centerlineNormal(track, span.verts[i].index);
+            const ox = nx * sign;
+            const oz = nz * sign;
+            foamSpots[foamTotal % 3].push({
+              x: at.x + ox * (FOAM_DEPTH / 2),
+              y: at.y,
+              z: at.z + oz * (FOAM_DEPTH / 2),
+              yaw: Math.atan2(ox, oz),
+            });
+            foamTotal++;
           }
         } else {
           hasWall = true;
@@ -462,9 +490,38 @@ export function createBarrierObject(
     materials.push(material);
   }
 
+  if (foamTotal > 0) {
+    const geometry = new THREE.BoxGeometry(FOAM_WIDTH, FOAM_HEIGHT, FOAM_DEPTH);
+    geometries.push(geometry);
+    const matrix = new THREE.Matrix4();
+    for (let c = 0; c < FOAM_COLORS.length; c++) {
+      const spots = foamSpots[c];
+      if (spots.length === 0) continue;
+      const material = new THREE.MeshStandardMaterial({
+        color: FOAM_COLORS[c],
+        roughness: 0.6,
+        metalness: 0,
+      });
+      materials.push(material);
+      const mesh = new THREE.InstancedMesh(geometry, material, spots.length);
+      mesh.name = FOAM_NAMES[c];
+      for (let i = 0; i < spots.length; i++) {
+        const p = spots[i];
+        // Base on the path: the box centre sits half a height above it.
+        matrix.makeRotationY(p.yaw);
+        matrix.setPosition(p.x, p.y + FOAM_HEIGHT / 2, p.z);
+        mesh.setMatrixAt(i, matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.castShadow = true;
+      group.add(mesh);
+    }
+  }
+
   let disposed = false;
   return {
     group,
+    foamBlocks: foamTotal,
     dispose(): void {
       if (disposed) return;
       disposed = true;

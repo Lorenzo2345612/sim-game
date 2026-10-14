@@ -205,6 +205,76 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
   return makeStrip('grass', rows, true);
 }
 
+/** Unit right lateral at polyline point i: end segments use their own normal, inner points average the adjacent ones. */
+function roadLateral(points: [number, number][], i: number): [number, number] {
+  const m = points.length;
+  const segNormal = (a: number, b: number): [number, number] => {
+    let dx = points[b][0] - points[a][0];
+    let dz = points[b][1] - points[a][1];
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-9) {
+      dx = 0;
+      dz = -1;
+    } else {
+      dx /= len;
+      dz /= len;
+    }
+    return [-dz, dx];
+  };
+  if (m < 2 || i === 0) return segNormal(0, Math.min(1, m - 1));
+  if (i === m - 1) return segNormal(m - 2, m - 1);
+  const a = segNormal(i - 1, i);
+  const b = segNormal(i, i + 1);
+  const nx = a[0] + b[0];
+  const nz = a[1] + b[1];
+  const len = Math.hypot(nx, nz);
+  if (len < 1e-9) return a;
+  return [nx / len, nz / len];
+}
+
+export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
+  const roads = track.escapeRoads;
+  if (!roads || roads.length === 0) return [];
+  const strips: SurfaceStrip[] = [];
+  for (const road of roads) {
+    const m = road.points.length;
+    if (m < 2) continue;
+    const half = road.width / 2;
+    const rows: Vertex[][] = [];
+    let s = 0;
+    for (let i = 0; i < m; i++) {
+      if (i > 0) {
+        s += Math.hypot(
+          road.points[i][0] - road.points[i - 1][0],
+          road.points[i][1] - road.points[i - 1][1],
+        );
+      }
+      // Vertex y follows the elevation of the nearest centerline point by XZ distance.
+      let best = 0;
+      let bestD2 = Infinity;
+      for (let k = 0; k < track.centerline.length; k++) {
+        const dx = track.centerline[k][0] - road.points[i][0];
+        const dz = track.centerline[k][1] - road.points[i][1];
+        const d2 = dx * dx + dz * dz;
+        if (d2 < bestD2) {
+          bestD2 = d2;
+          best = k;
+        }
+      }
+      const y = (track.elevation[best] ?? 0) + RUNOFF_Y;
+      const [rx, rz] = roadLateral(road.points, i);
+      const [x, z] = road.points[i];
+      const v = s / UV_SCALE;
+      rows.push([
+        { x: x - rx * half, y, z: z - rz * half, u: -half / UV_SCALE, v },
+        { x: x + rx * half, y, z: z + rz * half, u: half / UV_SCALE, v },
+      ]);
+    }
+    strips.push(makeStrip('runoff', rows, false));
+  }
+  return strips;
+}
+
 export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   const cx = track.centerline;
   const n = cx.length;
@@ -270,6 +340,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
 
   strips.push(vergeStrip(track, 'left'));
   strips.push(vergeStrip(track, 'right'));
+  strips.push(...escapeRoadStrips(track));
 
   return strips;
 }

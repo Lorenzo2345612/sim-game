@@ -44,6 +44,8 @@ import { SetupPanel } from './ui/setupPanel';
 
 export interface SceneStats {
   barriers: number;
+  foamBlocks: number;
+  escapeRoads: number;
   treeInstances: number;
   grandstands: number;
   pitBuildings: number;
@@ -300,6 +302,8 @@ async function startGame(trackId: string): Promise<void> {
   let treeField: TreeField | null = null;
   const stats: SceneStats = {
     barriers: 0,
+    foamBlocks: 0,
+    escapeRoads: 0,
     treeInstances: 0,
     grandstands: 0,
     pitBuildings: 0,
@@ -381,6 +385,8 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(lights.object);
 
     stats.barriers = barriers.group.children.length;
+    stats.foamBlocks = barriers.foamBlocks;
+    stats.escapeRoads = track.escapeRoads?.length ?? 0;
     stats.treeInstances = track.treeSpecies.reduce((n, s) => n + trees.instanceCount(s.name), 0);
     stats.grandstands = track.grandstands.length;
     stats.pitBuildings = 1;
