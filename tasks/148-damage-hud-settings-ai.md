@@ -63,7 +63,7 @@ Conventions: `value` clamped to [0, 1] first; invalid stored mode → `'full'`; 
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e -- 148
+npx playwright test 148-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

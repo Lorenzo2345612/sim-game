@@ -57,7 +57,7 @@ Conventions: milliseconds; budget comparisons `>` fail; the ring keeps the lates
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e -- 151
+npx playwright test 151-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

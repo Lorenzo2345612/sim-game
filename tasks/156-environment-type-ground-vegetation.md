@@ -68,7 +68,7 @@ Conventions: unknown type → parkland palette; missing `environment` → 'parkl
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e
+npx playwright test 156-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

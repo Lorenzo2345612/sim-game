@@ -61,7 +61,7 @@ Conventions: metres; `track.sausages ?? []`; empty → empty group with `count` 
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e -- 150
+npx playwright test 150-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

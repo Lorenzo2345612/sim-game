@@ -64,7 +64,7 @@ Conventions: unknown track id → `day`; invalid `?tod=` value ignored (never th
 ```
 npm run typecheck
 npm run lint
-npm run test:e2e
+npx playwright test 135-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

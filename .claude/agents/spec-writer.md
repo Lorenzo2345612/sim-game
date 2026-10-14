@@ -16,6 +16,14 @@ Rules for each spec:
 - Numeric/geometric specs: fill the template's Conventions line (rounding, boundary inclusivity, invalid input, tie-breaks, mutation).
 - Exact list of files to create/modify (max ~3 in src/ per task) and of tests (file + case name + expected values with tolerance).
 - Acceptance criteria verifiable with Vitest or commands. Verification section with the commands.
+- Test locations and Verification block (fixed format). Writers: acceptance → `tests/unit/acceptance/NNN-<slug>.test.ts` and e2e rows → `tests/e2e/acceptance/NNN-<slug>.spec.ts`; edge → `tests/unit/edge/NNN-<slug>.test.ts` (pre) / `.post.test.ts` (post). Verification is exactly:
+  ```
+  npm run typecheck
+  npm run lint
+  npm test
+  npx playwright test NNN-   # only if the table has e2e rows; this task's e2e files only
+  ```
+  Never `npm run test:e2e` (full suite, >9 min; the orchestrator runs it).
 - Explicit, concrete "Out of scope".
 - "Depends on" with the exact numbers the planner gives. Status: pending.
 - No npm dependencies outside architecture.md unless the planner says so.

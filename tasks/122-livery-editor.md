@@ -51,7 +51,7 @@ Conventions: invalid input values are clamped by the inputs; `saveLivery` errors
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e
+npx playwright test 122-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

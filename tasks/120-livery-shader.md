@@ -63,7 +63,7 @@ Conventions: u, v, h not clamped; boundaries as written (`<` strict); `bounds` w
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e
+npx playwright test 120-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

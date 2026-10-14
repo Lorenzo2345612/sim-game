@@ -60,7 +60,7 @@ Conventions: charts autoscale to the data min/max (min == max → ±1); redraw o
 ```
 npm run typecheck
 npm run lint
-npm run test:e2e
+npx playwright test 132-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

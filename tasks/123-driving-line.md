@@ -68,7 +68,7 @@ Conventions: thresholds as written (`<` and `≤`); input arrays not mutated; wr
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e
+npx playwright test 123-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope

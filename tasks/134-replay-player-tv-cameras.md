@@ -68,7 +68,7 @@ Conventions: `tvCameraFor` with empty array → throws `Error`; times in seconds
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e
+npx playwright test 134-   # this task's e2e files only; never the full e2e suite
 ```
 
 ## Out of scope
