@@ -555,6 +555,7 @@ async function startGame(trackId: string): Promise<void> {
       cameraRig.update(interp, frame);
       game.getTelemetry(telemetry);
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
+      gamepad.rumble(fb.low, fb.high, performance.now());
       cameraRig.applyShake(fb.shake, game.simTime);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
@@ -574,6 +575,8 @@ async function startGame(trackId: string): Promise<void> {
 
       updateGhostCar(info.currentLapTime);
       engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
+    } else {
+      gamepad.rumble(0, 0, performance.now());
     }
     if (frame > 0) fpsAvg += (1 / frame - fpsAvg) * 0.1;
     frameStats.fps = fpsAvg;

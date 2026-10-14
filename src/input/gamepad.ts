@@ -7,6 +7,18 @@ const BUTTON_SHIFT_UP = 5;
 const BUTTON_BRAKE = 6;
 const BUTTON_THROTTLE = 7;
 
+const RUMBLE_CHANGE_MS = 50;
+const RUMBLE_KEEPALIVE_MS = 100;
+const RUMBLE_CHANGE = 0.02;
+const RUMBLE_DURATION_MS = 120;
+
+const rumbleMagnitude = (v: number): number => (Number.isFinite(v) ? clamp(v, 0, 1) : 0);
+
+// Adopts a possibly non-promise return and swallows rejections (spec: ignore them).
+const ignoreRejection = (result: unknown): void => {
+  void Promise.resolve(result).catch(() => {});
+};
+
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 const largerMag = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
@@ -29,6 +41,11 @@ export class GamepadInput {
   private steer = 0;
   private throttle = 0;
   private brake = 0;
+  private rumbleEnabled = true;
+  private rumbleActive = false;
+  private lastPlayMs = Number.NEGATIVE_INFINITY;
+  private lastStrong = 0;
+  private lastWeak = 0;
 
   constructor(private getGamepads?: () => ArrayLike<Gamepad | null>) {
     if (!this.getGamepads && typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function') {
@@ -75,6 +92,56 @@ export class GamepadInput {
     this.shiftUpPending = false;
     this.shiftDownPending = false;
     return input;
+  }
+
+  rumble(low: number, high: number, nowMs: number): void {
+    if (!this.rumbleEnabled) return;
+    const strong = rumbleMagnitude(low);
+    const weak = rumbleMagnitude(high);
+    if (strong === 0 && weak === 0) {
+      if (this.rumbleActive) {
+        this.rumbleActive = false;
+        this.resetRumble();
+      }
+      return;
+    }
+    const dt = nowMs - this.lastPlayMs;
+    const changed = Math.abs(strong - this.lastStrong) > RUMBLE_CHANGE || Math.abs(weak - this.lastWeak) > RUMBLE_CHANGE;
+    if (!((dt >= RUMBLE_CHANGE_MS && changed) || dt >= RUMBLE_KEEPALIVE_MS)) return;
+    const actuator = this.actuator();
+    if (!actuator || typeof actuator.playEffect !== 'function') return;
+    ignoreRejection(
+      actuator.playEffect('dual-rumble', {
+        startDelay: 0,
+        duration: RUMBLE_DURATION_MS,
+        strongMagnitude: strong,
+        weakMagnitude: weak,
+      }),
+    );
+    this.lastPlayMs = nowMs;
+    this.lastStrong = strong;
+    this.lastWeak = weak;
+    this.rumbleActive = true;
+  }
+
+  setRumbleEnabled(on: boolean): void {
+    if (on === this.rumbleEnabled) return;
+    this.rumbleEnabled = on;
+    if (!on && this.rumbleActive) {
+      this.rumbleActive = false;
+      this.resetRumble();
+    }
+  }
+
+  private actuator(): GamepadHapticActuator | null {
+    const pad = this.firstPad();
+    return pad ? (pad.vibrationActuator ?? null) : null;
+  }
+
+  private resetRumble(): void {
+    const actuator = this.actuator();
+    if (!actuator || typeof actuator.reset !== 'function') return;
+    ignoreRejection(actuator.reset());
   }
 
   private firstPad(): Gamepad | null {
