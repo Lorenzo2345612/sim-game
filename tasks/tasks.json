@@ -1403,7 +1403,7 @@
     {
       "num": "104",
       "title": "Crowd sprite atlas and seated crowd",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "040"
       ],
