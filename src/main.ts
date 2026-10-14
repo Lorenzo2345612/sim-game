@@ -5,6 +5,7 @@ import { EngineAudio } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
+import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
 import type { DriverInput, LapEvent, Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
@@ -12,6 +13,7 @@ import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } f
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec } from './physics/carSpec';
+import type { Telemetry } from './physics/vehicle';
 import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
@@ -515,6 +517,9 @@ async function startGame(trackId: string): Promise<void> {
     MAX_SIM_STEPS_PER_FRAME,
   );
   const interp = createVehicleState(4);
+  const telemetry: Telemetry = game.getTelemetry();
+  // fb stays in scope for the next consumers (165 rumble, 167 particles).
+  const fb: Feedback = { shake: 0, low: 0, high: 0 };
 
   let autoGearbox = true;
   let paused = false;
@@ -548,6 +553,9 @@ async function startGame(trackId: string): Promise<void> {
       interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
       car.update(interp);
       cameraRig.update(interp, frame);
+      game.getTelemetry(telemetry);
+      surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
+      cameraRig.applyShake(fb.shake, game.simTime);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
       minimap.update(interp.position.x, interp.position.z);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { VehicleState } from '../core/types';
 import { ChaseCamera } from './chaseCamera';
+import { shakeOffset } from './cameraShake';
 
 export type CameraMode = 'chase' | 'tcam' | 'cockpit';
 
@@ -15,7 +16,9 @@ export class CameraRig {
   private readonly initialFov: number;
   private readonly offset = new THREE.Vector3();
   private readonly rotation = new THREE.Quaternion();
+  private readonly shakeOut = { y: 0, roll: 0 };
   private current: CameraMode = 'chase';
+  private shakeScale = 1;
 
   constructor(camera: THREE.PerspectiveCamera) {
     this.camera = camera;
@@ -54,6 +57,19 @@ export class CameraRig {
       state.position.z + this.offset.z,
     );
     this.camera.quaternion.copy(this.rotation);
+  }
+
+  setShakeScale(s: number): void {
+    this.shakeScale = Number.isFinite(s) ? Math.min(1, Math.max(0, s)) : 1;
+  }
+
+  // Called after update() each frame; update rewrites the pose, so the offset never accumulates.
+  applyShake(amount: number, t: number): void {
+    const scaled = amount * this.shakeScale;
+    if (scaled === 0) return;
+    const o = shakeOffset(scaled, t, this.current, this.shakeOut);
+    this.camera.position.y += o.y;
+    this.camera.rotateZ(o.roll);
   }
 
   dispose(): void {

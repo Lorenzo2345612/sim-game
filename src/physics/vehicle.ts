@@ -23,6 +23,27 @@ function clampControl(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
 }
 
+// Shape from task 065; the full tyre/fuel channels land with it.
+export interface WheelTelemetry {
+  fz: number;
+  kappa: number;
+  alpha: number;
+  tempC: number;
+  wear: number;
+  surface: Surface;
+}
+
+export interface Telemetry {
+  wheels: WheelTelemetry[];
+  fuelKg: number;
+  rpm: number;
+  gear: number;
+}
+
+function emptyWheel(): WheelTelemetry {
+  return { fz: 0, kappa: 0, alpha: 0, tempC: 0, wear: 0, surface: 'asphalt' };
+}
+
 export class Vehicle {
   readonly body: RAPIER.RigidBody;
   private readonly config: VehicleConfig;
@@ -173,6 +194,19 @@ export class Vehicle {
       tmpSurfaces[i] = ground === null ? 'asphalt' : (surfaceOf(ground) ?? 'asphalt');
     }
     return tmpSurfaces;
+  }
+
+  getTelemetry(out?: Telemetry): Telemetry {
+    const t: Telemetry = out ?? { wheels: this.config.wheelPositions.map(emptyWheel), fuelKg: 0, rpm: 0, gear: 0 };
+    this.getWheelSurfaces();
+    for (let i = 0; i < t.wheels.length; i++) {
+      const w = t.wheels[i];
+      w.surface = tmpSurfaces[i];
+      w.fz = this.controller.wheelSuspensionForce(i) ?? 0;
+    }
+    t.rpm = this.rpm();
+    t.gear = this.gearbox.gear;
+    return t;
   }
 
   getState(out?: VehicleState): VehicleState {

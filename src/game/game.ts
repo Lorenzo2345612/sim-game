@@ -8,7 +8,7 @@ import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import type { GearboxMode } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
-import { Vehicle } from '../physics/vehicle';
+import { Vehicle, type Telemetry } from '../physics/vehicle';
 import { F4_CAR } from '../physics/vehicleConfig';
 
 type World = ReturnType<typeof createPhysicsWorld>;
@@ -128,6 +128,10 @@ export class Game {
 
   getWheelSurfaces(): Surface[] {
     return this.vehicle.getWheelSurfaces();
+  }
+
+  getTelemetry(out?: Telemetry): Telemetry {
+    return this.vehicle.getTelemetry(out);
   }
 
   // Arrow fields so the debug hooks survive being detached from the instance.
