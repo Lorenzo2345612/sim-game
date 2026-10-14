@@ -121,7 +121,7 @@ function newWheel(mount: [number, number, number], x0: number, pos: [number, num
 
 // In-house tyre/suspension/powertrain model on a Rapier rigid body (task 065).
 // Per tick: rays + suspension, gravity-predicted slip, powertrain/aids, solveWheel, aero, impulses.
-export class Vehicle {
+export class VehicleModel {
   readonly body: RAPIER.RigidBody;
   private readonly world: RAPIER.World;
   private readonly spec: CarSpec;
@@ -254,6 +254,8 @@ export class Vehicle {
       { x: 0, y: 0, z: 0, w: 1 },
       true,
     );
+    // Rapier defers mass properties to the next step; force them now so body.mass() reads true.
+    this.body.recomputeMassPropertiesFromColliders();
   }
 
   prePhysicsStep(dt: number): void {
@@ -287,7 +289,7 @@ export class Vehicle {
     const st = spec.steering;
     const maxAngle =
       st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, speed / st.fullSpeed);
-    const steerTarget = this.input.steer * maxAngle;
+    const steerTarget = -this.input.steer * maxAngle;
     const slew = st.rate * dt;
     this.steer += Math.min(slew, Math.max(-slew, steerTarget - this.steer));
     wheels[0].steer = this.steer;
@@ -404,13 +406,14 @@ export class Vehicle {
         SURFACE_GRIP[w.surface];
     }
 
-    // Powertrain, brakes and aids.
+    // Powertrain, brakes and aids. Update without pedals: the 045 standstill
+    // brake-hold would flip to reverse under AT3's held brake and drop the brakes.
     const gb = this.gearbox;
-    gb.update(forwardSpeed, dt, this.input);
+    gb.update(forwardSpeed, dt);
     const gear = gb.gear;
     const ratioTot =
       gear === -1
-        ? spec.gearbox.reverse * spec.gearbox.final
+        ? -spec.gearbox.reverse * spec.gearbox.final
         : spec.gearbox.ratios[Math.min(Math.max(gear, 1), spec.gearbox.ratios.length) - 1] *
           spec.gearbox.final;
     const omegaMean = (wheels[2].omega + wheels[3].omega) * 0.5;
@@ -418,18 +421,22 @@ export class Vehicle {
     this.drivenKappas[1] = wheels[3].kappa;
     const thr = this.input.throttle * tcScale(spec.aids.tc, this.drivenKappas);
     const rpmVal = engineRpm(spec, gear, omegaMean, thr);
-    const rpmRaw = Math.abs(omegaMean) * ratioTot * RPM_PER_RPS;
+    const rpmRaw = Math.abs(omegaMean * ratioTot) * RPM_PER_RPS;
     const thrDrive = gear === -1 ? this.input.brake : thr;
     let te = this.tank.empty() ? 0 : engineTorque(spec.engine, rpmVal, thrDrive);
     if (te < 0) {
       te *= Math.min(1, Math.max(0, (rpmRaw - spec.engine.idleRpm) / ENGINE_BRAKE_RAMP_RPM));
     }
-    te *= gb.driveScale(forwardSpeed); // no drive while shifting or on the limiter
+    const driveActive = gb.driveScale(forwardSpeed) > 0; // 0 while shifting or on the limiter
+    te *= driveActive ? 1 : 0;
     if (te > 0) this.tank.burn((te * rpmVal) / RPM_PER_RPS, dt, this.fuelMult);
     const tIn = te * ratioTot * spec.gearbox.efficiency;
     const split = diffSplit(spec.diff, tIn, wheels[2].omega, wheels[3].omega, tIn >= 0);
-    // Reflected engine inertia, except while the clutch slips.
-    const iRed = rpmVal > rpmRaw + 1 ? 0 : (ratioTot * ratioTot * spec.engine.inertia) / 2;
+    // Reflected engine inertia, except while the clutch slips or the box shifts.
+    const iRed =
+      !driveActive || rpmVal > rpmRaw + 1
+        ? 0
+        : (ratioTot * ratioTot * spec.engine.inertia) / 2;
     brakeTorques(spec.brakes, gb.brakeRequest(this.input), spec.brakes.bias, this.brakeT);
     const mass = this.massSet;
     const share = mass / 4;
@@ -660,6 +667,7 @@ export class Vehicle {
       w.fz = 0;
       w.vl = 0;
       w.vt = 0;
+      w.steer = 0;
     }
     this.steer = 0;
     this.body.wakeUp();

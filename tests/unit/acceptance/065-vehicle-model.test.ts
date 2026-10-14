@@ -6,7 +6,7 @@ import {
   createPhysicsWorld,
   RAPIER,
 } from '../../../src/physics/physicsWorld';
-import { Vehicle } from '../../../src/physics/vehicle';
+import { VehicleModel as Vehicle } from '../../../src/physics/vehicleModel';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT, GRAVITY, MS_TO_KMH } from '../../../src/core/constants';
 import type {
