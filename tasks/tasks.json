@@ -734,7 +734,7 @@
     {
       "num": "055",
       "title": "Phase 1 end-to-end checks on three tracks",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "054"
       ],
@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -1338,7 +1338,7 @@
     {
       "num": "099",
       "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "042"
       ],
@@ -1362,7 +1362,7 @@
     {
       "num": "101",
       "title": "Tree field uses baked LODs",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "100",
         "039"

@@ -58,7 +58,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 052 | Graphics presets and FPS overlay | done | - |
 | 053 | F4 car model pipeline (offline asset build) | done | - |
 | 054 | Wire gameplay features into the game | done | 034, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052 |
-| 055 | Phase 1 end-to-end checks on three tracks | in progress | 054 |
+| 055 | Phase 1 end-to-end checks on three tracks | done | 054 |
 | 056 | Load TrackData v2 tracks into the game (terrain, surfaces, physics) | done | 030, 032, 033, 034, 035, 036, 037 |
 | 057 | Use the F4 car in the game and remove the Kenney placeholder | done | 053, 056 |
 | 058 | CarSpec type, loader and F4 data | done | - |
@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | in progress | 058, 067, 044, 054 |
@@ -101,9 +101,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
-| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | in progress | 042 |
+| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | waiting decision | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
-| 101 | Tree field uses baked LODs | pending | 100, 039 |
+| 101 | Tree field uses baked LODs | in progress | 100, 039 |
 | 102 | Satellite colour on distant terrain | pending | 081 |
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | pending | 040 |
