@@ -91,7 +91,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | done | 087, 058 |
-| 089 | AI driver controller | in progress | 087, 088 |
+| 089 | AI driver controller | done | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
@@ -103,10 +103,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
 | 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | in progress | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
-| 101 | Tree field uses baked LODs | in progress | 100, 039 |
-| 102 | Satellite colour on distant terrain | pending | 081 |
-| 103 | Real-size tyre walls, W-beam armco with posts, catch fences | pending | 083, 086 |
-| 104 | Crowd sprite atlas and seated crowd | pending | 040 |
+| 101 | Tree field uses baked LODs | waiting decision | 100, 039 |
+| 102 | Satellite colour on distant terrain | in progress | 081 |
+| 103 | Real-size tyre walls, W-beam armco with posts, catch fences | in progress | 083, 086 |
+| 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | pending | 099 |
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | pending | 044, 099, 102, 141, 143, 155 |
 | 107 | Car sound data | pending | 058, 072 |
@@ -162,3 +162,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 158 | City renderer: buildings, facades, water | pending | 099, 157 |
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
+| 161 | Fix minimap stretched to full screen and engine audio playing while paused | pending | - |
+| 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
