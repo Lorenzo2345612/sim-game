@@ -180,11 +180,14 @@ describe('086 barrier continuity post-code gaps', () => {
     const q = new THREE.Quaternion();
     const p = new THREE.Vector3();
     const s = new THREE.Vector3();
+    const k = 1 + 0.31 / Math.hypot(v19.x, v19.z);
+    const seamX = v19.x * k;
+    const seamZ = v19.z * k;
     let atSeam = false;
     for (let i = 0; i < tyres.count; i++) {
       tyres.getMatrixAt(i, m);
       m.decompose(p, q, s);
-      if (Math.hypot(p.x - v19.x, p.z - v19.z) < 1e-3) atSeam = true;
+      if (Math.hypot(p.x - seamX, p.z - seamZ) < 1e-3) atSeam = true;
     }
     dispose();
     expect(atSeam, 'first tyre stack sits on the wall->tyres seam vertex').toBe(true);

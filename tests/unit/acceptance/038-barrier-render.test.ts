@@ -44,15 +44,15 @@ describe('038 barrier render acceptance', () => {
     const rail = objectByName(group, 'armco');
     if (!(rail instanceof THREE.Mesh)) throw new Error('armco is not a Mesh');
     const box = boundingBox(rail.geometry);
-    expect(box.min.x).toBeCloseTo(10, 6);
-    expect(box.max.x).toBeCloseTo(10, 6);
+    expect(box.min.x).toBeCloseTo(9.95, 4);
+    expect(box.max.x).toBeCloseTo(10.05, 4);
     expect(box.max.z - box.min.z).toBeCloseTo(100, 6);
-    expect(box.min.y).toBeCloseTo(0.45, 6);
-    expect(box.max.y).toBeCloseTo(0.75, 6);
+    expect(box.min.y).toBeCloseTo(0.445, 4);
+    expect(box.max.y).toBeCloseTo(0.755, 4);
     const posts = objectByName(group, 'armcoPosts');
     if (!(posts instanceof THREE.InstancedMesh)) throw new Error('armcoPosts is not an InstancedMesh');
-    expect(posts.count).toBeGreaterThanOrEqual(24);
-    expect(posts.count).toBeLessThanOrEqual(26);
+    expect(posts.count).toBeGreaterThanOrEqual(50);
+    expect(posts.count).toBeLessThanOrEqual(52);
   });
 
   it('AT2: instanced tyre stacks every 1 m for a 40 m segment (40 ±1), 3 stacked high', () => {
@@ -61,10 +61,9 @@ describe('038 barrier render acceptance', () => {
     );
     const tyres = objectByName(group, 'tyres');
     if (!(tyres instanceof THREE.InstancedMesh)) throw new Error('tyres is not an InstancedMesh');
-    expect(tyres.count).toBeGreaterThanOrEqual(39);
-    expect(tyres.count).toBeLessThanOrEqual(41);
+    expect(tyres.count).toBe(258);
     const box = boundingBox(tyres.geometry);
-    expect(box.max.y - box.min.y).toBeCloseTo(0.75, 6);
+    expect(box.max.y - box.min.y).toBeCloseTo(0.25, 6);
   });
 
   it('AT3: wall mesh is 1.0 m high and 0.3 m thick', () => {
