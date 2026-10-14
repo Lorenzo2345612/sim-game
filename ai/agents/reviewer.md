@@ -6,7 +6,7 @@ You are the code reviewer of a web racing game (TypeScript, Three.js, Rapier, Vi
 
 1. Read the full task and `CLAUDE.md`.
 2. Review the changes: `git status`, `git diff` and new untracked files.
-3. Run: `npm run typecheck`, `npm run lint`, `npm test` (those that exist in `package.json`).
+3. Checks: the orchestrator already ran typecheck, lint, `npm test` and the task's e2e specs; the results are in your prompt note. Do not re-run them; run a single test file only to inspect a failure. If the note has no results, run `npm run typecheck`, `npm run lint`, `npm test`.
 4. Check, in this order:
    - Is each acceptance criterion met? Cite the code that meets it.
    - Bugs: logic errors, mixed units (m vs km, s vs ms, degrees vs radians), NaN/division by zero, memory leaks in Three.js (geometries, materials and textures without `dispose()`), objects created every frame inside the game loop.

@@ -16,6 +16,7 @@ Exit codes: 0 ok, 3 quota exhausted, 4 another orchestrator is running.
 import argparse
 import atexit
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -860,6 +861,75 @@ def lint_tests(num, spec):
     return "\n".join(errors)
 
 
+CHECK_TIMEOUT = 1800
+
+
+def tree_fingerprint(num):
+    """Hash of the worktree code state: HEAD, tracked diff and untracked file contents."""
+    cwd = wt_path(num)
+    h = hashlib.sha1(git("rev-parse", "HEAD", cwd=cwd).stdout.encode())
+    h.update(git("diff", "HEAD", "--", ".", *EXCLUDES, cwd=cwd).stdout.encode())
+    for f in sorted(git("ls-files", "-o", "--exclude-standard", "--", ".", *EXCLUDES, cwd=cwd).stdout.split()):
+        h.update(f.encode())
+        try:
+            h.update((cwd / f).read_bytes())
+        except OSError:
+            pass
+    return h.hexdigest()
+
+
+def run_checks(num):
+    """Typecheck, lint, unit tests and the task's e2e specs on the worktree; summary text, or '' when disabled."""
+    cwd = wt_path(num)
+    cmds = [("typecheck", check_cmd("ORCH_TYPECHECK_CMD", "npm run typecheck")),
+            ("lint", check_cmd("ORCH_FULL_LINT_CMD", "npm run lint")),
+            ("test", check_cmd("ORCH_TEST_CMD", "npm test"))]
+    e2e_dir, e2e_cmd = cwd / "tests/e2e", check_cmd("ORCH_E2E_CMD", "npx playwright test")
+    e2e = sorted(str(f.relative_to(cwd)) for f in e2e_dir.rglob(f"{num}-*.spec.ts")) if e2e_dir.is_dir() else []
+    if e2e and e2e_cmd:
+        cmds.append(("e2e " + " ".join(e2e), [*e2e_cmd, *e2e]))
+    env = {**os.environ, "E2E_PORT": str(E2E_BASE_PORT + slots.get(num, 0))}
+    parts = []
+    for name, cmd in cmds:
+        if not cmd:
+            continue
+        try:
+            p = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=CHECK_TIMEOUT,
+                               stdin=subprocess.DEVNULL)
+            ok, out = p.returncode == 0, (p.stdout + p.stderr).strip()
+        except subprocess.TimeoutExpired:
+            ok, out = False, f"timeout after {CHECK_TIMEOUT}s"
+        parts.append(f"- {name}: pass" if ok else f"- {name}: FAIL\n{out[-2500:]}")
+    return "\n".join(parts)
+
+
+def checks_note(num, st):
+    """Check results for the verifiers, computed once per code state."""
+    fp = tree_fingerprint(num)
+    cached = st.get("checks") or {}
+    if cached.get("fp") != fp:
+        event(num, "checks", "running typecheck/lint/test/e2e")
+        cached = {"fp": fp, "summary": run_checks(num)}
+        st["checks"] = cached
+        save_task_state(num, st)
+        event(num, "checks", " ".join(ln for ln in cached["summary"].splitlines() if ln.startswith("- "))[:300])
+    if not cached["summary"]:
+        return None
+    return ("Orchestrator check results for the current code (already run; do not re-run the full typecheck, "
+            "lint, `npm test` or e2e suite; run a single test file only to inspect a failure or a test you wrote):\n"
+            + cached["summary"])
+
+
+def gate_rows(spec):
+    """Acceptance rows the spec marks as verification gates (no test to write)."""
+    return {m.group(1) for m in re.finditer(r"^\|\s*(AT\d+)\s*\|.*verification gate", spec.read_text(), re.M | re.I)}
+
+
+def only_gates(untestable, spec):
+    ids = set(re.findall(r"\bAT\d+\b", str(untestable or "")))
+    return bool(ids) and ids <= gate_rows(spec)
+
+
 def fix_call(spec, num, round_no, note, st, heavy=False):
     if round_no <= 2:
         return call_retry(st, "coder", spec, num, resume=True, heavy=heavy, note=note)
@@ -936,7 +1006,9 @@ def _run_task(task, slot):
                 advance("tester-pre")
                 continue
             r = call_retry(st, "acceptance", spec, num, heavy=models_heavy)
-            if r["status"] != "READY" or not is_none(r["untestable"]):
+            if r["status"] == "READY" and not is_none(r["untestable"]) and only_gates(r["untestable"], spec):
+                event(num, "gate-rows", str(r["untestable"])[:200])
+            elif r["status"] != "READY" or not is_none(r["untestable"]):
                 return decision(num, title, stage, f"acceptance {r['status'] or 'failed'}; "
                                 f"untestable: {r['untestable'] or '?'}", r["out"], st,
                                 "spec" if r["status"] else "infra", r)
@@ -991,12 +1063,14 @@ def _run_task(task, slot):
                 event(num, "empty-diff", f"{stage}: no changes outside tests/ -> coder")
                 advance("coder")
                 continue
+            notes = [n for n in (st.pop("verifyNote", None), checks_note(num, st)) if n]
+            vnote = "\n\n".join(notes) or None
             if stage == "tester":
-                r = call_retry(st, "tester", spec, num, heavy=models_heavy, note=st.pop("verifyNote", None))
+                r = call_retry(st, "tester", spec, num, heavy=models_heavy, note=vnote)
                 failed = r["status"] != "PASS"
                 note = f"Tester failures to fix:\n{r['failures'] or r['out'][-1500:]}"
             else:
-                r = call_retry(st, "reviewer", spec, num, note=st.pop("verifyNote", None))
+                r = call_retry(st, "reviewer", spec, num, note=vnote)
                 failed = r["status"] in ("CHANGES", "REJECTED") and bool(r["blockers"]) or \
                     r["status"] not in ("APPROVED", "CHANGES", "REJECTED")
                 note = "Reviewer BLOCKER findings to fix:\n" + "\n".join(r["blockers"]) if r["blockers"] \
