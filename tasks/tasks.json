@@ -2259,7 +2259,7 @@
     {
       "num": "164",
       "title": "Camera shake from surfaces",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "163"
       ],
