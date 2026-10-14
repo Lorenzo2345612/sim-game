@@ -2244,6 +2244,71 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/162-offtrack-rolling-drag.md"
+    },
+    {
+      "num": "163",
+      "title": "Surface feedback signal (pure)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/163-surface-feedback-signal.md"
+    },
+    {
+      "num": "164",
+      "title": "Camera shake from surfaces",
+      "status": "pending",
+      "deps": [
+        "163"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/164-camera-shake-surfaces.md"
+    },
+    {
+      "num": "165",
+      "title": "Gamepad rumble",
+      "status": "pending",
+      "deps": [
+        "164"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/165-gamepad-rumble.md"
+    },
+    {
+      "num": "166",
+      "title": "Dirty tyres",
+      "status": "pending",
+      "deps": [
+        "065",
+        "162"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/166-dirty-tyres.md"
+    },
+    {
+      "num": "167",
+      "title": "Surface particles (stones, dust, grass clippings)",
+      "status": "pending",
+      "deps": [
+        "165",
+        "065"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/167-surface-particles.md"
     }
   ]
 }

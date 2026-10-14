@@ -164,3 +164,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 160 | Landmark proxies | pending | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
 | 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
+| 163 | Surface feedback signal (pure) | pending | - |
+| 164 | Camera shake from surfaces | pending | 163 |
+| 165 | Gamepad rumble | pending | 164 |
+| 166 | Dirty tyres | pending | 065, 162 |
+| 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |
