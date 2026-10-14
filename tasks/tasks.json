@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -1207,7 +1207,7 @@
     {
       "num": "090",
       "title": "AI traffic decisions and difficulty",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "089"
       ],
@@ -1963,7 +1963,7 @@
     {
       "num": "142",
       "title": "Kerbs on every corner with entry/exit extensions",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "098"
       ],
@@ -2248,7 +2248,7 @@
     {
       "num": "163",
       "title": "Surface feedback signal (pure)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
