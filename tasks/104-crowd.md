@@ -21,6 +21,10 @@ M1.2c. CC0 Quaternius character GLBs are in `assets/source/crowd/*.glb` (install
 - `tools/assets/buildCrowd.ts` — create — atlas bake; `package.json` — modify: only script `"build:crowd": "tsx tools/assets/buildCrowd.ts"`.
 - `src/render/grandstand.ts` — modify — crowd from atlas.
 - `tests/unit/acceptance/104-crowd.test.ts` — create (acceptance worker); e2e AT4 following existing e2e pattern.
+- Planner-authorised edits to superseded 040 assertions (coder applies exactly these, nothing else):
+  - `tests/unit/acceptance/040-grandstands-crowd.test.ts:29-32`: expected crowd count becomes `Math.round(0.85 * rows * Math.floor(length / 0.6))` (12 rows × 60 m → 1020), same ±5 % tolerance.
+  - `tests/unit/render/grandstand.test.ts:60-63`: `crowd.count` toBe(1020).
+  - `tests/unit/render/grandstand.test.ts:71-79`: instead of instance 0 at (y 1.05, z 0.45), assert every instance translation equals some `seatPositions(g)` entry (1e-6).
 
 ## Steps
 
@@ -53,7 +57,7 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 ## Acceptance criteria
 
 - [ ] All AT rows pass (AT1 reads PNG IHDR for size and `atlas.json` for cells/saturation).
-- [ ] Existing grandstand tests (040) still pass; edits to them reported.
+- [ ] Existing grandstand tests (040) pass with only the authorised edits above.
 - [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e` pass.
 
 ## Verification
