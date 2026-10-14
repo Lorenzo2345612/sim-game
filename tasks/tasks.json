@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "058",
         "059",
@@ -1193,7 +1193,7 @@
     {
       "num": "089",
       "title": "AI driver controller",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "087",
         "088"
@@ -1338,7 +1338,7 @@
     {
       "num": "099",
       "title": "HDRI sky, image-based lighting, neutral tone mapping, fog from horizon",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "042"
       ],
@@ -2151,6 +2151,75 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/155-close-parallel-sections.md"
+    },
+    {
+      "num": "156",
+      "title": "Environment type per track: ground palette and vegetation",
+      "status": "pending",
+      "deps": [
+        "081",
+        "101",
+        "106"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/156-environment-type-ground-vegetation.md"
+    },
+    {
+      "num": "157",
+      "title": "City bake from OSM: buildings, old-city walls, water",
+      "status": "pending",
+      "deps": [
+        "106"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/157-city-bake-osm.md"
+    },
+    {
+      "num": "158",
+      "title": "City renderer: buildings, facades, water",
+      "status": "pending",
+      "deps": [
+        "099",
+        "157"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/158-city-renderer.md"
+    },
+    {
+      "num": "159",
+      "title": "Street-circuit trackside: walls, sidewalks, lamps, billboards",
+      "status": "pending",
+      "deps": [
+        "141",
+        "157"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/159-street-circuit-trackside.md"
+    },
+    {
+      "num": "160",
+      "title": "Landmark proxies",
+      "status": "pending",
+      "deps": [
+        "158"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/160-landmark-proxies.md"
     }
   ]
 }

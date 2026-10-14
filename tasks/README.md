@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | in progress | 058, 067, 044, 054 |
@@ -91,7 +91,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 086 | Continuous barriers (no gaps between segments) | done | 043, 077 |
 | 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | done | 087, 058 |
-| 089 | AI driver controller | waiting decision | 087, 088 |
+| 089 | AI driver controller | in progress | 087, 088 |
 | 090 | AI traffic decisions and difficulty | pending | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
@@ -101,7 +101,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
-| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | pending | 042 |
+| 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | in progress | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
 | 101 | Tree field uses baked LODs | pending | 100, 039 |
 | 102 | Satellite colour on distant terrain | pending | 081 |
@@ -157,3 +157,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | pending | 140, 141, 142, 143 |
+| 156 | Environment type per track: ground palette and vegetation | pending | 081, 101, 106 |
+| 157 | City bake from OSM: buildings, old-city walls, water | pending | 106 |
+| 158 | City renderer: buildings, facades, water | pending | 099, 157 |
+| 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
+| 160 | Landmark proxies | pending | 158 |

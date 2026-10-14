@@ -178,6 +178,18 @@
       ]
     },
     {
+      "id": "M1.2d",
+      "title": "Environments: city (OSM buildings, walls, water, landmarks), desert, tropical",
+      "tasks": [
+        "156",
+        "157",
+        "158",
+        "159",
+        "160"
+      ],
+      "status": "open"
+    },
+    {
       "id": "M1.5",
       "title": "Vehicle dynamics: in-house tyre/suspension/powertrain model, setups, tyre wear, fuel",
       "status": "open",
