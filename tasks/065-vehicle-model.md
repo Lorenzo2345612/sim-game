@@ -55,7 +55,7 @@ Conventions: SI units; wheel order FL, FR, RL, RR; positive steer = left; `dt <=
 | AT4 | drop from 0.5 m | 3 s | settles, no NaN, not flipped |
 | AT5 | full throttle on flat | 6 s | speed > 100 km/h; wheels' kappa finite |
 | AT6 | telemetry | any tick | 4 wheels with fz ≥ 0 summing to (m+fuel)·g ± 5 % at rest |
-| AT7 | existing Phase 0/1 vehicle and e2e tests | run | pass (update thresholds only where the spec's new targets replace them) |
+| AT7 | existing Phase 0/1 vehicle and e2e tests | run | pass (update thresholds only where the spec's new targets replace them) — verification gate only (npm test + test:e2e), no new acceptance test |
 
 ## Acceptance criteria
 
