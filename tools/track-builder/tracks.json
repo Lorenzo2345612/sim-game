@@ -325,5 +325,68 @@
       { "atMeters": 3650, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -534, "toMeters": 534, "side": "right" }
+  },
+  {
+    "id": "fontana",
+    "name": "Fontana Inner",
+    "geojson": "us-fontana",
+    "dem": "assets/source/dem/fontana.json",
+    "maxGrade": 0.03,
+    "widthMeters": 15,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.02
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 400, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 1900, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -300, "toMeters": 300, "side": "right" }
+  },
+  {
+    "id": "cleveland",
+    "name": "Cleveland Burke Lakefront",
+    "geojson": "us-cleveland",
+    "dem": "assets/source/dem/cleveland.json",
+    "maxGrade": 0.03,
+    "widthMeters": 15,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.05
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 500, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 2800, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -350, "toMeters": 350, "side": "right" }
+  },
+  {
+    "id": "detroit",
+    "name": "Detroit Downtown",
+    "geojson": "us-detroit",
+    "dem": "assets/source/dem/detroit.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.02
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 16, "roof": true },
+      { "atMeters": 400, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 2100, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -150, "toMeters": 150, "side": "right" }
   }
 ]
