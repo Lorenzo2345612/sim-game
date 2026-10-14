@@ -105,7 +105,9 @@ def milestone_scope():
     return allowed | prefetch_set() | {t["num"] for t in read_tasks() if t["num"] not in assigned}
 
 
-PREFETCH_MAX = 3  # max concurrent prefetched tasks; the rest of the slots belong to the active milestone
+PREFETCH_MAX = 3  # max concurrent prefetched tasks on the fallback provider (MiMo); the rest belong to the active milestone
+PREFETCH_PRIMARY = int(os.environ.get("SIMGAME_PREFETCH_PRIMARY", "1"))  # extra prefetched tasks that keep their normal providers (GLM coder lane)
+PRIMARY_LANE = set()  # prefetched task numbers running on their normal providers
 
 
 def prefetch_set():
@@ -429,7 +431,7 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         argv += ["--note", note]
     prov = provider_of(role, num)
     fallback = load_json(PROVIDERS).get("fallback", {}).get("provider")
-    if fallback and prov != fallback and num in prefetch_set():
+    if fallback and prov != fallback and num in prefetch_set() and num not in PRIMARY_LANE:
         argv += ["--provider", fallback]  # prefetched work stays off the active milestone's providers
         prov = fallback
     elif prov and fallback and prov != fallback and quota.low_5h(prov):
@@ -1196,8 +1198,13 @@ def run(max_parallel, only, dry_run):
                 for t in ready_tasks(tasks, done, running, waiting, only):
                     if len(running) >= max_parallel:
                         break
-                    if t["num"] in early and sum(n in early for n in running) >= PREFETCH_MAX:
-                        continue
+                    if t["num"] in early:
+                        lane = sum(n in early and n in PRIMARY_LANE for n in running)
+                        fb = sum(n in early and n not in PRIMARY_LANE for n in running)
+                        if lane < PREFETCH_PRIMARY and not quota.low_5h("glm"):
+                            PRIMARY_LANE.add(t["num"])
+                        elif fb >= PREFETCH_MAX:
+                            continue
                     running[t["num"]] = pool.submit(run_task, t)
             if not running:
                 if quota_hit or DECISION_POLL <= 0 or not any(load_state().get(n, {}).get("decision") for n in waiting):
@@ -1210,6 +1217,7 @@ def run(max_parallel, only, dry_run):
                 if fut not in finished:
                     continue
                 del running[num]
+                PRIMARY_LANE.discard(num)
                 try:
                     result = fut.result()
                 except QuotaError as e:
