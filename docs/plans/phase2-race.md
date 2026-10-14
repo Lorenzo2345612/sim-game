@@ -68,7 +68,7 @@ export function carLimitsFromSpec(spec: CarSpec, fuelKg: number): CarLimits;
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | κ 0.01, muLat 1.5, aeroK 0, vMax 100 | cornerSpeed | sqrt(1.5·9.81·100) = 38.361 ± 0.01 |
-| AT2 | κ 0.01, muLat 1.5, aeroK 0.003 | cornerSpeed | sqrt(14.715/0.007) = 45.849 ± 0.01 |
+| AT2 | κ 0.01, muLat 1.5, aeroK 0.003 | cornerSpeed | sqrt(14.715/(0.01 − 1.5·0.003)) = 51.725 ± 0.01 |
 | AT3 | κ 0.004, muLat 1.5, aeroK 0.003 | cornerSpeed | vMax |
 | AT4 | circle R 100 line (087 AT1 fixture), muLat 1.5, aeroK 0, power high | speedProfile | all speeds within 0.5 % of their median; median between cornerSpeed(1/95) and cornerSpeed(1/105) (± 0.5 %) |
 | AT5 | rounded square (087 AT2), limits muLat=muLong 1.6, aeroK 0.002, dragK 0.0004, powerPerMass 400, vMax 80 | speedProfile | min speed inside the arcs; for every consecutive pair, (v₁² − v₂²)/(2ds) ≤ a_g + dragK·v₁² + 1e-6 when braking and (v₂² − v₁²)/(2ds) ≤ min(a_g, P/max(v₁,1)) − dragK·v₁² + 1e-6 when accelerating; no speed above cornerSpeed(κᵢ) + 1e-9 |
