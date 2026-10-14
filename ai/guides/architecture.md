@@ -27,7 +27,7 @@ Package manager: npm. `"type": "module"` in `package.json`.
 src/core     → nothing (pure TypeScript)
 src/track    → core
 src/physics  → core, track (surface geometry only), @dimforge/rapier3d-compat
-src/ai       → core, track (pure: racing line, AI driver, traffic)
+src/ai       → core, track, physics/carSpec types only (pure: racing line, AI driver, traffic; no three, no Rapier)
 src/race     → core, track, physics types only (pure: classification, start, rules, weather schedule)
 src/game     → core, track, physics, ai, race (simulation orchestration, no three, no DOM)
 src/input    → core
