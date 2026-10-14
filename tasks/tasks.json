@@ -2143,7 +2143,7 @@
     {
       "num": "155",
       "title": "Close parallel sections: per-index half-widths and shared median wall",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "140",
         "141",
