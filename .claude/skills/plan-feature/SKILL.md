@@ -14,6 +14,7 @@ Claude plans; it does not write production code. Tasks are executed by cheap fla
 3. Design the solution yourself: modules, public types, data flow, physics formulas with units. Architecture decisions are made here, not by the worker.
 4. Split into tasks following the size rules. Decisions and experiments are done by you (or a `model: sonnet` subagent); spec writing is split among Agent subagents with `model: "sonnet"` in parallel (groups of non-overlapping tasks), never Opus. Give them the closed design and review their specs. Number with the next free number in `tasks/` (`001-`, `002-`…).
 5. Write each task by copying `tasks/_TEMPLATE.md`.
+   Before freezing numeric ranges, check feasibility: compute each value from the real source data (asset ratios, track data, formulas) and confirm all rows of the table hold together under the specified transform. Most past decisions were planner test errors.
 6. If a task needs reusable knowledge (Three.js conventions, how to use Rapier, `track.json` format), write it once in `ai/guides/<topic>.md` and cite it from the tasks.
 7. Update `tasks/README.md` (table: #, title, status, depends on, parallel with).
 8. Summarize the plan to the user: task list, order and what will be viewable/testable at the end.
