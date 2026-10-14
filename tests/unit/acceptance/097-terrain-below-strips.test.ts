@@ -163,6 +163,7 @@ describe('097 terrain below strips acceptance', () => {
       delete copy.runoffs;
       delete copy.barriers;
       delete copy.trees;
+      delete copy.escapeRoads;
       return copy;
     };
     for (const id of IDS) {

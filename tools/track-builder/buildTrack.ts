@@ -4,6 +4,7 @@ import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
+import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads } from './hazards';
 import { loadGravelPolygons } from './osmAreas';
 import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
@@ -110,12 +111,18 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     origin,
   );
   const runoffs = detectRunoffs(centerline, gravelPolygons, config.widthMeters / 2, kerbs);
+  const corners = classifyCorners(centerline);
+  const paved = applyPavedRunoffs(centerline, runoffs, corners);
   const pit: PitLane = {
     start: indexAtMeters(cum, config.pit.fromMeters, lapLength),
     end: indexAtMeters(cum, config.pit.toMeters, lapLength),
     side: config.pit.side,
   };
-  const barriers = layoutBarriers(centerline, config.widthMeters, kerbs, runoffs, pit);
+  const barriers = applyFoamBarriers(
+    layoutBarriers(centerline, config.widthMeters, kerbs, paved, pit),
+    corners,
+  );
+  const escapeRoads = detectEscapeRoads(centerline);
   const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
   const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
   const trees = placeTrees(config.id, centerline, terrain, barriers, config.biome);
@@ -131,8 +138,9 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     version: 2,
     elevation,
     kerbs,
-    runoffs,
+    runoffs: paved,
     barriers,
+    escapeRoads,
     terrain,
     treeSpecies,
     trees,

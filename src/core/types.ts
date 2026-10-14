@@ -49,7 +49,9 @@ export type Side = 'left' | 'right';
 /** Centerline index range; end is inclusive, segments may wrap (end < start). */
 export interface TrackSegment { start: number; end: number; side: Side }
 export interface RunoffSegment extends TrackSegment { surface: 'gravel' | 'runoff'; widthMeters: number }
-export interface BarrierSegment extends TrackSegment { type: 'armco' | 'tyres' | 'wall'; offsetMeters: number }
+export interface BarrierSegment extends TrackSegment { type: 'armco' | 'tyres' | 'wall' | 'foam'; offsetMeters: number }
+/** Offline escape road polyline (XZ metres, order A→K→B) at chicane braking zones. */
+export interface EscapeRoad { points: [number, number][]; width: number }
 export interface Terrain { originX: number; originZ: number; sizeX: number; sizeZ: number; rows: number; cols: number; heights: number[] } // Rapier layout; origin = centre
 export interface TreeSpecies { name: string; preset: string; heightMeters: number }
 export interface TreeInstances { species: string; data: number[] } // flat [x, z, scale, rotY] * n
@@ -67,5 +69,6 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   trees: TreeInstances[];
   grandstands: Grandstand[];
   pit: PitLane;
+  escapeRoads?: EscapeRoad[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

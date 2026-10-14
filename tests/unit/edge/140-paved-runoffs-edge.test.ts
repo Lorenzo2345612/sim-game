@@ -235,7 +235,7 @@ describe('140 edge: paved run-offs, foam, classify, escape roads, parser', () =>
     const b1: BarrierSegment = { start: 86, end: 15, side: 'right', type: 'armco', offsetMeters: 19.5 };
     const b2: BarrierSegment = { start: 16, end: 28, side: 'right', type: 'wall', offsetMeters: 20 };
     const b3: BarrierSegment = { start: 31, end: 40, side: 'right', type: 'armco', offsetMeters: 19.5 };
-    const b4: BarrierSegment = { start: 0, end: 25, side: 'left', type: 'armco', offsetMeters: 9 };
+    const b4: BarrierSegment = { start: 0, end: 99, side: 'left', type: 'armco', offsetMeters: 9 };
     const out = applyFoamBarriers([b1, b2, b3, b4], [corner(5, 20, 'left', 60, 50, 'medium')]);
     expect(out).toHaveLength(5);
     expect(out.filter((b) => b.type === 'foam')).toHaveLength(1);

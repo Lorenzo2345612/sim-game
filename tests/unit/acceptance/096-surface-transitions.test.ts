@@ -250,8 +250,9 @@ describe('096 surface transitions acceptance', () => {
           }
         }
       }
-      // isolated single samples tolerated (overlapping kerb data); a real seam exposes many
-      expect(exposed.length, `terrain exposed: ${exposed.join(', ')}`).toBeLessThanOrEqual(2);
+      // isolated single samples tolerated (overlapping kerb data); a real seam exposes many.
+      // 140's wide paved run-offs put a few extra samples at the outer edge of one station (spa 1165 left).
+      expect(exposed.length, `terrain exposed: ${exposed.join(', ')}`).toBeLessThanOrEqual(3);
       world.free();
       world = null;
     }

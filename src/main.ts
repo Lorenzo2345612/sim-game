@@ -34,6 +34,7 @@ import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
 import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
+import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { Menu } from './ui/menu';
 import { Minimap } from './ui/minimap';
@@ -266,7 +267,7 @@ async function startGame(trackId: string): Promise<void> {
 
   const res = await fetch(`/tracks/${trackId}.json`);
   if (!res.ok) throw new Error(`Could not load ${trackId}.json`);
-  const track: TrackData | TrackDataV2 = await res.json();
+  const track: TrackData | TrackDataV2 = parseTrackData(await res.json());
 
   // Task 070 replaces this fetch with its car loader; today it only feeds the setup panel.
   const specRes = await fetch('/cars/f4.json');

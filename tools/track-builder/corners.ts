@@ -48,14 +48,14 @@ function turnSide(points: Point2[], i: number): Side | null {
   return null;
 }
 
-interface Run { start: number; end: number; side: Side; minRadius: number }
+export interface CornerRun { start: number; end: number; side: Side; minRadius: number }
 
-function cornerRuns(radiusList: number[], sides: (Side | null)[], threshold: number): Run[] {
+function cornerRuns(radiusList: number[], sides: (Side | null)[], threshold: number): CornerRun[] {
   const n = radiusList.length;
   let anchor = 0;
   while (anchor < n && sides[anchor] !== null) anchor++;
   const from = anchor < n ? anchor + 1 : 0;
-  const runs: Run[] = [];
+  const runs: CornerRun[] = [];
   let start = -1;
   let side: Side | null = null;
   let minRadius = Infinity;
@@ -75,10 +75,15 @@ function cornerRuns(radiusList: number[], sides: (Side | null)[], threshold: num
   return runs;
 }
 
-function analyze(points: Point2[], threshold: number): Run[] {
+function analyze(points: Point2[], threshold: number): CornerRun[] {
   const r = radii(points);
   const sides = points.map((_, i) => (r[i] < threshold ? turnSide(points, i) : null));
   return cornerRuns(r, sides, threshold);
+}
+
+/** Corner runs below CORNER_RADIUS, sorted by start index. */
+export function detectCorners(points: Point2[]): CornerRun[] {
+  return analyze(points, CORNER_RADIUS).sort((a, b) => a.start - b.start);
 }
 
 const opposite = (s: Side): Side => (s === 'left' ? 'right' : 'left');
