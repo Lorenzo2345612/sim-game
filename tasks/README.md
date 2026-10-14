@@ -121,7 +121,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 116 | Animated steering wheel in cockpit view | pending | 047, 054, 115 |
 | 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
 | 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
-| 119 | Livery data, palette and storage | in progress | 072 |
+| 119 | Livery data, palette and storage | done | 072 |
 | 120 | Paint materials in the car pipeline and livery shader | pending | 075, 112, 119 |
 | 121 | Race number decals | pending | 120 |
 | 122 | Livery editor screen | pending | 044, 073, 074, 106, 114, 120, 121 |
@@ -165,7 +165,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
 | 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
 | 163 | Surface feedback signal (pure) | done | - |
-| 164 | Camera shake from surfaces | pending | 163 |
+| 164 | Camera shake from surfaces | in progress | 163 |
 | 165 | Gamepad rumble | pending | 164 |
 | 166 | Dirty tyres | pending | 065, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |

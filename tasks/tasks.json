@@ -1623,7 +1623,7 @@
     {
       "num": "119",
       "title": "Livery data, palette and storage",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "072"
       ],
@@ -2259,7 +2259,7 @@
     {
       "num": "164",
       "title": "Camera shake from surfaces",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "163"
       ],
