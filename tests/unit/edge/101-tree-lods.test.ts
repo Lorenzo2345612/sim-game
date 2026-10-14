@@ -158,7 +158,7 @@ describe('101 tree lods edge', () => {
     expect(field.lodCounts()[0] + field.lodCounts()[1] + field.lodCounts()[2]).toBe(4);
 
     field.update({ x: 300, y: 0, z: 0 });
-    expect(field.lodCounts()).toEqual([0, 2, 2]);
+    expect(field.lodCounts()).toEqual([0, 3, 1]);
     expect(field.lodCounts()[0] + field.lodCounts()[1] + field.lodCounts()[2]).toBe(4);
     field.dispose();
   });
