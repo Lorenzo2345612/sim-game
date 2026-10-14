@@ -234,6 +234,21 @@
       ]
     },
     {
+      "id": "M1.5b",
+      "title": "Surface feel: feedback signal, camera shake, gamepad rumble, dirty tyres, surface particles",
+      "status": "open",
+      "tasks": [
+        "163",
+        "164",
+        "165",
+        "166",
+        "167"
+      ],
+      "prefetch": [
+        "163"
+      ]
+    },
+    {
       "id": "M1.6",
       "title": "Car roster: generic car pipeline, three GT3 cars, car selection, credits",
       "status": "open",
