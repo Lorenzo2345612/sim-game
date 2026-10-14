@@ -43,7 +43,8 @@ describe('barrierRenderer edge cases', () => {
     const { group } = createBarrierObject(
       circleTrack([{ start: 5, end: 15, side: 'right', type: 'armco', offsetMeters: 10 }]),
     );
-    expect(group.children.map((c) => c.name).sort()).toEqual(['armco', 'armcoPosts']);
+    // 103: an armco span also creates the catch fence mesh.
+    expect(group.children.map((c) => c.name).sort()).toEqual(['armco', 'armcoPosts', 'fence']);
   });
 
   it('a wrapped segment (end < start) produces finite positions', () => {

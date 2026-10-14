@@ -1,7 +1,16 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { BarrierSegment, TrackDataV2 } from '../core/types';
 import { barrierRuns, type BarrierVertex } from '../track/barrierPath';
+import {
+  ARMCO_POST_SPACING,
+  FENCE_HEIGHT,
+  FENCE_OFFSET,
+  TYRE_OUTER_RADIUS,
+  TYRE_PITCH,
+  TYRE_ROW_HEIGHT,
+  TYRE_ROWS,
+  wBeamProfile,
+} from './barrierProfiles';
 import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMaterials';
 
 export interface BarrierObject {
@@ -9,21 +18,16 @@ export interface BarrierObject {
   dispose(): void;
 }
 
-const RAIL_BOTTOM = 0.45;
-const RAIL_TOP = 0.75;
-const POST_SPACING = 4;
-const POST_SIZE = 0.1;
-const POST_HEIGHT = 0.75;
-const TYRE_RADIUS = 0.3;
-const TYRE_HEIGHT = 0.25;
-const TYRE_LAYERS = 3;
-const TYRE_SPACING = 1;
+// One metal tile every 2 m of rail; fence tile every 3 m; wall uv is metres / 10.
+const RAIL_UV_SCALE = 1 / 2;
+const FENCE_UV_SCALE = 1 / 3;
+const WALL_UV_SCALE = 1 / 10;
 const WALL_THICKNESS = 0.3;
 const WALL_HEIGHT = 1;
-// One metal tile every 2 m of rail; wall uv is metres / 10 like the strip surfaces.
-const RAIL_TILE_METERS = 2;
-const RAIL_UV_SCALE = 1 / RAIL_TILE_METERS;
-const WALL_UV_SCALE = 1 / 10;
+const POST_WIDTH = 0.08;
+const POST_HEIGHT = 0.75;
+const POST_DEPTH = 0.12;
+const POST_BEHIND = 0.1;
 const TYRE_COLOR_A = new THREE.Color(0.9, 0.9, 0.9);
 const TYRE_COLOR_B = new THREE.Color(0.75, 0.1, 0.1);
 
@@ -32,6 +36,12 @@ function defaultLoadTexture(url: string): THREE.Texture {
   const texture =
     typeof document !== 'undefined' ? new THREE.TextureLoader().load(url) : new THREE.Texture();
   texture.name = url;
+  return texture;
+}
+
+function repeatWrapping(texture: THREE.Texture): THREE.Texture {
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
   return texture;
 }
 
@@ -93,7 +103,8 @@ function runSpans(run: BarrierVertex[], closedRun: boolean): BarrierSpan[] {
   return starts.map((start) => {
     const type = typeOf(start);
     let len = 0;
-    while (len < steps && typeOf((start + len) % steps) === type) len++;
+    // Only a closed run wraps: an open run must not join across its ends.
+    while (len < steps && (closedRun || start + len < steps) && typeOf((start + len) % steps) === type) len++;
     const verts: BarrierVertex[] = [];
     for (let j = 0; j <= len; j++) verts.push(run[(start + j) % m]);
     return { type, verts, closed: false };
@@ -110,31 +121,28 @@ function pointAt(path: PathPoint[], s: number, out: THREE.Vector3): THREE.Vector
   return out.set(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
 }
 
-function appendRail(
-  positions: number[],
-  uvs: number[],
-  indices: number[],
-  path: PathPoint[],
-  closed: boolean,
-): void {
-  const base = positions.length / 3;
-  for (const p of path) {
-    positions.push(p.x, p.y + RAIL_BOTTOM, p.z, p.x, p.y + RAIL_TOP, p.z);
-    const u = p.s * RAIL_UV_SCALE;
-    uvs.push(u, 0, u, 1);
-  }
-  const edge = (i: number, j: number): void => {
-    indices.push(i, i + 1, j, i + 1, j + 1, j);
-  };
-  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 2, base + (k + 1) * 2);
-  if (closed && path.length > 1) edge(base + (path.length - 1) * 2, base);
-}
-
 // Wall cross-section is perpendicular to the barrier polyline itself.
 function pathNormal(path: PathPoint[], i: number): [number, number] {
   const a = path[Math.max(0, i - 1)];
   const b = path[Math.min(path.length - 1, i + 1)];
   return normalXZ(a.x, a.z, b.x, b.z);
+}
+
+// Path segment index containing arc position s.
+function pathIndexAt(path: PathPoint[], s: number): number {
+  let i = 0;
+  while (i < path.length - 1 && path[i + 1].s <= s) i++;
+  return i;
+}
+
+// Centerline normal at a vertex index: the direction barrierRuns offsets by,
+// and the true "away from track" direction for instances placed on the line.
+function centerlineNormal(track: TrackDataV2, i: number): [number, number] {
+  const cx = track.centerline;
+  const n = cx.length;
+  const prev = cx[(i - 1 + n) % n];
+  const next = cx[(i + 1) % n];
+  return normalXZ(prev[0], prev[1], next[0], next[1]);
 }
 
 // Section spans from the polyline outward so the inner face sits flush on the barrier line.
@@ -176,17 +184,91 @@ function appendWall(
   if (closed && path.length > 1) edge(base + (path.length - 1) * 4, base);
 }
 
-function tyreStackGeometry(): THREE.BufferGeometry {
-  const parts: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < TYRE_LAYERS; i++) {
-    const cylinder = new THREE.CylinderGeometry(TYRE_RADIUS, TYRE_RADIUS, TYRE_HEIGHT, 16);
-    cylinder.translate(0, i * TYRE_HEIGHT + TYRE_HEIGHT / 2, 0);
-    parts.push(cylinder);
+function profileVFractions(profile: Array<[number, number]>): number[] {
+  const fractions = [0];
+  let total = 0;
+  for (let m = 1; m < profile.length; m++) {
+    total += Math.hypot(profile[m][0] - profile[m - 1][0], profile[m][1] - profile[m - 1][1]);
+    fractions.push(total);
   }
-  const merged = mergeGeometries(parts);
-  for (const part of parts) part.dispose();
-  if (!merged) throw new Error('createBarrierObject: tyre geometry merge failed');
-  return merged;
+  if (total > 0) {
+    for (let m = 0; m < fractions.length; m++) fractions[m] /= total;
+  }
+  return fractions;
+}
+
+// W-beam section extruded along the span path; sign +1 = right side, -1 = left.
+function appendRail(
+  positions: number[],
+  uvs: number[],
+  indices: number[],
+  path: PathPoint[],
+  sign: number,
+  closed: boolean,
+): void {
+  const profile = wBeamProfile();
+  const vAt = profileVFractions(profile);
+  const width = profile.length;
+  const base = positions.length / 3;
+  for (let k = 0; k < path.length; k++) {
+    const p = path[k];
+    const [nx, nz] = pathNormal(path, k);
+    const ox = nx * sign;
+    const oz = nz * sign;
+    for (let m = 0; m < width; m++) {
+      const [t, y] = profile[m];
+      positions.push(p.x + ox * t, p.y + y, p.z + oz * t);
+      uvs.push(p.s * RAIL_UV_SCALE, vAt[m]);
+    }
+  }
+  const edge = (i: number, j: number): void => {
+    for (let m = 0; m + 1 < width; m++) {
+      indices.push(i + m, j + m, j + m + 1, i + m, j + m + 1, i + m + 1);
+    }
+  };
+  for (let k = 0; k + 1 < path.length; k++) edge(base + k * width, base + (k + 1) * width);
+  if (closed && path.length > 1) edge(base + (path.length - 1) * width, base);
+}
+
+// Catch fence: one 3 m vertical quad per path edge, 1 m behind the rail line.
+function appendFence(
+  positions: number[],
+  uvs: number[],
+  indices: number[],
+  path: PathPoint[],
+  sign: number,
+  closed: boolean,
+): void {
+  const base = positions.length / 3;
+  for (let k = 0; k < path.length; k++) {
+    const p = path[k];
+    const [nx, nz] = pathNormal(path, k);
+    const x = p.x + nx * sign * FENCE_OFFSET;
+    const z = p.z + nz * sign * FENCE_OFFSET;
+    positions.push(x, p.y, z, x, p.y + FENCE_HEIGHT, z);
+    const u = p.s * FENCE_UV_SCALE;
+    uvs.push(u, 0, u, FENCE_HEIGHT * FENCE_UV_SCALE);
+  }
+  const edge = (i: number, j: number): void => {
+    indices.push(i, i + 1, j, i + 1, j + 1, j);
+  };
+  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 2, base + (k + 1) * 2);
+  if (closed && path.length > 1) edge(base + (path.length - 1) * 2, base);
+}
+
+// Flat torus: outer radius 0.31, height 0.25, 144 triangles.
+function tyreGeometry(): THREE.BufferGeometry {
+  const tube = TYRE_ROW_HEIGHT / 2;
+  const geometry = new THREE.TorusGeometry(TYRE_OUTER_RADIUS - tube, tube, 12, 6);
+  geometry.rotateX(Math.PI / 2);
+  return geometry;
+}
+
+interface InstanceSpot {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
 }
 
 export function createBarrierObject(
@@ -202,34 +284,64 @@ export function createBarrierObject(
   const railPositions: number[] = [];
   const railUvs: number[] = [];
   const railIndices: number[] = [];
+  const fencePositions: number[] = [];
+  const fenceUvs: number[] = [];
+  const fenceIndices: number[] = [];
   const wallPositions: number[] = [];
   const wallUvs: number[] = [];
   const wallIndices: number[] = [];
-  const posts: THREE.Vector3[] = [];
-  const tyres: THREE.Vector3[] = [];
+  const posts: InstanceSpot[] = [];
+  const tyres: InstanceSpot[] = [];
   let hasArmco = false;
   let hasTyres = false;
   let hasWall = false;
 
   const at = new THREE.Vector3();
   for (const side of ['right', 'left'] as const) {
+    const sign = side === 'right' ? 1 : -1;
     for (const run of barrierRuns(track, side)) {
       const closed = run.length === track.centerline.length;
       for (const span of runSpans(run, closed)) {
         const path = spanPath(span.verts);
         const length = path[path.length - 1].s;
+        if (length <= 1e-9) continue;
         if (span.type === 'armco') {
           hasArmco = true;
-          appendRail(railPositions, railUvs, railIndices, path, span.closed);
-          const count = Math.floor(length / POST_SPACING) + 1;
+          appendRail(railPositions, railUvs, railIndices, path, sign, span.closed);
+          appendFence(fencePositions, fenceUvs, fenceIndices, path, sign, span.closed);
+          const count = Math.floor(length / ARMCO_POST_SPACING) + 1;
           for (let k = 0; k < count; k++) {
-            posts.push(pointAt(path, k * POST_SPACING, at).clone());
+            const s = k * ARMCO_POST_SPACING;
+            pointAt(path, s, at);
+            const i = pathIndexAt(path, s);
+            const [nx, nz] = centerlineNormal(track, span.verts[i].index);
+            const ox = nx * sign;
+            const oz = nz * sign;
+            posts.push({
+              x: at.x + ox * POST_BEHIND,
+              y: at.y,
+              z: at.z + oz * POST_BEHIND,
+              yaw: Math.atan2(ox, oz),
+            });
           }
         } else if (span.type === 'tyres') {
           hasTyres = true;
-          const count = Math.floor(length / TYRE_SPACING) + 1;
-          for (let k = 0; k < count; k++) {
-            tyres.push(pointAt(path, k * TYRE_SPACING, at).clone());
+          // Odd rows start staggered half a pitch and end one radius short.
+          for (let r = 0; r < TYRE_ROWS; r++) {
+            const start = (r % 2) * TYRE_OUTER_RADIUS;
+            for (let k = 0; ; k++) {
+              const s = start + k * TYRE_PITCH;
+              if (s + start > length + 1e-9) break;
+              pointAt(path, s, at);
+              const i = pathIndexAt(path, s);
+              const [nx, nz] = centerlineNormal(track, span.verts[i].index);
+              tyres.push({
+                x: at.x + nx * sign * TYRE_OUTER_RADIUS,
+                y: at.y + r * TYRE_ROW_HEIGHT + TYRE_ROW_HEIGHT / 2,
+                z: at.z + nz * sign * TYRE_OUTER_RADIUS,
+                yaw: 0,
+              });
+            }
           }
         } else {
           hasWall = true;
@@ -249,16 +361,12 @@ export function createBarrierObject(
     map.colorSpace = THREE.SRGBColorSpace;
     const normalMap = load('textures/metal/normal.jpg');
     const roughnessMap = load('textures/metal/roughness.jpg');
-    for (const texture of [map, normalMap, roughnessMap]) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-    }
     const material = new THREE.MeshStandardMaterial({
       color: 0xb0b4b8,
       side: THREE.DoubleSide,
-      map,
-      normalMap,
-      roughnessMap,
+      map: repeatWrapping(map),
+      normalMap: repeatWrapping(normalMap),
+      roughnessMap: repeatWrapping(roughnessMap),
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'armco';
@@ -268,24 +376,59 @@ export function createBarrierObject(
     materials.push(material);
     textures.push(map, normalMap, roughnessMap);
 
-    const postGeometry = new THREE.BoxGeometry(POST_SIZE, POST_HEIGHT, POST_SIZE);
-    const posts_ = new THREE.InstancedMesh(postGeometry, material, posts.length);
-    posts_.name = 'armcoPosts';
-    const matrix = new THREE.Matrix4();
-    for (let i = 0; i < posts.length; i++) {
-      const p = posts[i];
-      matrix.makeTranslation(p.x, p.y + POST_HEIGHT / 2, p.z);
-      posts_.setMatrixAt(i, matrix);
+    if (posts.length > 0) {
+      const postGeometry = new THREE.BoxGeometry(POST_WIDTH, POST_HEIGHT, POST_DEPTH);
+      const postsMesh = new THREE.InstancedMesh(postGeometry, material, posts.length);
+      postsMesh.name = 'armcoPosts';
+      const matrix = new THREE.Matrix4();
+      for (let i = 0; i < posts.length; i++) {
+        const p = posts[i];
+        matrix.makeRotationY(p.yaw);
+        matrix.setPosition(p.x, p.y + POST_HEIGHT / 2, p.z);
+        postsMesh.setMatrixAt(i, matrix);
+      }
+      postsMesh.instanceMatrix.needsUpdate = true;
+      postsMesh.castShadow = true;
+      group.add(postsMesh);
+      geometries.push(postGeometry);
     }
-    posts_.instanceMatrix.needsUpdate = true;
-    posts_.castShadow = true;
-    group.add(posts_);
-    geometries.push(postGeometry);
+
+    const fenceGeometry = new THREE.BufferGeometry();
+    fenceGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fencePositions, 3));
+    fenceGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(fenceUvs, 2));
+    fenceGeometry.setIndex(fenceIndices);
+    fenceGeometry.computeVertexNormals();
+    const fenceMap = load('textures/fence/color.jpg');
+    fenceMap.colorSpace = THREE.SRGBColorSpace;
+    const fenceAlphaMap = load('textures/fence/opacity.jpg');
+    const fenceMaterial = new THREE.MeshStandardMaterial({
+      map: repeatWrapping(fenceMap),
+      alphaMap: repeatWrapping(fenceAlphaMap),
+      alphaTest: 0.5,
+      side: THREE.DoubleSide,
+    });
+    const fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
+    fence.name = 'fence';
+    group.add(fence);
+    geometries.push(fenceGeometry);
+    materials.push(fenceMaterial);
+    textures.push(fenceMap, fenceAlphaMap);
   }
 
   if (hasTyres) {
-    const geometry = tyreStackGeometry();
-    const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
+    const geometry = tyreGeometry();
+    const map = load('textures/rubber/color.jpg');
+    map.colorSpace = THREE.SRGBColorSpace;
+    const normalMap = load('textures/rubber/normal.jpg');
+    const roughnessMap = load('textures/rubber/roughness.jpg');
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 1,
+      metalness: 0,
+      map: repeatWrapping(map),
+      normalMap: repeatWrapping(normalMap),
+      roughnessMap: repeatWrapping(roughnessMap),
+    });
     const mesh = new THREE.InstancedMesh(geometry, material, tyres.length);
     mesh.name = 'tyres';
     const matrix = new THREE.Matrix4();
@@ -300,6 +443,7 @@ export function createBarrierObject(
     group.add(mesh);
     geometries.push(geometry);
     materials.push(material);
+    textures.push(map, normalMap, roughnessMap);
   }
 
   if (hasWall) {
