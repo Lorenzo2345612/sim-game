@@ -35,7 +35,6 @@ The values were calibrated in the planner lab with the 065 model (`SURF='{"grip"
 - Planner-authorised edits to superseded constant-drag assertions (exactly these):
   - `tests/unit/acceptance/022-types-and-constants-v2.test.ts:50-55`: `SURFACE_DRAG.grass` → `{ c0: 0.10, c1: 0.004 }`, `.gravel` → `{ c0: 0.08, c1: 0.03 }`, asphalt/kerb/runoff `{ c0: 0, c1: 0 }` (toEqual).
   - `tests/unit/edge/033-surface-grip-edge.test.ts:185` (EDGE6) and `:218` (EDGE8): expected deceleration from `rollingDrag(surface, v, fz) / (m/4)` per wheel at the test's speed instead of `SURFACE_DRAG.gravel * g`; keep the same tolerance band shape.
-  - `tests/unit/edge/033-surface-grip.post.test.ts:117`: one-tick loss at 4 m/s = (0.08 + 0.03·4)·g·FIXED_DT ≈ 0.0164 m/s (was 0.049).
 
 ## Steps
 

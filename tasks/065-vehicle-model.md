@@ -29,6 +29,10 @@ Design: `ai/guides/vehicle-dynamics.md` (read all). **Reference implementation: 
   - `edge/033-surface-grip.post.test.ts:70-96`: replace `controller.wheelFrictionSlip(i)` checks with `getTelemetry().wheels[i].surface` equal to the surface under that wheel; keep the ordering asphalt grip > grass/gravel via the existing surface factor table.
   - `acceptance/045-gearbox.test.ts:78-93` (AT5), `edge/045-gearbox-edge.test.ts:128-148` (EDGE7/EDGE8): expected rpm/upshift/limiter values recomputed from f4.json (wheel radius 0.28, ratios, final 3.5, idleRpm 1200, upRpm 6400, limiterRpm 6900) using the same formulas; pure `Gearbox` class rows keep their defaults.
   - Do not touch `acceptance/010` AT4 or `057` AT1.
+  - `edge/011-vehicle-physics.test.ts` (round 2, all F4 `SPEC` = parsed f4.json): EDGE1 :80 band → y > 0.2; EDGE2 :106 advance 10 → 40 steps; EDGE6 :187-190 lo = `SPEC.steering.maxAngleLow` × 0.85, check after 40 steps; EDGE6 :202-203 run 2 → 40 steps (band unchanged); EDGE7 :222-229 hub offsets from `SPEC.wheels.positions`, wheel y band 0.28 ± 0.05; EDGE10 :280 run 40 steps before the steering assertion.
+  - `edge/033-surface-grip.post.test.ts:117` and `:128`: delete both assertions (old-model drag isolation; superseded by 065 and 162 coast tests).
+  - `edge/045-gearbox.post.test.ts:82` expected rpm from f4.json (r 0.28, ratio[0] 2.3, final 3.5, idle 1200) with the same formula; `:93` expect ≈ `SPEC.engine.idleRpm` (± 100).
+  - `tests/unit/physics/vehicle.test.ts`: constructor → F4 `CarSpec`; bands same as the new acceptance/011 values.
 
 ## Steps
 
