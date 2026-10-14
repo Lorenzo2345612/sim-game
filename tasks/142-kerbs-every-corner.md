@@ -46,8 +46,8 @@ Conventions: indices use positive modulo; bounds inclusive; thresholds strict (`
 | AT1 | rounded square: 4 straights 600 m + 4 arcs R 300 (90°), spacing 2 m | detectKerbs | 8 kerbs: per arc an inside kerb [start − 15, end + 15] and an outside kerb [end − 5, end + 20] (± 1 index); no outside entry kerb |
 | AT2 | same with arcs R 30 | detectKerbs | 12 kerbs: per arc inside [start − 15, end + 15], outside entry [start − 20, start + 5], outside exit [end − 5, end + 20] (± 1) |
 | AT3 | same with arcs R 500 | detectKerbs | [] |
-| AT4 | two same-side kerbs [10, 30] and [31, 50] produced by adjacent runs | detectKerbs | merged into one [10, 50] |
-| AT5 | rebuilt monza/spa/silverstone | read | every corner run (Rmin < 400, ≥ 4 points) has an inside kerb covering [start − 15, end + 15]; kerb count ≥ the previous JSON's; centerline, elevation and pit identical to the previous JSON |
+| AT4 | loop with two adjacent same-side corner runs whose extended inside kerbs touch or overlap | detectKerbs | one merged kerb [run1.start − 15, run2.end + 15] instead of two (illustrative: [10, 30] + [31, 50] → [10, 50]) |
+| AT5 | rebuilt monza/spa/silverstone | read | every corner run (Rmin < 400, ≥ 4 points) has an inside kerb covering [start − 15, end + 15]; centerline, elevation and pit identical to the previous JSON |
 
 ## Acceptance criteria
 
