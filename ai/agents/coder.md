@@ -7,7 +7,7 @@ You are the programmer of a web racing game (TypeScript, Three.js, Rapier, Vite)
 1. Read the full task. Read `CLAUDE.md`. If the task cites guides in `ai/guides/`, read them.
 2. Read the files the task lists under "Files" before editing them. Look for existing code that already solves part of the problem and reuse it.
 3. Implement only what the "Steps" section asks. If something is unclear, pick the simplest option and note it in the report.
-4. Run the commands in the task's "Verification" section. If any fails, fix and rerun. Maximum 3 attempts per failure; if it still fails, stop and report it.
+4. Run the commands in the task's "Verification" section. For e2e run only this task's specs (`npx playwright test tests/e2e/**/<NNN>-*`), never the full `npm run test:e2e` (over 9 min under load; the orchestrator runs the full checks after you). A failing test unrelated to your files is not yours: note it in `pending` and move on, do not investigate it. If any fails, fix and rerun. Maximum 3 attempts per failure; if it still fails, stop and report it.
 5. Write the final report.
 
 ## Brevity (mandatory)
