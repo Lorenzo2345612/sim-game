@@ -1,30 +1,39 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import type { TreeInstances, TreeSpecies } from '../../../src/core/types';
-import { createTreeField, scaleForHeight, type TreeFactory } from '../../../src/render/treeField';
+import { createTreeField, scaleForHeight } from '../../../src/render/treeField';
+
+// treeModels.ts lands with the coder (task 101); mirrors of the spec types keep this file type-checking.
+interface TreeVariant {
+  height: number;
+  lods: [THREE.Mesh[], THREE.Mesh[], THREE.Mesh[]];
+}
+type TreeModels = Record<'oak' | 'plane' | 'pine', TreeVariant[]>;
+
 
 const VARIANT_HEIGHT = 2;
 
 const createdGeometries: THREE.BufferGeometry[] = [];
 const createdMaterials: THREE.Material[] = [];
 
-// Fake factory: 2-mesh Group (trunk + leaves) with bounding-box height 2, heights baked into vertices.
-const fakeFactory: TreeFactory = (preset, seed, leafFactor) => {
-  const group = new THREE.Group();
-  group.name = `${preset}-${seed}`;
-  const trunkGeometry = new THREE.BoxGeometry(0.2, 1, 0.2).translate(0, 0.5, 0);
-  const leavesGeometry = new THREE.BoxGeometry(0.5 + leafFactor, 1, 0.5 + leafFactor).translate(0, 1.5, 0);
-  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
-  const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
-  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-  trunk.name = `${preset}-${seed}-trunk`;
-  const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-  leaves.name = `${preset}-${seed}-leaves`;
-  group.add(trunk, leaves);
-  createdGeometries.push(trunkGeometry, leavesGeometry);
-  createdMaterials.push(trunkMaterial, leavesMaterial);
-  return group;
-};
+// Synthetic GLB-free models: every variant has height 2 (2-part lods: trunk + leaves).
+function makeVariant(height: number): TreeVariant {
+  const lod = (size: number): THREE.Mesh[] => {
+    const trunkGeometry = new THREE.BoxGeometry(0.2, 1, 0.2).translate(0, 0.5, 0);
+    const leavesGeometry = new THREE.BoxGeometry(size, 1, size).translate(0, 1.5, 0);
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+    const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
+    createdGeometries.push(trunkGeometry, leavesGeometry);
+    createdMaterials.push(trunkMaterial, leavesMaterial);
+    return [new THREE.Mesh(trunkGeometry, trunkMaterial), new THREE.Mesh(leavesGeometry, leavesMaterial)];
+  };
+  return { height, lods: [lod(1.5), lod(1), lod(0.5)] };
+}
+
+function makeModels(): TreeModels {
+  const four = (): TreeVariant[] => [0, 1, 2, 3].map(() => makeVariant(VARIANT_HEIGHT));
+  return { oak: four(), plane: four(), pine: four() };
+}
 
 function speciesList(): TreeSpecies[] {
   return [
@@ -46,15 +55,15 @@ function flatTerrain(): (x: number, z: number) => number {
 }
 
 describe('039 trees render acceptance', () => {
-  it('AT1: instance count per species is 120 / 80 across its variants and each species uses 3 variants', () => {
+  it('AT1: instance count per species is 120 / 80 across its variants and each species uses 4 variants', () => {
     createdGeometries.length = 0;
     createdMaterials.length = 0;
     const trees = [instances('oak', 120), instances('pine', 80)];
-    const field = createTreeField(trees, speciesList(), { factory: fakeFactory, terrainY: flatTerrain() });
+    const field = createTreeField(trees, speciesList(), { models: makeModels(), terrainY: flatTerrain() });
     expect(field.instanceCount('oak')).toBe(120);
-    expect(field.variantCount('oak')).toBe(3);
+    expect(field.variantCount('oak')).toBe(4);
     expect(field.instanceCount('pine')).toBe(80);
-    expect(field.variantCount('pine')).toBe(3);
+    expect(field.variantCount('pine')).toBe(4);
     field.dispose();
   });
 
@@ -64,7 +73,7 @@ describe('039 trees render acceptance', () => {
     const terrainY = (x: number, z: number) => 0.5 * x + 0.25 * z;
     const oak: TreeInstances = { species: 'oak', data: [10, 20, 0.8, 0.3, -30, 40, 1.2, -1.0, 100, -200, 0.5, 2.5, 7, 7, 1, 0] };
     const pine: TreeInstances = { species: 'pine', data: [50, 50, 2, 1.5] };
-    const field = createTreeField([oak, pine], speciesList(), { factory: fakeFactory, terrainY });
+    const field = createTreeField([oak, pine], speciesList(), { models: makeModels(), terrainY });
     const out = new THREE.Matrix4();
     const position = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
@@ -93,15 +102,15 @@ describe('039 trees render acceptance', () => {
     field.dispose();
   });
 
-  it('AT3: camera at origin, trees at 100 m / 400 m / 2000 m use LOD0 / LOD1 / hidden with defaults 250 m and 1500 m', () => {
+  it('AT3: camera at origin, trees at 100 m / 400 m / 2000 m use LOD 1 / 2 / 2 (never culled)', () => {
     createdGeometries.length = 0;
     createdMaterials.length = 0;
     const trees: TreeInstances[] = [{ species: 'oak', data: [100, 0, 1, 0, 400, 0, 1, 0, 2000, 0, 1, 0] }];
-    const field = createTreeField(trees, [speciesList()[0]], { factory: fakeFactory, terrainY: flatTerrain() });
+    const field = createTreeField(trees, [speciesList()[0]], { models: makeModels(), terrainY: flatTerrain() });
     field.update({ x: 0, y: 0, z: 0 });
-    expect(field.getInstanceLod('oak', 0)).toBe(0);
-    expect(field.getInstanceLod('oak', 1)).toBe(1);
-    expect(field.getInstanceLod('oak', 2)).toBe(-1);
+    expect(field.getInstanceLod('oak', 0)).toBe(1);
+    expect(field.getInstanceLod('oak', 1)).toBe(2);
+    expect(field.getInstanceLod('oak', 2)).toBe(2);
     field.dispose();
   });
 
@@ -113,7 +122,7 @@ describe('039 trees render acceptance', () => {
     createdGeometries.length = 0;
     createdMaterials.length = 0;
     const trees: TreeInstances[] = [instances('oak', 5)];
-    const field = createTreeField(trees, [speciesList()[0]], { factory: fakeFactory, terrainY: flatTerrain() });
+    const field = createTreeField(trees, [speciesList()[0]], { models: makeModels(), terrainY: flatTerrain() });
     const geometries = new Set<THREE.BufferGeometry>(createdGeometries);
     const materials = new Set<THREE.Material>(createdMaterials);
     field.object.traverse((object) => {

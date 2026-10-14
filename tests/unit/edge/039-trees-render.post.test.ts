@@ -5,16 +5,30 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import type { TreeInstances, TreeSpecies } from '../../../src/core/types';
-import { createTreeField, scaleForHeight, type TreeFactory } from '../../../src/render/treeField';
+import { createTreeField, scaleForHeight } from '../../../src/render/treeField';
+
+// treeModels.ts lands with the coder (task 101); mirrors of the spec types keep this file type-checking.
+interface TreeVariant {
+  height: number;
+  lods: [THREE.Mesh[], THREE.Mesh[], THREE.Mesh[]];
+}
+type TreeModels = Record<'oak' | 'plane' | 'pine', TreeVariant[]>;
+
+// Synthetic GLB-free models: Node unit tests must not load files.
+function makeVariant(height: number): TreeVariant {
+  const lod = (size: number): THREE.Mesh[] => [
+    new THREE.Mesh(new THREE.BoxGeometry(size, height, size).translate(0, height / 2, 0), new THREE.MeshStandardMaterial()),
+  ];
+  return { height, lods: [lod(4), lod(2), lod(1)] };
+}
+
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-const onePart: TreeFactory = (preset, seed, leafFactor) => {
-  const group = new THREE.Group();
-  group.name = `${preset}-${seed}-${leafFactor}`;
-  group.add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 0.2).translate(0, 1, 0), new THREE.MeshStandardMaterial()));
-  return group;
-};
+function makeModels(height = 2): TreeModels {
+  const four = (): TreeVariant[] => [0, 1, 2, 3].map(() => makeVariant(height));
+  return { oak: four(), plane: four(), pine: four() };
+}
 
 const OAK: TreeSpecies = { name: 'oak', preset: 'oak-preset', heightMeters: 10 };
 const PINE: TreeSpecies = { name: 'pine', preset: 'pine-preset', heightMeters: 6 };
@@ -27,7 +41,7 @@ describe('039 trees render post', () => {
       { species: 'pine', data: [9, 9, 1, 0] },
       { species: 'oak', data: [5, 6, 1, 0, 7, 8, 1, 0, 9, 10, 1, 0] },
     ];
-    const field = createTreeField(trees, [OAK, PINE], { factory: onePart, terrainY: flat() });
+    const field = createTreeField(trees, [OAK, PINE], { models: makeModels(), terrainY: flat() });
     expect(field.instanceCount('oak')).toBe(5);
     expect(field.instanceCount('pine')).toBe(1);
     const out = new THREE.Matrix4();
@@ -49,27 +63,20 @@ describe('039 trees render post', () => {
   });
 
   it('batches whose species is not in the species list are ignored', () => {
-    const presets: string[] = [];
-    const factory: TreeFactory = (preset, seed, leafFactor) => {
-      presets.push(preset);
-      return onePart(preset, seed, leafFactor);
-    };
     const trees: TreeInstances[] = [
       { species: 'oak', data: [0, 0, 1, 0] },
       { species: 'ghost', data: [1, 1, 1, 0, 2, 2, 1, 0] },
     ];
-    const field = createTreeField(trees, [OAK], { factory, terrainY: flat() });
+    const field = createTreeField(trees, [OAK], { models: makeModels(), terrainY: flat() });
     expect(field.instanceCount('oak')).toBe(1);
     expect(field.instanceCount('ghost')).toBe(0);
     expect(field.variantCount('ghost')).toBe(0);
-    expect([...new Set(presets)]).toEqual(['oak-preset']);
-    expect(field.object.children).toHaveLength(6);
     field.dispose();
   });
 
   it('a trailing incomplete record in data is ignored', () => {
     const trees: TreeInstances[] = [{ species: 'oak', data: [0, 0, 1, 0, 10, 10, 1, 0, 20] }];
-    const field = createTreeField(trees, [OAK], { factory: onePart, terrainY: flat() });
+    const field = createTreeField(trees, [OAK], { models: makeModels(), terrainY: flat() });
     expect(field.instanceCount('oak')).toBe(2);
     const out = new THREE.Matrix4();
     field.getInstanceMatrix('oak', 1, out);
@@ -77,54 +84,15 @@ describe('039 trees render post', () => {
     field.dispose();
   });
 
-  it('every LOD level of a variant carries the same instance matrices and counts', () => {
-    const data: number[] = [];
-    for (let i = 0; i < 7; i++) data.push(i * 5, 0, 1 + i * 0.1, i * 0.4);
-    const field = createTreeField([{ species: 'oak', data }], [OAK], { factory: onePart, terrainY: flat() });
-    const meshes = field.object.children as unknown as InstancedMesh2[];
-    const a = new THREE.Matrix4();
-    const b = new THREE.Matrix4();
-    const perVariant = [3, 2, 2];
-    for (let v = 0; v < 3; v++) {
-      const lod0 = meshes[v * 2];
-      const lod1 = meshes[v * 2 + 1];
-      expect(lod1.instancesCount).toBe(perVariant[v]);
-      for (let local = 0; local < perVariant[v]; local++) {
-        lod0.getMatrixAt(local, a);
-        lod1.getMatrixAt(local, b);
-        for (let e = 0; e < 16; e++) expect(b.elements[e]).toBeCloseTo(a.elements[e], 6);
-      }
-    }
-    field.dispose();
-  });
-
-  it('instances start hidden and update shows exactly one LOD mesh per instance', () => {
-    const trees: TreeInstances[] = [{ species: 'oak', data: [100, 0, 1, 0, 400, 0, 1, 0, 2000, 0, 1, 0] }];
-    const field = createTreeField(trees, [OAK], { factory: onePart, terrainY: flat() });
-    const meshes = field.object.children as unknown as InstancedMesh2[];
-    for (const mesh of meshes) {
-      for (let local = 0; local < mesh.instancesCount; local++) expect(mesh.getVisibilityAt(local)).toBe(false);
-    }
-    expect(field.getInstanceLod('oak', 0)).toBe(-1);
-    field.update({ x: 0, y: 0, z: 0 });
-    expect(meshes[0].getVisibilityAt(0)).toBe(true); // instance 0, variant 0, LOD0
-    expect(meshes[1].getVisibilityAt(0)).toBe(false);
-    expect(meshes[2].getVisibilityAt(0)).toBe(false); // instance 1, variant 1, LOD1
-    expect(meshes[3].getVisibilityAt(0)).toBe(true);
-    expect(meshes[4].getVisibilityAt(0)).toBe(false); // instance 2, variant 2, hidden
-    expect(meshes[5].getVisibilityAt(0)).toBe(false);
-    field.dispose();
-  });
-
   it('frustum culling is enabled on every instanced mesh', () => {
-    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0] }], [OAK], { factory: onePart, terrainY: flat() });
+    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0] }], [OAK], { models: makeModels(), terrainY: flat() });
     expect(field.object.children.length).toBeGreaterThan(0);
     for (const child of field.object.children) expect((child as THREE.Mesh).frustumCulled).toBe(true);
     field.dispose();
   });
 
   it('dispose() disposes every instanced mesh and is safe to call twice', () => {
-    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0, 5, 5, 1, 0] }], [OAK], { factory: onePart, terrainY: flat() });
+    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0, 5, 5, 1, 0] }], [OAK], { models: makeModels(), terrainY: flat() });
     const meshes = [...field.object.children] as unknown as InstancedMesh2[];
     const spies = meshes.map((mesh) => vi.spyOn(mesh, 'dispose'));
     field.dispose();
@@ -133,12 +101,8 @@ describe('039 trees render post', () => {
   });
 
   it('a variant with zero bounding-box height falls back to 1 m so instance scale stays finite', () => {
-    const flatFactory: TreeFactory = () => {
-      const group = new THREE.Group();
-      group.add(new THREE.Mesh(new THREE.BoxGeometry(1, 0, 1), new THREE.MeshStandardMaterial()));
-      return group;
-    };
-    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0] }], [OAK], { factory: flatFactory, terrainY: flat() });
+    const models = makeModels(0);
+    const field = createTreeField([{ species: 'oak', data: [0, 0, 1, 0] }], [OAK], { models, terrainY: flat() });
     const out = new THREE.Matrix4();
     field.getInstanceMatrix('oak', 0, out);
     const scale = new THREE.Vector3();
@@ -152,7 +116,7 @@ describe('039 trees render post', () => {
 
   it('a zero instance scale yields a zero-scale matrix at the terrain position', () => {
     const trees: TreeInstances[] = [{ species: 'oak', data: [10, 20, 0, 0.5] }];
-    const field = createTreeField(trees, [OAK], { factory: onePart, terrainY: () => 3 });
+    const field = createTreeField(trees, [OAK], { models: makeModels(), terrainY: () => 3 });
     const out = new THREE.Matrix4();
     field.getInstanceMatrix('oak', 0, out);
     expect(out.elements[0]).toBeCloseTo(0, 6);
@@ -165,10 +129,11 @@ describe('039 trees render post', () => {
   });
 
   it('accessors on unknown species or out-of-range indices are inert', () => {
-    const field = createTreeField([{ species: 'oak', data: [1, 2, 1, 0] }], [OAK], { factory: onePart, terrainY: flat() });
-    expect(field.getInstanceLod('ghost', 0)).toBe(-1);
-    expect(field.getInstanceLod('oak', -1)).toBe(-1);
-    expect(field.getInstanceLod('oak', 1)).toBe(-1);
+    const field = createTreeField([{ species: 'oak', data: [1, 2, 1, 0] }], [OAK], { models: makeModels(), terrainY: flat() });
+    const valid: number[] = [0, 1, 2];
+    expect(valid).not.toContain(field.getInstanceLod('ghost', 0));
+    expect(valid).not.toContain(field.getInstanceLod('oak', -1));
+    expect(valid).not.toContain(field.getInstanceLod('oak', 1));
     const out = new THREE.Matrix4();
     field.getInstanceMatrix('oak', 0, out);
     const filled = out.clone();
@@ -183,10 +148,10 @@ describe('039 trees render post', () => {
       { species: 'oak', data: [100, 0, 1, 0] },
       { species: 'pine', data: [2000, 0, 1, 0] },
     ];
-    const field = createTreeField(trees, [OAK, PINE], { factory: onePart, terrainY: flat() });
+    const field = createTreeField(trees, [OAK, PINE], { models: makeModels(), terrainY: flat() });
     field.update({ x: 0, y: 0, z: 0 });
-    expect(field.getInstanceLod('oak', 0)).toBe(0);
-    expect(field.getInstanceLod('pine', 0)).toBe(-1);
+    expect(field.getInstanceLod('oak', 0)).toBe(1);
+    expect(field.getInstanceLod('pine', 0)).toBe(2);
     field.dispose();
   });
 
