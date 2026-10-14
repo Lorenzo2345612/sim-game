@@ -1693,20 +1693,6 @@
       "spec": "tasks/123-driving-line.md"
     },
     {
-      "num": "124",
-      "title": "Braking marker boards",
-      "status": "pending",
-      "deps": [
-        "088",
-        "123"
-      ],
-      "complexity": "simple",
-      "type": "feature",
-      "models": "standard",
-      "phase": 2,
-      "spec": "tasks/124-braking-boards.md"
-    },
-    {
       "num": "125",
       "title": "Assist presets and braking assist",
       "status": "pending",
@@ -1731,9 +1717,9 @@
       "status": "pending",
       "deps": [
         "123",
-        "124",
         "125",
-        "044"
+        "044",
+        "143"
       ],
       "complexity": "complex",
       "type": "feature",

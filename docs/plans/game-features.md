@@ -15,9 +15,9 @@ Milestone order: … M1.7 → **M1.8 Cockpit** → **M1.9 Liveries** → M2.1 �
 | 121 | M1.9 | Race number decals | 120 | simple |
 | 122 | M1.9 | Livery editor screen | 120, 121, 044 | simple |
 | 123 | M2.1b | Driving line overlay coloured by action | 088, 093 | simple |
-| 124 | M2.1b | Braking marker boards | 088 | simple |
+| 124 | — | (replaced by 143 in M1.2c: boards are static track data) | — | — |
 | 125 | M2.1b | Assist presets and braking assist | 088, 070 | complex |
-| 126 | M2.1b | Driving school lessons | 123, 124, 125, 044 | complex |
+| 126 | M2.1b | Driving school lessons | 123, 125, 143, 044 | complex |
 | 127 | M2.1c | Track limits strikes | 092, 093 | simple |
 | 128 | M2.1c | Yellow and blue flags | 092, 093 | complex |
 | 129 | M2.1c | Virtual safety car | 088, 092, 093 | complex |
@@ -133,7 +133,7 @@ Menu "Livery": car selector, 3 colour inputs, 4 pattern buttons, number input, l
 | AT3 | e2e monza, drivingLine full | sceneStats().drivingLine | visible, vertex count ≥ 2 × line points |
 | AT4 | e2e drivingLine off | same | not visible |
 
-### 124 — Braking boards
+### 124 — Braking boards (REPLACED by 143, docs/plans/m1.2c-realism.md)
 `brakeMarkers(speeds, dist, length): { distance: number; label: 150 | 100 | 50 }[]` for every braking zone (maximal run of brake points) whose speed drop (start − min of the zone) > 15 m/s: boards at zone start − 150/−100/−50 m (wrapped), sorted by distance. Rendered as instanced boards (1.2 × 0.8 m on 1.2 m posts, 1.5 m outside the track edge on the right side of the direction of travel… on the outside of the following corner), canvas textures "150/100/50".
 
 | ID | Given | When | Then |

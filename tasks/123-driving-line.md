@@ -73,4 +73,4 @@ npm run test:e2e
 
 ## Out of scope
 
-- Braking boards (124), assist presets (125), settings UI, ghost line, line for AI cars.
+- Distance boards (143), assist presets (125), settings UI, ghost line, line for AI cars.

@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 2
-Depends on: 123, 124, 125, 044
+Depends on: 123, 125, 143, 044
 Complexity: complex
 Type: feature
 Models: standard
@@ -14,7 +14,7 @@ A driving school offers four lessons on a track, each with a goal, a hint and a 
 
 ## Context
 
-Design: `docs/plans/game-features.md` section 126. Reuses: braking boards `brakeMarkers` (124, `src/ai/brakeMarkers.ts`), driving line (123), assist preset beginner (125, `src/game/assists.ts`), `speedProfile`/`carLimitsFromSpec` (088), `computeRacingLine` (087), menu screens (044, `src/ui/menu.ts`), single-car `Game` (`src/game/game.ts`, exposes lap info and state). Lessons run on monza with `f4`. Distances along the lap from the start line, lateral + = right. Pure module: no `three`, no DOM, no `Math.random`. e2e: `tests/e2e/acceptance/126-driving-school.spec.ts`.
+Design: `docs/plans/game-features.md` section 126. Reuses: distance boards from the track JSON (`boards`, task 143; board100 = distance of the first label-100 board), driving line (123), assist preset beginner (125, `src/game/assists.ts`), `speedProfile`/`carLimitsFromSpec` (088), `computeRacingLine` (087), menu screens (044, `src/ui/menu.ts`), single-car `Game` (`src/game/game.ts`, exposes lap info and state). Lessons run on monza with `f4`. Distances along the lap from the start line, lateral + = right. Pure module: no `three`, no DOM, no `Math.random`. e2e: `tests/e2e/acceptance/126-driving-school.spec.ts`.
 
 ## Files
 
