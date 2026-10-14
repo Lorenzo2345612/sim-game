@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "058",
         "059",
@@ -1207,7 +1207,7 @@
     {
       "num": "090",
       "title": "AI traffic decisions and difficulty",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "089"
       ],

@@ -68,7 +68,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 062 | Powertrain: engine, launch rpm, differential, generalised gearbox | done | 058, 045 |
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
-| 065 | Vehicle model on Rapier | waiting decision | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
+| 065 | Vehicle model on Rapier | in progress | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
 | 066 | Calibration suite and F4 tuning | pending | 058, 065 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
@@ -92,7 +92,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 087 | Racing line (minimum curvature) | done | - |
 | 088 | Speed profile and car limits | done | 087, 058 |
 | 089 | AI driver controller | done | 087, 088 |
-| 090 | AI traffic decisions and difficulty | in progress | 089 |
+| 090 | AI traffic decisions and difficulty | done | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
 | 093 | Multi-car race game | pending | 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092 |
