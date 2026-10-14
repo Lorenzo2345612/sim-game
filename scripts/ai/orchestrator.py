@@ -982,6 +982,21 @@ def merge_task(num, title):
         commit(["tasks/tasks.json", "tasks/README.md"], "chore: tasks status sync")
         head = git("rev-parse", "HEAD").stdout.strip()
         r = git("rebase", head, cwd=path)
+        # tasks/ (registry, README, specs) belongs to master: on conflicts only there, keep master's copy.
+        for _ in range(50):
+            if r.returncode == 0:
+                break
+            conflicted = set(git("diff", "--name-only", "--diff-filter=U", cwd=path).stdout.split())
+            in_rebase = Path(path, git("rev-parse", "--git-path", "rebase-merge", cwd=path).stdout.strip()).exists()
+            if not conflicted and in_rebase and not git("diff", "--cached", "--name-only", cwd=path).stdout.strip():
+                r = git("rebase", "--skip", cwd=path)
+                continue
+            if not conflicted or not all(f.startswith("tasks/") for f in conflicted):
+                break
+            git("checkout", "--ours", "--", *conflicted, cwd=path)
+            git("add", "--", *conflicted, cwd=path)
+            r = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
+                               cwd=path, capture_output=True, text=True)
         if r.returncode != 0:
             git("rebase", "--abort", cwd=path)
             return f"rebase conflict:\n{(r.stdout + r.stderr).strip()[-1500:]}"
