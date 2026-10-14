@@ -1362,7 +1362,7 @@
     {
       "num": "101",
       "title": "Tree field uses baked LODs",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "100",
         "039"
@@ -1376,7 +1376,7 @@
     {
       "num": "102",
       "title": "Satellite colour on distant terrain",
-      "status": "waiting decision",
+      "status": "done",
       "deps": [
         "081"
       ],

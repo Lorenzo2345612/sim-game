@@ -103,8 +103,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
 | 099 | HDRI sky, image-based lighting, neutral tone mapping, fog from horizon | done | 042 |
 | 100 | Bake realistic tree LODs with EZ-Tree (offline tool) | done | - |
-| 101 | Tree field uses baked LODs | waiting decision | 100, 039 |
-| 102 | Satellite colour on distant terrain | waiting decision | 081 |
+| 101 | Tree field uses baked LODs | in progress | 100, 039 |
+| 102 | Satellite colour on distant terrain | done | 081 |
 | 103 | Real-size tyre walls, W-beam armco with posts, catch fences | in progress | 083, 086 |
 | 104 | Crowd sprite atlas and seated crowd | in progress | 040 |
 | 105 | Post-processing tiers: bloom, LUT, SMAA (GTAO high only) | in progress | 099 |
