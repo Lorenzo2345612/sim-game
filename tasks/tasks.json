@@ -1416,7 +1416,7 @@
     {
       "num": "105",
       "title": "Post-processing tiers: bloom, LUT, SMAA (GTAO high only)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "099"
       ],
