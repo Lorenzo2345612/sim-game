@@ -141,11 +141,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 137 | Rain and track wetness model, wet compounds | pending | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
-| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | waiting decision | 098, 142 |
+| 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | in progress | 098, 142 |
 | 141 | Render and colliders for escape roads and foam block barriers | pending | 140, 103 |
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | pending | 140 |
-| 144 | Damage model (pure) | in progress | 058 |
+| 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
@@ -166,7 +166,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 162 | Speed-dependent rolling drag on grass and gravel | pending | 065 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
-| 165 | Gamepad rumble | pending | 164 |
+| 165 | Gamepad rumble | in progress | 164 |
 | 166 | Dirty tyres | pending | 065, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
