@@ -1935,14 +1935,14 @@
     {
       "num": "140",
       "title": "Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "098",
         "142"
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/140-paved-runoffs-escape-roads.md"
     },

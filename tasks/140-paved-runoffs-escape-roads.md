@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 098, 142
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Goal
@@ -54,6 +54,13 @@ export function detectEscapeRoads(points: Point2[]): EscapeRoad[];
 6. Everything is deterministic; no randomness.
 
 Conventions: indices wrap with positive modulo; arc length in metres; width rounding to 0.5 m half-up; span bounds inclusive; empty/short input (n < 3) returns `[]` / unchanged; inputs are not mutated; ties in run-off sorting keep input order.
+
+## Work order
+
+Previous runs timed out reading existing tests without writing code. Follow this order strictly:
+1. Write `types.ts`, `parseTrackData.ts`, `corners.ts` export, `hazards.ts` first; run only `npx vitest run tests/unit/acceptance/140-paved-runoffs.test.ts` until green. Do not open any other test file in this phase.
+2. Wire `buildTrack.ts` and `main.ts`, run `npm run build:tracks`.
+3. Run `npm test`; open an existing test file only if it fails, and edit it only per the Files list.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
