@@ -106,7 +106,7 @@ def milestone_scope():
     return allowed | prefetch_set() | {t["num"] for t in read_tasks() if t["num"] not in assigned}
 
 
-PREFETCH_MAX = 3  # max concurrent prefetched tasks on the fallback provider (MiMo); the rest belong to the active milestone
+PREFETCH_MAX = int(os.environ.get("SIMGAME_PREFETCH_MAX", "5"))  # max concurrent prefetched tasks on the fallback provider (MiMo); the rest belong to the active milestone
 PREFETCH_PRIMARY = int(os.environ.get("SIMGAME_PREFETCH_PRIMARY", "1"))  # extra prefetched tasks that keep their normal providers (GLM coder lane)
 PRIMARY_LANE = set()  # prefetched task numbers running on their normal providers
 
