@@ -464,6 +464,22 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
         track(num, role)
     out = proc.stdout or ""
     if proc.returncode != 0 and "quota error" in out:
+        if fallback and prov != fallback:
+            event(num, "quota-route", f"{role}: {prov} quota exhausted -> {fallback}")
+            argv = [a for a in argv if a != "--resume"]
+            i = argv.index("--provider") if "--provider" in argv else -1
+            argv = argv[:i] + argv[i + 2:] if i >= 0 else argv
+            argv += ["--provider", fallback]
+            model = cfg.get("fallback", {}).get("heavyModel" if heavy else "model", model)
+            track(num, role, add={"provider": fallback, "model": model, "start": time.time()})
+            try:
+                with provider_slot(fallback):
+                    proc = subprocess.run(argv, cwd=ROOT, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            finally:
+                track(num, role)
+            out = proc.stdout or ""
+            if proc.returncode == 0 or "quota error" not in out:
+                return {"exit": proc.returncode, "out": out, **parse_report(out)}
         raise QuotaError(role)
     return {"exit": proc.returncode, "out": out, **parse_report(out)}
 
