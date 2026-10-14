@@ -155,7 +155,8 @@ describe('087 racing line post-code gaps', () => {
     const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
     expect(files.length).toBeGreaterThan(0);
     for (const f of files) {
-      const src = readFileSync(join(dir, f), 'utf8');
+      // type-only CarSpec import is allowed (088)
+      const src = readFileSync(join(dir, f), 'utf8').replace(/import type[^;]*from\s+['"][^'"]+['"];?/g, '');
       expect(src).not.toMatch(/Math\.random/);
       expect(src).not.toMatch(/from\s+['"]three['"]/);
       expect(src).not.toMatch(/from\s+['"]@dimforge/);

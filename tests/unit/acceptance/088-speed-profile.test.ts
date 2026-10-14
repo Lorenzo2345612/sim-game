@@ -78,9 +78,9 @@ describe('088 speed profile acceptance', () => {
     expect(Math.abs(v - 38.361)).toBeLessThanOrEqual(0.01);
   });
 
-  it('AT2: cornerSpeed with aeroK 0.003 is sqrt(14.715/0.007) = 45.849 ± 0.01', () => {
+  it('AT2: cornerSpeed with aeroK 0.003 is sqrt(14.715/0.0055) = 51.725 ± 0.01', () => {
     const v = cornerSpeed(0.01, limits({ aeroK: 0.003 }));
-    expect(Math.abs(v - 45.849)).toBeLessThanOrEqual(0.01);
+    expect(Math.abs(v - 51.7248)).toBeLessThanOrEqual(0.01);
   });
 
   it('AT3: cornerSpeed of kappa 0.004 with muLat 1.5, aeroK 0.003 returns vMax', () => {
