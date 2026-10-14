@@ -57,6 +57,8 @@ export interface TreeSpecies { name: string; preset: string; heightMeters: numbe
 export interface TreeInstances { species: string; data: number[] } // flat [x, z, scale, rotY] * n
 export interface Grandstand { x: number; z: number; yaw: number; lengthMeters: number; rows: number; roof: boolean }
 export interface PitLane { start: number; end: number; side: Side }
+/** Static braking board beside the track; offset is metres from the centerline, positive outward on `side`. */
+export interface Board { index: number; side: Side; offset: number; label: 50 | 100 | 150 | 200 }
 export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
@@ -70,5 +72,6 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   grandstands: Grandstand[];
   pit: PitLane;
   escapeRoads?: EscapeRoad[];
+  boards?: Board[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

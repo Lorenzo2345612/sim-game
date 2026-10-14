@@ -5,6 +5,7 @@ import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTra
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads } from './hazards';
+import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
 import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
@@ -123,6 +124,7 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     corners,
   );
   const escapeRoads = detectEscapeRoads(centerline);
+  const boards = buildBoards(centerline, config.widthMeters, barriers);
   const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
   const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
   const trees = placeTrees(config.id, centerline, terrain, barriers, config.biome);
@@ -140,6 +142,7 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     kerbs,
     runoffs: paved,
     barriers,
+    boards,
     escapeRoads,
     terrain,
     treeSpecies,

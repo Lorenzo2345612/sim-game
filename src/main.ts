@@ -24,6 +24,7 @@ import { createTerrainMaterial, terrainTrackDistance } from './render/terrainMat
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
+import { createDistanceBoards } from './render/distanceBoards';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
@@ -47,6 +48,7 @@ export interface SceneStats {
   grandstands: number;
   pitBuildings: number;
   startGantries: number;
+  distanceBoards: number;
   sky: boolean;
   shadows: boolean;
   environment: string;
@@ -302,6 +304,7 @@ async function startGame(trackId: string): Promise<void> {
     grandstands: 0,
     pitBuildings: 0,
     startGantries: 0,
+    distanceBoards: 0,
     sky: false,
     shadows: false,
     environment: '',
@@ -349,6 +352,10 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(barriers.group);
     disposables.push(barriers);
 
+    const boards = createDistanceBoards(track);
+    scene.add(boards.group);
+    disposables.push(boards);
+
     // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
     // quads) being the farthest level.
@@ -378,6 +385,7 @@ async function startGame(trackId: string): Promise<void> {
     stats.grandstands = track.grandstands.length;
     stats.pitBuildings = 1;
     stats.startGantries = 1;
+    stats.distanceBoards = boards.count;
   } else {
     const trackObj = createTrackObject(buildRibbon(track.centerline, track.widthMeters, 0.02), track);
     scene.add(trackObj.group);

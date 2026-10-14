@@ -164,6 +164,8 @@ describe('097 terrain below strips acceptance', () => {
       delete copy.barriers;
       delete copy.trees;
       delete copy.escapeRoads;
+      // 143 adds the braking boards array to every rebuilt track.
+      delete copy.boards;
       return copy;
     };
     for (const id of IDS) {
