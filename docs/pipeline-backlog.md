@@ -8,3 +8,4 @@ Changes to `scripts/ai/*` and `ai/*` wanted while a milestone is open. Apply in 
 - Stale `<num>-<stage>.resolved.md` from an earlier round makes the orchestrator resume immediately while the new `.md` stays open (seen on 092); resolve by decision timestamp or archive old resolved files.
 - Coder timeouts on mimo-flash (092 twice, 25 min): auto-escalate to heavy after one TIMEOUT.
 - Acceptance: a row the spec marks as "verification gate only" still escalates as untestable (065 twice). Skip escalation when the untestable list only names rows tagged as gates in the spec.
+- Run checks once: after the coder, the orchestrator runs typecheck, lint, npm test (and the task's e2e specs) itself and passes the output to tester/reviewer, who must not re-run the full suite (today coder, tester and reviewer each run it; e2e costs minutes per run).
