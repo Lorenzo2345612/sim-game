@@ -46,6 +46,7 @@ export class EngineAudio {
   private squealBase = 0;
   private running = false;
   private disposed = false;
+  private pausedValue = false;
 
   constructor(createContext: () => AudioContext = () => new AudioContext()) {
     this.ctx = createContext();
@@ -109,12 +110,35 @@ export class EngineAudio {
   resume(): void {
     if (this.disposed) return;
     this.start();
+    if (this.pausedValue) return;
     try {
       this.ctx.resume().catch(() => {
         /* stays suspended until a user gesture */
       });
     } catch {
       /* context refuses to resume outside a gesture */
+    }
+  }
+
+  get paused(): boolean {
+    return this.pausedValue;
+  }
+
+  setPaused(paused: boolean): void {
+    if (this.disposed || paused === this.pausedValue) return;
+    this.pausedValue = paused;
+    try {
+      if (paused) {
+        this.ctx.suspend().catch(() => {
+          /* context refuses to suspend */
+        });
+      } else {
+        this.ctx.resume().catch(() => {
+          /* stays suspended until a user gesture */
+        });
+      }
+    } catch {
+      /* context refuses the state change */
     }
   }
 

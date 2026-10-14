@@ -65,6 +65,7 @@ declare global {
       gear(): number;
       preset(): Preset;
       teleportToIndex(i: number): void;
+      audioPaused(): boolean;
     };
   }
 }
@@ -241,6 +242,8 @@ function presetFromQuery(storage: Storage): Preset {
 async function startGame(trackId: string): Promise<void> {
   endSession();
   menu?.hide();
+  // "Change track" leaves the audio paused behind the menu; a new session must not inherit it.
+  engineAudio?.setPaused(false);
   if (status) {
     status.textContent = 'Loading…';
     status.style.display = '';
@@ -531,6 +534,7 @@ async function startGame(trackId: string): Promise<void> {
 
   const resume = (): void => {
     paused = false;
+    engineAudio?.setPaused(false);
     menu?.hide();
   };
 
@@ -600,6 +604,7 @@ async function startGame(trackId: string): Promise<void> {
         return;
       }
       paused = true;
+      engineAudio?.setPaused(true);
       showPauseMenu();
       return;
     }
@@ -670,6 +675,7 @@ async function startGame(trackId: string): Promise<void> {
     gear: () => game.gear(),
     preset: () => preset,
     teleportToIndex: (i: number) => game.teleportToIndex(i),
+    audioPaused: () => engineAudio?.paused ?? false,
   };
 }
 

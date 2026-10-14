@@ -42,6 +42,7 @@ function node<T extends object>(extra: T): FakeNode<T> {
 class FakeContext {
   gains: Array<{ gain: FakeParam }> = [];
   resumeCount = 0;
+  suspendCount = 0;
   closeCount = 0;
   started: string[] = [];
   stopped: string[] = [];
@@ -57,6 +58,7 @@ class FakeContext {
   }
 
   suspend(): Promise<void> {
+    this.suspendCount += 1;
     this.state = 'suspended';
     return Promise.resolve();
   }
@@ -212,5 +214,46 @@ describe('051 engine audio edge cases', () => {
       audio.setMasterVolume(1);
     }).not.toThrow();
     expect(ctx.resumeCount).toBe(0);
+  });
+});
+
+describe('161 setPaused', () => {
+  it('setPaused(true) suspends once even when repeated', () => {
+    const ctx = new FakeContext();
+    const audio = audioWith(ctx);
+    audio.setPaused(true);
+    audio.setPaused(true);
+    expect(ctx.suspendCount).toBe(1);
+    expect(audio.paused).toBe(true);
+  });
+
+  it('update() and resume() do not resume the context while paused', () => {
+    const ctx = new FakeContext();
+    const audio = audioWith(ctx);
+    audio.setPaused(true);
+    expect(() => audio.update(6000, 1, [0, 0, 0, 0])).not.toThrow();
+    audio.resume();
+    expect(ctx.resumeCount).toBe(0);
+  });
+
+  it('setPaused(false) resumes once and clears the flag', () => {
+    const ctx = new FakeContext();
+    const audio = audioWith(ctx);
+    audio.setPaused(true);
+    audio.setPaused(false);
+    audio.setPaused(false);
+    expect(ctx.resumeCount).toBe(1);
+    expect(audio.paused).toBe(false);
+  });
+
+  it('setPaused is a no-op after dispose()', () => {
+    const ctx = new FakeContext();
+    const audio = audioWith(ctx);
+    audio.dispose();
+    audio.setPaused(true);
+    audio.setPaused(false);
+    expect(ctx.suspendCount).toBe(0);
+    expect(ctx.resumeCount).toBe(0);
+    expect(audio.paused).toBe(false);
   });
 });
