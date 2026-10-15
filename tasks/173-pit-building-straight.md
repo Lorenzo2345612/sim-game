@@ -77,6 +77,8 @@ AT2 forces new pit ranges on monza/spa/silverstone (old chord deviation 2.13 / 2
 - `tests/unit/acceptance/155-close-parallel.test.ts` AT5
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts` (key list `centerline, elevation, pit`)
 
+In the full-object comparisons of 106 AT5 and 155 AT5, also exclude `barriers` (pit-dependent, step 5).
+
 Leave the regenerated `public/tracks/*.json` in the worktree; the orchestrator commits them. The elkhart 1.16 % length warning from `build:tracks` is pre-existing and accepted.
 
 ## Out of scope
