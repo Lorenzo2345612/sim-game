@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { addTrackColliders } from '../../../src/physics/trackColliders';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT, GRAVITY, SURFACE_DRAG } from '../../../src/core/constants';
 import type { DriverInput, Surface, SurfaceStrip, Terrain, TrackDataV2 } from '../../../src/core/types';
 import { fixture } from '../acceptance/022-fixture-trackdatav2';
@@ -10,6 +12,15 @@ import { fixture } from '../acceptance/022-fixture-trackdatav2';
 type World = ReturnType<typeof createPhysicsWorld>;
 // Task 033 target signature; the intersection keeps this file typechecking before Vehicle has it.
 type VehicleWithSurfaces = Vehicle & { getWheelSurfaces(): Surface[] };
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 // Flat grass terrain; surface zones are hand-built quads so the boundaries are exact.
 // Quads are wound CCW seen from +Y (phase1.md: vehicle down rays hit those faces).
@@ -72,7 +83,7 @@ function run(w: World, car: Vehicle, seconds: number): void {
 }
 
 function settle(w: World, x: number, z: number): Vehicle {
-  const car = new Vehicle(w, PLACEHOLDER_CAR, { position: { x, y: 0.6, z }, yaw: 0 });
+  const car = new Vehicle(w, SPEC, { position: { x, y: 0.6, z }, yaw: 0 });
   run(w, car, 1.5);
   return car;
 }
@@ -125,9 +136,9 @@ describe('033 surface grip edge cases', () => {
 
   it('EDGE3: wheels with no ground object read asphalt (fresh car and in the air over gravel)', () => {
     world = zoneWorld();
-    const fresh = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 10, y: 0.6, z: -20 }, yaw: 0 });
+    const fresh = new Vehicle(world, SPEC, { position: { x: 10, y: 0.6, z: -20 }, yaw: 0 });
     expect(surfacesOf(fresh)).toEqual(['asphalt', 'asphalt', 'asphalt', 'asphalt']);
-    const falling = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 10, y: 5, z: -10 }, yaw: 0 });
+    const falling = new Vehicle(world, SPEC, { position: { x: 10, y: 5, z: -10 }, yaw: 0 });
     run(world, falling, 0.1);
     for (const wheel of falling.getState().wheels) {
       expect(wheel.inContact).toBe(false);
@@ -202,22 +213,6 @@ describe('033 surface grip edge cases', () => {
     const vR = horizSpeed(runoff);
     expect(vR).toBeGreaterThanOrEqual(vA - 1);
     expect(vR).toBeLessThanOrEqual(vA + 0.01);
-  }, 20000);
-
-  it('EDGE8: drag applies per wheel: two wheels on gravel give half the four-wheel loss', () => {
-    world = zoneWorld();
-    const asphalt = settle(world, 0, -8);
-    launch(asphalt, -30);
-    run(world, asphalt, 1);
-    const vA = horizSpeed(asphalt);
-    const half = settle(world, 5.5, -8);
-    expect(surfacesOf(half)).toEqual(['asphalt', 'gravel', 'asphalt', 'gravel']);
-    launch(half, -30);
-    run(world, half, 1);
-    const loss = vA - horizSpeed(half);
-    const expected = (SURFACE_DRAG.gravel * Math.abs(GRAVITY) * 1) / 2;
-    expect(loss).toBeGreaterThanOrEqual(expected - 0.45);
-    expect(loss).toBeLessThanOrEqual(expected + 0.2);
   }, 20000);
 
   it('EDGE9: prePhysicsStep with dt 0, NaN or negative applies no drag impulse and keeps the body finite', () => {

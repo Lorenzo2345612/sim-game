@@ -278,7 +278,7 @@ async function startGame(trackId: string): Promise<void> {
   if (!specRes.ok) throw new Error('Could not load f4.json');
   const carSpec = parseCarSpec(await specRes.json());
 
-  let game = await Game.create(track);
+  let game = await Game.create(track, carSpec);
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
@@ -608,7 +608,7 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   const restart = async (): Promise<void> => {
-    const next = await Game.create(track);
+    const next = await Game.create(track, carSpec);
     // The session may have been torn down while the new Game was being created.
     if (!running) {
       next.dispose();

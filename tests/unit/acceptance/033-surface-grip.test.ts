@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput, Surface, Terrain, TrackDataV2 } from '../../../src/core/types';
 import { fixture } from './022-fixture-trackdatav2';
@@ -9,6 +11,15 @@ import { fixture } from './022-fixture-trackdatav2';
 type World = ReturnType<typeof createPhysicsWorld>;
 // Task 033 target signature; the intersection keeps this file typechecking before Vehicle has it.
 type VehicleWithSurfaces = Vehicle & { getWheelSurfaces(): Surface[] };
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 // Closed rectangular fixture, 2 m spacing. Straight indices 0..75 (x = 0, z = 0..-150,
 // heading -Z so the right normal is +X): asphalt strip x = -6..6 (widthMeters 12) over
@@ -45,7 +56,7 @@ const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 const FULL: DriverInput = { throttle: 1, brake: 0, steer: 0, reset: false };
 
 function settle(w: World, x: number, z: number): Vehicle {
-  const car = new Vehicle(w, PLACEHOLDER_CAR, { position: { x, y: 0.6, z }, yaw: 0 });
+  const car = new Vehicle(w, SPEC, { position: { x, y: 0.6, z }, yaw: 0 });
   for (let i = 0; i < Math.round(1.5 / FIXED_DT); i++) {
     car.setInput(IDLE);
     car.prePhysicsStep(FIXED_DT);

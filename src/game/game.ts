@@ -9,7 +9,8 @@ import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import type { GearboxMode } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle, type Telemetry } from '../physics/vehicle';
-import { F4_CAR } from '../physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../physics/carSpec';
+import f4Json from '../../public/cars/f4.json';
 
 type World = ReturnType<typeof createPhysicsWorld>;
 
@@ -74,11 +75,11 @@ export class Game {
     this.current = current;
   }
 
-  static async create(track: TrackData | TrackDataV2): Promise<Game> {
+  static async create(track: TrackData | TrackDataV2, spec: CarSpec = parseCarSpec(f4Json)): Promise<Game> {
     await initPhysics();
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
-    const vehicle = new Vehicle(world, F4_CAR, spawn);
+    const vehicle = new Vehicle(world, spec, spawn);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [

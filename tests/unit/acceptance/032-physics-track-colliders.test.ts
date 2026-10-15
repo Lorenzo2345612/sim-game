@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   initPhysics,
   createPhysicsWorld,
@@ -6,7 +8,7 @@ import {
 } from '../../../src/physics/physicsWorld';
 import { surfaceOf } from '../../../src/physics/trackColliders';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type {
   BarrierSegment,
@@ -19,6 +21,15 @@ import type {
 import { fixture } from './022-fixture-trackdatav2';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 // Task 032 target signature: createPhysicsWorld(track?). The cast keeps this file
 // typechecking before and after physicsWorld.ts accepts the optional track.
@@ -153,7 +164,7 @@ describe('032 physics track colliders acceptance', () => {
 
   it('AT5: car body driven sideways at 10 m/s toward the barrier at x = 11 stops before crossing it', () => {
     world = createWorld(trackFlat);
-    car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: -30 }, yaw: 0 });
+    car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: -30 }, yaw: 0 });
     // Settle on the asphalt, then drive sideways (+x, toward the right barrier) at 10 m/s.
     for (let i = 0; i < Math.round(1.5 / FIXED_DT); i++) {
       car.setInput(IDLE);

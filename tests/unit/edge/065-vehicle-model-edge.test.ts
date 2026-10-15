@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
-import { VehicleModel as Vehicle } from '../../../src/physics/vehicleModel';
+import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput, SpawnPose, Surface, VehicleState } from '../../../src/core/types';

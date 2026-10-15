@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Gearbox, rpmFor } from '../../../src/physics/gearbox';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput } from '../../../src/core/types';
 
@@ -14,6 +16,15 @@ type VehicleWithGearbox = Vehicle & {
   shiftUp(): void;
   setGearMode(mode: 'auto' | 'manual'): void;
 };
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 const FULL: DriverInput = { throttle: 1, brake: 0, steer: 0, reset: false };
@@ -75,19 +86,19 @@ describe('045 gearbox acceptance', () => {
     expect(gb.gear).toBe(1);
   });
 
-  it('AT5: manual gear 2 at the 9000 rpm limiter gives zero drive force under throttle', () => {
+  it('AT5: manual gear 2 at the 6900 rpm limiter gives zero drive force under throttle', () => {
     world = createPhysicsWorld();
-    const car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+    const car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
     for (let i = 0; i < Math.round(1 / FIXED_DT); i++) step(car, world, IDLE);
     const v = car as VehicleWithGearbox;
     v.setGearMode('manual');
     v.shiftUp();
     expect(v.gear()).toBe(2);
-    // 40 m/s in gear 2 ≈ 9052 rpm, at/above the 9000 limiter.
+    // 40 m/s in gear 2 ≈ (40/0.28) × 1.68 × 3.5 × 60/2π ≈ 8021 rpm, at/above the 6900 limiter.
     car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -40 }, true);
     const v0 = car.getState().forwardSpeed;
     step(car, world, FULL);
-    expect(v.rpm()).toBeGreaterThanOrEqual(9000);
+    expect(v.rpm()).toBeGreaterThanOrEqual(SPEC.engine.limiterRpm);
     for (let i = 0; i < Math.round(1 / FIXED_DT) - 1; i++) step(car, world, FULL);
     expect(car.getState().forwardSpeed).toBeLessThanOrEqual(v0 + 0.1);
   }, 20000);

@@ -1,15 +1,25 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Game } from '../../../src/game/game';
 import { initPhysics } from '../../../src/physics/physicsWorld';
-import { IDLE_RPM } from '../../../src/physics/gearbox';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import type { DriverInput, Quat, TrackData } from '../../../src/core/types';
 
 const ROOT = new URL('../../..', import.meta.url);
 const mainPath = fileURLToPath(new URL('src/main.ts', ROOT));
 
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 // Same fixture as acceptance 017: closed circle r = 200 resampled at ~2 m.
 function circleTrack(r: number, spacing: number): TrackData {
@@ -83,7 +93,7 @@ describe('054 gameplay integration edges', () => {
   it('EDGE2: game exposes gear and rpm; at rest they are gear 1 and idle rpm', async () => {
     game = await Game.create(circleTrack(200, 2));
     expect(readNumeric(game, 'gear')).toBe(1);
-    expect(readNumeric(game, 'rpm')).toBeCloseTo(IDLE_RPM, 0);
+    expect(readNumeric(game, 'rpm')).toBeCloseTo(SPEC.engine.idleRpm, 0);
   });
 
   it('EDGE3: C cycles the camera, Q/E shift down/up, M toggles the gear mode auto/manual', () => {

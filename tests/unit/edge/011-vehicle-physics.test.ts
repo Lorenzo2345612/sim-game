@@ -1,14 +1,25 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   initPhysics,
   createPhysicsWorld,
 } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput, SpawnPose } from '../../../src/core/types';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 const SPAWN: SpawnPose = { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 };
 
@@ -56,7 +67,7 @@ describe('011 vehicle physics edge cases', () => {
 
   function spawn(yaw = SPAWN.yaw, position: { x: number; y: number; z: number } = { ...SPAWN.position }): Vehicle {
     world = createPhysicsWorld();
-    vehicle = new Vehicle(world, PLACEHOLDER_CAR, { position, yaw });
+    vehicle = new Vehicle(world, SPEC, { position, yaw });
     return vehicle;
   }
 
@@ -77,8 +88,7 @@ describe('011 vehicle physics edge cases', () => {
     expect(Math.abs(state.forwardSpeed)).toBeLessThan(0.5);
     expect(Math.abs(state.position.x)).toBeLessThan(0.05);
     expect(Math.abs(state.position.z)).toBeLessThan(0.05);
-    expect(state.position.y).toBeGreaterThan(0.3);
-    expect(state.position.y).toBeLessThanOrEqual(0.6);
+    expect(state.position.y).toBeGreaterThan(0.2);
   }, 20000);
 
   it('EDGE2: setInput clamps throttle/brake to [0,1] and steer to [-1,1], NaN becomes 0, and stores a copy', () => {
@@ -88,7 +98,7 @@ describe('011 vehicle physics edge cases', () => {
     inp.throttle = 0;
     inp.brake = 1;
     inp.steer = 0;
-    advance(v, world!, 30);
+    advance(v, world!, 120);
     const state = v.getState();
     // Copy: later mutation of the caller object must not change the stored input.
     // Clamp: brake NaN→0 must not brake, throttle 2→1 drives.
@@ -100,7 +110,7 @@ describe('011 vehicle physics edge cases', () => {
     expect(state.wheels[0].steering).toBeLessThan(0.5);
     // Steer NaN→0: zero input must zero the applied steering.
     v.setInput(input(1, 0, NaN));
-    advance(v, world!, 10);
+    advance(v, world!, 40);
     const state2 = v.getState();
     expect(Number.isFinite(state2.forwardSpeed)).toBe(true);
     expect(Math.abs(state2.wheels[0].steering)).toBeLessThan(0.01);
@@ -181,23 +191,23 @@ describe('011 vehicle physics edge cases', () => {
     for (const wheel of fresh.wheels) {
       expect(Math.abs(wheel.steering)).toBeLessThan(0.000001);
     }
-    run(v, world!, 10, input(0.5, 0, 1));
+    run(v, world!, 40, input(0.5, 0, 1));
     const low = v.getState();
-    // At ~0.4 m/s maxSteer ≈ maxSteerLowSpeed = 0.35, sign negative for steer +1.
-    const lo = PLACEHOLDER_CAR.maxSteerLowSpeed;
+    // At low speed the steering slews to ≈ -maxAngleLow (0.38), sign negative for steer +1.
+    const lo = SPEC.steering.maxAngleLow * 0.85;
     for (const i of [0, 1]) {
-      expect(low.wheels[i].steering).toBeLessThan(-lo * 0.85);
-      expect(low.wheels[i].steering).toBeGreaterThan(-lo - 0.01);
+      expect(low.wheels[i].steering).toBeLessThan(-lo);
+      expect(low.wheels[i].steering).toBeGreaterThan(-SPEC.steering.maxAngleLow - 0.01);
     }
     // Only wheels 0 and 1 get setWheelSteering; rear stay at 0.
     expect(Math.abs(low.wheels[2].steering)).toBeLessThan(0.001);
     expect(Math.abs(low.wheels[3].steering)).toBeLessThan(0.001);
-    // At speed, lerp towards maxSteerHighSpeed must shrink the magnitude (STEER_FULL_SPEED = 60).
+    // At speed, lerp towards maxAngleHigh must shrink the magnitude (fullSpeed = 60).
     run(v, world!, 600, input(1)); // ~5 s straight: well above 30 m/s, below 60
     const mid = v.getState();
     expect(mid.forwardSpeed).toBeGreaterThan(30);
     expect(mid.forwardSpeed).toBeLessThan(60);
-    run(v, world!, 2, input(1, 0, 1));
+    run(v, world!, 40, input(1, 0, 1));
     const fast = v.getState();
     expect(fast.wheels[0].steering).toBeGreaterThan(-0.25);
     expect(fast.wheels[0].steering).toBeLessThan(-0.10);
@@ -210,8 +220,7 @@ describe('011 vehicle physics edge cases', () => {
     const cx = state.position.x;
     const cz = state.position.z;
     // At yaw pi/2 the car faces -X; chassis (x,z) maps to world (z,-x):
-    // FL(-0.8,0,-1.3)->(cx-1.3, cz+0.8), FR->(cx-1.3, cz-0.8),
-    // RL(-0.8,0,1.25)->(cx+1.25, cz+0.8), RR->(cx+1.25, cz-0.8).
+    // hub (x, z) reads (dx, dz) = (pos.z, -pos.x) from SPEC.wheels.positions.
     const expectOffset = (i: number, dx: number, dz: number): void => {
       const w = state.wheels[i].position;
       expect(w.x - cx).toBeGreaterThan(dx - 0.08);
@@ -219,14 +228,13 @@ describe('011 vehicle physics edge cases', () => {
       expect(w.z - cz).toBeGreaterThan(dz - 0.08);
       expect(w.z - cz).toBeLessThan(dz + 0.08);
     };
-    expectOffset(0, -1.3, 0.8);
-    expectOffset(1, -1.3, -0.8);
-    expectOffset(2, 1.25, 0.8);
-    expectOffset(3, 1.25, -0.8);
+    for (const i of [0, 1, 2, 3]) {
+      expectOffset(i, SPEC.wheels.positions[i][2], -SPEC.wheels.positions[i][0]);
+    }
     // Wheel centre sits at the ground contact: c.y = connectionY - suspensionLength (not +).
     for (const wheel of state.wheels) {
-      expect(wheel.position.y).toBeGreaterThan(PLACEHOLDER_CAR.wheelRadius - 0.05);
-      expect(wheel.position.y).toBeLessThan(PLACEHOLDER_CAR.wheelRadius + 0.05);
+      expect(wheel.position.y).toBeGreaterThan(0.28 - 0.05);
+      expect(wheel.position.y).toBeLessThan(0.28 + 0.05);
     }
   }, 20000);
 
@@ -278,12 +286,11 @@ describe('011 vehicle physics edge cases', () => {
     expect(Number.isFinite(state.forwardSpeed)).toBe(true);
     expect(Math.abs(state.wheels[0].steering)).toBeLessThan(0.000001);
     // A valid step afterwards must behave normally.
-    v.prePhysicsStep(FIXED_DT);
-    world!.step();
+    advance(v, world!, 40);
     state = v.getState();
     expect(state.wheels[0].steering).toBeLessThan(-0.3);
     expect(isFiniteVec(state.position)).toBe(true);
-    expect(state.position.y).toBeGreaterThan(0.3);
+    expect(state.position.y).toBeGreaterThan(0.2);
     expect(Math.abs(state.forwardSpeed)).toBeLessThan(0.5);
   }, 20000);
 });

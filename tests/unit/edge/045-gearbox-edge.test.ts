@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Gearbox, rpmFor } from '../../../src/physics/gearbox';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput } from '../../../src/core/types';
 
@@ -15,6 +17,15 @@ type VehicleWithGearbox = Vehicle & {
   shiftDown(): void;
   setGearMode(mode: 'auto' | 'manual'): void;
 };
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 const FULL: DriverInput = { throttle: 1, brake: 0, steer: 0, reset: false };
@@ -32,7 +43,7 @@ function step(car: Vehicle, world: World, inp: DriverInput): void {
 }
 
 function settle(world: World): Vehicle {
-  const car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+  const car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
   for (let i = 0; i < Math.round(1 / FIXED_DT); i++) step(car, world, IDLE);
   return car;
 }
@@ -130,7 +141,7 @@ describe('045 gearbox edge cases', () => {
     const car = settle(world);
     const v = car as VehicleWithGearbox;
     expect(v.gear()).toBe(1);
-    expect(v.rpm()).toBeCloseTo(3000, 0);
+    expect(v.rpm()).toBeCloseTo(SPEC.engine.idleRpm, 0);
   }, 20000);
 
   it('EDGE8: the vehicle auto-upshifts during full-throttle acceleration', () => {
@@ -143,7 +154,7 @@ describe('045 gearbox edge cases', () => {
       if (car.getState().forwardSpeed >= 30) break;
     }
     expect(car.getState().forwardSpeed).toBeGreaterThanOrEqual(30);
-    // Gear 1 upshifts at ~27.0 m/s, gear 2 not until ~37.6 m/s.
+    // Gear 1 upshifts at (6400/60×2π)·0.28/(2.3·3.5) ≈ 23.3 m/s, gear 2 not until ≈ 31.9 m/s.
     expect(v.gear()).toBe(2);
   }, 20000);
 
@@ -169,13 +180,22 @@ describe('045 gearbox edge cases', () => {
     const v = car as VehicleWithGearbox;
     v.setGearMode('manual');
     v.shiftUp(); // gear 2
-    car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -40 }, true); // ≈ 9052 rpm, at the limiter
+    car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -40 }, true); // ≈ 8021 rpm, at the limiter
     step(car, world, FULL);
-    expect(v.rpm()).toBeGreaterThanOrEqual(9000);
+    expect(v.rpm()).toBeGreaterThanOrEqual(SPEC.engine.limiterRpm);
     expect(car.getState().forwardSpeed).toBeLessThanOrEqual(40.1);
-    car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -30 }, true); // ≈ 6788 rpm, below the limiter
-    const below = car.getState().forwardSpeed;
-    for (let i = 0; i < Math.round(0.5 / FIXED_DT); i++) step(car, world, FULL);
-    expect(car.getState().forwardSpeed).toBeGreaterThan(below + 1);
+    car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -30 }, true); // ≈ 6016 rpm, below the limiter
+    let maxRpm = v.rpm();
+    for (let i = 0; i < Math.round(0.5 / FIXED_DT); i++) {
+      step(car, world, FULL);
+      maxRpm = Math.max(maxRpm, v.rpm());
+    }
+    const atHalf = car.getState().forwardSpeed;
+    for (let i = 0; i < Math.round(1.5 / FIXED_DT); i++) {
+      step(car, world, FULL);
+      maxRpm = Math.max(maxRpm, v.rpm());
+    }
+    expect(car.getState().forwardSpeed).toBeGreaterThan(atHalf);
+    expect(maxRpm).toBeLessThanOrEqual(SPEC.engine.limiterRpm);
   }, 20000);
 });

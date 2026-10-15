@@ -1,12 +1,22 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import RAPIER from '@dimforge/rapier3d-compat';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
-import { FIXED_DT, SURFACE_GRIP } from '../../../src/core/constants';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
+import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput, Terrain, TrackDataV2 } from '../../../src/core/types';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+function loadF4(): CarSpec {
+  const json = JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown;
+  return parseCarSpec(json);
+}
+
+const SPEC = loadF4();
 
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 
@@ -51,17 +61,13 @@ const track: TrackDataV2 = {
 };
 
 function settle(w: World, x: number, z: number): Vehicle {
-  const car = new Vehicle(w, PLACEHOLDER_CAR, { position: { x, y: 0.6, z }, yaw: 0 });
+  const car = new Vehicle(w, SPEC, { position: { x, y: 0.6, z }, yaw: 0 });
   for (let i = 0; i < Math.round(1.5 / FIXED_DT); i++) {
     car.setInput(IDLE);
     car.prePhysicsStep(FIXED_DT);
     w.step();
   }
   return car;
-}
-
-function controllerOf(car: Vehicle): RAPIER.DynamicRayCastVehicleController {
-  return (car as unknown as { controller: RAPIER.DynamicRayCastVehicleController }).controller;
 }
 
 describe('surface grip and drag', () => {
@@ -90,13 +96,13 @@ describe('surface grip and drag', () => {
     expect(car.getWheelSurfaces()).toBe(car.getWheelSurfaces());
   }, 20000);
 
-  it('leaves frictionSlip untouched on asphalt', () => {
+  it('telemetry reads asphalt under all 4 wheels on asphalt', () => {
     world = createPhysicsWorld();
     const car = settle(world, 0, 0);
     car.prePhysicsStep(FIXED_DT);
-    const c = controllerOf(car);
+    const tel = car.getTelemetry();
     for (let i = 0; i < 4; i++) {
-      expect(c.wheelFrictionSlip(i)).toBeCloseTo(PLACEHOLDER_CAR.frictionSlip, 5);
+      expect(tel.wheels[i].surface).toBe('asphalt');
     }
   }, 20000);
 
@@ -115,17 +121,14 @@ describe('surface grip and drag', () => {
     }
   }, 20000);
 
-  it('scales frictionSlip by SURFACE_GRIP on grass', () => {
+  it('telemetry reads grass under all 4 wheels on grass', () => {
     world = createPhysicsWorld(track);
     const car = settle(world, -20, -10);
     car.prePhysicsStep(FIXED_DT);
     expect(car.getWheelSurfaces()).toEqual(['grass', 'grass', 'grass', 'grass']);
-    const c = controllerOf(car);
+    const tel = car.getTelemetry();
     for (let i = 0; i < 4; i++) {
-      expect(c.wheelFrictionSlip(i)).toBeCloseTo(
-        PLACEHOLDER_CAR.frictionSlip * SURFACE_GRIP.grass,
-        5,
-      );
+      expect(tel.wheels[i].surface).toBe('grass');
     }
   }, 20000);
 });

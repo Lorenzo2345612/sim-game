@@ -5,11 +5,20 @@ import { dirname, join } from 'node:path';
 import { Gearbox, rpmFor, IDLE_RPM, LIMITER_RPM, UPSHIFT_RPM, DOWNSHIFT_RPM } from '../../../src/physics/gearbox';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput } from '../../../src/core/types';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+const SPEC: CarSpec = parseCarSpec(
+  JSON.parse(
+    readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'public/cars/f4.json'),
+      'utf8',
+    ),
+  ) as unknown,
+);
 
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 const FULL: DriverInput = { throttle: 1, brake: 0, steer: 0, reset: false };
@@ -68,7 +77,7 @@ describe('045 gearbox post-code gaps', () => {
 
   it('a reversing vehicle drops back to gear 1 and reads rpm from the speed magnitude', async () => {
     world = createPhysicsWorld();
-    const car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+    const car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
     for (let i = 0; i < Math.round(1 / FIXED_DT); i++) step(car, world, IDLE);
     for (let i = 0; i < Math.round(8 / FIXED_DT); i++) {
       step(car, world, FULL);
@@ -79,18 +88,26 @@ describe('045 gearbox post-code gaps', () => {
     step(car, world, IDLE);
     expect(car.gear()).toBe(1);
     expect(car.rpm()).toBeGreaterThan(IDLE_RPM);
-    expect(car.rpm()).toBeCloseTo(rpmFor(Math.abs(car.getState().forwardSpeed), 1), 0);
+    // F4 formula: |v|/0.28 × 2.3 × 3.5 × 60/2π, clamped at the 1200 idle.
+    const expectedRpm = Math.max(
+      (Math.abs(car.getState().forwardSpeed) / SPEC.wheels.radius) *
+        SPEC.gearbox.ratios[0] *
+        SPEC.gearbox.final *
+        (60 / (2 * Math.PI)),
+      SPEC.engine.idleRpm,
+    );
+    expect(car.rpm()).toBeCloseTo(expectedRpm, 0);
   }, 20000);
 
   it('a vehicle sliding sideways reads idle rpm and stays in gear 1', async () => {
     world = createPhysicsWorld();
-    const car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+    const car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
     for (let i = 0; i < Math.round(1 / FIXED_DT); i++) step(car, world, IDLE);
     car.body.setLinvel({ x: 20, y: car.body.linvel().y, z: 0 }, true);
     step(car, world, IDLE);
     expect(car.getState().forwardSpeed).toBeCloseTo(0, 1);
     expect(car.gear()).toBe(1);
-    expect(car.rpm()).toBeCloseTo(IDLE_RPM, 0);
+    expect(Math.abs(car.rpm() - SPEC.engine.idleRpm)).toBeLessThanOrEqual(100);
   }, 20000);
 
   it('gearbox.ts imports nothing outside src/core (acceptance criterion)', () => {
@@ -119,7 +136,7 @@ describe('045 gearbox post-code gaps', () => {
 
   it('vehicle gearbox.update is skipped on invalid dt and runs once even for a huge dt', () => {
     world = createPhysicsWorld();
-    const car = new Vehicle(world, PLACEHOLDER_CAR, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+    const car = new Vehicle(world, SPEC, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
     for (let i = 0; i < Math.round(1 / FIXED_DT); i++) step(car, world, IDLE);
     car.body.setLinvel({ x: 0, y: car.body.linvel().y, z: -50 }, true);
     car.prePhysicsStep(0);

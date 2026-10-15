@@ -1,11 +1,19 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
 import { Vehicle } from '../../../src/physics/vehicle';
-import { PLACEHOLDER_CAR, type VehicleConfig } from '../../../src/physics/vehicleConfig';
+import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { FIXED_DT } from '../../../src/core/constants';
 import type { DriverInput, VehicleState } from '../../../src/core/types';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+const SPEC: CarSpec = parseCarSpec(
+  JSON.parse(
+    readFileSync(join(__dirname, '..', '..', '..', 'public', 'cars', 'f4.json'), 'utf8'),
+  ) as unknown,
+);
 
 function input(throttle: number, brake = 0, steer = 0): DriverInput {
   return { throttle, brake, steer, reset: false };
@@ -29,11 +37,11 @@ describe('011 vehicle physics post-code gaps', () => {
     worlds.length = 0;
   });
 
-  function make(overrides: Partial<VehicleConfig> = {}): Vehicle {
+  function make(overrides: Partial<CarSpec> = {}): Vehicle {
     const world = createPhysicsWorld();
     worlds.push(world);
-    const cfg: VehicleConfig = { ...PLACEHOLDER_CAR, ...overrides };
-    vehicle = new Vehicle(world, cfg, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
+    const spec: CarSpec = { ...SPEC, ...overrides };
+    vehicle = new Vehicle(world, spec, { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
     return vehicle;
   }
 
@@ -98,8 +106,8 @@ describe('011 vehicle physics post-code gaps', () => {
     expect(a.position.z).toBeCloseTo(b.position.z, 9);
   }, 20000);
 
-  it('POST3: brake impulse scales with config.brakeMax (brakeMax=0 cannot brake)', () => {
-    const v = make({ brakeMax: 0 });
+  it('POST3: brake impulse scales with brakes.maxTorque (maxTorque=0 cannot brake)', () => {
+    const v = make({ brakes: { ...SPEC.brakes, maxTorque: 0 } });
     const w = worldOf(v);
     expect(accelerateUntil(v, w, 20, 8)).toBeGreaterThanOrEqual(0);
     const v0 = v.getState().forwardSpeed;
@@ -108,27 +116,27 @@ describe('011 vehicle physics post-code gaps', () => {
     expect(v0 - v1).toBeLessThan(3);
   }, 20000);
 
-  it('POST4: low-speed drive force caps at config.maxDriveForceN, slowing 0-100 far below the default band', () => {
-    const v = make({ maxDriveForceN: 2000 });
-    const w = worldOf(v);
-    const elapsed = accelerateUntil(v, w, 27.78, 20);
-    expect(elapsed).toBeGreaterThanOrEqual(6);
-    expect(elapsed).toBeLessThanOrEqual(16);
+  it('POST5: top speed scales with the torque curve (quarter torque stays under 85 % of stock)', () => {
+    const weak = make({
+      engine: {
+        ...SPEC.engine,
+        torqueCurve: SPEC.engine.torqueCurve.map(([rpm, t]) => [rpm, t * 0.25] as [number, number]),
+      },
+    });
+    const ww = worldOf(weak);
+    const base = make();
+    const bw = worldOf(base);
+    run(weak, ww, 30, input(1));
+    run(base, bw, 30, input(1));
+    const fsWeak = weak.getState().forwardSpeed;
+    const fsBase = base.getState().forwardSpeed;
+    expect(fsWeak).toBeLessThan(fsBase * 0.85);
   }, 20000);
 
-  it('POST5: top speed scales with config.enginePowerW (quarter power lands well under the default 55-66 band)', () => {
-    const v = make({ enginePowerW: 32500 });
-    const w = worldOf(v);
-    run(v, w, 30, input(1));
-    const fs = v.getState().forwardSpeed;
-    expect(fs).toBeGreaterThan(30);
-    expect(fs).toBeLessThan(50);
-  }, 20000);
-
-  it('POST6: coast-down deceleration comes from config.dragAreaCdA (CdA=0 coasts almost free)', () => {
+  it('POST6: coast-down deceleration comes from aero.cda (CdA=0 coasts almost free)', () => {
     const a = make();
     const wa = worldOf(a);
-    const b = make({ dragAreaCdA: 0 });
+    const b = make({ aero: { ...SPEC.aero, cda: 0 } });
     const wb = worldOf(b);
     expect(accelerateUntil(a, wa, 45, 30)).toBeGreaterThanOrEqual(0);
     expect(accelerateUntil(b, wb, 45, 30)).toBeGreaterThanOrEqual(0);
