@@ -34,6 +34,7 @@ import { createPitBuilding, createStartGantry, createStartLights } from './rende
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
 import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
+import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
 import { buildTrackSurfaces } from './track/surfaces';
@@ -65,6 +66,7 @@ export interface SceneStats {
   liveryPrimary: string;
   directionalLights: number;
   maxWhiteAlbedo: number;
+  decals: number;
 }
 
 declare global {
@@ -357,6 +359,7 @@ async function startGame(trackId: string): Promise<void> {
     liveryPrimary: '',
     directionalLights: 0,
     maxWhiteAlbedo: 0,
+    decals: 0,
   };
 
   if ('version' in track) {
@@ -457,6 +460,12 @@ async function startGame(trackId: string): Promise<void> {
   const liveryBounds = paintBounds(car.root, paintMaterials);
   let playerLivery = loadLivery(window.localStorage, carSpec.id);
   applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
+  const carBounds = new THREE.Box3().setFromObject(car.root);
+  // Body rest pose at the capture of carBounds: the body moves under the always-identity car.root.
+  car.root.updateMatrixWorld(true);
+  const restWorld = new THREE.Matrix4().copy((car.root.getObjectByName('body') ?? car.root).matrixWorld);
+  let decalMeshes = addNumberDecals(car.root, carBounds, playerLivery.number, 0.35, restWorld);
+  stats.decals = decalMeshes.length;
 
   const carBox = new THREE.Box3();
   const carCorner = new THREE.Vector3();
@@ -878,8 +887,15 @@ async function startGame(trackId: string): Promise<void> {
     teleportToIndex: (i: number) => game.teleportToIndex(i),
     audioPaused: () => engineAudio?.paused ?? false,
     setLivery: (l: Partial<Livery>) => {
+      const prevNumber = playerLivery.number;
       playerLivery = { ...playerLivery, ...l };
       applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
+      if (playerLivery.number !== prevNumber) {
+        disposeNumberDecals(decalMeshes);
+        car.root.updateMatrixWorld(true);
+        decalMeshes = addNumberDecals(car.root, carBounds, playerLivery.number, 0.35, restWorld);
+        stats.decals = decalMeshes.length;
+      }
     },
   };
 }
