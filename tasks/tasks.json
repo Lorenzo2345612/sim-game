@@ -1562,7 +1562,7 @@
     {
       "num": "115",
       "title": "Cockpit data per car (eye, steering wheel anchor, lock)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "066",
@@ -1655,7 +1655,7 @@
     {
       "num": "121",
       "title": "Race number decals",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "120"
       ],
