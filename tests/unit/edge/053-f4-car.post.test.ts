@@ -155,7 +155,7 @@ describe('053 F4 car model post checks', () => {
   it('POST2: f4.json has exactly the documented keys, finite positive values and 6-decimal rounding', async () => {
     const { meta, rawMeta } = await load();
     expect(Object.keys(rawMeta).sort()).toEqual(
-      ['wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
+      ['paintMaterials', 'wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
     );
     expect(Array.isArray(meta.wheels)).toBe(true);
     expect(meta.wheels).toHaveLength(4);

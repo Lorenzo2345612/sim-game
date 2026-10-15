@@ -450,6 +450,7 @@ export async function buildF4(options: BuildF4Options = {}): Promise<void> {
   }
 
   const meta = {
+    paintMaterials: ['livery'],
     wheelRadius: round6(wheelRadius),
     wheelbase: round6(Math.abs(wheelMeta[0].z - wheelMeta[2].z)),
     trackFront: round6(Math.abs(wheelMeta[1].x - wheelMeta[0].x)),

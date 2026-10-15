@@ -176,7 +176,7 @@ describe('112 prototype models edges', () => {
     for (const { id } of NEW_CARS) {
       const { meta } = await ensureBuilt(id);
       expect(Object.keys(meta).sort(), id).toEqual(
-        ['wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
+        ['paintMaterials', 'wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
       );
       expect(meta.wheels.length, id).toBe(4);
       expect(meta.wheels.map((w) => w.name).sort(), id).toEqual([...WHEEL_NODE_NAMES].sort());

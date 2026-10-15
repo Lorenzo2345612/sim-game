@@ -845,7 +845,28 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
   const zFront = (fl.z + fr.z) / 2;
   const zRear = (bl.z + br.z) / 2;
 
+  // 071 POST6/POST7 pin builds whose livery patterns matched nothing as successful and
+  // without a livery material, so those cars name their largest body material instead.
+  const materialTriangles = new Map<string, number>();
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const name = prim.getMaterial()?.getName() ?? '';
+      const idx = prim.getIndices();
+      const pos = prim.getAttribute('POSITION');
+      const n = idx ? idx.getCount() / 3 : pos ? pos.getCount() / 3 : 0;
+      materialTriangles.set(name, (materialTriangles.get(name) ?? 0) + n);
+    }
+  }
+  const bySize = (a: [string, number], b: [string, number]): number => b[1] - a[1];
+  const bodyPick = [...materialTriangles.entries()].filter(([n]) => /^body_\d+$/.test(n)).sort(bySize)[0];
+  const wheelPick = [...materialTriangles.entries()]
+    .filter(([n]) => n === 'rim' || n === 'tyre')
+    .sort(bySize)[0];
+  const paintMaterials = doc.getRoot().listMaterials().some((m) => m.getName() === 'livery')
+    ? ['livery']
+    : [bodyPick ? bodyPick[0] : (wheelPick?.[0] ?? 'rim')];
   const meta = {
+    paintMaterials,
     wheelRadius: round6(wheelRadius),
     wheelbase: round6(Math.abs(zFront - zRear)),
     trackFront: round6(Math.abs(fr.x - fl.x)),

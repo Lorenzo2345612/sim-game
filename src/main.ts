@@ -10,6 +10,7 @@ import { loadPreset, parseQuality, presetSettings, type Preset } from './core/se
 import type { DriverInput, LapEvent, Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
+import { loadLivery, type Livery } from './game/livery';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec } from './physics/carSpec';
@@ -32,6 +33,7 @@ import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
+import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
 import { buildTrackSurfaces } from './track/surfaces';
@@ -59,6 +61,8 @@ export interface SceneStats {
   horizonColor: [number, number, number];
   fogColor: [number, number, number];
   groundTexture: string | null;
+  carScreenRect: { x: number; y: number; w: number; h: number };
+  liveryPrimary: string;
 }
 
 declare global {
@@ -82,6 +86,7 @@ declare global {
       preset(): Preset;
       teleportToIndex(i: number): void;
       audioPaused(): boolean;
+      setLivery(l: Partial<Livery>): void;
     };
   }
 }
@@ -250,6 +255,21 @@ function presetFromQuery(storage: Storage): Preset {
     : loadPreset(storage);
 }
 
+/** Union of the paint meshes' geometry boxes, in the car model space the shader samples. */
+function paintBounds(root: THREE.Object3D, paintMaterials: string[]): THREE.Box3 {
+  const bounds = new THREE.Box3();
+  const box = new THREE.Box3();
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    if (!materials.some((m) => paintMaterials.includes(m.name))) return;
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    if (mesh.geometry.boundingBox) bounds.union(box.copy(mesh.geometry.boundingBox));
+  });
+  return bounds;
+}
+
 async function loadGradeLut(): Promise<{ size: number; data: Float32Array } | null> {
   try {
     const res = await fetch('/luts/grade.cube');
@@ -317,6 +337,8 @@ async function startGame(trackId: string): Promise<void> {
     horizonColor: [0, 0, 0],
     fogColor: [0, 0, 0],
     groundTexture: null,
+    carScreenRect: { x: 0, y: 0, w: 0, h: 0 },
+    liveryPrimary: '',
   };
 
   if ('version' in track) {
@@ -406,6 +428,39 @@ async function startGame(trackId: string): Promise<void> {
   });
   scene.add(car.root);
   disposables.push(car);
+
+  const modelRes = await fetch('/models/f4.json');
+  const modelMeta = modelRes.ok ? ((await modelRes.json()) as { paintMaterials?: string[] }) : {};
+  const paintMaterials = modelMeta.paintMaterials ?? [];
+  const liveryBounds = paintBounds(car.root, paintMaterials);
+  let playerLivery = loadLivery(window.localStorage, carSpec.id);
+  applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
+
+  const carBox = new THREE.Box3();
+  const carCorner = new THREE.Vector3();
+  const carScreenRect = (): { x: number; y: number; w: number; h: number } => {
+    carBox.setFromObject(car.root);
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      carCorner
+        .set(
+          i & 1 ? carBox.max.x : carBox.min.x,
+          i & 2 ? carBox.max.y : carBox.min.y,
+          i & 4 ? carBox.max.z : carBox.min.z,
+        )
+        .project(camera);
+      const sx = (carCorner.x * 0.5 + 0.5) * window.innerWidth;
+      const sy = (-carCorner.y * 0.5 + 0.5) * window.innerHeight;
+      if (sx < minX) minX = sx;
+      if (sx > maxX) maxX = sx;
+      if (sy < minY) minY = sy;
+      if (sy > maxY) maxY = sy;
+    }
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  };
 
   const ghostCar = await CarRenderer.load('/models/f4.glb', -(F4_CAR.suspensionRestLength + F4_CAR.wheelRadius));
   ghostCar.makeGhost();
@@ -773,6 +828,8 @@ async function startGame(trackId: string): Promise<void> {
       const fog = scene.fog;
       return {
         ...stats,
+        carScreenRect: carScreenRect(),
+        liveryPrimary: liveryPrimaryOf(car.root) ?? '',
         sky: scene.background !== null,
         shadows: handle.renderer.shadowMap.enabled,
         ibl: scene.environment !== null,
@@ -791,6 +848,10 @@ async function startGame(trackId: string): Promise<void> {
     preset: () => preset,
     teleportToIndex: (i: number) => game.teleportToIndex(i),
     audioPaused: () => engineAudio?.paused ?? false,
+    setLivery: (l: Partial<Livery>) => {
+      playerLivery = { ...playerLivery, ...l };
+      applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
+    },
   };
 }
 

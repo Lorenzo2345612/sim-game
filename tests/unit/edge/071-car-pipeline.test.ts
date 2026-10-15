@@ -169,7 +169,7 @@ describe('071 car pipeline edges', () => {
     for (const id of ALL_IDS) {
       const { meta } = await load(id);
       expect(Object.keys(meta).sort(), id).toEqual(
-        ['wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
+        ['paintMaterials', 'wheelRadius', 'wheelbase', 'trackFront', 'trackRear', 'wheels'].sort(),
       );
       expect(meta.wheels.length, id).toBe(4);
       expect(meta.wheels.map((w) => w.name).sort(), id).toEqual([...WHEEL_NODE_NAMES].sort());

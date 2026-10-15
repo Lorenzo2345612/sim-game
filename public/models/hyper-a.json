@@ -1,4 +1,7 @@
 {
+  "paintMaterials": [
+    "rim"
+  ],
   "wheelRadius": 0.362521,
   "wheelbase": 3.232731,
   "trackFront": 1.683013,

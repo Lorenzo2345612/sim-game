@@ -1,4 +1,7 @@
 {
+  "paintMaterials": [
+    "livery"
+  ],
   "wheelRadius": 0.330492,
   "wheelbase": 2.659399,
   "trackFront": 1.750531,
