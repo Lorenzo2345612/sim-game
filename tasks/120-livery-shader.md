@@ -20,7 +20,8 @@ Design: `docs/plans/game-features.md` section 120. Pipeline: `tools/assets/build
 
 ## Files
 
-- `tools/assets/buildCar.ts`, `tools/assets/buildF4.ts` — modify: output json gains `"paintMaterials": ["livery"]` (only if the glb contains a material named `livery`; else fail the build).
+- `tools/assets/buildCar.ts`, `tools/assets/buildF4.ts` — modify: output json gains `"paintMaterials": ["livery"]` (`["livery"]` when the merged livery material exists, else the largest-triangle `body_<n>` material, else the largest rim/tyre material; never fail the build).
+- Planner-authorised test edits (exactly these): add `'paintMaterials'` to the expected json key lists in `tests/unit/edge/053-f4-car.post.test.ts:157`, `tests/unit/edge/071-car-pipeline.test.ts:171` and `tests/unit/edge/112-prototype-models.test.ts:178`.
 - `public/models/*.json` (f4, gt3-a, gt3-b, gt3-c, gt3-d and any prototype that has a model json) — modify: add `paintMaterials` (re-run `npm run build:cars` / `build:f4`, or edit by hand if the sources are not available; each name must exist in the glb).
 - `src/render/liveryMaterial.ts` — create.
 - `src/main.ts` — modify: apply the saved/default livery to the player car; `__SIMGAME__.setLivery(l: Partial<Livery>)` and `sceneStats().carScreenRect: {x:number;y:number;w:number;h:number}` (pixels of the player car's projected bounding box).
