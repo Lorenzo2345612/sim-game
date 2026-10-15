@@ -871,7 +871,7 @@
     {
       "num": "065",
       "title": "Vehicle model on Rapier (part 1)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "059",
