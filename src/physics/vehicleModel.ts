@@ -7,6 +7,7 @@ import { surfaceOf } from './trackColliders';
 import { rollingDrag } from './surfaceDrag';
 import { antiRoll, staticCompression, suspensionForce } from './suspension';
 import { relaxAlpha, V_LOW } from './tyre';
+import { dirtGripFactor, updateDirt } from './tyreDirt';
 import { gripFactor, newTyreState, updateTyreState, TyreState } from './tyreState';
 import { diffSplit, engineRpm, engineTorque } from './powertrain';
 import { absScale, brakeTorques, tcScale } from './brakes';
@@ -39,7 +40,7 @@ function clampControl(v: number, min: number, max: number): number {
 }
 
 function emptyWheel(): WheelTelemetry {
-  return { fz: 0, kappa: 0, alpha: 0, tempC: 0, wear: 0, surface: 'asphalt' };
+  return { fz: 0, kappa: 0, alpha: 0, tempC: 0, wear: 0, dirt: 0, surface: 'asphalt' };
 }
 
 export interface WheelTelemetry {
@@ -48,6 +49,7 @@ export interface WheelTelemetry {
   alpha: number;
   tempC: number;
   wear: number;
+  dirt?: number; // optional: pre-065 casts in tests declare the shape without it
   surface: Surface;
 }
 
@@ -84,6 +86,7 @@ interface WheelModel {
   vl: number;
   vt: number; // hub velocity in the wheel frame
   surface: Surface;
+  dirt: number;
   tyre: TyreState;
   steer: number;
 }
@@ -115,6 +118,7 @@ function newWheel(mount: [number, number, number], x0: number, pos: [number, num
     vl: 0,
     vt: 0,
     surface: 'asphalt',
+    dirt: 0,
     tyre: newTyreState(),
     steer: 0,
   };
@@ -353,6 +357,12 @@ export class VehicleModel {
       w.fzBase = suspensionForce(axle, xRaw, xdot);
     }
 
+    // Dirt pickup/clean per wheel, from the surface just sampled.
+    for (let i = 0; i < 4; i++) {
+      const w = wheels[i];
+      w.dirt = updateDirt(w.dirt, w.surface, forwardSpeed, dt);
+    }
+
     // Anti-roll bars, then vertical load.
     for (let a = 0; a < 2; a++) {
       const l = wheels[a * 2];
@@ -404,7 +414,8 @@ export class VehicleModel {
       w.alpha = relaxAlpha(w.alpha, Math.atan2(vt, Math.max(Math.abs(vl), V_LOW)), vl, dt);
       w.grip =
         gripFactor(this.compoundSpec, w.tyre, this.pressureKpa, spec.tyres.optPressureKpa) *
-        SURFACE_GRIP[w.surface];
+        SURFACE_GRIP[w.surface] *
+        dirtGripFactor(w.dirt, w.surface);
     }
 
     // Powertrain, brakes and aids. Update without pedals: the 045 standstill
@@ -585,6 +596,7 @@ export class VehicleModel {
       tel.alpha = w.alpha;
       tel.tempC = w.tyre.tempC;
       tel.wear = w.tyre.wear;
+      tel.dirt = w.dirt;
       tel.surface = tmpSurfaces[i];
     }
     t.fuelKg = this.tank.massKg;
@@ -651,6 +663,7 @@ export class VehicleModel {
       w.rotation = 0;
       w.alpha = 0;
       w.kappa = 0;
+      w.dirt = 0;
       w.x = w.x0;
       w.fz = 0;
       w.vl = 0;
