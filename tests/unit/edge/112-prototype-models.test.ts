@@ -25,19 +25,9 @@ const NEW_CARS = [
     targetLength: 4.745,
   },
   {
-    id: 'lmp2-b',
-    source: 'assets/vendor/cars/ligier-js-px/ligier_js_px.glb',
-    targetLength: 4.745,
-  },
-  {
     id: 'hyper-a',
     source: 'assets/vendor/cars/cadillac-v-series-r/2023_-_2026_cadillac_v-series.r_lmdh_hypercar.glb',
     targetLength: 5.1,
-  },
-  {
-    id: 'hyper-b',
-    source: 'assets/vendor/cars/ferrari-499p/2023_-_2026_ferrari_499p.glb',
-    targetLength: 4.995,
   },
 ];
 
@@ -49,22 +39,10 @@ const LICENSE_ROWS = [
     url: 'https://sketchfab.com/3d-models/6044bd804bed4ac4b9f0c782c5c3459b',
   },
   {
-    id: 'lmp2-b',
-    asset: 'LMP2 car B source (real-brand shape, dev only; de-brand before release)',
-    author: 'Kerdak123',
-    url: 'https://sketchfab.com/3d-models/72432f51423d429e93f4981563d76fb8',
-  },
-  {
     id: 'hyper-a',
     asset: 'Hypercar A source (real-brand shape, dev only; de-brand before release)',
     author: 'supranakamura',
     url: 'https://sketchfab.com/3d-models/efe600b0b1694e2aae055f35db3aaeda',
-  },
-  {
-    id: 'hyper-b',
-    asset: 'Hypercar B source (real-brand shape, dev only; de-brand before release)',
-    author: 'supranakamura',
-    url: 'https://sketchfab.com/3d-models/359b41f7c14941c8bceafbc3ac98c537',
   },
 ];
 

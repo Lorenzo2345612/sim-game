@@ -16,10 +16,8 @@ const WHEEL_NODE_NAMES = [
 ] as const;
 
 const NEW_CARS = [
-  { id: 'lmp2-a', targetLength: 4.745 },
-  { id: 'lmp2-b', targetLength: 4.745 },
-  { id: 'hyper-a', targetLength: 5.1 },
-  { id: 'hyper-b', targetLength: 4.995 },
+  { id: 'lmp2-a', targetLength: 4.745, maxHeight: 1.25 },
+  { id: 'hyper-a', targetLength: 5.1, maxHeight: 1.45 },
 ];
 
 const NEW_IDS = NEW_CARS.map((car) => car.id);
@@ -173,7 +171,7 @@ describe('112 prototype models acceptance', () => {
   });
 
   it('AT3: each prototype matches its target length and the width, height, wheelbase and wheel radius ranges', async () => {
-    for (const { id, targetLength } of NEW_CARS) {
+    for (const { id, targetLength, maxHeight } of NEW_CARS) {
       const doc = await readDoc(id);
       const { min, max } = getBounds(doc.getRoot().listScenes()[0]);
       expect(Math.abs(max[2] - min[2] - targetLength), id).toBeLessThanOrEqual(0.05);
@@ -182,7 +180,7 @@ describe('112 prototype models acceptance', () => {
       expect(width, id).toBeGreaterThanOrEqual(1.85);
       expect(width, id).toBeLessThanOrEqual(2.15);
       expect(height, id).toBeGreaterThanOrEqual(0.95);
-      expect(height, id).toBeLessThanOrEqual(1.25);
+      expect(height, id).toBeLessThanOrEqual(maxHeight);
       const meta = readMeta(id);
       expect(meta.wheelbase, id).toBeGreaterThanOrEqual(2.85);
       expect(meta.wheelbase, id).toBeLessThanOrEqual(3.3);

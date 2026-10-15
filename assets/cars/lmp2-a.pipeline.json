@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/cars/katattak-ka01/katattak_ka01_lmp2_prototype_full.glb",
+  "forward": "-z",
+  "targetLength": 4.745,
+  "wheelMaterials": ["customtire"],
+  "liveryMaterials": [],
+  "triBudget": 70000,
+  "outGlb": "public/models/lmp2-a.glb",
+  "outJson": "public/models/lmp2-a.json"
+}

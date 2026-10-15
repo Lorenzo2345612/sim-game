@@ -23,6 +23,8 @@
 | GT3 car B source (real-brand shape, dev only; de-brand before release) | `assets/vendor/cars/porsche-911-gt3-rsr/2022_porche_911_gt3_rsr.glb` | No Limits, Sketchfab | CC-BY 4.0 | https://sketchfab.com/3d-models/6370209fd29e4752b53fea3dcceeea13 | no |
 | GT3 low-poly car source (real-brand shape, dev only; de-brand before release) | `assets/vendor/cars/audi-r8-gt3-lowpoly/low_poly_audi_r8_gt3.glb` | Mauro3D, Sketchfab | CC-BY 4.0 | https://sketchfab.com/3d-models/d71e1fce9acd4adb93c5ca927fee9531 | no |
 | GT3 car D source (real-brand shape and baked logos, dev only; license is the uploader's claim, possibly sim-extracted: verify or replace before release) | `assets/vendor/cars/mustang-gt3/ford_mustang_gt3.glb` | MattDoesBlender, Sketchfab | CC-BY 4.0 | https://sketchfab.com/3d-models/545a596dde5f464ab166662dd48e57a0 | no |
+| LMP2 car A source (original design) | `assets/vendor/cars/katattak-ka01/katattak_ka01_lmp2_prototype_full.glb` | mosigana, Sketchfab | CC-BY 4.0 | https://sketchfab.com/3d-models/6044bd804bed4ac4b9f0c782c5c3459b | no |
+| Hypercar A source (real-brand shape, dev only; de-brand before release) | `assets/vendor/cars/cadillac-v-series-r/2023_-_2026_cadillac_v-series.r_lmdh_hypercar.glb` | supranakamura, Sketchfab | CC-BY 4.0 | https://sketchfab.com/3d-models/efe600b0b1694e2aae055f35db3aaeda | no |
 | asphalt-track asphalt_track | `public/textures/asphalt-track/` | Dimitrios Savva, Poly Haven | CC0 1.0 | https://polyhaven.com/a/asphalt_track | no |
 | grass-mown Grass008 | `public/textures/grass-mown/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Grass008 | no |
 | grass-dark Grass003 | `public/textures/grass-dark/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/Grass003 | no |

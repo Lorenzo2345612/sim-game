@@ -1,0 +1,10 @@
+{
+  "source": "assets/vendor/cars/cadillac-v-series-r/2023_-_2026_cadillac_v-series.r_lmdh_hypercar.glb",
+  "forward": "-z",
+  "targetLength": 5.1,
+  "wheelMaterials": ["tier1mtl", "rim1mtl", "disc1mtl", "caliper1mtl"],
+  "liveryMaterials": [],
+  "triBudget": 70000,
+  "outGlb": "public/models/hyper-a.glb",
+  "outJson": "public/models/hyper-a.json"
+}
