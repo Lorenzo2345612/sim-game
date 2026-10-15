@@ -2376,7 +2376,7 @@
     {
       "num": "172",
       "title": "Lighting calibration: one sun, tamer whites and bloom",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "106"
       ],
@@ -2389,7 +2389,7 @@
     {
       "num": "173",
       "title": "Pit building only along the straight",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "106"
       ],
@@ -2398,6 +2398,34 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/173-pit-building-straight.md"
+    },
+    {
+      "num": "174",
+      "title": "Track banking (cross-slope) + Daytona",
+      "status": "pending",
+      "deps": [
+        "106",
+        "155"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/174-track-banking-daytona.md"
+    },
+    {
+      "num": "175",
+      "title": "Fontana banking data",
+      "status": "pending",
+      "deps": [
+        "168",
+        "174"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/175-fontana-banking.md"
     }
   ]
 }
