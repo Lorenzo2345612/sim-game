@@ -2290,7 +2290,7 @@
     {
       "num": "166",
       "title": "Dirty tyres",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "065",
         "169",

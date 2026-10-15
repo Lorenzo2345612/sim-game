@@ -167,7 +167,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
-| 166 | Dirty tyres | in progress | 065, 169, 162 |
+| 166 | Dirty tyres | done | 065, 169, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | done | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
