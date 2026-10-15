@@ -38,7 +38,7 @@ Conventions: fixed-step determinism kept (no `Math.random` or wall-clock in simu
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | e2e `/?track=monza` | 5 s throttle | speed > 100 km/h, `telemetry().wheels` length 4 with finite values, fuel decreasing |
-| AT2 | unit: elkhart track JSON; f4 spec through `loadSetup('f4','elkhart',spec,storage)` + `applySetup` with a fake storage holding rearWing 0, then 10 | `Game.create(track, spec)`, 1200 `step()` calls at full throttle | wing 10 forward speed lower by > 1.5 km/h (lab: 2.6) |
+| AT2 | unit: elkhart track JSON; f4 spec through `loadSetup('f4','elkhart',spec,storage)` + `applySetup` with a fake storage holding rearWing 0, then 10 | `Game.create(track, spec)`, 1200 `step()` calls at full throttle | wing 10 forward speed lower by > 1.5 km/h (planner Game probe: 158.53 vs 156.25, delta 2.27) |
 | AT3 | e2e: `?wear=5` vs `?wear=1`, same 6 s full-throttle script (car stays on the Monza straight) | wear ratio | in [4, 6] |
 | AT4 | e2e `/?track=monza` at ≥ 120 km/h | full brake + full steer for 2 s of sim time | \|`getHeading()` − velocity direction\| < 30° throughout (no spin) |
 | AT5 | Verification commands | run | pass (verification gate; no dedicated test) |
