@@ -22,12 +22,12 @@
     "optPressureKpa": 140,
     "compounds": {
       "medium": {
-        "mu0": 1.65, "Fz0": 2000, "loadSens": 0.1,
+        "mu0": 1.716, "Fz0": 2000, "loadSens": 0.1,
         "Bx": 14, "Cx": 1.55, "Ex": 0,
         "By": 9, "Cy": 1.6, "Ey": 0,
         "optTempC": 90, "tempWindowC": 40,
         "heatCoef": 1.2e-4, "coolCoef": 0.002,
-        "wearRate": 4e-8, "wearGripLoss": 0.25, "cliffWear": 0.8
+        "wearRate": 5e-8, "wearGripLoss": 0.25, "cliffWear": 0.8
       }
     }
   },
@@ -38,7 +38,7 @@
   },
   "gearbox": { "ratios": [2.3, 1.68, 1.33, 1.1, 0.93, 0.8], "final": 3.5, "reverse": 2.5, "upRpm": 6400, "downRpm": 3200, "shiftTime": 0.15, "efficiency": 0.92 },
   "diff": { "type": "lsd", "preload": 40, "lockPower": 0.35, "lockCoast": 0.2 },
-  "brakes": { "maxTorque": 4200, "bias": 0.6 },
+  "brakes": { "maxTorque": 4000, "bias": 0.6 },
   "aids": { "abs": { "enabled": true, "slip": 0.12 }, "tc": { "enabled": true, "slip": 0.2 } },
   "fuel": { "capacityL": 40, "densityKgL": 0.745, "bsfc": 250, "startL": 20 }
 }
