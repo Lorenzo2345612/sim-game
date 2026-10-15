@@ -163,7 +163,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
-| 162 | Speed-dependent rolling drag on grass and gravel | pending | 065, 169 |
+| 162 | Speed-dependent rolling drag on grass and gravel | in progress | 065, 169 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
@@ -171,3 +171,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
+| 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |

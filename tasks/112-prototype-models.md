@@ -10,7 +10,7 @@ Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
 
-`npm run build:cars` also builds brand-neutral models `lmp2-a`, `lmp2-b`, `hyper-a`, `hyper-b` into `public/models/<id>.{glb,json}`.
+`npm run build:cars` also builds brand-neutral models `lmp2-a` and `hyper-a` into `public/models/<id>.{glb,json}`.
 
 ## Context
 
@@ -22,10 +22,11 @@ Pipeline, frame, node names, config type and json shape: `tasks/071-car-pipeline
 
 ## Files
 
-- `assets/cars/{lmp2-a,lmp2-b,hyper-a,hyper-b}.pipeline.json` — create (`triBudget` 70000; outputs `public/models/<id>.{glb,json}`)
+- `assets/cars/{lmp2-a,hyper-a}.pipeline.json` — create. Scope cut 2026-10-14: `lmp2-b` and `hyper-b` (wheels not separable by material) moved to task 170; delete `assets/cars/hyper-b.pipeline.json`, `public/models/hyper-b.{glb,json}` and every `tools/assets/_tmp_*` / `scripts/preview/_tmp_*` file from the worktree (`triBudget` 70000; outputs `public/models/<id>.{glb,json}`)
 - `tools/assets/buildCar.ts` — modify ONLY if needed (allowed contract extension below)
-- `public/models/{lmp2-a,lmp2-b,hyper-a,hyper-b}.{glb,json}` — generated, committed
-- `ASSETS_LICENSES.md` — modify: 4 rows, same columns as the GT3 rows. Asset text: "LMP2 car A source", "LMP2 car B source", "Hypercar A source", "Hypercar B source" + " (real-brand shape, dev only; de-brand before release)" (lmp2-a: " (original design)"). Authors/URLs: mosigana `https://sketchfab.com/3d-models/6044bd804bed4ac4b9f0c782c5c3459b`; Kerdak123 `.../72432f51423d429e93f4981563d76fb8`; supranakamura `.../efe600b0b1694e2aae055f35db3aaeda` (Cadillac) and `.../359b41f7c14941c8bceafbc3ac98c537` (Ferrari); license CC-BY 4.0; NC no.
+- `public/models/{lmp2-a,hyper-a}.{glb,json}` — generated, committed
+- Planner-authorised test edits: in `tests/unit/acceptance/112-prototype-models.test.ts`, `tests/unit/edge/112-prototype-models.test.ts` and `tests/unit/edge/112-prototype-models.post.test.ts` remove the `lmp2-b` and `hyper-b` entries from the id/config lists, and delete the rows that exist only for them (POST2, POST3, POST4, POST8, POST9; POST5/POST6 keep only remaining ids). Nothing else in those files.
+- `ASSETS_LICENSES.md` — modify: 2 rows (lmp2-a, hyper-a), same columns as the GT3 rows. Asset text: "LMP2 car A source", "LMP2 car B source", "Hypercar A source", "Hypercar B source" + " (real-brand shape, dev only; de-brand before release)" (lmp2-a: " (original design)"). Authors/URLs: mosigana `https://sketchfab.com/3d-models/6044bd804bed4ac4b9f0c782c5c3459b`; Kerdak123 `.../72432f51423d429e93f4981563d76fb8`; supranakamura `.../efe600b0b1694e2aae055f35db3aaeda` (Cadillac) and `.../359b41f7c14941c8bceafbc3ac98c537` (Ferrari); license CC-BY 4.0; NC no.
 
 ## Steps
 
@@ -40,16 +41,16 @@ Conventions: metres; tolerance as in 071 (1 cm derived dimensions); unknown id o
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | `npm run build:cars` | outputs | `public/models/{lmp2-a,lmp2-b,hyper-a,hyper-b}.{glb,json}` exist; existing f4/gt3 outputs byte-identical to before |
+| AT1 | `npm run build:cars` | outputs | `public/models/{lmp2-a,hyper-a}.{glb,json}` exist; existing f4/gt3 outputs byte-identical to before |
 | AT2 | each new glb | root nodes | exactly `body` + 4 wheel names; triangles ≤ 70 000 |
-| AT3 | each new json | read | length (z) = targetLength ± 0.05 (lmp2 4.745, hyper-a 5.10, hyper-b 4.995); width incl. wheels in [1.85, 2.15]; height in [0.95, 1.25]; wheelbase in [2.85, 3.30]; wheelRadius in [0.32, 0.38] |
+| AT3 | each new json | read | length (z) = targetLength ± 0.05 (lmp2-a 4.745, hyper-a 5.10); width incl. wheels in [1.85, 2.15]; height in [0.95, 1.25]; wheelbase in [2.85, 3.30]; wheelRadius in [0.32, 0.38] |
 | AT4 | each new glb | wheel hubs | front z < 0, left x < 0; each wheel node's geometry bbox centred on its pivot ± 0.02; left/right hub \|x\| equal ± 0.02; each wheel holds ≤ 40 % of all wheel vertices |
 | AT5 | each output | vertices / bytes | min y ≥ −0.02; no brand strings (071 AT6 list + ligier, cadillac, ferrari, oreca, katattak) |
 
 ## Acceptance criteria
 
 - [ ] AT1–AT5 pass; 053, 071, 075 tests still pass.
-- [ ] `ASSETS_LICENSES.md` has the 4 rows.
+- [ ] `ASSETS_LICENSES.md` has the 2 rows (lmp2-a, hyper-a).
 
 ## Verification
 

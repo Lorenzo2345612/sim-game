@@ -10,7 +10,7 @@ Roles: acceptance, coder, reviewer
 
 ## Goal
 
-The car picker offers the four prototypes after the GT3 entries, and the credits panel attributes their models.
+The car picker offers the two prototypes (LMP2 A, Hypercar A; B variants are task 170) after the GT3 entries, and the credits panel attributes their models.
 
 ## Context
 
@@ -18,10 +18,10 @@ Picker and `?car=` wiring: `tasks/073-car-selection.md` (`public/cars/index.json
 
 ## Files
 
-- `public/cars/index.json` — modify: append, in this order after the existing entries, `{id:"lmp2-a",name:"LMP2 A",category:"lmp2"}`, `lmp2-b`/"LMP2 B", `hyper-a`/"Hypercar A" (category "hypercar"), `hyper-b`/"Hypercar B"
+- `public/cars/index.json` — modify: append, in this order after the existing entries, `{id:"lmp2-a",name:"LMP2 A",category:"lmp2"}`, `hyper-a`/"Hypercar A" (category "hypercar")
 - `public/credits.json` — regenerate with `npm run build:credits` and commit
 - `tests/e2e/acceptance/114-prototype-selection.spec.ts` — create (acceptance worker)
-- Planner-authorised minimal edit: the 073 acceptance test row that pins the picker to exactly 4 cars → 8 cars (f4, gt3-a, gt3-b, gt3-c, lmp2-a, lmp2-b, hyper-a, hyper-b)
+- Planner-authorised minimal edit: the 073 acceptance test row that pins the picker to exactly 4 cars → 6 cars (f4, gt3-a, gt3-b, gt3-c, lmp2-a, hyper-a)
 
 ## Steps
 
@@ -33,7 +33,7 @@ Picker and `?car=` wiring: `tasks/073-car-selection.md` (`public/cars/index.json
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | e2e car selection | list | includes LMP2 A, LMP2 B, Hypercar A, Hypercar B after the GT3 entries |
+| AT1 | e2e car selection | list | includes LMP2 A, Hypercar A after the GT3 entries |
 | AT2 | e2e `/?track=monza&car=hyper-a` | ready | car loads; 3 s throttle > 40 km/h; no console errors |
 | AT3 | credits screen | text | one line per new model: title, author (mosigana, Kerdak123, supranakamura ×2), "CC-BY 4.0", source URL |
 

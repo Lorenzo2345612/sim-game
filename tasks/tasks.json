@@ -2239,7 +2239,7 @@
     {
       "num": "162",
       "title": "Speed-dependent rolling drag on grass and gravel",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "065",
         "169"
@@ -2344,6 +2344,21 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/169-vehicle-swap.md"
+    },
+    {
+      "num": "170",
+      "title": "Prototype B variants (LMP2 B, Hypercar B) - needs design",
+      "status": "pending",
+      "deps": [
+        "112",
+        "113",
+        "114"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/170-prototype-b-variants.md"
     }
   ]
 }
