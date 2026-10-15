@@ -894,7 +894,7 @@
     {
       "num": "066",
       "title": "Calibration suite and F4 tuning",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "065",

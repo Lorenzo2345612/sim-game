@@ -69,7 +69,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
 | 065 | Vehicle model on Rapier (part 1) | done | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
-| 066 | Calibration suite and F4 tuning | in progress | 058, 065, 169 |
+| 066 | Calibration suite and F4 tuning | done | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | done | 048, 065, 169 |
