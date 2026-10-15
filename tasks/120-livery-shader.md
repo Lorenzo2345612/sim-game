@@ -21,10 +21,10 @@ Design: `docs/plans/game-features.md` section 120. Pipeline: `tools/assets/build
 ## Files
 
 - `tools/assets/buildCar.ts`, `tools/assets/buildF4.ts` — modify: output json gains `"paintMaterials": ["livery"]` (`["livery"]` when the merged livery material exists, else the largest-triangle `body_<n>` material, else the largest rim/tyre material; never fail the build).
-- Planner-authorised test edits (exactly these): add `'paintMaterials'` to the expected json key lists in `tests/unit/edge/053-f4-car.post.test.ts:157`, `tests/unit/edge/071-car-pipeline.test.ts:171` and `tests/unit/edge/112-prototype-models.test.ts:178`.
+- Planner-authorised test edits (exactly these): rewrite `tests/e2e/acceptance/120-livery-shader.spec.ts` AT4 to the new AT4 row (drop screenshot/pixel helpers); delete `tests/e2e/acceptance/zz-debug-120.spec.ts`; add `'paintMaterials'` to the expected json key lists in `tests/unit/edge/053-f4-car.post.test.ts:157`, `tests/unit/edge/071-car-pipeline.test.ts:171` and `tests/unit/edge/112-prototype-models.test.ts:178`.
 - `public/models/*.json` (f4, gt3-a, gt3-b, gt3-c, gt3-d and any prototype that has a model json) — modify: add `paintMaterials` (re-run `npm run build:cars` / `build:f4`, or edit by hand if the sources are not available; each name must exist in the glb).
 - `src/render/liveryMaterial.ts` — create.
-- `src/main.ts` — modify: apply the saved/default livery to the player car; `__SIMGAME__.setLivery(l: Partial<Livery>)` and `sceneStats().carScreenRect: {x:number;y:number;w:number;h:number}` (pixels of the player car's projected bounding box).
+- `src/main.ts` — modify: apply the saved/default livery to the player car; `__SIMGAME__.setLivery(l: Partial<Livery>)` and `sceneStats().carScreenRect: {x:number;y:number;w:number;h:number}` (pixels of the player car's projected bounding box) and `sceneStats().liveryPrimary: string` (lower-case `#rrggbb` read back from the paint material's shader uniform, not from the stored livery object).
 - `tests/unit/acceptance/120-livery-shader.test.ts` — acceptance worker.
 
 ## Steps
@@ -51,7 +51,7 @@ Conventions: u, v, h not clamped; boundaries as written (`<` strict); `bounds` w
 | AT1 | each `public/models/<car>.json` | read | `paintMaterials` non-empty; every name exists among the glb's materials |
 | AT2 | liveryColorAt for (stripe, 0.5, 0.5, 0.5) / (stripe, 0.59, 0.5, 0.5) / (stripe, 0.8, 0.5, 0.5) / (split, 0.5, 0.5, 0.6) / (chevron, 0.5, 0.1, 0.5) / (chevron, 0.9, 0.1, 0.5) | call | 1 / 2 / 0 / 1 / 1 / 0 |
 | AT3 | unit: applyLivery on a scene with materials A (paint) and B | inspect | A has the livery uniforms, B untouched; two cars with different liveries share one compiled program per pattern (program cache key) |
-| AT4 | e2e monza, set player livery primary #ff0000 then #0000ff via `__SIMGAME__.setLivery` | screenshot pixel on the car body (chase cam, from `sceneStats().carScreenRect` centre) | red channel dominant then blue channel dominant |
+| AT4 | e2e monza, set player livery primary #ff0000 then #0000ff via `__SIMGAME__.setLivery` | read `sceneStats()` after each | `liveryPrimary` = '#ff0000' then '#0000ff'; `carScreenRect` w, h > 0 and inside the 1280×720 viewport. (No pixel sampling: headless swiftshader renders lit geometry black, also on approved builds.) |
 
 ## Acceptance criteria
 
