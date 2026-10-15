@@ -114,7 +114,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
 | 110 | Audio effects | pending | 109 |
 | 111 | Audio mix | pending | 110 |
-| 112 | Prototype models through the car pipeline | waiting decision | 071, 075 |
+| 112 | Prototype models through the car pipeline | in progress | 071, 075 |
 | 113 | Prototype CarSpecs from the lab files | pending | 112, 072, 058 |
 | 114 | Car selection and credits list the prototypes | pending | 113, 073, 074 |
 | 115 | Cockpit data per car (eye, steering wheel anchor, lock) | pending | 058, 066, 072, 107, 113 |
@@ -167,7 +167,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
-| 166 | Dirty tyres | pending | 065, 169, 162 |
+| 166 | Dirty tyres | in progress | 065, 169, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | done | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
