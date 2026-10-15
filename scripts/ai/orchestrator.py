@@ -1134,7 +1134,7 @@ def _run_task(task, slot):
                 return decision(num, title, stage, "escalation exhausted", r["out"], st,
                                 "tests" if r["status"] else "infra", r)
             save_task_state(num, st)
-            if st["fixRounds"] == ANALYST_ROUND and not st.get("analyzed") and not DRAIN.is_set():
+            if st["fixRounds"] >= ANALYST_ROUND and not st.get("analyzed") and not DRAIN.is_set():
                 st["analyzed"] = True
                 save_task_state(num, st)
                 a = run_analyst(num, spec, st, ANALYST_ROUND)
