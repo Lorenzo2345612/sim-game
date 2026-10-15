@@ -38,7 +38,7 @@ Conventions: fixed-step determinism kept (no `Math.random` or wall-clock in simu
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | e2e `/?track=monza` | 5 s throttle | speed > 100 km/h, `telemetry().wheels` length 4 with finite values, fuel decreasing |
-| AT2 | e2e: setup rear wing max vs min (via storage) | top speed after 20 s | max wing slower by > 3 km/h |
+| AT2 | e2e `/?track=elkhart`: setup rear wing max vs min (via storage) | max speed over 10 s of sim time, full throttle | max wing slower by > 1.5 km/h (lab: 2.6) |
 | AT3 | e2e: `?wear=5` vs `?wear=1`, same 6 s full-throttle script (car stays on the Monza straight) | wear ratio | in [4, 6] |
 | AT4 | e2e `/?track=monza` at ≥ 120 km/h | full brake + full steer for 2 s of sim time | \|`getHeading()` − velocity direction\| < 30° throughout (no spin) |
 | AT5 | Verification commands | run | pass (verification gate; no dedicated test) |
@@ -65,6 +65,8 @@ In `tests/e2e/acceptance/070-dynamics-integration.spec.ts` change only:
 - AT4: speed threshold `>= 150` → `>= 120` (test title text to match) and that `waitForFunction` timeout `180000` → `300000`.
 - Add `test.describe.configure({ mode: 'serial' });` as the first line inside the `test.describe` block (serial runs; swiftshader is slow under parallel workers).
 - AT3: in `meanWear`, `waitSim(page, 30, 360000)` → `waitSim(page, 6, 180000)` (title text to match). Planner lab probe: wear ratio is exactly 5.00 on flat ground at 6 s and 30 s; the 30 s e2e failure (ratio 0.08) is the car leaving the track at ~7 s and crashing, not the grip cliff.
+
+- AT2: run on elkhart (640 m straight from the start; Monza leaves the track at ~7 s): storage key `setup:f4:elkhart`, `topSpeedOverRun` loads `/?track=elkhart`, 20 s → 10 s, threshold 3 → 1.5 (title text to match). Lab: rear wing 0 vs 10 gives 163.7 vs 161.1 km/h at 10 s.
 
 Then run the verification once and report.
 
