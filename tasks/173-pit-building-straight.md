@@ -66,6 +66,19 @@ npm test
 npx playwright test 173-
 ```
 
+## Planner-authorised test edits
+
+AT2 forces new pit ranges on monza/spa/silverstone (old chord deviation 2.13 / 2.19 / 6.14 m). In these legacy "unchanged vs base revision" checks, exclude only the `pit` field from the comparison (delete it from both copies or drop `'pit'` from the key list); change nothing else:
+- `tests/unit/acceptance/097-terrain-below-strips.test.ts` AT3 (pin)
+- `tests/unit/acceptance/098-osm-runoffs.test.ts` AT5
+- `tests/unit/acceptance/106-new-tracks-in-game.test.ts` AT5 (strip)
+- `tests/unit/acceptance/140-paved-runoffs.test.ts` AT5
+- `tests/unit/acceptance/142-kerbs-every-corner.test.ts` AT5
+- `tests/unit/acceptance/155-close-parallel.test.ts` AT5
+- `tests/unit/edge/142-kerbs-every-corner.post.test.ts` (key list `centerline, elevation, pit`)
+
+Leave the regenerated `public/tracks/*.json` in the worktree; the orchestrator commits them. The elkhart 1.16 % length warning from `build:tracks` is pre-existing and accepted.
+
 ## Out of scope
 
 - Pit lane geometry, pit stops, changing `side` or the configured from/to meters in `tracks.json`.
