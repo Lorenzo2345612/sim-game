@@ -2376,7 +2376,7 @@
     {
       "num": "172",
       "title": "Lighting calibration: one sun, tamer whites and bloom",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "106"
       ],
