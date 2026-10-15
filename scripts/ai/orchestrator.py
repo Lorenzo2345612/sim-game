@@ -52,7 +52,7 @@ EXPERIMENTS = ROOT / "ai/experiments.json"
 WORKER_HOME = Path(os.environ.get("CLAUDE_WORKERS_DIR") or Path.home() / ".claude-workers")
 TRIAGE_TIMEOUT = 300
 ANALYST_TIMEOUT = 600
-ANALYST_ROUND = 2
+ANALYST_ROUND = 1
 INSIGHTS = AI / "insights"
 TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 MAX_FIX_ROUNDS = 4
@@ -1134,10 +1134,10 @@ def _run_task(task, slot):
                 return decision(num, title, stage, "escalation exhausted", r["out"], st,
                                 "tests" if r["status"] else "infra", r)
             save_task_state(num, st)
-            if st["fixRounds"] >= ANALYST_ROUND and not st.get("analyzed") and not DRAIN.is_set():
-                st["analyzed"] = True
+            # Every failed verification goes to the round analyst; it escalates or the loop continues.
+            if st["fixRounds"] >= ANALYST_ROUND and not DRAIN.is_set():
                 save_task_state(num, st)
-                a = run_analyst(num, spec, st, ANALYST_ROUND)
+                a = run_analyst(num, spec, st, st["fixRounds"])
                 if a and a["action"] == "escalate":
                     cat = {"acceptance_tests": "tests", "infra": "infra"}.get(a["fault"], "spec")
                     return decision(num, title, stage, f"round analyst ({a['fault']}): {a['note'][:200]}", r["out"], st,
