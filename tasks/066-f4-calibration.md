@@ -14,7 +14,7 @@ A headless calibration suite drives the real `Vehicle` (task 065) and `public/ca
 
 ## Context
 
-Design and targets: `ai/guides/vehicle-dynamics.md` (section "Calibration targets"). Reference results and calibrated data: run `node ai/lab/vehicle-model.mjs`; `ai/lab/f4-carspec.json`, `ai/lab/vehicle-calibration.mjs`. Test harness style: `ai/guides/testing.md`. The thresholds are law: the worker may ONLY change values in `public/cars/f4.json` (never test thresholds, never `src/`). If a target cannot be met by JSON changes alone, stop and report as blocked.
+Design and targets: `ai/guides/vehicle-dynamics.md` (section "Calibration targets"). Reference results and calibrated data: run `node ai/lab/vehicle-model.mjs`; `ai/lab/f4-carspec.json`, `ai/lab/vehicle-calibration.mjs`. Test harness style: `ai/guides/testing.md`. The thresholds are law: the worker may ONLY change values in `public/cars/f4.json` (never test thresholds, never `src/`). If a target cannot be met by JSON changes alone, stop and report as blocked. Planner clarifications: (a) every value changed in `public/cars/f4.json` must be mirrored with the same value in `ai/lab/f4-carspec.json` (058 AT4 keeps them equal) — this is the only allowed lab-file edit; tunable values may deviate from the original lab data within that rule. (b) The braking target (≤ 60 m) applies with ABS on only, as in AT3.
 
 ## Files
 
