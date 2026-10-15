@@ -1,4 +1,4 @@
-import type { Board, EscapeRoad, TrackData, TrackDataV2 } from '../core/types';
+import type { Board, EscapeRoad, Sausage, TrackData, TrackDataV2 } from '../core/types';
 
 const BARRIER_TYPES = new Set(['armco', 'tyres', 'wall', 'foam']);
 
@@ -12,7 +12,7 @@ function validateBarriers(barriers: unknown): void {
   }
 }
 
-/** Validates fetched track JSON; v2 gets `escapeRoads` and `boards` defaulted to []. */
+/** Validates fetched track JSON; v2 gets `escapeRoads`, `boards` and `sausages` defaulted to []. */
 export function parseTrackData(json: unknown): TrackData | TrackDataV2 {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) {
     throw new Error('Track data must be an object');
@@ -23,6 +23,7 @@ export function parseTrackData(json: unknown): TrackData | TrackDataV2 {
     const out = { ...obj } as Record<string, unknown>;
     if (!Array.isArray(out.escapeRoads)) out.escapeRoads = [] as EscapeRoad[];
     if (!Array.isArray(out.boards)) out.boards = [] as Board[];
+    if (!Array.isArray(out.sausages)) out.sausages = [] as Sausage[];
     return out as unknown as TrackDataV2;
   }
   return obj as unknown as TrackData;

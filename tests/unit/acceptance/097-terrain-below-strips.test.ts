@@ -152,7 +152,7 @@ describe('097 terrain below strips acceptance', () => {
     expect(failures.length, failures.slice(0, 12).join('; ')).toBe(0);
   }, 120000);
 
-  it('AT3: the regenerated tracks change only terrain.heights plus the fields tasks 098 and 142 own (run-offs, barriers, trees, kerbs); every other field matches the pre-task JSON', () => {
+  it('AT3: the regenerated tracks change only terrain.heights plus the fields tasks 098 and 142 own (run-offs, barriers, trees, kerbs); every other field matches the pre-task JSON (sausages from 149 ignored)', () => {
     const baseRev = execFileSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
     // 098 moved the run-off strips, so barriers/trees follow them and the strip clamp may
     // raise or lower terrain.heights; the 097 decrease-only invariant no longer applies.
@@ -166,6 +166,8 @@ describe('097 terrain below strips acceptance', () => {
       delete copy.escapeRoads;
       // 143 adds the braking boards array to every rebuilt track.
       delete copy.boards;
+      // 149 adds the sausages array to every rebuilt track.
+      delete copy.sausages;
       return copy;
     };
     for (const id of IDS) {

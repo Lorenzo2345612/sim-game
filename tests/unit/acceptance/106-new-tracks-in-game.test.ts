@@ -41,16 +41,26 @@ describe('106 new tracks in game', () => {
     }
   });
 
-  it('AT5: monza, spa and silverstone JSONs are unchanged vs the base revision', () => {
+  it('AT5: monza, spa and silverstone JSONs are unchanged vs the base revision, ignoring the sausages field task 149 adds', () => {
     const baseRev = (
       spawnSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout ?? ''
     ).trim();
     expect(baseRev, 'git merge-base master HEAD').toMatch(/^[0-9a-f]{7,40}$/);
-    const diff = spawnSync('git', ['diff', '--exit-code', baseRev, '--', ...TRACK_FILES], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    });
-    const report = `${diff.stdout ?? ''}${diff.stderr ?? ''}`.slice(0, 2000);
-    expect(diff.status, `git diff vs base:\n${report}`).toBe(0);
+    const strip = (t: Record<string, unknown>): Record<string, unknown> => {
+      const copy = { ...t };
+      delete copy.sausages;
+      return copy;
+    };
+    for (const file of TRACK_FILES) {
+      const prev = spawnSync('git', ['show', `${baseRev}:${file}`], {
+        cwd: ROOT,
+        encoding: 'utf8',
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      expect(prev.status, `git show ${baseRev}:${file} failed: ${prev.stderr}`).toBe(0);
+      const before = strip(JSON.parse(prev.stdout ?? '') as Record<string, unknown>);
+      const now = strip(JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as Record<string, unknown>);
+      expect(now, `${file}: JSON changed vs base (sausages ignored)`).toEqual(before);
+    }
   }, 60000);
 });

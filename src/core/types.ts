@@ -59,6 +59,8 @@ export interface Grandstand { x: number; z: number; yaw: number; lengthMeters: n
 export interface PitLane { start: number; end: number; side: Side }
 /** Static braking board beside the track; offset is metres from the centerline, positive outward on `side`. */
 export interface Board { index: number; side: Side; offset: number; label: 50 | 100 | 150 | 200 }
+/** Small yellow kerb on the inside of a chicane apex; offset is metres from the centerline on `side`, length metres along the track. */
+export interface Sausage { index: number; side: Side; offset: number; length: number }
 export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
@@ -73,6 +75,7 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   pit: PitLane;
   escapeRoads?: EscapeRoad[];
   boards?: Board[];
+  sausages?: Sausage[];
   /** Metres from the centerline to the left/right edge per index; absent when no section is narrowed. */
   halfWidthLeft?: number[];
   halfWidthRight?: number[];

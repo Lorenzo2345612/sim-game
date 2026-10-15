@@ -4,6 +4,7 @@ import { buildTrackData } from './buildTrackData';
 import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTrackData';
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
+import { buildSausages, type SausageOverride } from './sausages';
 import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads } from './hazards';
 import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
@@ -34,6 +35,7 @@ interface TrackConfig extends TrackSourceConfig {
   biome: Biome;
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
+  sausages?: SausageOverride[];
 }
 
 const SPECIES_PRESETS: Record<string, { preset: string; heightMeters: number }> = {
@@ -137,6 +139,7 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
   const trees = placeTrees(config.id, centerline, terrain, barriers, config.biome);
   const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
+  const sausages = buildSausages(centerline, config.widthMeters, config.sausages);
   const treeSpecies: TreeSpecies[] = config.biome.species.map((sp) => ({
     name: sp.name,
     preset: SPECIES_PRESETS[sp.name].preset,
@@ -157,6 +160,7 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     trees,
     grandstands,
     pit,
+    sausages,
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
   if (parallel.any) {

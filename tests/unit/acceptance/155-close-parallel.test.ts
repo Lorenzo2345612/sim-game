@@ -450,7 +450,7 @@ describe('155 close parallel sections acceptance', () => {
     expect(overlaps, `overlapping strips: ${overlaps.join('; ')}`).toHaveLength(0);
   }, 120000);
 
-  it('AT5: rebuilt monza, spa and silverstone are identical to the previous JSON', () => {
+  it('AT5: rebuilt monza, spa and silverstone are identical to the previous JSON, ignoring the sausages field task 149 adds', () => {
     const baseRev = execFileSync('git', ['merge-base', 'HEAD', 'master'], {
       cwd: ROOT,
       encoding: 'utf8',
@@ -464,7 +464,13 @@ describe('155 close parallel sections acceptance', () => {
           maxBuffer: 64 * 1024 * 1024,
         }),
       ) as TrackDataV2;
-      expect(track, `${id}: JSON changed`).toEqual(prev);
+      // 149 adds the sausages array to every rebuilt track.
+      const strip = (t: TrackDataV2): Record<string, unknown> => {
+        const copy: Record<string, unknown> = { ...t };
+        delete copy.sausages;
+        return copy;
+      };
+      expect(strip(track), `${id}: JSON changed (sausages ignored)`).toEqual(strip(prev));
     }
   }, 120000);
 });
