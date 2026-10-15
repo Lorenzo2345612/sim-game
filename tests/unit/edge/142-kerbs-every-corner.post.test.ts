@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { detectKerbs, radii } from '../../../tools/track-builder/corners';
+import { analyzeParallel, stripParallel } from '../../../tools/track-builder/parallel';
 import { CORNER_RADIUS, KERB_RADIUS } from '../../../src/core/constants';
 import type { Point2 } from '../../../src/track/geo';
 import type { Side, TrackDataV2, TrackSegment } from '../../../src/core/types';
@@ -154,7 +155,12 @@ describe('142 kerbs post-coder gaps', () => {
       for (const key of ['centerline', 'elevation', 'pit'] as const) {
         expect(track[key], `${id}: ${key} changed`).toEqual(prev[key]);
       }
-      expect(detectKerbs(track.centerline), `${id}: stored kerbs not a fresh detectKerbs build`).toEqual(track.kerbs);
+      // Task 155: tracks with narrowed parallel sections store kerbs after stripParallel.
+      const fresh = detectKerbs(track.centerline);
+      const expected = track.halfWidthLeft
+        ? stripParallel(fresh, analyzeParallel(track.centerline, track.widthMeters))
+        : fresh;
+      expect(expected, `${id}: stored kerbs not a fresh detectKerbs build`).toEqual(track.kerbs);
     }
   }, 180_000);
 });

@@ -79,6 +79,23 @@ function normIndex(i: number, n: number): number {
   return ((i % n) + n) % n;
 }
 
+/** Per-index half-width on one side; widthMeters/2 when the arrays are absent. */
+export function halfWidthAt(track: TrackDataV2, side: Side, i: number): number {
+  const arr = side === 'left' ? track.halfWidthLeft : track.halfWidthRight;
+  const v = arr?.[i];
+  return v === undefined ? track.widthMeters / 2 : v;
+}
+
+/** Offset of the last barrier covering (side, i); null when none does. */
+function barrierOffsetAt(track: TrackDataV2, side: Side, i: number): number | null {
+  const n = track.centerline.length;
+  let found: number | null = null;
+  for (const b of track.barriers) {
+    if (b.side === side && segmentCovers(b, i, n)) found = b.offsetMeters;
+  }
+  return found;
+}
+
 function segmentLength(start: number, end: number, n: number): number {
   return ((end - start + n) % n) + 1;
 }
@@ -144,7 +161,7 @@ function segmentRows(
 /** Outermost lateral extent of asphalt, kerbs and runoffs on one side at centerline index i. */
 function vergeInnerExtent(track: TrackDataV2, side: Side, i: number): number {
   const n = track.centerline.length;
-  const half = track.widthMeters / 2;
+  const half = halfWidthAt(track, side, i);
   const kerb = track.kerbs.some((k) => k.side === side && segmentCovers(k, i, n));
   let inner = half + (kerb ? KERB_WIDTH : 0);
   for (const seg of track.runoffs) {
@@ -189,6 +206,14 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
       const cap = 0.8 * corner.radius;
       flat = Math.max(inner, Math.min(inner + VERGE_FLAT, cap - VERGE_SLOPE));
       outer = Math.max(inner, Math.min(flat + VERGE_SLOPE, cap));
+    }
+    if (halfWidthAt(track, side, i) < track.widthMeters / 2 - 1e-9) {
+      // Narrowed side: the verge stops at the barrier (the shared median wall).
+      const cap = barrierOffsetAt(track, side, i);
+      if (cap !== null) {
+        flat = Math.max(inner, Math.min(flat, cap));
+        outer = Math.max(inner, Math.min(outer, cap));
+      }
     }
     const y = track.elevation[i] ?? 0;
     const [rx, rz] = rightNormal(cx, i);
@@ -279,7 +304,6 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   const cx = track.centerline;
   const n = cx.length;
   if (n === 0) return [];
-  const half = track.widthMeters / 2;
   const elev = (i: number): number => track.elevation[i] ?? 0;
   const strips: SurfaceStrip[] = [];
 
@@ -291,9 +315,11 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     const [rx, rz] = rightNormal(cx, i);
     const y = elev(i) + ASPHALT_Y;
     const v = s / UV_SCALE;
+    const halfL = halfWidthAt(track, 'left', i);
+    const halfR = halfWidthAt(track, 'right', i);
     asphaltRows.push([
-      { x: cx[i][0] - rx * half, y, z: cx[i][1] - rz * half, u: -half / UV_SCALE, v },
-      { x: cx[i][0] + rx * half, y, z: cx[i][1] + rz * half, u: half / UV_SCALE, v },
+      { x: cx[i][0] - rx * halfL, y, z: cx[i][1] - rz * halfL, u: -halfL / UV_SCALE, v },
+      { x: cx[i][0] + rx * halfR, y, z: cx[i][1] + rz * halfR, u: halfR / UV_SCALE, v },
     ]);
   }
   strips.push(makeStrip('asphalt', asphaltRows, true));
@@ -302,14 +328,16 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     const start = normIndex(seg.start, n);
     const end = normIndex(seg.end, n);
     const sign = seg.side === 'right' ? 1 : -1;
-    const latInner = sign * half;
-    const latOuter = sign * (half + KERB_WIDTH);
     const uMin = sign > 0 ? 0 : 1;
     const rows = segmentRows(
       track,
       start,
       end,
-      () => [Math.min(latInner, latOuter), Math.max(latInner, latOuter), uMin, 1 - uMin],
+      (idx) => {
+        const latInner = sign * halfWidthAt(track, seg.side, idx);
+        const latOuter = sign * (halfWidthAt(track, seg.side, idx) + KERB_WIDTH);
+        return [Math.min(latInner, latOuter), Math.max(latInner, latOuter), uMin, 1 - uMin];
+      },
       (idx) => elev(idx) + KERB_Y,
       KERB_UV_V,
     );
@@ -326,7 +354,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       end,
       (idx) => {
         const pushed = track.kerbs.some((k) => k.side === seg.side && segmentCovers(k, idx, n));
-        const inner = sign * (half + (pushed ? KERB_WIDTH : 0));
+        const inner = sign * (halfWidthAt(track, seg.side, idx) + (pushed ? KERB_WIDTH : 0));
         const outer = inner + sign * seg.widthMeters;
         const latMin = Math.min(inner, outer);
         const latMax = Math.max(inner, outer);

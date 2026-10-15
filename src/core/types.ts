@@ -73,5 +73,8 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   pit: PitLane;
   escapeRoads?: EscapeRoad[];
   boards?: Board[];
+  /** Metres from the centerline to the left/right edge per index; absent when no section is narrowed. */
+  halfWidthLeft?: number[];
+  halfWidthRight?: number[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

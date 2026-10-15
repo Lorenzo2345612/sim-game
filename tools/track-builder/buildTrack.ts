@@ -7,6 +7,7 @@ import { detectKerbs, detectRunoffs } from './corners';
 import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads } from './hazards';
 import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
+import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
 import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
@@ -114,14 +115,21 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const runoffs = detectRunoffs(centerline, gravelPolygons, config.widthMeters / 2, kerbs);
   const corners = classifyCorners(centerline);
   const paved = applyPavedRunoffs(centerline, runoffs, corners);
+  const parallel = analyzeParallel(centerline, config.widthMeters);
+  const kerbsFinal = parallel.any ? stripParallel(kerbs, parallel) : kerbs;
+  const runoffsFinal = parallel.any ? stripParallel(paved, parallel) : paved;
   const pit: PitLane = {
     start: indexAtMeters(cum, config.pit.fromMeters, lapLength),
     end: indexAtMeters(cum, config.pit.toMeters, lapLength),
     side: config.pit.side,
   };
-  const barriers = applyFoamBarriers(
-    layoutBarriers(centerline, config.widthMeters, kerbs, paved, pit),
-    corners,
+  const barriers = applyMedianWalls(
+    applyFoamBarriers(
+      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit),
+      corners,
+    ),
+    parallel,
+    centerline.length,
   );
   const escapeRoads = detectEscapeRoads(centerline);
   const boards = buildBoards(centerline, config.widthMeters, barriers);
@@ -139,8 +147,8 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     ...base,
     version: 2,
     elevation,
-    kerbs,
-    runoffs: paved,
+    kerbs: kerbsFinal,
+    runoffs: runoffsFinal,
     barriers,
     boards,
     escapeRoads,
@@ -151,6 +159,10 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     pit,
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
+  if (parallel.any) {
+    data.halfWidthLeft = parallel.halfLeft;
+    data.halfWidthRight = parallel.halfRight;
+  }
   clampTerrainBelowStrips(data.terrain, buildTrackSurfaces(data));
   return data;
 }

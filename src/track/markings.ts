@@ -1,4 +1,5 @@
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
+import { halfWidthAt } from './surfaces';
 
 const MARKING_Y = 0.025;
 const EDGE_WIDTH = 0.12;
@@ -72,14 +73,15 @@ function makeStrip(surface: Surface, rows: Vertex[][], closed: boolean): Surface
 function edgeLine(track: TrackDataV2, sign: 1 | -1): SurfaceStrip {
   const cx = track.centerline;
   const n = cx.length;
-  const half = track.widthMeters / 2;
-  const inner = half - EDGE_WIDTH;
-  // Columns ordered by increasing lateral for consistent winding.
-  const lats = sign > 0 ? [inner, half] : [-half, -inner];
+  const side = sign > 0 ? 'right' : 'left';
   const rows: Vertex[][] = [];
   let s = 0;
   for (let i = 0; i < n; i++) {
     if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
+    const half = halfWidthAt(track, side, i);
+    const inner = half - EDGE_WIDTH;
+    // Columns ordered by increasing lateral for consistent winding.
+    const lats = sign > 0 ? [inner, half] : [-half, -inner];
     const [rx, rz] = rightNormal(cx, i);
     const y = (track.elevation[i] ?? 0) + MARKING_Y;
     const v = s / UV_SCALE;
