@@ -227,6 +227,26 @@
       ]
     },
     {
+      "id": "M1.6",
+      "title": "Car roster: generic car pipeline, three GT3 cars, car selection, credits",
+      "status": "open",
+      "tasks": [
+        "071",
+        "072",
+        "073",
+        "074",
+        "075",
+        "076"
+      ],
+      "prefetch": [
+        "071",
+        "072",
+        "075",
+        "074",
+        "076"
+      ]
+    },
+    {
       "id": "M1.2d",
       "title": "Environments: city (OSM buildings, walls, water, landmarks), desert, tropical",
       "tasks": [
@@ -256,26 +276,6 @@
         "165",
         "167",
         "166"
-      ]
-    },
-    {
-      "id": "M1.6",
-      "title": "Car roster: generic car pipeline, three GT3 cars, car selection, credits",
-      "status": "open",
-      "tasks": [
-        "071",
-        "072",
-        "073",
-        "074",
-        "075",
-        "076"
-      ],
-      "prefetch": [
-        "071",
-        "072",
-        "075",
-        "074",
-        "076"
       ]
     },
     {
