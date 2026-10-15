@@ -938,7 +938,7 @@
     {
       "num": "069",
       "title": "HUD tyres and fuel widget",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "048",
         "065",

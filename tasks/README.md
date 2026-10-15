@@ -72,7 +72,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 066 | Calibration suite and F4 tuning | in progress | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
-| 069 | HUD tyres and fuel widget | in progress | 048, 065, 169 |
+| 069 | HUD tyres and fuel widget | done | 048, 065, 169 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
