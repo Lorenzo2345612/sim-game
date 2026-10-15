@@ -1,0 +1,44 @@
+.tyres {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  font-family: monospace;
+  color: #fff;
+  max-width: calc(100vw - 24px);
+}
+
+.tyre {
+  width: 52px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+}
+
+.tyre-blue {
+  background: rgba(30, 90, 220, 0.75);
+}
+
+.tyre-green {
+  background: rgba(30, 160, 60, 0.75);
+}
+
+.tyre-red {
+  background: rgba(220, 50, 40, 0.75);
+}
+
+.fuel {
+  margin-left: 8px;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
