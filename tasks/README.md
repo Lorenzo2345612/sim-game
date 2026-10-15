@@ -174,7 +174,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |
 | 171 | Track select menu redesign | done | 106 |
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
-| 173 | Pit building only along the straight | in progress | 106 |
+| 173 | Pit building only along the straight | done | 106 |
 | 174 | Track banking (cross-slope) + Daytona | pending | 106, 155 |
 | 175 | Fontana banking data | pending | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | pending | 173 |

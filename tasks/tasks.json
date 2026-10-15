@@ -2389,7 +2389,7 @@
     {
       "num": "173",
       "title": "Pit building only along the straight",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "106"
       ],
