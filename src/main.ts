@@ -18,6 +18,7 @@ import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
+import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
 import { createTerrainMaterial, terrainTrackDistance } from './render/terrainMaterial';
@@ -536,6 +537,38 @@ async function startGame(trackId: string): Promise<void> {
   // fb stays in scope for the next consumers (165 rumble, 167 particles).
   const fb: Feedback = { shake: 0, low: 0, high: 0 };
 
+  const particles = new SurfaceParticles(scene);
+  disposables.push(particles);
+  const emissionAcc = new Float64Array(4);
+  const particlePos: Vec3 = { x: 0, y: 0, z: 0 };
+  const particleVel: Vec3 = { x: 0, y: 0, z: 0 };
+  const particleQuat = new THREE.Quaternion();
+  const particleFwd = new THREE.Vector3();
+
+  const emitParticles = (dt: number): void => {
+    const speed = Math.abs(interp.forwardSpeed);
+    particleQuat.set(interp.rotation.x, interp.rotation.y, interp.rotation.z, interp.rotation.w);
+    particleFwd.set(0, 0, -1).applyQuaternion(particleQuat);
+    for (let i = 0; i < interp.wheels.length; i++) {
+      const wheel = interp.wheels[i];
+      const surface = telemetry.wheels[i].surface;
+      const rate = wheel.inContact ? emissionRate(surface, speed) : 0;
+      emissionAcc[i] = rate > 0 ? emissionAcc[i] + rate * dt : 0;
+      const count = Math.floor(emissionAcc[i]);
+      if (count <= 0) continue;
+      emissionAcc[i] -= count;
+      const wp = wheel.position;
+      particlePos.x = wp.x;
+      particlePos.y = wp.y - F4_CAR.wheelRadius;
+      particlePos.z = wp.z;
+      particleVel.x = speed * particleFwd.x;
+      particleVel.y = 0;
+      particleVel.z = speed * particleFwd.z;
+      particles.emit(surface, particlePos, particleVel, count);
+    }
+    particles.update(dt);
+  };
+
   let autoGearbox = true;
   let paused = false;
   let running = true;
@@ -572,6 +605,7 @@ async function startGame(trackId: string): Promise<void> {
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
       gamepad.rumble(fb.low, fb.high, performance.now());
       cameraRig.applyShake(fb.shake, game.simTime);
+      emitParticles(frame);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
       minimap.update(interp.position.x, interp.position.z);
