@@ -189,7 +189,7 @@
     },
     {
       "id": "M1.5",
-      "title": "Vehicle dynamics: in-house tyre/suspension/powertrain model, setups, tyre wear, fuel",
+      "title": "Vehicle dynamics: in-house tyre/suspension/powertrain model, setups, tyre wear, fuel + surface feel (feedback, shake, rumble, dirty tyres, particles)",
       "status": "open",
       "tasks": [
         "058",
@@ -206,7 +206,12 @@
         "068",
         "069",
         "070",
-        "162"
+        "162",
+        "163",
+        "164",
+        "165",
+        "166",
+        "167"
       ],
       "prefetch": [
         "058",
@@ -223,7 +228,12 @@
         "162",
         "066",
         "069",
-        "070"
+        "070",
+        "163",
+        "164",
+        "165",
+        "167",
+        "166"
       ]
     },
     {
@@ -258,25 +268,6 @@
         "168"
       ],
       "status": "open"
-    },
-    {
-      "id": "M1.5b",
-      "title": "Surface feel: feedback signal, camera shake, gamepad rumble, dirty tyres, surface particles",
-      "status": "open",
-      "tasks": [
-        "163",
-        "164",
-        "165",
-        "166",
-        "167"
-      ],
-      "prefetch": [
-        "163",
-        "164",
-        "165",
-        "167",
-        "166"
-      ]
     },
     {
       "id": "M1.6b",

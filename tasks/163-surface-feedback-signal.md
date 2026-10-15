@@ -14,7 +14,7 @@ A pure function turns per-wheel surface and slip into three 0..1 feedback channe
 
 ## Context
 
-Milestone M1.5b. `Surface` comes from `src/core/types.ts`. Simulation-side code: no `three`, no allocation per call.
+Milestone M1.5 (merged from M1.5b). `Surface` comes from `src/core/types.ts`. Simulation-side code: no `three`, no allocation per call.
 
 ## Files
 
