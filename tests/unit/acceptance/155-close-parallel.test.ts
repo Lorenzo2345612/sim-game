@@ -468,6 +468,8 @@ describe('155 close parallel sections acceptance', () => {
       const strip = (t: TrackDataV2): Record<string, unknown> => {
         const copy: Record<string, unknown> = { ...t };
         delete copy.sausages;
+        delete copy.pit;
+        delete copy.barriers;
         return copy;
       };
       expect(strip(track), `${id}: JSON changed (sausages ignored)`).toEqual(strip(prev));

@@ -82,11 +82,13 @@ describe('createPitBuilding', () => {
     expect(meshesByName(group, 'garageDoor')).toHaveLength(group.userData.garageCount as number);
   });
 
-  it('elevation anchors the building base', () => {
+  // Task 173: base = min(elevation over the range, terrain samples) - 0.3.
+  // The fixture terrain is degenerate (non-finite samples are dropped), so elevation anchors it.
+  it('building base sits 0.3 m below the lowest sample', () => {
     const group = createPitBuilding(straightTrack({ start: 2, end: 18, side: 'right' }, 2.5));
     const box = bbox(meshesByName(group, 'pit')[0]);
-    expect(box.min.y).toBeCloseTo(2.5, 6);
-    expect(box.max.y).toBeCloseTo(6.5, 6);
+    expect(box.min.y).toBeCloseTo(2.2, 6);
+    expect(box.max.y).toBeCloseTo(6.2, 6);
   });
 });
 

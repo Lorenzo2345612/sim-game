@@ -212,7 +212,7 @@ describe('142 kerbs on every corner acceptance', () => {
           cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
         }),
       ) as TrackDataV2;
-      for (const key of ['centerline', 'elevation', 'pit'] as const) {
+      for (const key of ['centerline', 'elevation'] as const) {
         expect(track[key], `${id}: ${key} changed`).toEqual(prev[key]);
       }
       const n = track.centerline.length;

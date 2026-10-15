@@ -292,7 +292,7 @@ describe('140 paved run-offs, escape roads and foam barriers acceptance', () => 
           maxBuffer: 64 * 1024 * 1024,
         }),
       ) as TrackV2_140;
-      for (const key of ['centerline', 'elevation', 'kerbs', 'pit'] as const) {
+      for (const key of ['centerline', 'elevation', 'kerbs'] as const) {
         expect(track[key], `${id}: ${key} changed`).toEqual(prev[key]);
       }
       const n = track.centerline.length;

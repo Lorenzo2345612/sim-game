@@ -49,6 +49,8 @@ describe('106 new tracks in game', () => {
     const strip = (t: Record<string, unknown>): Record<string, unknown> => {
       const copy = { ...t };
       delete copy.sausages;
+      delete copy.pit;
+      delete copy.barriers;
       return copy;
     };
     for (const file of TRACK_FILES) {

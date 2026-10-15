@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { TrackDataV2 } from '../core/types';
+import type { Terrain, TrackDataV2 } from '../core/types';
 import { registerWhitePaint } from './sceneSetup';
 
 export interface StartLights { object: THREE.Group; setLights(n: number): void }
@@ -31,6 +31,27 @@ function tangentYaw(track: TrackDataV2): number {
   return Math.atan2(-(z1 - z0) / len, (x1 - x0) / len);
 }
 
+// Bilinear sample of the terrain grid; same convention as main.ts makeTerrainY
+// (heights column-major, col * (rows + 1) + row, origin = centre).
+function terrainY(t: Terrain, x: number, z: number): number {
+  const vertexRows = t.rows + 1;
+  const minX = t.originX - t.sizeX / 2;
+  const minZ = t.originZ - t.sizeZ / 2;
+  const fx = Math.min(Math.max(((x - minX) / t.sizeX) * t.cols, 0), t.cols);
+  const fz = Math.min(Math.max(((z - minZ) / t.sizeZ) * t.rows, 0), t.rows);
+  const j = Math.min(Math.floor(fx), t.cols - 1);
+  const i = Math.min(Math.floor(fz), t.rows - 1);
+  const tx = fx - j;
+  const tz = fz - i;
+  const h00 = t.heights[j * vertexRows + i];
+  const h10 = t.heights[(j + 1) * vertexRows + i];
+  const h01 = t.heights[j * vertexRows + i + 1];
+  const h11 = t.heights[(j + 1) * vertexRows + i + 1];
+  const h0 = h00 + (h10 - h00) * tx;
+  const h1 = h01 + (h11 - h01) * tx;
+  return h0 + (h1 - h0) * tz;
+}
+
 function pitPathLength(track: TrackDataV2): number {
   const { centerline, pit } = track;
   let length = 0;
@@ -51,10 +72,34 @@ export function createPitBuilding(track: TrackDataV2): THREE.Group {
   const dz = (ez - sz) / chordLength;
   const yaw = Math.atan2(-dz, dx);
   const [nx, nz] = sideNormal(dx, dz, track.pit.side);
-  const y = track.elevation[track.pit.start];
 
-  const buildingGeometry = new THREE.BoxGeometry(chordLength, BUILDING_HEIGHT, BUILDING_DEPTH);
-  buildingGeometry.translate(0, BUILDING_HEIGHT / 2, 0);
+  const samples: number[] = [];
+  const n = track.centerline.length;
+  for (let i = track.pit.start; ; i = (i + 1) % n) {
+    samples.push(track.elevation[i]);
+    if (i === track.pit.end) break;
+  }
+  const near = track.widthMeters / 2 + EDGE_OFFSET;
+  const far = near + BUILDING_DEPTH;
+  if (track.terrain) {
+    const corner = (u: number, v: number): number =>
+      terrainY(track.terrain, sx + dx * u + nx * v, sz + dz * u + nz * v);
+    const edges: Array<[number, number]> = [
+      [0, near], [0, far], [chordLength, near], [chordLength, far],
+      [chordLength / 2, near], [chordLength / 2, far],
+      [0, (near + far) / 2], [chordLength, (near + far) / 2],
+    ];
+    for (const [u, v] of edges) {
+      const h = corner(u, v);
+      if (Number.isFinite(h)) samples.push(h);
+    }
+  }
+  // Sink 0.3 m so it never floats, but keep the roof above every sample.
+  const y = Math.min(...samples) - 0.3;
+  const height = Math.max(BUILDING_HEIGHT, Math.max(...samples) - y + 0.1);
+
+  const buildingGeometry = new THREE.BoxGeometry(chordLength, height, BUILDING_DEPTH);
+  buildingGeometry.translate(0, height / 2, 0);
   const buildingMaterial = new THREE.MeshStandardMaterial({ color: '#b8bcc0', roughness: 0.85 });
   registerWhitePaint(buildingMaterial);
   const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
@@ -67,7 +112,6 @@ export function createPitBuilding(track: TrackDataV2): THREE.Group {
   const spacing = chordLength / garageCount;
   const doorGeometry = new THREE.BoxGeometry(Math.min(5, spacing * 0.75), DOOR_HEIGHT, DOOR_THICKNESS);
   const doorMaterial = new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.9 });
-  const nearFace = track.widthMeters / 2 + EDGE_OFFSET;
 
   const group = new THREE.Group();
   group.userData.garageCount = garageCount;
@@ -76,7 +120,7 @@ export function createPitBuilding(track: TrackDataV2): THREE.Group {
     const door = new THREE.Mesh(doorGeometry, doorMaterial);
     door.name = 'garageDoor';
     // Flush on the near face, protruding slightly so the dark panel stays visible.
-    door.position.set(sx + dx * t + nx * nearFace, y + DOOR_HEIGHT / 2, sz + dz * t + nz * nearFace);
+    door.position.set(sx + dx * t + nx * near, y + DOOR_HEIGHT / 2, sz + dz * t + nz * near);
     door.rotation.y = yaw;
     group.add(door);
   }

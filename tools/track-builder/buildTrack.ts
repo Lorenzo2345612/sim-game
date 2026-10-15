@@ -11,6 +11,7 @@ import { loadGravelPolygons } from './osmAreas';
 import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
 import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
+import { clipPitRange } from './pitRange';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
 import { placeTrees, type Biome } from './trees';
 import type { DemGrid } from '../dem/fetchDem';
@@ -120,9 +121,9 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
   const parallel = analyzeParallel(centerline, config.widthMeters);
   const kerbsFinal = parallel.any ? stripParallel(kerbs, parallel) : kerbs;
   const runoffsFinal = parallel.any ? stripParallel(paved, parallel) : paved;
+  // from/to meters are relative to the start line (centerline index 0)
   const pit: PitLane = {
-    start: indexAtMeters(cum, config.pit.fromMeters, lapLength),
-    end: indexAtMeters(cum, config.pit.toMeters, lapLength),
+    ...clipPitRange(centerline, 0, config.pit.fromMeters, config.pit.toMeters, 2, config.id),
     side: config.pit.side,
   };
   const barriers = applyMedianWalls(
