@@ -1,0 +1,59 @@
+import { describe, expect, it } from 'vitest';
+import type { BarrierSegment, TrackDataV2 } from '../../../src/core/types';
+import { barrierRuns } from '../../../src/track/barrierPath';
+
+// Two straights 3 m apart (median layout): bottom z=0, top z=3.
+function medianLoop(): [number, number][] {
+  const pts: [number, number][] = [];
+  for (let x = 0; x <= 300; x += 2) pts.push([x, 0]);
+  for (let x = 300; x >= 2; x -= 2) pts.push([x, 3]);
+  pts.push([0, 3]);
+  return pts;
+}
+
+function track(barrier: BarrierSegment): TrackDataV2 {
+  const centerline = medianLoop();
+  const halfWidthRight = centerline.map((_, i) => (i <= 150 ? 1.5 : 3));
+  return {
+    version: 2,
+    id: 'edge-median',
+    name: 'Edge Median',
+    widthMeters: 6,
+    lengthMeters: 612,
+    officialLengthMeters: 612,
+    centerline,
+    sectors: [0, 100, 200],
+    elevation: centerline.map(() => 0),
+    kerbs: [],
+    runoffs: [],
+    barriers: [barrier],
+    halfWidthRight,
+    terrain: { originX: 150, originZ: 1.5, sizeX: 800, sizeZ: 100, rows: 1, cols: 1, heights: [0, 0, 0, 0] },
+    treeSpecies: [],
+    trees: [],
+    grandstands: [],
+    pit: { start: 0, end: 0, side: 'left' },
+    escapeRoads: [],
+    source: { dataset: 'test', license: 'CC0', url: '', dem: '' },
+  };
+}
+
+describe('176 median wall exemption edge cases', () => {
+  it('EDGE8: narrowed-side walls keep every vertex; armco at the same offset loses the mid-track vertices', () => {
+    const seg = (type: BarrierSegment['type']): BarrierSegment => ({
+      start: 0,
+      end: 150,
+      side: 'right',
+      type,
+      offsetMeters: 1.5,
+    });
+    const wallRuns = barrierRuns(track(seg('wall')), 'right');
+    expect(wallRuns).toHaveLength(1);
+    expect(wallRuns[0].map((v) => v.index)).toEqual(Array.from({ length: 151 }, (_, i) => i));
+    const armco = barrierRuns(track(seg('armco')), 'right').flat();
+    expect(armco.length).toBeLessThan(151);
+    for (const v of armco) {
+      expect(v.x > 5 && v.x < 295, `armco survivor (${v.x}, ${v.z})`).toBe(false);
+    }
+  });
+});
