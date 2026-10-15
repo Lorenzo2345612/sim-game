@@ -41,7 +41,7 @@ Conventions: fixed-step determinism kept (no `Math.random` or wall-clock in simu
 | AT2 | e2e: setup rear wing max vs min (via storage) | top speed after 20 s | max wing slower by > 3 km/h |
 | AT3 | e2e: `?wear=5` vs `?wear=1`, same 30 s script | wear ratio | in [4, 6] |
 | AT4 | e2e `/?track=monza` at > 150 km/h | full brake + full steer for 2 s of sim time | \|`getHeading()` − velocity direction\| < 30° throughout (no spin) |
-| AT5 | Verification commands | run | pass (covered by Verification; no dedicated test) |
+| AT5 | Verification commands | run | pass (verification gate; no dedicated test) |
 | AT6 | e2e: game running | HUD | `.tyres` has 4 boxes and `.fuel` visible inside the viewport |
 
 ## Acceptance criteria
