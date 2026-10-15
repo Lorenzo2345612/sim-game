@@ -31,6 +31,7 @@ Today `showTrackSelect` in `src/ui/menu.ts` renders 15 full-width stacked button
 - `tests/e2e/acceptance/044-track-menu.spec.ts` AT1: assert `#menu button[data-track="<id>"] .track-name` has text '<Name>' (instead of the whole button).
 - `tests/e2e/acceptance/106-new-tracks-in-game.spec.ts`: `names` = text contents of `#menu button[data-track] .track-name` (ids check unchanged).
 - Nothing else in those files changes.
+- `tests/unit/edge/142-kerbs-every-corner.post.test.ts` (~line 144): skip `index.json` in the `public/tracks/*.json` scan (by file name); nothing else.
 
 ## Steps
 
