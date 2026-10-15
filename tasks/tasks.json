@@ -1518,7 +1518,7 @@
     {
       "num": "112",
       "title": "Prototype models through the car pipeline",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "071",
         "075"
@@ -2290,7 +2290,7 @@
     {
       "num": "166",
       "title": "Dirty tyres",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "065",
         "169",
