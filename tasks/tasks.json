@@ -1562,7 +1562,7 @@
     {
       "num": "115",
       "title": "Cockpit data per car (eye, steering wheel anchor, lock)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "058",
         "066",
