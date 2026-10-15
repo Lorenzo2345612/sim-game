@@ -1433,7 +1433,7 @@
     {
       "num": "106",
       "title": "Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "044",
         "099",
@@ -1444,7 +1444,7 @@
       ],
       "complexity": "simple",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/106-new-tracks-in-game.md"
     },
