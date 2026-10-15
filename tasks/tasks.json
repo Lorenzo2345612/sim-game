@@ -2363,7 +2363,7 @@
     {
       "num": "171",
       "title": "Track select menu redesign",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "106"
       ],
@@ -2372,6 +2372,32 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/171-track-select-redesign.md"
+    },
+    {
+      "num": "172",
+      "title": "Lighting calibration: one sun, tamer whites and bloom",
+      "status": "pending",
+      "deps": [
+        "106"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/172-lighting-calibration.md"
+    },
+    {
+      "num": "173",
+      "title": "Pit building only along the straight",
+      "status": "pending",
+      "deps": [
+        "106"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/173-pit-building-straight.md"
     }
   ]
 }
