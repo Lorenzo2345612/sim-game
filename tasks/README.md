@@ -150,7 +150,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
-| 149 | Sausage kerb placement (builder) | pending | 140 |
+| 149 | Sausage kerb placement (builder) | in progress | 140 |
 | 150 | Sausage kerb render and colliders | pending | 141, 149 |
 | 151 | Performance harness and budgets | pending | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
@@ -172,3 +172,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |
+| 171 | Track select menu redesign | pending | 106 |
