@@ -35,10 +35,13 @@ Track data was built by the planner (`tools/track-builder/tracks.json` entries, 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | e2e `/` | menu | 15 track buttons in order monza, spa, silverstone, mexico, daytona, lusail, bahrain, braselton, elkhart, sepang, baku, budapest, singapore, lasvegas, spielberg with names Monza, Spa, Silverstone, Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake, Sepang, Baku, Budapest, Singapore, Las Vegas, Spielberg |
-| AT2 | e2e `/?track=<id>` for every new id | ready | `trackId()` = id; no console errors; 3 s of throttle reaches > 30 km/h |
+| AT2 | e2e `/?track=<id>` for every new id | ready | `trackId()` = id; no console errors; 3 s of simulated time (`getSimTime()`) of throttle reaches > 30 km/h |
 | AT3 | e2e each new track | ready | `sceneStats().environment` per Steps; `sceneStats().groundTexture` contains `textures/ground/<id>.jpg` |
 | AT4 | public/tracks/ daytona, lusail, bahrain, braselton, elkhart, baku, budapest, singapore, lasvegas, spielberg .json / mexico.json, sepang.json | read `source` | dataset 'OpenStreetMap', license 'ODbL 1.0' / dataset 'bacinger/f1-circuits', license 'MIT' |
 | AT5 | public/tracks/monza.json, spa.json, silverstone.json | git diff vs base | unchanged |
+
+- Planner-authorised test edit (exactly this): in `tests/e2e/acceptance/106-new-tracks-in-game.spec.ts` AT2, replace `page.waitForTimeout(3000)` with recording `getSimTime()` after `keyboard.down` and `page.waitForFunction` until it has advanced ≥ 3 s (timeout 60 s). Software GL runs the sim slower than wall time.
+- Do not edit `src/track/surfaces.ts` or `tools/track-builder/terrain.ts`. Run the 106 e2e at most twice; no diagnostic specs.
 
 ## Acceptance criteria
 
