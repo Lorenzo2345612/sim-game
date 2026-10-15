@@ -60,7 +60,7 @@ npx playwright test 070-   # this task's e2e files only; never the full e2e suit
 
 ## Planner-authorised test edits
 
-Planner ran the e2e on the coder's wiring (uncommitted in the worktree): AT1, AT2, AT6 pass; AT3 failed once with a Playwright `browser.newContext` protocol error (infra flake); AT4 timed out because the current F4 needs ~16 s of sim time to reach 150 km/h (known calibration issue, separate task 177, out of scope here). The wiring in the worktree is complete: do NOT tune physics or car files, do not analyse track data, no `sleep` loops, no `pkill`.
+Planner ran the e2e on the coder's wiring (uncommitted in the worktree): AT1, AT2, AT6 pass; AT3 failed once with a Playwright `browser.newContext` protocol error (infra flake); AT4 timed out because with throttle only and no steering the car drifts off the Monza straight onto grass at ~7 s / ~151 km/h (planner probe; flat-ground lab: 0-100 4.0 s, 193 km/h at 16 s, so no calibration issue). The wiring in the worktree is complete: do NOT tune physics or car files, do not analyse track data, no `sleep` loops, no `pkill`.
 In `tests/e2e/acceptance/070-dynamics-integration.spec.ts` change only:
 - AT4: speed threshold `>= 150` → `>= 120` (test title text to match) and that `waitForFunction` timeout `180000` → `300000`.
 - Add `test.describe.configure({ mode: 'serial' });` as the first line inside the `test.describe` block (serial runs; swiftshader is slow under parallel workers).
