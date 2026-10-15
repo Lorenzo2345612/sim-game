@@ -2064,7 +2064,7 @@
     {
       "num": "149",
       "title": "Sausage kerb placement (builder)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "140"
       ],

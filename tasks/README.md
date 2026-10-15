@@ -150,7 +150,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
-| 149 | Sausage kerb placement (builder) | in progress | 140 |
+| 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | pending | 141, 149 |
 | 151 | Performance harness and budgets | pending | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
