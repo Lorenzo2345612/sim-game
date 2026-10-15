@@ -1655,7 +1655,7 @@
     {
       "num": "121",
       "title": "Race number decals",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "120"
       ],
