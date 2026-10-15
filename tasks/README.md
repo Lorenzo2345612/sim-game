@@ -156,7 +156,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
-| 155 | Close parallel sections: per-index half-widths and shared median wall | in progress | 140, 141, 142, 143 |
+| 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | pending | 081, 101, 106 |
 | 157 | City bake from OSM: buildings, old-city walls, water | pending | 106 |
 | 158 | City renderer: buildings, facades, water | pending | 099, 157 |
