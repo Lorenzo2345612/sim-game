@@ -1031,6 +1031,9 @@ def _run_task(task, slot):
         if not resolved.exists():
             return "decision"
         st.pop("decision")
+        # A planner resolution changes spec/tests: fix rounds start over against the new contract.
+        st["fixRounds"] = 0
+        st.pop("dismissed", None)
         event(num, "resumed", f"decision resolved at {st['stage']}")
 
     set_status(num, "in progress")
