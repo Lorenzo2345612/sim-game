@@ -34,7 +34,8 @@ The values were calibrated in the planner lab with the 065 model (`SURF='{"grip"
 - `tests/unit/physics/surfaceDrag.test.ts` — create — edge cases.
 - Planner-authorised edits to superseded constant-drag assertions (exactly these):
   - `tests/unit/acceptance/022-types-and-constants-v2.test.ts:50-55`: `SURFACE_DRAG.grass` → `{ c0: 0.10, c1: 0.004 }`, `.gravel` → `{ c0: 0.08, c1: 0.03 }`, asphalt/kerb/runoff `{ c0: 0, c1: 0 }` (toEqual).
-  - `tests/unit/edge/033-surface-grip-edge.test.ts:185` (EDGE6) and `:218` (EDGE8): expected deceleration from `rollingDrag(surface, v, fz) / (m/4)` per wheel at the test's speed instead of `SURFACE_DRAG.gravel * g`; keep the same tolerance band shape.
+  - `tests/unit/edge/033-surface-grip-edge.test.ts` EDGE5 (~:175): `toBeLessThan(0.4)` → `toBeLessThan(0.6)`.
+  - `tests/unit/edge/033-surface-grip-edge.test.ts` EDGE6 (~:185-202): band becomes `loss >= expectedAt(vG) - 0.45` and `loss <= expectedAt(30) + 0.2`, where `expectedAt(v) = rollingDrag('gravel', v, fz) / (m/4) * 1` (drag is speed-dependent; the true loss lies between the end-speed and launch-speed values). Title may be updated. (EDGE8 no longer exists; no edit there.)
 
 ## Steps
 
