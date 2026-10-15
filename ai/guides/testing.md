@@ -7,3 +7,4 @@
 - No `setTimeout` or real time: the game loop accepts an explicit `dt`.
 - Test track data: use small fixtures in `tests/fixtures/`, not the full tracks.
 - One test = one behavior. Test name in English, describes the expected behavior.
+- e2e runs on headless swiftshader, which renders lit geometry black (sky only): never assert screenshot pixels of the 3D world; assert state through `__SIMGAME__` hooks. Wait on `getSimTime()`, not wall time, for driving checks.
