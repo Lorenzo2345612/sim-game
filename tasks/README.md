@@ -172,7 +172,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |
-| 171 | Track select menu redesign | in progress | 106 |
+| 171 | Track select menu redesign | done | 106 |
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
 | 173 | Pit building only along the straight | in progress | 106 |
 | 174 | Track banking (cross-slope) + Daytona | pending | 106, 155 |
