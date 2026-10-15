@@ -163,7 +163,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
-| 162 | Speed-dependent rolling drag on grass and gravel | in progress | 065, 169 |
+| 162 | Speed-dependent rolling drag on grass and gravel | done | 065, 169 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
