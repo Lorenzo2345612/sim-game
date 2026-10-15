@@ -88,7 +88,12 @@ test.describe('106 new tracks in game', () => {
       await loadGame(page, `/?track=${id}`);
       expect(await page.evaluate(() => window.__SIMGAME__!.trackId()), `${id}: trackId`).toBe(id);
       await page.keyboard.down('ArrowUp');
-      await page.waitForTimeout(3000);
+      const start = await page.evaluate(() => window.__SIMGAME__!.getSimTime());
+      await page.waitForFunction(
+        (from) => (window.__SIMGAME__?.getSimTime() ?? 0) - from >= 3,
+        start,
+        { timeout: 60000 },
+      );
       await page.keyboard.up('ArrowUp');
       const speed = await page.evaluate(() => window.__SIMGAME__!.getSpeedKmh());
       expect(speed, `${id}: speed after 3 s`).toBeGreaterThan(30);

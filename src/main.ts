@@ -40,7 +40,7 @@ import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
-import { Menu } from './ui/menu';
+import { Menu, TRACK_CHOICES } from './ui/menu';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
@@ -91,7 +91,7 @@ declare global {
   }
 }
 
-const TRACK_IDS = ['monza', 'spa', 'silverstone'];
+const TRACK_IDS = TRACK_CHOICES.map((c) => c.id);
 const DEFAULT_TRACK_ID = 'monza';
 
 // The v2 world renders below 15 fps on software GL (CI), where the default cap

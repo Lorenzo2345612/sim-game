@@ -9,6 +9,18 @@ export const TRACK_CHOICES: TrackChoice[] = [
   { id: 'monza', name: 'Monza' },
   { id: 'spa', name: 'Spa' },
   { id: 'silverstone', name: 'Silverstone' },
+  { id: 'mexico', name: 'Mexico City' },
+  { id: 'daytona', name: 'Daytona' },
+  { id: 'lusail', name: 'Lusail' },
+  { id: 'bahrain', name: 'Sakhir' },
+  { id: 'braselton', name: 'Braselton' },
+  { id: 'elkhart', name: 'Elkhart Lake' },
+  { id: 'sepang', name: 'Sepang' },
+  { id: 'baku', name: 'Baku' },
+  { id: 'budapest', name: 'Budapest' },
+  { id: 'singapore', name: 'Singapore' },
+  { id: 'lasvegas', name: 'Las Vegas' },
+  { id: 'spielberg', name: 'Spielberg' },
 ];
 
 export const LAST_TRACK_KEY = 'lastTrack';

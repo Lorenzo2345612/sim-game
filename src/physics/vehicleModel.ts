@@ -18,6 +18,11 @@ import { aeroForces, AeroForces } from './aero';
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const ENGINE_BRAKE_RAMP_RPM = 1500;
 const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on a visible change
+// m/s; below this the chassis is numerically at rest for the wheel solver, but only
+// without brakes: the locked-wheel hold needs the real vx. The solver's tick clamp caps
+// an opposing force at massShare·|vx|/dt, so a mm/s gravity creep on an uphill spawn
+// would cap throttle exactly at the slope pull and the car could never launch.
+const VX_REST = 0.05;
 
 const tmpSurfaces: Surface[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
 const tmpRay = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
@@ -462,7 +467,8 @@ export class VehicleModel {
       this.solveIn.inertia = wheelInertia + (i >= 2 ? iRed : 0);
       this.solveIn.driveTorque = i === 2 ? split[0] : i === 3 ? split[1] : 0;
       this.solveIn.brakeTorque = this.brakeT[i] * absScale(spec.aids.abs, w.kappa, speed);
-      this.solveIn.vx = w.vl;
+      this.solveIn.vx =
+        this.brakeT[i] > 0 || Math.abs(w.vl) >= VX_REST ? w.vl : 0;
       this.solveIn.fz = w.fz;
       this.solveIn.compound = this.compoundSpec;
       this.solveIn.factor = w.grip;

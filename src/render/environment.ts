@@ -6,12 +6,36 @@ export const FOG_TABLE: Record<string, { density: number }> = {
   monza: { density: 0.00055 },
   spa: { density: 0.0011 },
   silverstone: { density: 0.0008 },
+  mexico: { density: 0.0005 },
+  daytona: { density: 0.0004 },
+  lusail: { density: 0.0003 },
+  bahrain: { density: 0.0003 },
+  braselton: { density: 0.0005 },
+  elkhart: { density: 0.0005 },
+  sepang: { density: 0.0004 },
+  baku: { density: 0.0004 },
+  budapest: { density: 0.0005 },
+  singapore: { density: 0.0005 },
+  lasvegas: { density: 0.0003 },
+  spielberg: { density: 0.0006 },
 };
 
 export const ENV_TABLE: Record<string, string> = {
   monza: 'kloofendal_48d_partly_cloudy_puresky',
   spa: 'kloofendal_overcast_puresky',
   silverstone: 'kloofendal_overcast_puresky',
+  mexico: 'kloofendal_48d_partly_cloudy_puresky',
+  daytona: 'kloofendal_48d_partly_cloudy_puresky',
+  lusail: 'qwantani_noon_puresky',
+  bahrain: 'qwantani_noon_puresky',
+  braselton: 'kloofendal_48d_partly_cloudy_puresky',
+  elkhart: 'kloofendal_48d_partly_cloudy_puresky',
+  sepang: 'kloofendal_48d_partly_cloudy_puresky',
+  baku: 'kloofendal_48d_partly_cloudy_puresky',
+  budapest: 'kloofendal_48d_partly_cloudy_puresky',
+  singapore: 'kloofendal_48d_partly_cloudy_puresky',
+  lasvegas: 'qwantani_noon_puresky',
+  spielberg: 'kloofendal_48d_partly_cloudy_puresky',
 };
 
 export interface EnvironmentInfo {

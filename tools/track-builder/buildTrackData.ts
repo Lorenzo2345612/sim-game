@@ -2,7 +2,19 @@ import type { TrackData } from '../../src/core/types';
 import { bboxCenter, projectLonLat, polylineLength } from '../../src/track/geo';
 import { catmullRomClosed, resampleClosed } from '../../src/track/centerline';
 
-export interface TrackSourceConfig { id: string; name: string; widthMeters: number; reverse: boolean }
+export interface TrackSource {
+  dataset: string;
+  license: string;
+  url: string;
+}
+
+export interface TrackSourceConfig {
+  id: string;
+  name: string;
+  widthMeters: number;
+  reverse: boolean;
+  source?: TrackSource;
+}
 
 export interface GeoJsonLineFeatureCollection {
   type: 'FeatureCollection';
@@ -39,6 +51,10 @@ export function buildTrackData(geojson: GeoJsonLineFeatureCollection, config: Tr
     officialLengthMeters,
     centerline: res,
     sectors: [0, Math.round(N / 3), Math.round((2 * N) / 3)],
-    source: { dataset: 'bacinger/f1-circuits', license: 'MIT', url: 'https://github.com/bacinger/f1-circuits' },
+    source: config.source ?? {
+      dataset: 'bacinger/f1-circuits',
+      license: 'MIT',
+      url: 'https://github.com/bacinger/f1-circuits',
+    },
   };
 }
