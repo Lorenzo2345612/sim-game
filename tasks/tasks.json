@@ -1640,7 +1640,7 @@
     {
       "num": "120",
       "title": "Paint materials in the car pipeline and livery shader",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "075",
         "112",

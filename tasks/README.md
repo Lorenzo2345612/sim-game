@@ -122,7 +122,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
 | 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
 | 119 | Livery data, palette and storage | done | 072 |
-| 120 | Paint materials in the car pipeline and livery shader | in progress | 075, 112, 119 |
+| 120 | Paint materials in the car pipeline and livery shader | done | 075, 112, 119 |
 | 121 | Race number decals | pending | 120 |
 | 122 | Livery editor screen | pending | 044, 073, 074, 106, 114, 120, 121 |
 | 123 | Driving line overlay coloured by action | pending | 088, 093, 118 |
