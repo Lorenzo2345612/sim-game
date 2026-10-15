@@ -25,6 +25,13 @@ Today `showTrackSelect` in `src/ui/menu.ts` renders 15 full-width stacked button
 - `src/ui/menu.ts`, `src/ui/menu.css` (create, imported by menu.ts), `index.html` (remove `#menu` rules; pause/credits panels keep the same look).
 - `tests/unit/tools/171-track-index.test.ts` — create — generator unit tests.
 
+## Planner-authorised test edits
+
+- Each card holds the name in `<span class="track-name">` (text = name only) and the "<country> · <km> km" line in `<span class="track-meta">`.
+- `tests/e2e/acceptance/044-track-menu.spec.ts` AT1: assert `#menu button[data-track="<id>"] .track-name` has text '<Name>' (instead of the whole button).
+- `tests/e2e/acceptance/106-new-tracks-in-game.spec.ts`: `names` = text contents of `#menu button[data-track] .track-name` (ids check unchanged).
+- Nothing else in those files changes.
+
 ## Steps
 
 ```ts
