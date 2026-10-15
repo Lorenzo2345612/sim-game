@@ -65,8 +65,16 @@ export const DEFAULT_CAR_SOUND: CarSound = {
   crackle: 0.2,
 };
 
-export type CarCategory = 'open-wheel' | 'gt3' | 'gt4' | 'touring' | 'prototype';
-const CATEGORIES: readonly CarCategory[] = ['open-wheel', 'gt3', 'gt4', 'touring', 'prototype'];
+export type CarCategory = 'open-wheel' | 'gt3' | 'gt4' | 'touring' | 'prototype' | 'lmp2' | 'hypercar';
+const CATEGORIES: readonly CarCategory[] = [
+  'open-wheel',
+  'gt3',
+  'gt4',
+  'touring',
+  'prototype',
+  'lmp2',
+  'hypercar',
+];
 
 export interface CarSpec {
   id: string;
