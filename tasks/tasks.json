@@ -1532,7 +1532,7 @@
     {
       "num": "113",
       "title": "Prototype CarSpecs from the lab files",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "112",
         "072",
@@ -1640,7 +1640,7 @@
     {
       "num": "120",
       "title": "Paint materials in the car pipeline and livery shader",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "075",
         "112",
