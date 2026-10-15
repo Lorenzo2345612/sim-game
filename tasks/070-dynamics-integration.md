@@ -39,7 +39,7 @@ Conventions: fixed-step determinism kept (no `Math.random` or wall-clock in simu
 |---|---|---|---|
 | AT1 | e2e `/?track=monza` | 5 s throttle | speed > 100 km/h, `telemetry().wheels` length 4 with finite values, fuel decreasing |
 | AT2 | e2e: setup rear wing max vs min (via storage) | top speed after 20 s | max wing slower by > 3 km/h |
-| AT3 | e2e: `?wear=5` vs `?wear=1`, same 30 s script | wear ratio | in [4, 6] |
+| AT3 | e2e: `?wear=5` vs `?wear=1`, same 6 s full-throttle script (car stays on the Monza straight) | wear ratio | in [4, 6] |
 | AT4 | e2e `/?track=monza` at ≥ 120 km/h | full brake + full steer for 2 s of sim time | \|`getHeading()` − velocity direction\| < 30° throughout (no spin) |
 | AT5 | Verification commands | run | pass (verification gate; no dedicated test) |
 | AT6 | e2e: game running | HUD | `.tyres` has 4 boxes and `.fuel` visible inside the viewport |
@@ -64,6 +64,8 @@ Planner ran the e2e on the coder's wiring (uncommitted in the worktree): AT1, AT
 In `tests/e2e/acceptance/070-dynamics-integration.spec.ts` change only:
 - AT4: speed threshold `>= 150` → `>= 120` (test title text to match) and that `waitForFunction` timeout `180000` → `300000`.
 - Add `test.describe.configure({ mode: 'serial' });` as the first line inside the `test.describe` block (serial runs; swiftshader is slow under parallel workers).
+- AT3: in `meanWear`, `waitSim(page, 30, 360000)` → `waitSim(page, 6, 180000)` (title text to match). Planner lab probe: wear ratio is exactly 5.00 on flat ground at 6 s and 30 s; the 30 s e2e failure (ratio 0.08) is the car leaving the track at ~7 s and crashing, not the grip cliff.
+
 Then run the verification once and report.
 
 ## Out of scope
