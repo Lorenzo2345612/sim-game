@@ -2335,7 +2335,7 @@
     {
       "num": "169",
       "title": "Vehicle model swap-in and old-test migration",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "065"
       ],
