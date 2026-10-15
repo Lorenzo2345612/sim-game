@@ -175,7 +175,7 @@
         "143",
         "155"
       ],
-      "status": "open",
+      "status": "approved",
       "prefetch": [
         "161",
         "100",
@@ -185,7 +185,11 @@
         "103",
         "104",
         "142"
-      ]
+      ],
+      "builtAt": "2026-10-15T12:01:34",
+      "commit": "0777572",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.5",
@@ -410,7 +414,10 @@
         "149",
         "150"
       ],
-      "status": "open"
+      "status": "open",
+      "prefetch": [
+        "149"
+      ]
     },
     {
       "id": "M5",

@@ -60,3 +60,5 @@ Coder A/B (GLM vs MiMo) per task in `ai/experiments.json`; results so far (Phase
 - New track data (a25ce7d): braselton (Road Atlanta, OSM, +0.06 %), elkhart (Road America, OSM, −1.16 % vs 6515 m; shape matches OSM and the real layout, accepted like Daytona), sepang (bacinger my-1999, +0.28 %, OSM mean 1.81 m). Start lines and grandstands approximate. In task 106.
 - Track data afdd708: baku, budapest, singapore (2023 layout), lasvegas, spielberg (all OSM; baku DEM from SRTM). Baku has ~380 m of parallel carriageways 9.5–20 m apart → task 155 (median wall, per-index half-widths) before 106. 106 now adds 12 new tracks (menu = 15).
 - M1.2d (156–160) registered after M1.2c. Planner TODO before 160: fill `landmarks` (lon/lat/height) in tools/track-builder/tracks.json for baku, singapore, lasvegas. Assets being installed by asset-scout.
+
+- M1.2c approved 2026-10-15. Known: in-game handling regressed after the 065/169 model swap (0-100 4.73 s, 151 km/h @16 s, 150-0 93 m vs targets). 070 (assists/spec boot) should fix it; check `handling.json` in the M1.5 review, else bugfix.
