@@ -2,6 +2,7 @@
   {
     "id": "monza",
     "name": "Monza",
+    "country": "Italy",
     "geojson": "it-1922",
     "dem": "assets/source/dem/monza.json",
     "canopyRadiusCells": 3,
@@ -26,6 +27,7 @@
   {
     "id": "spa",
     "name": "Spa",
+    "country": "Belgium",
     "geojson": "be-1925",
     "dem": "assets/source/dem/spa.json",
     "maxGrade": 0.20,
@@ -48,6 +50,7 @@
   {
     "id": "silverstone",
     "name": "Silverstone",
+    "country": "United Kingdom",
     "geojson": "gb-1948",
     "dem": "assets/source/dem/silverstone.json",
     "maxGrade": 0.04,
@@ -70,6 +73,7 @@
   {
     "id": "mexico",
     "name": "Mexico City",
+    "country": "Mexico",
     "geojson": "mx-1962",
     "source": { "dataset": "bacinger/f1-circuits", "license": "MIT", "url": "https://github.com/bacinger/f1-circuits" },
     "dem": "assets/source/dem/mexico.json",
@@ -93,6 +97,7 @@
   {
     "id": "daytona",
     "name": "Daytona",
+    "country": "United States",
     "geojson": "us-daytona",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/daytona.json",
@@ -115,6 +120,7 @@
   {
     "id": "lusail",
     "name": "Lusail",
+    "country": "Qatar",
     "geojson": "qa-lusail",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/lusail.json",
@@ -137,6 +143,7 @@
   {
     "id": "bahrain",
     "name": "Sakhir",
+    "country": "Bahrain",
     "geojson": "bh-sakhir",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/bahrain.json",
@@ -159,6 +166,7 @@
   {
     "id": "braselton",
     "name": "Braselton",
+    "country": "United States",
     "geojson": "us-braselton",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/braselton.json",
@@ -182,6 +190,7 @@
   {
     "id": "elkhart",
     "name": "Elkhart Lake",
+    "country": "United States",
     "geojson": "us-elkhart",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/elkhart.json",
@@ -206,6 +215,7 @@
   {
     "id": "sepang",
     "name": "Sepang",
+    "country": "Malaysia",
     "geojson": "my-1999",
     "source": { "dataset": "bacinger/f1-circuits", "license": "MIT", "url": "https://github.com/bacinger/f1-circuits" },
     "dem": "assets/source/dem/sepang.json",
@@ -228,6 +238,7 @@
   {
     "id": "baku",
     "name": "Baku",
+    "country": "Azerbaijan",
     "geojson": "az-baku",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/baku.json",
@@ -250,6 +261,7 @@
   {
     "id": "budapest",
     "name": "Budapest",
+    "country": "Hungary",
     "geojson": "hu-hungaroring",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/budapest.json",
@@ -274,6 +286,7 @@
   {
     "id": "singapore",
     "name": "Singapore",
+    "country": "Singapore",
     "geojson": "sg-marina-bay",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/singapore.json",
@@ -296,6 +309,7 @@
   {
     "id": "lasvegas",
     "name": "Las Vegas",
+    "country": "United States",
     "geojson": "us-lasvegas",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/lasvegas.json",
@@ -318,6 +332,7 @@
   {
     "id": "spielberg",
     "name": "Spielberg",
+    "country": "Austria",
     "geojson": "at-spielberg",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/spielberg.json",

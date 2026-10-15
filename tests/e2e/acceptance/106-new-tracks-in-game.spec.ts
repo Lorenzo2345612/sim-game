@@ -70,7 +70,7 @@ test.describe('106 new tracks in game', () => {
       els.map((el) => (el as HTMLButtonElement).getAttribute('data-track') ?? ''),
     );
     expect(ids).toEqual(MENU_IDS);
-    const names = await buttons.allTextContents();
+    const names = await page.locator('#menu button[data-track] .track-name').allTextContents();
     expect(names).toEqual(MENU_NAMES);
   });
 

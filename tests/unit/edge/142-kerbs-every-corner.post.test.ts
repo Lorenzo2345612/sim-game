@@ -142,7 +142,7 @@ describe('142 kerbs post-coder gaps', () => {
   it('every regenerated public track stores exactly detectKerbs(centerline) and keeps centerline, elevation and pit unchanged', () => {
     const baseRev = execFileSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
     const ids = readdirSync(join(ROOT, 'public', 'tracks'))
-      .filter((f) => f.endsWith('.json'))
+      .filter((f) => f.endsWith('.json') && f !== 'index.json')
       .map((f) => f.slice(0, -5));
     expect(ids.length).toBeGreaterThanOrEqual(10);
     for (const id of ids) {

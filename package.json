@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "build:tracks": "tsx tools/track-builder/buildTrack.ts",
+    "build:track-index": "tsx tools/track-builder/buildTrackIndex.ts",
     "fetch:dem": "tsx tools/dem/fetchDem.ts",
     "fetch:textures": "tsx tools/assets/fetchTextures.ts",
     "build:f4": "tsx tools/assets/buildF4.ts",

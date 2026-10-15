@@ -1,3 +1,5 @@
+import './menu.css';
+import type { TrackIndexEntry } from '../../tools/track-builder/buildTrackIndex';
 import type { CreditEntry } from '../../tools/assets/buildCredits';
 
 export interface TrackChoice {
@@ -25,10 +27,65 @@ export const TRACK_CHOICES: TrackChoice[] = [
 
 export const LAST_TRACK_KEY = 'lastTrack';
 
+const ARROW_DELTAS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
+
+function outlinePath(outline: Array<[number, number]>): string {
+  if (outline.length === 0) return '';
+  let d = `M${outline[0][0]} ${outline[0][1]}`;
+  for (let i = 1; i < outline.length; i += 1) {
+    d += ` L${outline[i][0]} ${outline[i][1]}`;
+  }
+  return `${d} Z`;
+}
+
+function isOutline(value: unknown): value is Array<[number, number]> {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (point) => Array.isArray(point) && point.length === 2 && typeof point[0] === 'number' && typeof point[1] === 'number',
+    )
+  );
+}
+
+function parseIndex(data: unknown): TrackIndexEntry[] | null {
+  if (!Array.isArray(data)) return null;
+  const entries: TrackIndexEntry[] = [];
+  for (const item of data) {
+    if (!item || typeof item !== 'object') return null;
+    const entry = item as Record<string, unknown>;
+    if (
+      typeof entry.id !== 'string' ||
+      entry.id === '' ||
+      typeof entry.name !== 'string' ||
+      entry.name === '' ||
+      typeof entry.country !== 'string' ||
+      entry.country === '' ||
+      typeof entry.lengthKm !== 'number' ||
+      !isOutline(entry.outline)
+    ) {
+      return null;
+    }
+    entries.push({
+      id: entry.id,
+      name: entry.name,
+      country: entry.country,
+      lengthKm: entry.lengthKm,
+      outline: entry.outline,
+    });
+  }
+  return entries;
+}
+
 export class Menu {
   private readonly doc: Document;
   private shown = false;
   private creditsEsc: ((event: KeyboardEvent) => void) | null = null;
+  private trackRender = 0;
 
   constructor(
     private readonly root: HTMLElement,
@@ -44,28 +101,11 @@ export class Menu {
   }
 
   showTrackSelect(onSelect: (id: string) => void): void {
-    const last = this.storage.getItem(LAST_TRACK_KEY);
-    const panel = this.doc.createElement('div');
-    panel.className = 'menu-panel';
-    panel.appendChild(this.heading('Select track'));
-    let focus: HTMLElement | null = null;
-    for (const choice of TRACK_CHOICES) {
-      const button = this.doc.createElement('button');
-      button.dataset.track = choice.id;
-      button.textContent = choice.name;
-      if (choice.id === last) {
-        button.classList.add('selected');
-        focus = button;
-      }
-      button.addEventListener('click', () => {
-        this.storage.setItem(LAST_TRACK_KEY, choice.id);
-        onSelect(choice.id);
-      });
-      panel.appendChild(button);
-    }
-    panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
-    this.show(panel);
-    focus?.focus();
+    const token = ++this.trackRender;
+    void this.loadTrackIndex().then((entries) => {
+      if (token !== this.trackRender) return;
+      this.renderTrackSelect(entries, onSelect);
+    });
   }
 
   showPause(handlers: {
@@ -112,12 +152,111 @@ export class Menu {
   }
 
   hide(): void {
+    this.trackRender += 1;
     this.shown = false;
     this.root.style.display = 'none';
     this.root.replaceChildren();
   }
 
+  private async loadTrackIndex(): Promise<TrackIndexEntry[] | null> {
+    try {
+      const res = await fetch('/tracks/index.json');
+      if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
+      return parseIndex(await res.json());
+    } catch {
+      return null;
+    }
+  }
+
+  private renderTrackSelect(entries: TrackIndexEntry[] | null, onSelect: (id: string) => void): void {
+    const last = this.storage.getItem(LAST_TRACK_KEY);
+    const panel = this.doc.createElement('div');
+    panel.className = 'menu-panel track-select';
+    panel.appendChild(this.heading('Select track'));
+    const grid = this.doc.createElement('div');
+    grid.className = 'track-grid';
+    let focus: HTMLElement | null = null;
+    for (const choice of TRACK_CHOICES) {
+      const entry = entries?.find((candidate) => candidate.id === choice.id) ?? null;
+      const button = this.trackCard(choice, entry);
+      if (choice.id === last) {
+        button.classList.add('selected');
+        focus = button;
+      }
+      button.addEventListener('click', () => {
+        this.storage.setItem(LAST_TRACK_KEY, choice.id);
+        onSelect(choice.id);
+      });
+      grid.appendChild(button);
+    }
+    panel.appendChild(grid);
+    panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
+    this.wireCardKeys(grid);
+    this.show(panel);
+    focus?.focus();
+  }
+
+  private trackCard(choice: TrackChoice, entry: TrackIndexEntry | null): HTMLButtonElement {
+    const button = this.doc.createElement('button');
+    button.className = 'track-card';
+    button.dataset.track = choice.id;
+    if (entry) {
+      const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'track-outline');
+      svg.setAttribute('viewBox', '-0.04 -0.04 1.08 1.08');
+      svg.setAttribute('aria-hidden', 'true');
+      const path = this.doc.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', outlinePath(entry.outline));
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(path);
+      button.appendChild(svg);
+    }
+    const name = this.doc.createElement('span');
+    name.className = 'track-name';
+    name.textContent = entry?.name ?? choice.name;
+    button.appendChild(name);
+    if (entry) {
+      const meta = this.doc.createElement('span');
+      meta.className = 'track-meta';
+      meta.textContent = `${entry.country} · ${entry.lengthKm.toFixed(3)} km`;
+      button.appendChild(meta);
+    }
+    return button;
+  }
+
+  // Arrow keys move focus to the nearest card strictly in that direction.
+  private wireCardKeys(grid: HTMLElement): void {
+    grid.addEventListener('keydown', (event) => {
+      const delta = ARROW_DELTAS[event.key];
+      if (!delta) return;
+      const active = this.doc.activeElement;
+      const current = active instanceof HTMLElement ? active.closest<HTMLElement>('.track-card') : null;
+      if (!current || !grid.contains(current)) return;
+      event.preventDefault();
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>('.track-card'));
+      const [dirX, dirY] = delta;
+      const cx = current.offsetLeft + current.offsetWidth / 2;
+      const cy = current.offsetTop + current.offsetHeight / 2;
+      let best: HTMLElement | null = null;
+      let bestDistance = Infinity;
+      for (const card of cards) {
+        if (card === current) continue;
+        const dx = card.offsetLeft + card.offsetWidth / 2 - cx;
+        const dy = card.offsetTop + card.offsetHeight / 2 - cy;
+        const offAxis = dirX !== 0 ? Math.sign(dx) - dirX : Math.sign(dy) - dirY;
+        if (offAxis !== 0) continue;
+        const distance = Math.hypot(dx, dy);
+        if (distance < bestDistance) {
+          best = card;
+          bestDistance = distance;
+        }
+      }
+      best?.focus();
+    });
+  }
+
   private show(panel: HTMLElement): void {
+    this.trackRender += 1;
     this.root.replaceChildren(panel);
     this.root.style.display = 'flex';
     this.shown = true;

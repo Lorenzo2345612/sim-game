@@ -11,9 +11,9 @@ test.describe('044 track selection and pause menu', () => {
     test.setTimeout(120000);
     await page.goto('/');
     await expect(page.locator('#menu')).toBeVisible();
-    await expect(page.locator('#menu button[data-track="monza"]')).toHaveText('Monza');
-    await expect(page.locator('#menu button[data-track="spa"]')).toHaveText('Spa');
-    await expect(page.locator('#menu button[data-track="silverstone"]')).toHaveText('Silverstone');
+    await expect(page.locator('#menu button[data-track="monza"] .track-name')).toHaveText('Monza');
+    await expect(page.locator('#menu button[data-track="spa"] .track-name')).toHaveText('Spa');
+    await expect(page.locator('#menu button[data-track="silverstone"] .track-name')).toHaveText('Silverstone');
     expect(await page.evaluate(() => window.__SIMGAME__?.ready === true)).toBe(false);
   });
 
