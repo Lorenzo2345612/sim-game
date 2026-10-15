@@ -23,6 +23,12 @@ User report: on track, white and everything looks far too bright. Causes: `creat
 - White-paint materials in `src/render/` (`trackMarkingsRenderer.ts`, `surfaceMaterials.ts`, `distanceBoards.ts`, `pitAndStart.ts`, `barrierProfiles.ts`) — modify only the colour values (max 3 src files total beyond the above if unavoidable: keep edits colour-only).
 - `tests/e2e/acceptance/172-lighting.spec.ts` — create (acceptance worker).
 
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/082-track-markings.test.ts` AT4: replace the three `>= 0.9` colour checks with `>= 0.6` and `<= 0.7` (and update the test title accordingly).
+- `tests/unit/edge/080-surface-materials.post.test.ts`: uStripeB expected value `0.92` → `0.7` (x, y, z).
+- Use exactly 0.7 for the white marking colour and the white kerb stripe.
+
 ## Steps
 
 1. When `ShadowRig` is created on a v2 track, remove the Phase-0 DirectionalLight from the scene and dispose it (shadow map if any). Exactly one visible DirectionalLight remains. v1 path unchanged.
