@@ -5,7 +5,8 @@ import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWor
 import { addTrackColliders } from '../../../src/physics/trackColliders';
 import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
-import { FIXED_DT, GRAVITY, SURFACE_DRAG } from '../../../src/core/constants';
+import { FIXED_DT, GRAVITY } from '../../../src/core/constants';
+import { rollingDrag } from '../../../src/physics/surfaceDrag';
 import type { DriverInput, Surface, SurfaceStrip, Terrain, TrackDataV2 } from '../../../src/core/types';
 import { fixture } from '../acceptance/022-fixture-trackdatav2';
 
@@ -171,7 +172,7 @@ describe('033 surface grip edge cases', () => {
       world.step();
       maxVz = Math.max(maxVz, car.body.linvel().z);
     }
-    expect(horizSpeed(car)).toBeLessThan(0.4);
+    expect(horizSpeed(car)).toBeLessThan(0.6);
     run(world, car, 1.5);
     for (let i = 0; i < 10; i++) {
       car.setInput(IDLE);
@@ -183,7 +184,7 @@ describe('033 surface grip edge cases', () => {
     expect(horizSpeed(car)).toBeLessThanOrEqual(0.05);
   }, 20000);
 
-  it('EDGE6: gravel coasting loss equals the drag impulse formula SURFACE_DRAG x |g| x dt over 4 wheels', () => {
+  it('EDGE6: gravel coasting loss equals the rollingDrag deceleration at the launch speed over 4 wheels', () => {
     world = zoneWorld();
     const asphalt = settle(world, 0, -8);
     launch(asphalt, -30);
@@ -193,11 +194,13 @@ describe('033 surface grip edge cases', () => {
     launch(gravel, -30);
     run(world, gravel, 1);
     const vG = horizSpeed(gravel);
-    const expected = SURFACE_DRAG.gravel * Math.abs(GRAVITY) * 1;
+    const m = SPEC.chassis.massKg + SPEC.fuel.startL * SPEC.fuel.densityKgL;
+    const fz = (m * Math.abs(GRAVITY)) / 4; // per-wheel static load
+    const expectedAt = (v: number): number => (rollingDrag('gravel', v, fz) / (m / 4)) * 1;
     const loss = vA - vG;
-    // The slower car sheds less aero, so the loss cannot exceed the drag formula by much.
-    expect(loss).toBeGreaterThanOrEqual(expected - 0.45);
-    expect(loss).toBeLessThanOrEqual(expected + 0.2);
+    // Drag is speed-dependent; the true loss lies between the end-speed and launch-speed values.
+    expect(loss).toBeGreaterThanOrEqual(expectedAt(vG) - 0.45);
+    expect(loss).toBeLessThanOrEqual(expectedAt(30) + 0.2);
   }, 20000);
 
   it('EDGE7: zero-drag surfaces (runoff) do not slow the car versus asphalt', () => {

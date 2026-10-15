@@ -83,14 +83,18 @@ export function addTrackColliders(
       z: t.sizeZ,
     }).setTranslation(t.originX, 0, t.originZ),
   );
-  surfaceByHandle.set(terrain.handle, 'grass');
+  registerSurface(terrain, 'grass');
   for (const strip of strips) {
     const collider = world.createCollider(
       RAPIER.ColliderDesc.trimesh(strip.positions, strip.indices),
     );
-    surfaceByHandle.set(collider.handle, strip.surface);
+    registerSurface(collider, strip.surface);
   }
   addBarrierWalls(world, track);
+}
+
+export function registerSurface(collider: RAPIER.Collider, surface: Surface): void {
+  surfaceByHandle.set(collider.handle, surface);
 }
 
 export function surfaceOf(collider: RAPIER.Collider): Surface | null {

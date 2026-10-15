@@ -2,8 +2,9 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import type { CarSpec, TyreCompound, TyreName } from './carSpec';
 import { Gearbox, GearboxMode } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
-import { GRAVITY, SURFACE_DRAG, SURFACE_GRIP } from '../core/constants';
+import { GRAVITY, SURFACE_GRIP } from '../core/constants';
 import { surfaceOf } from './trackColliders';
+import { rollingDrag } from './surfaceDrag';
 import { antiRoll, staticCompression, suspensionForce } from './suspension';
 import { relaxAlpha, V_LOW } from './tyre';
 import { gripFactor, newTyreState, updateTyreState, TyreState } from './tyreState';
@@ -461,7 +462,10 @@ export class VehicleModel {
       w.omega = this.solveOut.omega1;
       w.rotation += w.omega * dt;
       if (w.hit) {
-        const fx = this.solveOut.fx;
+        let fx = this.solveOut.fx;
+        // Off-track rolling resistance, clamped to never reverse the wheel's motion in one tick.
+        const rr = rollingDrag(w.surface, w.vl, w.fz);
+        if (rr > 0) fx -= Math.sign(w.vl) * Math.min(rr, (share * Math.abs(w.vl)) / dt);
         // The pure-module fy is Fy_pacejka(alpha); the force along the right axis is its negative.
         let fy = -this.solveOut.fy;
         if (fy * w.vt < 0) {
@@ -528,22 +532,6 @@ export class VehicleModel {
       tmpImpulse.y = -lv.y * k;
       tmpImpulse.z = -lv.z * k;
       body.applyImpulse(tmpImpulse, true);
-    }
-
-    // Off-track rolling drag, per wheel share of m·g (same law as the old controller).
-    const hSpeed = Math.hypot(lv.x, lv.z);
-    if (hSpeed >= 0.01) {
-      const maxPerWheel = (mass * hSpeed) / 4;
-      for (let i = 0; i < 4; i++) {
-        const drag = SURFACE_DRAG[wheels[i].surface];
-        if (drag > 0) {
-          const mag = Math.min((drag * mass * Math.abs(GRAVITY) * dt) / 4, maxPerWheel);
-          tmpImpulse.x = (-lv.x / hSpeed) * mag;
-          tmpImpulse.y = 0;
-          tmpImpulse.z = (-lv.z / hSpeed) * mag;
-          body.applyImpulse(tmpImpulse, true);
-        }
-      }
     }
 
     this.applyMass();

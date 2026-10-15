@@ -47,12 +47,12 @@ describe('022 types and constants acceptance', () => {
     expect(SURFACE_GRIP.gravel).toBeCloseTo(0.35, 10);
   });
 
-  it('AT3: SURFACE_DRAG is 0/0/0/0.15/0.6 and KERB_WIDTH 1.2, VERGE_WIDTH 4, BARRIER_GAP 1, CORNER_RADIUS 400, KERB_RADIUS 250', () => {
-    expect(SURFACE_DRAG.asphalt).toBeCloseTo(0, 10);
-    expect(SURFACE_DRAG.kerb).toBeCloseTo(0, 10);
-    expect(SURFACE_DRAG.runoff).toBeCloseTo(0, 10);
-    expect(SURFACE_DRAG.grass).toBeCloseTo(0.15, 10);
-    expect(SURFACE_DRAG.gravel).toBeCloseTo(0.6, 10);
+  it('AT3: SURFACE_DRAG c0/c1 is 0/0 for asphalt, kerb and runoff, grass 0.10/0.004, gravel 0.08/0.03 and KERB_WIDTH 1.2, VERGE_WIDTH 4, BARRIER_GAP 1, CORNER_RADIUS 400, KERB_RADIUS 250', () => {
+    expect(SURFACE_DRAG.asphalt).toEqual({ c0: 0, c1: 0 });
+    expect(SURFACE_DRAG.kerb).toEqual({ c0: 0, c1: 0 });
+    expect(SURFACE_DRAG.runoff).toEqual({ c0: 0, c1: 0 });
+    expect(SURFACE_DRAG.grass).toEqual({ c0: 0.1, c1: 0.004 });
+    expect(SURFACE_DRAG.gravel).toEqual({ c0: 0.08, c1: 0.03 });
     expect(KERB_WIDTH).toBeCloseTo(1.2, 10);
     expect(VERGE_WIDTH).toBeCloseTo(4, 10);
     expect(BARRIER_GAP).toBeCloseTo(1, 10);
