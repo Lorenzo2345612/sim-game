@@ -36,7 +36,7 @@ export function clipPitRange(
 1. Begin at `startIndex`; extend backward and forward (wrap-around indices) while the max distance of covered centerline points from the chord (first to last covered point) stays ≤ `maxChordDevM`, and within `fromMeters` (≤ 0) / `toMeters` (≥ 0) along the centerline.
 2. Minimum result length 120 m. If the start line sits in a curve so the window is shorter, slide the window to the nearest straight of ≥ 120 m within ±600 m of the start and `console.warn` with the track id/context; if none exists, throw.
 3. `buildTrack.ts` stores the returned indices as `pit.start/end`; `side` unchanged.
-4. `createPitBuilding`: building y = min elevation over the pit range (no floating). Footprint logic otherwise unchanged.
+4. `createPitBuilding`: building base y = min of (elevation over the pit range, bilinear terrain height from `track.terrain` at the footprint corners and edge midpoints — same grid convention as trackColliders' heightfield) − 0.3 m, keeping the roof height above the highest of those samples (no floating, user saw it floating in Baku). Footprint logic otherwise unchanged.
 5. Rebuild all `public/tracks/*.json`; only `pit` (and pit-dependent barrier data) may change.
 
 Conventions: distances in metres; chord deviation inclusive (`<=`); indices wrap modulo length, `start` may be greater than `end`; invalid input (empty centerline, startIndex out of range) throws; input not mutated; tie-break when sliding: smaller |offset| from the start line.
@@ -50,6 +50,7 @@ Conventions: distances in metres; chord deviation inclusive (`<=`); indices wrap
 | AT3 | unit: every `public/tracks/*.json` with `pit` | pit range length along centerline | ≥ 120 m |
 | AT4 | unit: every track; building footprint = chord rectangle offset to `side` by widthMeters/2 + EDGE_OFFSET … + depth (as in pitAndStart.ts) | distance from footprint to every centerline point outside the pit range | ≥ widthMeters/2 + 1 m (the building never overlaps the track) |
 | AT5 | e2e `/?track=lusail` | ready | `sceneStats().pitBuildings` === 1 |
+| AT6 | unit: every `public/tracks/*.json` with `pit` and `terrain` | `createPitBuilding(track)` | the `pit` mesh's world bounding-box min y ≤ min(elevation over the pit range, terrain height at the footprint corners) + 0.01 m |
 
 ## Acceptance criteria
 
