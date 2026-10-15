@@ -168,7 +168,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
 | 166 | Dirty tyres | pending | 065, 169, 162 |
-| 167 | Surface particles (stones, dust, grass clippings) | in progress | 165, 065, 169 |
+| 167 | Surface particles (stones, dust, grass clippings) | done | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |
