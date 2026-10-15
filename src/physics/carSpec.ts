@@ -76,6 +76,15 @@ const CATEGORIES: readonly CarCategory[] = [
   'hypercar',
 ];
 
+export interface CockpitSpec {
+  eye: Vec3;
+  wheel: Vec3;
+  wheelRadius: number;
+  lockDeg: number;
+}
+
+export const DEFAULT_COCKPIT_EYE: Vec3 = { x: 0, y: 0.75, z: -0.2 };
+
 export interface CarSpec {
   id: string;
   name: string;
@@ -143,6 +152,7 @@ export interface CarSpec {
     tc: { enabled: boolean; slip: number };
   };
   fuel: { capacityL: number; densityKgL: number; bsfc: number; startL: number };
+  cockpit: CockpitSpec;
   setup: SetupRanges;
   presets: Record<PresetName, PresetSetup>;
 }
@@ -290,6 +300,32 @@ function carSound(root: unknown): CarSound {
   return { cylinders, exhaustLengthM, intakeMix, crackle };
 }
 
+const COCKPIT_WHEEL_OFFSET: Vec3 = { x: 0, y: -0.15, z: -0.45 };
+const DEFAULT_COCKPIT_WHEEL_RADIUS = 0.13;
+const DEFAULT_COCKPIT_LOCK_DEG = 270;
+
+function cockpitSpec(root: unknown): CockpitSpec {
+  const raw = pick(root, 'cockpit');
+  if (raw !== undefined && (typeof raw !== 'object' || raw === null)) fail('cockpit');
+  const eye =
+    pick(root, 'cockpit.eye') === undefined
+      ? { ...DEFAULT_COCKPIT_EYE }
+      : vec3(root, 'cockpit.eye');
+  const wheel =
+    pick(root, 'cockpit.wheel') === undefined
+      ? {
+          x: eye.x + COCKPIT_WHEEL_OFFSET.x,
+          y: eye.y + COCKPIT_WHEEL_OFFSET.y,
+          z: eye.z + COCKPIT_WHEEL_OFFSET.z,
+        }
+      : vec3(root, 'cockpit.wheel');
+  const wheelRadius = optNum(root, 'cockpit.wheelRadius') ?? DEFAULT_COCKPIT_WHEEL_RADIUS;
+  if (!(wheelRadius >= 0.05 && wheelRadius <= 0.3)) fail('cockpit.wheelRadius');
+  const lockDeg = optNum(root, 'cockpit.lockDeg') ?? DEFAULT_COCKPIT_LOCK_DEG;
+  if (!(lockDeg >= 90 && lockDeg <= 1080)) fail('cockpit.lockDeg');
+  return { eye, wheel, wheelRadius, lockDeg };
+}
+
 function boxInertia(massKg: number, half: Vec3): Vec3 {
   const w = half.x * 2;
   const h = half.y * 2;
@@ -402,6 +438,8 @@ export function parseCarSpec(json: unknown): CarSpec {
     startL: num(json, 'fuel.startL'),
   };
 
+  const cockpit = cockpitSpec(json);
+
   const setup = {
     frontWing: range(json, 'setup.frontWing'),
     rearWing: range(json, 'setup.rearWing'),
@@ -437,6 +475,7 @@ export function parseCarSpec(json: unknown): CarSpec {
     brakes,
     aids,
     fuel,
+    cockpit,
     setup,
     presets,
   };

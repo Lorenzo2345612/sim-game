@@ -68,6 +68,7 @@
   "brakes": { "maxTorque": 4000, "bias": 0.6 },
   "aids": { "abs": { "enabled": true, "slip": 0.12 }, "tc": { "enabled": true, "slip": 0.2 } },
   "fuel": { "capacityL": 40, "densityKgL": 0.745, "bsfc": 250, "startL": 20 },
+  "cockpit": { "eye": { "x": 0, "y": 0.75, "z": -0.2 }, "wheelRadius": 0.13, "lockDeg": 270 },
   "setup": {
     "frontWing": { "min": 0, "max": 10, "step": 1, "default": 5 },
     "rearWing": { "min": 0, "max": 10, "step": 1, "default": 5 },

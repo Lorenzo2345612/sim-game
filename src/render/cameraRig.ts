@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { VehicleState } from '../core/types';
+import type { Vec3 } from '../physics/carSpec';
 import { ChaseCamera } from './chaseCamera';
 import { shakeOffset } from './cameraShake';
 
@@ -17,6 +18,7 @@ export class CameraRig {
   private readonly offset = new THREE.Vector3();
   private readonly rotation = new THREE.Quaternion();
   private readonly shakeOut = { y: 0, roll: 0 };
+  private readonly cockpitEye: Vec3 = { ...COCKPIT_OFFSET };
   private current: CameraMode = 'chase';
   private shakeScale = 1;
 
@@ -48,7 +50,7 @@ export class CameraRig {
       this.chase.update(state, dt);
       return;
     }
-    const offset = this.current === 'tcam' ? TCAM_OFFSET : COCKPIT_OFFSET;
+    const offset = this.current === 'tcam' ? TCAM_OFFSET : this.cockpitEye;
     this.rotation.set(state.rotation.x, state.rotation.y, state.rotation.z, state.rotation.w);
     this.offset.set(offset.x, offset.y, offset.z).applyQuaternion(this.rotation);
     this.camera.position.set(
@@ -57,6 +59,12 @@ export class CameraRig {
       state.position.z + this.offset.z,
     );
     this.camera.quaternion.copy(this.rotation);
+  }
+
+  setCockpitEye(eye: Vec3): void {
+    this.cockpitEye.x = eye.x;
+    this.cockpitEye.y = eye.y;
+    this.cockpitEye.z = eye.z;
   }
 
   setShakeScale(s: number): void {

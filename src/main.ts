@@ -469,6 +469,7 @@ async function startGame(trackId: string): Promise<void> {
   disposables.push(ghostCar);
 
   const cameraRig = new CameraRig(camera);
+  cameraRig.setCockpitEye(carSpec.cockpit.eye);
   cameraRig.update(game.getCurrentState(), 0);
 
   const keyboard = new KeyboardInput(window);
