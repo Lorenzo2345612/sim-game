@@ -953,7 +953,7 @@
     {
       "num": "070",
       "title": "Integrate the new vehicle model in the game",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "054",
         "057",
