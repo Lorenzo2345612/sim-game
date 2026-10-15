@@ -68,6 +68,13 @@ npx playwright test 176-
 npx playwright test 106- 140- 155-
 ```
 
+## Planner-authorised test edits
+
+Rebuilding changes `escapeRoads` and `barriers` on monza/spa/silverstone. In the legacy "unchanged vs base revision" checks, also exclude `escapeRoads` and `barriers` from the comparison (as 173 did for `pit`); change nothing else:
+- `tests/unit/acceptance/097-terrain-below-strips.test.ts` AT3, `098-osm-runoffs.test.ts` AT5, `106-new-tracks-in-game.test.ts` AT5, `140-paved-runoffs.test.ts` AT5, `142-kerbs-every-corner.test.ts` AT5, `155-close-parallel.test.ts` AT5, `tests/unit/edge/142-kerbs-every-corner.post.test.ts`.
+- 097 AT3 may also need `terrain.heights` to differ, which it already ignores.
+Any other failing test that pins counts still follows step 9.
+
 ## Out of scope
 
 - Changing kerb geometry, median walls (155), banking (174), pit building (173).
