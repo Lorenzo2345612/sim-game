@@ -15,9 +15,27 @@ export interface RendererHandle {
 
 const SKY_COLOR = '#9ec9f0';
 
+// White paint (track lines, kerb stripes, board panels, pit building) registered so the
+// debug hook can verify the albedo cap; entries only need a linear `color`.
+const whitePaint: { color: THREE.Color }[] = [];
+
+export function registerWhitePaint(paint: { color: THREE.Color }): void {
+  whitePaint.push(paint);
+}
+
+export function maxWhiteAlbedo(): number {
+  let max = 0;
+  for (const paint of whitePaint) {
+    max = Math.max(max, paint.color.r, paint.color.g, paint.color.b);
+  }
+  return max;
+}
+
 export function createScene(): SceneParts {
+  whitePaint.length = 0;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SKY_COLOR);
+  scene.backgroundIntensity = 0.85;
   scene.fog = new THREE.Fog(SKY_COLOR, 300, 2500);
 
   const sun = new THREE.DirectionalLight('#ffffff', 2.0);
@@ -47,6 +65,7 @@ export function createRenderer(canvas: HTMLCanvasElement): RendererHandle {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 0.85;
 
   return {
     renderer,

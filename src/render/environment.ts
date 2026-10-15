@@ -103,7 +103,7 @@ export async function applyEnvironment(
 
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = texture;
-  scene.backgroundIntensity = 1;
+  scene.backgroundIntensity = 0.85;
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   const target = pmrem.fromEquirectangular(texture);
@@ -127,7 +127,7 @@ export class ShadowRig {
   readonly light: THREE.DirectionalLight;
 
   constructor(scene: THREE.Scene) {
-    this.light = new THREE.DirectionalLight('#ffffff', 2);
+    this.light = new THREE.DirectionalLight('#ffffff', 2.2);
     this.light.castShadow = true;
     this.light.shadow.mapSize.set(2048, 2048);
     this.light.shadow.bias = -0.0004;

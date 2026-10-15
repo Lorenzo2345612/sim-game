@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { SurfaceStrip } from '../core/types';
+import { registerWhitePaint } from './sceneSetup';
 
 export interface TrackMarkingsObject { group: THREE.Group; dispose(): void }
 
@@ -28,11 +29,12 @@ export function createTrackMarkingsObject(strips: SurfaceStrip[]): TrackMarkings
   geometry.computeVertexNormals();
 
   const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.95, 0.95, 0.95),
+    color: new THREE.Color(0.7, 0.7, 0.7),
     roughness: 0.6,
     polygonOffset: true,
     polygonOffsetFactor: -1,
   });
+  registerWhitePaint(material);
 
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'markings';

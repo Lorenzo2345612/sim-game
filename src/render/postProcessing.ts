@@ -78,6 +78,8 @@ export interface PostProcessing {
   render(dt: number): void;
   resize(w: number, h: number): void;
   passes: PassName[];
+  /** Live pass instance so hooks read the real strength/threshold, null when bloom is off. */
+  bloom: UnrealBloomPass | null;
   dispose(): void;
 }
 
@@ -112,6 +114,7 @@ export function createPostProcessing(
       render: () => renderer.render(scene, camera),
       resize: () => {},
       passes: [],
+      bloom: null,
       dispose: () => {},
     };
   }
@@ -122,6 +125,7 @@ export function createPostProcessing(
   const created: Pass[] = [];
   const passes: PassName[] = [];
   let texture: THREE.Data3DTexture | null = null;
+  let bloom: UnrealBloomPass | null = null;
   const add = (name: PassName, pass: Pass): void => {
     created.push(pass);
     composer.addPass(pass);
@@ -140,7 +144,9 @@ export function createPostProcessing(
         add('gtao', new GTAOPass(scene, camera, size.x, size.y));
         break;
       case 'bloom':
-        add('bloom', new UnrealBloomPass(size.clone(), 0.25, 0.4, 0.9));
+        // Threshold 1.0: only HDR highlights (emissives, the HDRI sun) bloom, not white paint.
+        bloom = new UnrealBloomPass(size.clone(), 0.12, 0.4, 1.0);
+        add('bloom', bloom);
         break;
       case 'lut':
         if (lut !== null) {
@@ -161,6 +167,7 @@ export function createPostProcessing(
     render: (dt) => composer.render(dt),
     resize: (w, h) => composer.setSize(w, h),
     passes,
+    bloom,
     dispose: () => {
       for (const pass of created) pass.dispose();
       texture?.dispose();

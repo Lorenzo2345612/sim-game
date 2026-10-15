@@ -118,7 +118,7 @@ describe('082 track markings acceptance', () => {
     expect(count).toBe(1 + buildTrackSurfaces(track).length);
   });
 
-  it('AT4: renderer group has a mesh named markings with polygonOffset true and colour channels >= 0.9', () => {
+  it('AT4: renderer group has a mesh named markings with polygonOffset true and colour channels in [0.6, 0.7]', () => {
     const strips = buildTrackMarkings(circleV2());
     const { group } = createTrackMarkingsObject(strips);
     const mesh = group.getObjectByName('markings');
@@ -126,8 +126,11 @@ describe('082 track markings acceptance', () => {
     const material = (mesh as THREE.Mesh).material as THREE.MeshStandardMaterial;
     expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
     expect(material.polygonOffset).toBe(true);
-    expect(material.color.r).toBeGreaterThanOrEqual(0.9);
-    expect(material.color.g).toBeGreaterThanOrEqual(0.9);
-    expect(material.color.b).toBeGreaterThanOrEqual(0.9);
+    expect(material.color.r).toBeGreaterThanOrEqual(0.6);
+    expect(material.color.r).toBeLessThanOrEqual(0.7);
+    expect(material.color.g).toBeGreaterThanOrEqual(0.6);
+    expect(material.color.g).toBeLessThanOrEqual(0.7);
+    expect(material.color.b).toBeGreaterThanOrEqual(0.6);
+    expect(material.color.b).toBeLessThanOrEqual(0.7);
   });
 });

@@ -115,16 +115,16 @@ describe('080 surface materials post-code gaps', () => {
     expect(gravel.uniforms.uTint.value).toBeCloseTo(0.85, 10);
   });
 
-  it('kerb stripe uniforms are red (0.78,0.1,0.1) and white (0.92,0.92,0.92)', () => {
+  it('kerb stripe uniforms are red (0.78,0.1,0.1) and white (0.7,0.7,0.7)', () => {
     const shader = compile(createSurfaceMaterial('kerb', recordingLoader().loadTexture));
     const a = shader.uniforms.uStripeA.value as THREE.Vector3;
     const b = shader.uniforms.uStripeB.value as THREE.Vector3;
     expect(a.x).toBeCloseTo(0.78, 10);
     expect(a.y).toBeCloseTo(0.1, 10);
     expect(a.z).toBeCloseTo(0.1, 10);
-    expect(b.x).toBeCloseTo(0.92, 10);
-    expect(b.y).toBeCloseTo(0.92, 10);
-    expect(b.z).toBeCloseTo(0.92, 10);
+    expect(b.x).toBeCloseTo(0.7, 10);
+    expect(b.y).toBeCloseTo(0.7, 10);
+    expect(b.z).toBeCloseTo(0.7, 10);
   });
 
   it('non-kerb kinds get no stripe uniforms and no stripe shader code', () => {

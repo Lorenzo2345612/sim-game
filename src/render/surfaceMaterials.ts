@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWhitePaint } from './sceneSetup';
 
 export type SurfaceMaterialKind = 'asphalt' | 'runoff' | 'gravel' | 'grass' | 'kerb' | 'concrete';
 
@@ -118,8 +119,10 @@ export function createSurfaceMaterial(
     uTint: { value: config.tint },
   };
   if (config.kerb) {
+    const stripeWhite = new THREE.Color(0.7, 0.7, 0.7);
     uniforms.uStripeA = { value: new THREE.Vector3(0.78, 0.1, 0.1) };
-    uniforms.uStripeB = { value: new THREE.Vector3(0.92, 0.92, 0.92) };
+    uniforms.uStripeB = { value: new THREE.Vector3(stripeWhite.r, stripeWhite.g, stripeWhite.b) };
+    registerWhitePaint({ color: stripeWhite });
   }
   material.onBeforeCompile = (shader) => {
     applyAntiTiling(shader, uniforms);

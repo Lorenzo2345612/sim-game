@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { TrackDataV2 } from '../core/types';
+import { registerWhitePaint } from './sceneSetup';
 
 export interface StartLights { object: THREE.Group; setLights(n: number): void }
 
@@ -55,6 +56,7 @@ export function createPitBuilding(track: TrackDataV2): THREE.Group {
   const buildingGeometry = new THREE.BoxGeometry(chordLength, BUILDING_HEIGHT, BUILDING_DEPTH);
   buildingGeometry.translate(0, BUILDING_HEIGHT / 2, 0);
   const buildingMaterial = new THREE.MeshStandardMaterial({ color: '#b8bcc0', roughness: 0.85 });
+  registerWhitePaint(buildingMaterial);
   const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
   building.name = 'pit';
   const inset = track.widthMeters / 2 + EDGE_OFFSET + BUILDING_DEPTH / 2;
@@ -88,6 +90,7 @@ export function createStartGantry(track: TrackDataV2): THREE.Group {
   const beamLength = track.widthMeters + 2 * (PILLAR_OUT + PILLAR_SIZE / 2);
 
   const material = new THREE.MeshStandardMaterial({ color: '#8a8f94', roughness: 0.7, metalness: 0.2 });
+  registerWhitePaint(material);
   const pillarGeometry = new THREE.BoxGeometry(PILLAR_SIZE, GANTRY_HEIGHT, PILLAR_SIZE);
   pillarGeometry.translate(0, GANTRY_HEIGHT / 2, 0);
   const beamGeometry = new THREE.BoxGeometry(PILLAR_SIZE, BEAM_THICKNESS, beamLength);

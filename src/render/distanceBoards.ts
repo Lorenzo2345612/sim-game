@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Board, TrackDataV2 } from '../core/types';
+import { registerWhitePaint } from './sceneSetup';
 
 export interface DistanceBoards { group: THREE.Group; count: number; dispose(): void }
 
@@ -64,7 +65,13 @@ export function createDistanceBoards(track: TrackDataV2, makeAtlas?: () => THREE
 
   if (boards.length > 0) {
     atlas = (makeAtlas ?? defaultAtlas)();
-    const faceMaterial = new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.9, metalness: 0 });
+    const faceMaterial = new THREE.MeshStandardMaterial({
+      map: atlas,
+      color: new THREE.Color(0.7, 0.7, 0.7),
+      roughness: 0.9,
+      metalness: 0,
+    });
+    registerWhitePaint(faceMaterial);
     const postMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3f44, roughness: 0.8, metalness: 0.1 });
     materials.push(faceMaterial, postMaterial);
 

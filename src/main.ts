@@ -18,7 +18,7 @@ import type { Telemetry } from './physics/vehicle';
 import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
-import { createRenderer, createScene, type RendererHandle } from './render/sceneSetup';
+import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
 import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
@@ -63,6 +63,8 @@ export interface SceneStats {
   groundTexture: string | null;
   carScreenRect: { x: number; y: number; w: number; h: number };
   liveryPrimary: string;
+  directionalLights: number;
+  maxWhiteAlbedo: number;
 }
 
 declare global {
@@ -79,7 +81,12 @@ declare global {
       /** Car yaw in radians: 0 facing -Z, positive turning left (CCW seen from +Y). */
       getHeading(): number;
       sceneStats(): SceneStats;
-      renderStats(): { toneMapping: string; passes: PassName[] };
+      renderStats(): {
+        toneMapping: string;
+        passes: PassName[];
+        exposure: number;
+        bloom: { strength: number; threshold: number } | null;
+      };
       drawCalls(): number;
       cameraMode(): CameraMode;
       gear(): number;
@@ -190,6 +197,15 @@ function disposeScene(scene: THREE.Scene): void {
 
 function headingOf(q: Quat): number {
   return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
+}
+
+function countDirectionalLights(root: THREE.Object3D): number {
+  let count = 0;
+  root.traverse((obj) => {
+    const light = obj as THREE.DirectionalLight;
+    if (light.isDirectionalLight && light.visible) count++;
+  });
+  return count;
 }
 
 // Bilinear sample of the terrain grid; heights are column-major (col * (rows + 1) + row).
@@ -316,7 +332,7 @@ async function startGame(trackId: string): Promise<void> {
     // the 081 splat terrain (10+ texture reads per fragment vs 3 before).
     handle.renderer.setPixelRatio(0.5);
   }
-  const { scene, camera, ground } = createScene();
+  const { scene, camera, ground, sun } = createScene();
 
   const disposables: { dispose(): void }[] = [];
   let shadows: ShadowRig | null = null;
@@ -339,6 +355,8 @@ async function startGame(trackId: string): Promise<void> {
     groundTexture: null,
     carScreenRect: { x: 0, y: 0, w: 0, h: 0 },
     liveryPrimary: '',
+    directionalLights: 0,
+    maxWhiteAlbedo: 0,
   };
 
   if ('version' in track) {
@@ -348,6 +366,10 @@ async function startGame(trackId: string): Promise<void> {
     stats.environment = env.name;
     stats.horizonColor = env.horizon;
     shadows = new ShadowRig(scene);
+    // The rig is the v2 sun; the Phase-0 one would double the direct light on top of the IBL.
+    scene.remove(sun);
+    sun.shadow.map?.dispose();
+    sun.dispose();
     shadows.setEnabled(handle.renderer, settings.shadows);
     if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
 
@@ -834,6 +856,8 @@ async function startGame(trackId: string): Promise<void> {
         sky: scene.background !== null,
         shadows: handle.renderer.shadowMap.enabled,
         ibl: scene.environment !== null,
+        directionalLights: countDirectionalLights(scene),
+        maxWhiteAlbedo: maxWhiteAlbedo(),
         fogColor: fog
           ? ([fog.color.r, fog.color.g, fog.color.b] as [number, number, number])
           : ([0, 0, 0] as [number, number, number]),
@@ -842,6 +866,10 @@ async function startGame(trackId: string): Promise<void> {
     renderStats: () => ({
       toneMapping: TONE_MAPPING_NAMES[handle.renderer.toneMapping] ?? 'Custom',
       passes: post.passes,
+      exposure: handle.renderer.toneMappingExposure,
+      bloom: post.bloom
+        ? { strength: post.bloom.strength, threshold: post.bloom.threshold }
+        : null,
     }),
     drawCalls: () => handle.renderer.info.render.calls,
     cameraMode: () => cameraRig.mode,
