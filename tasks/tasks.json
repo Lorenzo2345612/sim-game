@@ -894,7 +894,7 @@
     {
       "num": "066",
       "title": "Calibration suite and F4 tuning",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "058",
         "065",
@@ -938,7 +938,7 @@
     {
       "num": "069",
       "title": "HUD tyres and fuel widget",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "048",
         "065",
@@ -2239,7 +2239,7 @@
     {
       "num": "162",
       "title": "Speed-dependent rolling drag on grass and gravel",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "065",
         "169"
@@ -2305,7 +2305,7 @@
     {
       "num": "167",
       "title": "Surface particles (stones, dust, grass clippings)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "165",
         "065",

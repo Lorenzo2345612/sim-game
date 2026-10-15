@@ -69,10 +69,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 063 | Brakes, ABS/TC and fuel | done | 058 |
 | 064 | Implicit wheel solver | done | 058, 059 |
 | 065 | Vehicle model on Rapier (part 1) | done | 058, 059, 060, 061, 062, 063, 064, 033, 045, 054, 057 |
-| 066 | Calibration suite and F4 tuning | pending | 058, 065, 169 |
+| 066 | Calibration suite and F4 tuning | in progress | 058, 065, 169 |
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
-| 069 | HUD tyres and fuel widget | pending | 048, 065, 169 |
+| 069 | HUD tyres and fuel widget | in progress | 048, 065, 169 |
 | 070 | Integrate the new vehicle model in the game | pending | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
@@ -163,12 +163,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | pending | 141, 157 |
 | 160 | Landmark proxies | pending | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
-| 162 | Speed-dependent rolling drag on grass and gravel | in progress | 065, 169 |
+| 162 | Speed-dependent rolling drag on grass and gravel | waiting decision | 065, 169 |
 | 163 | Surface feedback signal (pure) | done | - |
 | 164 | Camera shake from surfaces | done | 163 |
 | 165 | Gamepad rumble | done | 164 |
 | 166 | Dirty tyres | pending | 065, 169, 162 |
-| 167 | Surface particles (stones, dust, grass clippings) | pending | 165, 065, 169 |
+| 167 | Surface particles (stones, dust, grass clippings) | in progress | 165, 065, 169 |
 | 168 | Add Fontana, Cleveland and Detroit to the game | pending | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | pending | 112, 113, 114 |
