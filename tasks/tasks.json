@@ -1518,7 +1518,7 @@
     {
       "num": "112",
       "title": "Prototype models through the car pipeline",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "071",
         "075"
