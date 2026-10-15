@@ -2426,6 +2426,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/175-fontana-banking.md"
+    },
+    {
+      "num": "176",
+      "title": "Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing)",
+      "status": "pending",
+      "deps": [
+        "173"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/176-track-geometry-overlaps.md"
     }
   ]
 }
