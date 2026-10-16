@@ -1,19 +1,21 @@
 import './ui/hud.css';
 import './ui/hudV2.css';
+import './ui/hudTyres.css';
 import * as THREE from 'three';
 import { EngineAudio } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
-import { loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
-import type { DriverInput, LapEvent, Quat, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
+import { loadGameOptions, loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
+import type { DriverInput, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { loadLivery, type Livery } from './game/livery';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
-import { parseCarSpec } from './physics/carSpec';
+import { parseCarSpec, type CarSpec } from './physics/carSpec';
+import { applySetup, loadSetup } from './physics/setup';
 import type { Telemetry } from './physics/vehicle';
 import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
@@ -41,6 +43,7 @@ import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
+import { HudTyres, type HudTyresData } from './ui/hudTyres';
 import { Menu, TRACK_CHOICES } from './ui/menu';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
@@ -82,6 +85,7 @@ declare global {
       trackHeightUnderCar(): number;
       /** Car yaw in radians: 0 facing -Z, positive turning left (CCW seen from +Y). */
       getHeading(): number;
+      telemetry(): Telemetry;
       sceneStats(): SceneStats;
       renderStats(): {
         toneMapping: string;
@@ -197,10 +201,6 @@ function disposeScene(scene: THREE.Scene): void {
   scene.clear();
 }
 
-function headingOf(q: Quat): number {
-  return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
-}
-
 function countDirectionalLights(root: THREE.Object3D): number {
   let count = 0;
   root.traverse((obj) => {
@@ -273,6 +273,13 @@ function presetFromQuery(storage: Storage): Preset {
     : loadPreset(storage);
 }
 
+/** Query multiplier: a finite value above 0 wins, an absent query keeps the stored option, anything else is 1. */
+function queryMultiplier(raw: string | null, stored: number): number {
+  if (raw === null) return stored;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
 /** Union of the paint meshes' geometry boxes, in the car model space the shader samples. */
 function paintBounds(root: THREE.Object3D, paintMaterials: string[]): THREE.Box3 {
   const bounds = new THREE.Box3();
@@ -312,12 +319,23 @@ async function startGame(trackId: string): Promise<void> {
   if (!res.ok) throw new Error(`Could not load ${trackId}.json`);
   const track: TrackData | TrackDataV2 = parseTrackData(await res.json());
 
-  // Task 070 replaces this fetch with its car loader; today it only feeds the setup panel.
-  const specRes = await fetch('/cars/f4.json');
-  if (!specRes.ok) throw new Error('Could not load f4.json');
-  const carSpec = parseCarSpec(await specRes.json());
+  const params = new URLSearchParams(window.location.search);
+  const carId = params.get('car') ?? 'f4';
+  const specRes = await fetch(`/cars/${carId}.json`);
+  if (!specRes.ok) throw new Error(`Could not load ${carId}.json`);
+  const baseSpec = parseCarSpec(await specRes.json());
 
-  let game = await Game.create(track, carSpec);
+  const gameOpts = loadGameOptions(window.localStorage);
+  const qCompound = params.get('compound');
+  const compound =
+    qCompound === 'soft' || qCompound === 'medium' || qCompound === 'hard' ? qCompound : gameOpts.compound;
+  const tune = {
+    compound,
+    wear: queryMultiplier(params.get('wear'), gameOpts.wear),
+    fuel: queryMultiplier(params.get('fuel'), gameOpts.fuel),
+  };
+  const freshSpec = (): CarSpec => applySetup(baseSpec, loadSetup(carId, track.id, baseSpec, window.localStorage));
+  let game = await Game.create(track, freshSpec(), tune);
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
@@ -458,7 +476,7 @@ async function startGame(trackId: string): Promise<void> {
   const modelMeta = modelRes.ok ? ((await modelRes.json()) as { paintMaterials?: string[] }) : {};
   const paintMaterials = modelMeta.paintMaterials ?? [];
   const liveryBounds = paintBounds(car.root, paintMaterials);
-  let playerLivery = loadLivery(window.localStorage, carSpec.id);
+  let playerLivery = loadLivery(window.localStorage, baseSpec.id);
   applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
   const carBounds = new THREE.Box3().setFromObject(car.root);
   // Body rest pose at the capture of carBounds: the body moves under the always-identity car.root.
@@ -500,13 +518,23 @@ async function startGame(trackId: string): Promise<void> {
   disposables.push(ghostCar);
 
   const cameraRig = new CameraRig(camera);
-  cameraRig.setCockpitEye(carSpec.cockpit.eye);
+  cameraRig.setCockpitEye(baseSpec.cockpit.eye);
   cameraRig.update(game.getCurrentState(), 0);
 
   const keyboard = new KeyboardInput(window);
   const gamepad = new GamepadInput();
 
   const hud = new HudV2(document.getElementById('hud') as HTMLElement);
+  const activeCompound = baseSpec.tyres.compounds[compound];
+  const hudTyres = new HudTyres(document.body);
+  const tyresData: HudTyresData = {
+    tempC: [0, 0, 0, 0],
+    wear: [0, 0, 0, 0],
+    optTempC: activeCompound.optTempC,
+    tempWindowC: activeCompound.tempWindowC,
+    fuelL: 0,
+    meanLapL: null,
+  };
   const minimap = new Minimap(document.body, track.centerline);
   const fpsOverlay = new FpsOverlay(document.body, window);
 
@@ -709,6 +737,15 @@ async function startGame(trackId: string): Promise<void> {
       hudData.deltaSeconds = ghostDelta(info.currentLapTime);
       hud.update(hudData);
 
+      for (let i = 0; i < 4; i++) {
+        tyresData.tempC[i] = telemetry.wheels[i].tempC;
+        tyresData.wear[i] = telemetry.wheels[i].wear;
+      }
+      tyresData.fuelL = telemetry.fuelKg / baseSpec.fuel.densityKgL;
+      const meanFuelKg = game.meanLapFuel();
+      tyresData.meanLapL = meanFuelKg === null ? null : meanFuelKg / baseSpec.fuel.densityKgL;
+      hudTyres.update(tyresData);
+
       updateGhostCar(info.currentLapTime);
       engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
     } else {
@@ -729,7 +766,7 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   const restart = async (): Promise<void> => {
-    const next = await Game.create(track, carSpec);
+    const next = await Game.create(track, freshSpec(), tune);
     // The session may have been torn down while the new Game was being created.
     if (!running) {
       next.dispose();
@@ -770,8 +807,8 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   const setupPanel = new SetupPanel(document.body, {
-    spec: carSpec,
-    carId: carSpec.id,
+    spec: freshSpec(),
+    carId,
     trackId: track.id,
     storage: window.localStorage,
     onApply: () => restart().catch(onError),
@@ -823,6 +860,7 @@ async function startGame(trackId: string): Promise<void> {
     window.removeEventListener('resize', onResize);
     keyboard.dispose();
     hud.dispose();
+    hudTyres.dispose();
     minimap.dispose();
     fpsOverlay.dispose();
     setupPanel.dispose();
@@ -855,7 +893,8 @@ async function startGame(trackId: string): Promise<void> {
     // Spec 043 keeps the 056 chassis-centre raycast ('asphalt' fallback lives in Game), not a game.getWheelSurfaces() majority.
     surfaceUnderCar: () => game.surfaceUnderCar(),
     trackHeightUnderCar: () => game.trackHeightUnderCar(),
-    getHeading: () => headingOf(game.getCurrentState().rotation),
+    getHeading: () => game.heading(),
+    telemetry: () => game.getTelemetry(),
     sceneStats: () => {
       const fog = scene.fog;
       return {

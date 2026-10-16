@@ -9,10 +9,17 @@ import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import type { GearboxMode } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle, type Telemetry } from '../physics/vehicle';
-import { parseCarSpec, type CarSpec } from '../physics/carSpec';
+import { parseCarSpec, type CarSpec, type TyreName } from '../physics/carSpec';
 import f4Json from '../../public/cars/f4.json';
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+/** Compound and wear/fuel multipliers resolved from the query and the stored options (task 070). */
+export interface GameTune {
+  compound: TyreName;
+  wear: number;
+  fuel: number;
+}
 
 const GROUND_RAY_ORIGIN_OFFSET = 1; // m above the chassis centre
 const GROUND_RAY_MAX_TOI = 600;     // m; covers the elevation range of every track
@@ -54,6 +61,9 @@ export class Game {
   private events: LapEvent[] = [];
   private time = 0;
   private disposed = false;
+  private fuelLapStartKg = 0;
+  private fuelSumKg = 0;
+  private fuelLaps = 0;
 
   private constructor(
     world: World,
@@ -73,13 +83,22 @@ export class Game {
     this.lapTimer = lapTimer;
     this.prev = prev;
     this.current = current;
+    this.fuelLapStartKg = vehicle.getTelemetry().fuelKg;
   }
 
-  static async create(track: TrackData | TrackDataV2, spec: CarSpec = parseCarSpec(f4Json)): Promise<Game> {
+  static async create(
+    track: TrackData | TrackDataV2,
+    spec: CarSpec = parseCarSpec(f4Json),
+    tune?: GameTune,
+  ): Promise<Game> {
     await initPhysics();
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
     const vehicle = new Vehicle(world, spec, spawn);
+    if (tune) {
+      vehicle.setCompound(tune.compound);
+      vehicle.setMultipliers(tune.wear, tune.fuel);
+    }
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [
@@ -116,7 +135,31 @@ export class Game {
       this.events.push(...this.lapTimer.invalidate());
     }
     const sample = this.progress.update(this.current.position.x, this.current.position.z);
-    this.events.push(...this.lapTimer.update(sample.distance, this.time));
+    const lapEvents = this.lapTimer.update(sample.distance, this.time);
+    for (const ev of lapEvents) {
+      if (ev.type === 'lapStarted') this.fuelLapStartKg = this.vehicle.getTelemetry().fuelKg;
+      else if (ev.type === 'lapCompleted') this.closeLapFuel();
+    }
+    this.events.push(...lapEvents);
+  }
+
+  private closeLapFuel(): void {
+    const kg = this.vehicle.getTelemetry().fuelKg;
+    this.fuelSumKg += this.fuelLapStartKg - kg;
+    this.fuelLapStartKg = kg;
+    this.fuelLaps++;
+  }
+
+  /** Mean fuel burnt per completed lap in kg; null before the first lap. */
+  meanLapFuel(): number | null {
+    const laps = this.fuelLaps;
+    return laps > 0 ? this.fuelSumKg / laps : null;
+  }
+
+  /** Car yaw in radians: 0 facing -Z, positive turning left (CCW seen from +Y). */
+  heading(): number {
+    const q = this.current.rotation;
+    return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
   }
 
   getPrevState(): VehicleState {

@@ -62,3 +62,47 @@ export function loadPreset(storage: KeyValueStorage): Preset {
 export function savePreset(storage: KeyValueStorage, preset: Preset): void {
   storage.setItem(SETTINGS_KEY, JSON.stringify({ preset }));
 }
+
+export type CompoundOption = 'soft' | 'medium' | 'hard';
+
+export interface GameOptions {
+  wear: number;
+  fuel: number;
+  compound: CompoundOption;
+}
+
+export const DEFAULT_GAME_OPTIONS: GameOptions = { wear: 1, fuel: 1, compound: 'medium' };
+
+function isCompound(value: unknown): value is CompoundOption {
+  return value === 'soft' || value === 'medium' || value === 'hard';
+}
+
+function multiplier(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+/** Wear/fuel multipliers and tyre compound from the stored settings; invalid or missing values fall back to the defaults. */
+export function loadGameOptions(storage: KeyValueStorage): GameOptions {
+  let raw: string | null = null;
+  try {
+    raw = storage.getItem(SETTINGS_KEY);
+  } catch {
+    /* treat as missing */
+  }
+  if (raw !== null) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed === 'object' && parsed !== null) {
+        const stored = parsed as { wear?: unknown; fuel?: unknown; compound?: unknown };
+        return {
+          wear: multiplier(stored.wear) ?? DEFAULT_GAME_OPTIONS.wear,
+          fuel: multiplier(stored.fuel) ?? DEFAULT_GAME_OPTIONS.fuel,
+          compound: isCompound(stored.compound) ? stored.compound : DEFAULT_GAME_OPTIONS.compound,
+        };
+      }
+    } catch {
+      // corrupt JSON falls through to the defaults
+    }
+  }
+  return { ...DEFAULT_GAME_OPTIONS };
+}
