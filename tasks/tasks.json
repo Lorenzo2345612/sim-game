@@ -2465,6 +2465,515 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/178-auto-reverse.md"
+    },
+    {
+      "num": "179",
+      "title": "TrackStyle schema, defaults and parser",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/179-track-style-schema.md"
+    },
+    {
+      "num": "180",
+      "title": "Style loader, wiring, extra grandstands, debug hook",
+      "status": "pending",
+      "deps": [
+        "179",
+        "156",
+        "157",
+        "158",
+        "159",
+        "160",
+        "168",
+        "174",
+        "175"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/180-track-style-wiring.md"
+    },
+    {
+      "num": "181",
+      "title": "Tools: `track:locate` and `check:styles`",
+      "status": "pending",
+      "deps": [
+        "179"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/181-track-style-tools.md"
+    },
+    {
+      "num": "182",
+      "title": "Pit building and grandstand styling",
+      "status": "pending",
+      "deps": [
+        "180"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/182-pit-grandstand-style.md"
+    },
+    {
+      "num": "183",
+      "title": "Kerb colours per segment and run-off paint",
+      "status": "pending",
+      "deps": [
+        "180"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/183-kerb-runoff-paint.md"
+    },
+    {
+      "num": "184",
+      "title": "Palette tints, edge-line colour and sky overrides from the track style",
+      "status": "pending",
+      "deps": [
+        "180",
+        "183",
+        "156",
+        "157",
+        "158",
+        "159",
+        "160",
+        "168",
+        "174",
+        "175"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/184-palette-edge-sky-style.md"
+    },
+    {
+      "num": "185",
+      "title": "Barrier colours, wall band and configurable catch fence from the track style",
+      "status": "pending",
+      "deps": [
+        "180"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/185-barrier-fence-style.md"
+    },
+    {
+      "num": "186",
+      "title": "Floodlight poles along the track from the track style",
+      "status": "pending",
+      "deps": [
+        "180",
+        "182",
+        "184"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/186-floodlights.md"
+    },
+    {
+      "num": "187",
+      "title": "Generic trackside props from the track style",
+      "status": "pending",
+      "deps": [
+        "186"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/187-trackside-props.md"
+    },
+    {
+      "num": "188",
+      "title": "Monza track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/188-monza-style.md"
+    },
+    {
+      "num": "189",
+      "title": "Spa track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/189-spa-style.md"
+    },
+    {
+      "num": "190",
+      "title": "Silverstone track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/190-silverstone-style.md"
+    },
+    {
+      "num": "191",
+      "title": "Budapest track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/191-budapest-style.md"
+    },
+    {
+      "num": "192",
+      "title": "Spielberg track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/192-spielberg-style.md"
+    },
+    {
+      "num": "193",
+      "title": "Mexico City track style data",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/193-mexico-style.md"
+    },
+    {
+      "num": "194",
+      "title": "Daytona style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/194-daytona-style.md"
+    },
+    {
+      "num": "195",
+      "title": "Fontana style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188",
+        "168"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/195-fontana-style.md"
+    },
+    {
+      "num": "196",
+      "title": "Elkhart Lake style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/196-elkhart-style.md"
+    },
+    {
+      "num": "197",
+      "title": "Road Atlanta (Braselton) style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/197-braselton-style.md"
+    },
+    {
+      "num": "198",
+      "title": "Cleveland style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188",
+        "168"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/198-cleveland-style.md"
+    },
+    {
+      "num": "199",
+      "title": "Detroit style file (data only)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188",
+        "168"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/199-detroit-style.md"
+    },
+    {
+      "num": "200",
+      "title": "Baku style data (`baku.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/200-baku-style.md"
+    },
+    {
+      "num": "201",
+      "title": "Singapore style data (`singapore.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/201-singapore-style.md"
+    },
+    {
+      "num": "202",
+      "title": "Las Vegas style data (`lasvegas.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/202-lasvegas-style.md"
+    },
+    {
+      "num": "203",
+      "title": "Bahrain style data (`bahrain.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/203-bahrain-style.md"
+    },
+    {
+      "num": "204",
+      "title": "Sepang style data (`sepang.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/204-sepang-style.md"
+    },
+    {
+      "num": "205",
+      "title": "Lusail style data (`lusail.style.json`)",
+      "status": "pending",
+      "deps": [
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/205-lusail-style.md"
+    },
+    {
+      "num": "206",
+      "title": "Painted strip outside the kerbs",
+      "status": "pending",
+      "deps": [
+        "187"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/206-kerb-outer-strip.md"
     }
   ]
 }

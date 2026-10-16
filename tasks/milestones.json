@@ -297,6 +297,41 @@
       "status": "open"
     },
     {
+      "id": "M1.2e",
+      "title": "Visual fidelity per circuit (track style: pit, stands, kerbs, paint, barriers, fences, floodlights, props)",
+      "tasks": [
+        "179",
+        "180",
+        "181",
+        "182",
+        "183",
+        "184",
+        "185",
+        "186",
+        "187",
+        "188",
+        "189",
+        "190",
+        "191",
+        "192",
+        "193",
+        "194",
+        "195",
+        "196",
+        "197",
+        "198",
+        "199",
+        "200",
+        "201",
+        "202",
+        "203",
+        "204",
+        "205",
+        "206"
+      ],
+      "status": "open"
+    },
+    {
       "id": "M1.7",
       "title": "Audio: per-car engine synthesis and effects",
       "tasks": [

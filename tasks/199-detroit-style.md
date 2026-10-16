@@ -1,0 +1,69 @@
+# 199 — Detroit style file (data only)
+
+Status: pending
+Phase: 1
+Depends on: 181, 182, 183, 184, 185, 186, 187, 188, 168
+Complexity: simple
+Type: feature
+Models: standard
+Roles: acceptance, coder, reviewer
+
+## Goal
+
+Create `public/tracks/detroit.style.json` so Detroit gets its own look (design: `docs/design/track-style.md`).
+
+## Context
+
+Source: `docs/research/tracks/detroit-visual.md` (Top 10) and photos in `.ai/refs/detroit/` (workers may view them). Schema, limits and defaults: `docs/design/track-style.md`. Convert lat/lon to centerline indices with `npm run track:locate -- detroit <lat> <lon>`. Colours from photos/doc as `#rrggbb`, every channel <= 0xda (brighter ones warn and fail check:styles). No brand or sponsor text anywhere in the file. If the renderer cannot express something, stop and escalate; do not touch `src/` or `tools/`.
+
+## Files
+
+- `public/tracks/detroit.style.json` — create
+- `tests/unit/acceptance/199-detroit-style.test.ts` — create (acceptance role, from the table)
+
+## Steps
+
+Encode only these (schema-supported; skip the rest of the doc). Row C2 also requires non-default pitBuilding, kerbs.colors, barriers.fence, grandstands (structure/roof/seats) and palette, so set each from the photos. Keep every range under 40 % of the lap, props total under 30:
+
+1. Continuous concrete wall plus galvanised post and wire-mesh fence along the whole lap: `barriers.fence` height 3.5-4.5 m, types `wall` and `armco`, galvanised grey `color`.
+2. Run-off: no `runoffPaint` (pattern `none`, no ranges); no gravel: leave `palette.gravel` unset.
+3. At least 2 `footbridge` props (pedestrian bridges), dark colour.
+4. At least 2 `extraGrandstands` (wide temporary stands) along straights.
+5. Concrete wall `barriers.concrete` light grey; mixed asphalt/concrete tint in `palette.asphalt`.
+6. Pit building: modest 2 storeys, light facade, glazing from the photos.
+7. START/FINISH: the doc has a location conflict (Atwater vs Jefferson). Ignore the doc; the start is `public/tracks/detroit.json` centerline index 0. Take every other index relative to that.
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+| ID | Given | When | Then (expected, tolerance) |
+|---|---|---|---|
+| C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
+| C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
+| C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
+| C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
+| C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
+| C6 | `npm run -s check:styles` | run | exit 0 |
+| S1 | `detroit.style.json` parsed | check signature | fence types include 'wall', heightMeters ≥ 3.5. |
+| S2 | `detroit.style.json` parsed | check signature | runoffPaint pattern 'none' and no ranges. |
+| S3 | `detroit.style.json` parsed | check signature | ≥ 2 footbridge props. |
+| S4 | `detroit.style.json` parsed | check signature | extraGrandstands ≥ 2 and palette.gravel null |
+
+## Acceptance criteria
+
+- [ ] `detroit.style.json` exists, `version: 1`, passes every table row.
+- [ ] `npm run -s check:styles` exits 0.
+- [ ] No files changed outside `public/tracks/` and `tests/unit/acceptance/`.
+
+## Verification
+
+```
+npm run typecheck
+npm run lint
+npm test
+npm run -s check:styles
+```
+
+## Out of scope
+
+- Any change in `src/`, `tools/`, `tasks/tasks.json`; new renderer features, landmarks, vegetation, buildings, night lighting.
+- Brand or sponsor text; other circuits' style files.
