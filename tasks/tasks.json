@@ -3094,7 +3094,7 @@
     {
       "num": "217",
       "title": "Active-aero zones from the centerline",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3160,7 +3160,7 @@
     {
       "num": "222",
       "title": "Per-car RPM range in the HUD",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -3181,6 +3181,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/223-hud-ers.md"
+    },
+    {
+      "num": "224",
+      "title": "OW-26 3D model through the car pipeline",
+      "status": "pending",
+      "deps": [
+        "221"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/224-ow26-model.md"
     }
   ]
 }

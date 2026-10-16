@@ -218,10 +218,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 214 | Track conditions: asphalt abrasion and track temperature | in progress | - |
 | 215 | Hybrid and active-aero contract | in progress | - |
 | 216 | ERS energy model | pending | 215 |
-| 217 | Active-aero zones from the centerline | pending | - |
+| 217 | Active-aero zones from the centerline | in progress | - |
 | 218 | Active-aero state and aero blend | pending | 215 |
 | 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
 | 220 | Overtake and ERS mode controls | pending | 215 |
 | 221 | OW-26 car definition and calibration | pending | 219 |
-| 222 | Per-car RPM range in the HUD | pending | - |
+| 222 | Per-car RPM range in the HUD | in progress | - |
 | 223 | ERS and active-aero HUD widget | pending | 219, 221 |
+| 224 | OW-26 3D model through the car pipeline | pending | 221 |

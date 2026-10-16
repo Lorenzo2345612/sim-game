@@ -1,7 +1,7 @@
 # 224 — OW-26 3D model through the car pipeline
 
 Status: pending
-Phase: 3
+Phase: 1
 Depends on: 221
 Complexity: complex
 Type: bugfix
@@ -14,11 +14,11 @@ Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Context
 
-BLOCKED until the user downloads the source glb to `assets/vendor/cars/ow26-src/` (report BLOCKED if absent). Source: "FIA F1 2026 Car" by Abu Saif, CC-BY 4.0, https://sketchfab.com/3d-models/fia-f1-2026-car-d242ab0587ee47c683a904bc38cead93 (276k tris). Same flow as `tasks/112-prototype-models.md` (pipeline `tasks/071-car-pipeline.md`, textures `075`): inspect with `python3 -I scripts/preview/glb_inspect.py <glb> --nodes`, choose `forward`, wheel selection (`wheelMaterials` or the existing `wheelNodes`, do not duplicate) from inspection; never fake geometry. Output must contain no brand/sponsor text or logos (de-brand as in 112).
+Source glb: `assets/vendor/cars/ow26-src/ow26-source.glb` (textures in `ow26-src/textures/`). Source: "FIA F1 2026 Car" by Abu Saif, CC-BY 4.0, https://sketchfab.com/3d-models/fia-f1-2026-car-d242ab0587ee47c683a904bc38cead93 (276k tris). Same flow as `tasks/112-prototype-models.md` (pipeline `tasks/071-car-pipeline.md`, textures `075`): inspect with `python3 -I scripts/preview/glb_inspect.py <glb> --nodes`, choose `forward`, wheel selection (`wheelMaterials` or the existing `wheelNodes`, do not duplicate) from inspection; never fake geometry. Planner inspection: nose at +z (`forward` must flip it to -Z); wheel nodes `TYRE_{LF,RF,LR,RR}_SUB0/SUB1`, `wheel_{fl,fr,bl,br}`, `hub_caliper_{bl,br}`. De-brand: drop node `decals_layer1`; neutralise (plain colour, no texture) materials `redbull_detail`, `redbull_wheel_hub`, `decal`, `TAG_DRS_ON`, `gp21_LCD`; no output name may contain `redbull`. Output must contain no brand/sponsor text or logos (de-brand as in 112).
 
 ## Files
 
-- `assets/cars/ow26.pipeline.json` — create: triBudget 70000, targetLength 5.5, outputs `public/models/ow26.{glb,json}`.
+- `assets/cars/ow26.pipeline.json` — create: triBudget 70000, targetLength 5.27 (source is already to scale: bbox 1.972 × 1.174 × 5.268 m, wheelbase ≈ 3.40 m), outputs `public/models/ow26.{glb,json}`.
 - `tools/assets/buildCar.ts` — modify ONLY if needed; existing outputs must stay byte-identical.
 - `public/models/ow26.{glb,json}` — generated, committed.
 - `ASSETS_LICENSES.md` — modify: one row "OW-26 car source (real-regulation shape, dev only; de-brand before release)", Abu Saif, CC-BY 4.0, URL above, NC no (columns as the GT3 rows).
@@ -33,13 +33,13 @@ BLOCKED until the user downloads the source glb to `assets/vendor/cars/ow26-src/
 
 Conventions: metres; 1 cm tolerance on derived dimensions (071); missing source throws.
 
-## Acceptance tests (derived from 112, planner to confirm)
+## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | `npm run build:cars` | outputs | `public/models/ow26.{glb,json}` exist; all other existing model outputs byte-identical to before |
 | AT2 | ow26 glb | root nodes | exactly `body` + 4 wheel names; triangles ≤ 70 000 |
-| AT3 | ow26 json | read | length (z) = 5.5 ± 0.05; height ≤ 1.1; width incl. wheels 1.9 ± 0.05 |
+| AT3 | ow26 json | read | length (z) = 5.27 ± 0.05; height ≤ 1.2; width incl. wheels 1.97 ± 0.05 |
 | AT4 | ow26 glb | strings/bytes | no brand/sponsor text strings (071 AT6 list + "fia", "formula", "ferrari", "mercedes", "mclaren", "redbull", "red bull", "cadillac", "sauber", "audi", "haas") |
 | AT5 | `ow26.json` + model json | wheel positions | `ow26.json` wheel x/z match the model json ± 1e-3 |
 

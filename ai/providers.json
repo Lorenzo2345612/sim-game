@@ -13,7 +13,7 @@
     "mimo": {
       "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",
       "keyEnv": "MIMO_TOKEN_PLAN_KEY",
-      "maxConcurrent": 6
+      "maxConcurrent": 9
     },
     "claude": {
       "oauth": true,
