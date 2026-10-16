@@ -54,3 +54,7 @@ npx playwright test 114-   # this task's e2e files only; never the full e2e suit
 ## Out of scope
 
 Dynamics changes, per-car setup storage, car stats display, model or pipeline changes, editing `ASSETS_LICENSES.md`.
+
+## Planner-authorised test edits
+
+- `tests/e2e/acceptance/073-car-selection.spec.ts` line with `toHaveCount(4)`: change to `toHaveCount(6)` (f4, gt3-a, gt3-b, gt3-c, lmp2-a, hyper-a). Nothing else in that file.
