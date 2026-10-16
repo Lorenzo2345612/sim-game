@@ -23,6 +23,7 @@ Builder: `tools/track-builder/` (`buildTrackData.ts`, `terrain.ts` incl. `clampT
 - `src/track/surfaces.ts` (+ `parseTrackData.ts`, `markings.ts`, `barrierPath.ts` only if they place geometry by lateral offset) — modify — `bank?: number[]` on `TrackDataV2`, parser default, banked heights.
 - Tests: `tests/unit/acceptance/174-track-banking.test.ts`, `tests/e2e/acceptance/174-track-banking.spec.ts`.
 - Rebuild `public/tracks/daytona.json` with the builder.
+- `src/core/types.ts`, `src/physics/vehicleModel.ts`, `src/game/game.ts` — modify — bank-aware spawn (planner decision after AT7 blocked; see "Bank-aware spawn").
 
 ## Steps
 
@@ -88,3 +89,13 @@ npx playwright test 174-
 ## Planner-authorised test edits
 
 - `tests/e2e/acceptance/174-track-banking.spec.ts`: replace `join(__dirname, '../../../public/tracks/daytona.json')` with `join(process.cwd(), 'public/tracks/daytona.json')` (the project is ESM; Playwright runs from the repo root). No other change to that file.
+
+## Bank-aware spawn (planner decision)
+
+Spawning level on a 31° bank engages the bump stops and launches the car. This exception to "Physics: no code change" covers the spawn only:
+- `SpawnPose` gains `roll?: number` (rad, default 0, positive = right side up).
+- `VehicleModel.reset` builds the body rotation as yaw, then roll about the car's local forward axis (-Z). Linear and angular velocity stay zeroed as today.
+- `teleportToIndex(i)` (and every reset path that uses it, e.g. R) passes `roll = ±bank[i]`, with the sign such that the car's up vector equals the banked surface normal at the centerline. Height stays `elevation[i] + 0.6`.
+- With `bank` absent or 0, behaviour is byte-identical to today: no change for other tracks.
+
+The coder adds a unit test in `tests/unit/physics/` that checks two things: a reset with roll 0.5 gives a body up vector at 0.5 ± 0.01 rad from world Y, and roll 0 matches the old quaternion.
