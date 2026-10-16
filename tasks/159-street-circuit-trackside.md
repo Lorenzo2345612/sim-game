@@ -72,3 +72,7 @@ npx playwright test 159-   # this task's e2e files only; never the full e2e suit
 ## Planner-authorised test edits (2026-10-16)
 
 - `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else.
+
+## Merge note
+
+The branch conflicts with master in `src/main.ts` and in the generated `public/tracks/{baku,lasvegas,singapore}.json`. Run `git merge master` in the worktree; in `src/main.ts` keep both sides (master's new code and this task's trackside wiring). Never hand-merge the track JSONs: take master's version, then regenerate with `npm run build:tracks` and commit the rebuilt files. Re-run the Verification block.
