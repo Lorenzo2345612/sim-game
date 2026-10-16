@@ -219,7 +219,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 215 | Hybrid and active-aero contract | done | - |
 | 216 | ERS energy model | in progress | 215 |
 | 217 | Active-aero zones from the centerline | in progress | - |
-| 218 | Active-aero state and aero blend | in progress | 215 |
+| 218 | Active-aero state and aero blend | done | 215 |
 | 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
 | 220 | Overtake and ERS mode controls | done | 215 |
 | 221 | OW-26 car definition and calibration | pending | 219 |
