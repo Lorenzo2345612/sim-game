@@ -160,8 +160,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |
 | 157 | City bake from OSM: buildings, old-city walls, water | done | 106 |
 | 158 | City renderer: buildings, facades, water | done | 099, 157 |
-| 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | waiting decision | 141, 157 |
-| 160 | Landmark proxies | pending | 158 |
+| 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | in progress | 141, 157 |
+| 160 | Landmark proxies | in progress | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
 | 162 | Speed-dependent rolling drag on grass and gravel | done | 065, 169 |
 | 163 | Surface feedback signal (pure) | done | - |
@@ -175,7 +175,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 171 | Track select menu redesign | done | 106 |
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
 | 173 | Pit building only along the straight | done | 106 |
-| 174 | Track banking (cross-slope) + Daytona | waiting decision | 106, 155 |
+| 174 | Track banking (cross-slope) + Daytona | in progress | 106, 155 |
 | 175 | Fontana banking data | pending | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
@@ -212,3 +212,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 208 | Tyre HUD details and dirt tuning | done | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
+| 211 | Fontana Sports Car Course (oval + infield layout) | pending | 174 |

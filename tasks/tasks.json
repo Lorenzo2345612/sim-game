@@ -2201,7 +2201,7 @@
     {
       "num": "159",
       "title": "Street-circuit trackside: walls, sidewalks, lamps, billboards",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "141",
         "157"
@@ -2215,7 +2215,7 @@
     {
       "num": "160",
       "title": "Landmark proxies",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "158"
       ],
@@ -2402,7 +2402,7 @@
     {
       "num": "174",
       "title": "Track banking (cross-slope) + Daytona",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "106",
         "155"
@@ -3020,6 +3020,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/210-reverse-cap-trigger-deadzone.md"
+    },
+    {
+      "num": "211",
+      "title": "Fontana Sports Car Course (oval + infield layout)",
+      "status": "pending",
+      "deps": [
+        "174"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/211-fontana-sports-car-course.md"
     }
   ]
 }
