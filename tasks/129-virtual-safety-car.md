@@ -37,7 +37,7 @@ export class Vsc {
 ```
 
 - Phases: `off → deployed` when `stoppedOnTrackSeconds >= 10`. While deployed, `stoppedOnTrackSeconds === 0` means the cause cleared: phase `ending` for 5 s, then `off` (`time − clearTime >= 5` → off; `< 5` → ending). A cause reappearing (`> 0`) during `ending` returns to `deployed`. Going `off` resets every car's state.
-- Reference pace = 0.6 × profile speed, linearly interpolated by `lapDistance` (wrapping). Per car, per deployment: the first `delta` call records the start time. Each later call adds `Δs / (0.6·v(lapDistance))` to the reference time, where `Δs` is the forward wrapped distance since the previous call (negative steps count 0). `delta` = (time − start time) − reference time; positive = slower than reference (OK). Returns 0 when phase is `off`.
+- Reference pace = 0.6 × profile speed, linearly interpolated by `lapDistance` (wrapping). Per car, per deployment: the first `delta` call records the start time. Each later call adds `Δs / (0.6·v(lapDistance))` to the reference time, where `Δs` is the forward wrapped distance since the previous call (raw `d = lapDistance − prev`; if `d < −lapLength/2` then `d += lapLength` (seam crossing), else if `d > lapLength/2` then `d −= lapLength`; then negative `d` counts 0, as in `classification.ts`). `delta` = (time − start time) − reference time; positive = slower than reference (OK). Returns 0 when phase is `off`.
 - Penalty: per car, accumulate the time between `delta` calls during which delta < 0; when the accumulated time exceeds 2 s (`> 2`) push one `{ car, seconds: 5 }` event, once per car per deployment.
 - Applies in phases `deployed` and `ending`.
 
