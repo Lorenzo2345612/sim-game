@@ -1614,7 +1614,7 @@
     {
       "num": "118",
       "title": "Cockpit head motion and FOV setting",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "047",
         "115",
@@ -1765,7 +1765,7 @@
     {
       "num": "129",
       "title": "Virtual safety car",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "088",
         "092"

@@ -120,7 +120,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 115 | Cockpit data per car (eye, steering wheel anchor, lock) | done | 058, 066, 072, 107, 113 |
 | 116 | Animated steering wheel in cockpit view | done | 047, 054, 115 |
 | 117 | Virtual rear-view mirror | done | 047, 054, 070, 099, 105, 111 |
-| 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
+| 118 | Cockpit head motion and FOV setting | in progress | 047, 115, 117 |
 | 119 | Livery data, palette and storage | done | 072 |
 | 120 | Paint materials in the car pipeline and livery shader | done | 075, 112, 119 |
 | 121 | Race number decals | done | 120 |
@@ -130,7 +130,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
 | 128 | Yellow and blue flags | done | 092 |
-| 129 | Virtual safety car | waiting decision | 088, 092 |
+| 129 | Virtual safety car | in progress | 088, 092 |
 | 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
