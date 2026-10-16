@@ -134,7 +134,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
-| 133 | Replay recorder (all cars) | in progress | - |
+| 133 | Replay recorder (all cars) | done | - |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
 | 135 | Time of day presets | pending | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
