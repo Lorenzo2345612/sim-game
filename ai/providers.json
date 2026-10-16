@@ -52,9 +52,9 @@
       "timeoutMin": 25
     },
     "reviewer": {
-      "provider": "kimi",
-      "model": "k3-256k",
-      "heavyModel": "k3",
+      "provider": "mimo",
+      "model": "mimo-v2.6-flash",
+      "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/reviewer.md",
       "timeoutMin": 20
     },
