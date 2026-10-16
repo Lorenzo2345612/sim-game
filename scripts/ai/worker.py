@@ -30,6 +30,8 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+import quota
+
 ROOT = Path(__file__).resolve().parents[2]
 WORKDIR = Path(os.environ.get("SIMGAME_WORKDIR") or ROOT)
 CONFIG = json.loads((ROOT / "ai/providers.json").read_text())
@@ -50,7 +52,7 @@ PARENT_VARS = [
     "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_SESSION_ID",
     "CLAUDE_CODE_SESSION_ATTENDED", "CLAUDE_CODE_EXECPATH", "CLAUDE_PID", "CLAUDE_YOLO",
     "CLAUDE_EFFORT", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
-    "ANTHROPIC_MODEL", "CLAUDE_CONFIG_DIR",
+    "ANTHROPIC_MODEL", "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN",
 ]
 
 
@@ -140,6 +142,9 @@ def target_for(provider_name, role):
     """Model pair to use for a provider: the role's own pair or the fallback pair."""
     if provider_name == role["provider"]:
         return role
+    own = CONFIG["providers"].get(provider_name, {})
+    if own.get("model"):
+        return {"provider": provider_name, "model": own["model"], "heavyModel": own.get("heavyModel", own["model"])}
     fallback = CONFIG.get("fallback")
     if fallback and fallback["provider"] == provider_name:
         return fallback
@@ -210,11 +215,17 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
         resume_id = sess_path.read_text().strip() or None
     provider = CONFIG["providers"][provider_name]
     env = {k: v for k, v in os.environ.items() if k not in PARENT_VARS}
+    oauth = provider.get("oauth", False)
+    if oauth:  # Claude subscription: planner's OAuth token, guarded by the 5 h window cap
+        if not under_cap(provider_name):
+            print(f"[worker] quota error: {provider_name} 5h window above cap", flush=True)
+            return 1, True
+        env["CLAUDE_CODE_OAUTH_TOKEN"] = json.loads(quota.CLAUDE_CREDS.read_text())["claudeAiOauth"]["accessToken"]
+    else:
+        env.update({"ANTHROPIC_BASE_URL": provider["baseUrl"], "ANTHROPIC_AUTH_TOKEN": get_key(provider["keyEnv"])})
     env.update({
         "SIMGAME_WORKER": args.role,
         "CLAUDE_CONFIG_DIR": str(WORKER_CONFIG_DIR),
-        "ANTHROPIC_BASE_URL": provider["baseUrl"],
-        "ANTHROPIC_AUTH_TOKEN": get_key(provider["keyEnv"]),
         "ANTHROPIC_MODEL": model,
         "ANTHROPIC_DEFAULT_OPUS_MODEL": model,
         "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
@@ -272,9 +283,17 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
                threading.Thread(target=pump, args=(proc.stderr, err), daemon=True)]
     for t in readers:
         t.start()
+    next_quota = started + 60
     while proc.poll() is None:
         time.sleep(5)
         now = time.time()
+        if oauth and now >= next_quota:
+            next_quota = now + 60
+            if not under_cap(provider_name):
+                proc.kill()
+                proc.wait()
+                print(f"[worker] quota error: {provider_name} 5h window reached the cap; stopped", flush=True)
+                return 1, True
         last = max(activity[0], transcript.stat().st_mtime if transcript.exists() else started)
         reason = "TIMEOUT" if now > deadline else "STALLED" if now - last > stall_s else None
         if reason:
@@ -325,6 +344,12 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
     if data.get("structured_output") is not None:
         print("[worker] report-json: " + json.dumps(data["structured_output"], separators=(",", ":")), flush=True)
     return (1 if data.get("is_error") else 0), False
+
+
+def under_cap(provider_name):
+    """Strict check for subscription providers: unknown usage counts as over the cap."""
+    value = quota.cached(provider_name)
+    return isinstance(value, list) and not quota.low_5h(provider_name)
 
 
 def looks_like_quota(text):

@@ -180,7 +180,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
-| 179 | TrackStyle schema, defaults and parser | pending |  |
+| 179 | TrackStyle schema, defaults and parser | in progress | - |
 | 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174, 175 |
 | 181 | Tools: `track:locate` and `check:styles` | pending | 179 |
 | 182 | Pit building and grandstand styling | pending | 180 |
@@ -208,3 +208,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 204 | Sepang style data (`sepang.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
 | 205 | Lusail style data (`lusail.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
+| 207 | UI polish: shared theme, HUD and menus | in progress | - |

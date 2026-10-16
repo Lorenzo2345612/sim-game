@@ -455,7 +455,8 @@ def call_worker(role, spec, num, resume=False, heavy=False, note=None):
     role_cfg = cfg.get("roles", {}).get(role, {})
     model = role_cfg.get("heavyModel" if heavy else "model", "")
     if prov and prov != role_cfg.get("provider"):
-        model = cfg.get("fallback", {}).get("heavyModel" if heavy else "model", model)
+        own = cfg.get("providers", {}).get(prov, {})
+        model = (own if own.get("model") else cfg.get("fallback", {})).get("heavyModel" if heavy else "model", model)
     track(num, role, add={"provider": prov, "model": model, "start": time.time()})
     try:
         with provider_slot(prov):

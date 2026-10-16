@@ -2469,7 +2469,7 @@
     {
       "num": "179",
       "title": "TrackStyle schema, defaults and parser",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -2974,6 +2974,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/206-kerb-outer-strip.md"
+    },
+    {
+      "num": "207",
+      "title": "UI polish: shared theme, HUD and menus",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/207-ui-polish-hud-menu.md"
     }
   ]
 }
