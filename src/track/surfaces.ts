@@ -9,6 +9,36 @@ const KERB_UV_V = 1.5;
 const VERGE_FLAT = 6;
 const VERGE_SLOPE = 3;
 const VERGE_DROP = 0.3;
+const INNER_CURVE_CLAMP = 0.9; // lateral ribbons stay inside this multiple of the corner radius
+
+interface PointIndex {
+  cell: number;
+  grid: Map<string, number[]>;
+}
+
+function buildPointIndex(pts: [number, number][], reach: number[]): PointIndex {
+  let maxReach = 0;
+  for (const r of reach) if (r > maxReach) maxReach = r;
+  const cell = Math.max(maxReach, 1);
+  const grid = new Map<string, number[]>();
+  pts.forEach((p, i) => {
+    const k = `${Math.floor(p[0] / cell)},${Math.floor(p[1] / cell)}`;
+    const list = grid.get(k);
+    if (list) list.push(i);
+    else grid.set(k, [i]);
+  });
+  return { cell, grid };
+}
+
+function nearPoints(idx: PointIndex, x: number, z: number, visit: (i: number) => void): void {
+  const gx = Math.floor(x / idx.cell);
+  const gz = Math.floor(z / idx.cell);
+  for (let a = -1; a <= 1; a++) {
+    for (let b = -1; b <= 1; b++) {
+      for (const i of idx.grid.get(`${gx + a},${gz + b}`) ?? []) visit(i);
+    }
+  }
+}
 
 interface Vertex {
   x: number;
@@ -84,6 +114,72 @@ export function halfWidthAt(track: TrackDataV2, side: Side, i: number): number {
   const arr = side === 'left' ? track.halfWidthLeft : track.halfWidthRight;
   const v = arr?.[i];
   return v === undefined ? track.widthMeters / 2 : v;
+}
+
+/**
+ * Index of a centerline point whose asphalt contains (x, z): |lateral| <=
+ * halfWidthAt - margin (per side) with the projection inside the point's own
+ * segment (both ends inclusive); -1 when no asphalt does.
+ */
+export function asphaltOwner(track: TrackDataV2, margin = 0.5): (x: number, z: number) => number {
+  const cx = track.centerline;
+  const n = cx.length;
+  if (n < 2) return () => -1;
+  const eps = 1e-9; // keeps the inclusive bounds inclusive under float64 rounding
+  const reach = new Array<number>(n);
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const seg = Math.hypot(cx[j][0] - cx[i][0], cx[j][1] - cx[i][1]);
+    const half = Math.max(
+      halfWidthAt(track, 'left', i) - margin,
+      halfWidthAt(track, 'right', i) - margin,
+    );
+    reach[i] = Math.hypot(seg, Math.max(half, 0)) + eps;
+  }
+  const index = buildPointIndex(cx, reach);
+  return (x, z) => {
+    let best = -1;
+    nearPoints(index, x, z, (i) => {
+      if (best >= 0 && i >= best) return;
+      const dx = x - cx[i][0];
+      const dz = z - cx[i][1];
+      if (dx * dx + dz * dz > reach[i] * reach[i]) return;
+      const j = (i + 1) % n;
+      const ex = cx[j][0] - cx[i][0];
+      const ez = cx[j][1] - cx[i][1];
+      const l2 = ex * ex + ez * ez;
+      if (l2 < 1e-12) return;
+      const t = (dx * ex + dz * ez) / l2;
+      if (t < -eps || t > 1 + eps) return;
+      const len = Math.sqrt(l2);
+      const lateral = (dz * ex - dx * ez) / len;
+      const half = lateral >= 0 ? halfWidthAt(track, 'right', i) : halfWidthAt(track, 'left', i);
+      if (Math.abs(lateral) <= half - margin + eps && (best < 0 || i < best)) best = i;
+    });
+    return best;
+  };
+}
+
+/** True when (x, z) lies within min(halfWidthLeft, halfWidthRight) - 1 m of any centerline point. */
+function nearAsphaltQuery(track: TrackDataV2): (x: number, z: number) => boolean {
+  const cx = track.centerline;
+  const n = cx.length;
+  if (n < 2) return () => false;
+  const reach = new Array<number>(n);
+  for (let i = 0; i < n; i++) {
+    reach[i] = Math.min(halfWidthAt(track, 'left', i), halfWidthAt(track, 'right', i)) - 1;
+  }
+  const index = buildPointIndex(cx, reach);
+  return (x, z) => {
+    let near = false;
+    nearPoints(index, x, z, (i) => {
+      if (near || reach[i] <= 0) return;
+      const dx = x - cx[i][0];
+      const dz = z - cx[i][1];
+      if (dx * dx + dz * dz <= reach[i] * reach[i]) near = true;
+    });
+    return near;
+  };
 }
 
 /** Offset of the last barrier covering (side, i); null when none does. */
@@ -197,13 +293,14 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
   let s = 0;
   for (let i = 0; i < n; i++) {
     if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
-    const inner = vergeInnerExtent(track, side, i);
+    let inner = vergeInnerExtent(track, side, i);
     let flat = inner + VERGE_FLAT;
     let outer = flat + VERGE_SLOPE;
     const corner = cornerCurvature(cx, i);
     if (corner !== null && corner.side === side) {
       // Inner side of a corner: keep the verge inside 0.8 x radius of curvature.
       const cap = 0.8 * corner.radius;
+      inner = Math.max(halfWidthAt(track, side, i), Math.min(inner, INNER_CURVE_CLAMP * corner.radius));
       flat = Math.max(inner, Math.min(inner + VERGE_FLAT, cap - VERGE_SLOPE));
       outer = Math.max(inner, Math.min(flat + VERGE_SLOPE, cap));
     }
@@ -295,9 +392,104 @@ export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
         { x: x + rx * half, y, z: z + rz * half, u: half / UV_SCALE, v },
       ]);
     }
-    strips.push(makeStrip('runoff', rows, false));
+    strips.push(rewindToMajority(makeStrip('runoff', rows, false)));
   }
   return strips;
+}
+
+/** Re-winds the minority-sign triangles of a strip to its majority winding. */
+function rewindToMajority(strip: SurfaceStrip): SurfaceStrip {
+  const p = strip.positions;
+  const ind = strip.indices;
+  let pos = 0;
+  let neg = 0;
+  for (let k = 0; k + 2 < ind.length; k += 3) {
+    const area2 = signedArea2(p, 3 * ind[k], 3 * ind[k + 1], 3 * ind[k + 2]);
+    if (area2 > 0) pos++;
+    else if (area2 < 0) neg++;
+  }
+  if (pos === 0 || neg === 0) return strip;
+  const majority = pos >= neg ? 1 : -1;
+  const out = new Uint32Array(ind);
+  for (let k = 0; k + 2 < out.length; k += 3) {
+    const area2 = signedArea2(p, 3 * out[k], 3 * out[k + 1], 3 * out[k + 2]);
+    if (area2 !== 0 && (area2 > 0 ? 1 : -1) !== majority) {
+      const t = out[k + 1];
+      out[k + 1] = out[k + 2];
+      out[k + 2] = t;
+    }
+  }
+  return { surface: strip.surface, positions: strip.positions, indices: out, uvs: strip.uvs };
+}
+
+function signedArea2(p: Float32Array, a: number, b: number, c: number): number {
+  return (p[b] - p[a]) * (p[c + 2] - p[a + 2]) - (p[c] - p[a]) * (p[b + 2] - p[a + 2]);
+}
+
+/**
+ * Drops triangles of a non-asphalt/kerb strip lying on asphalt (centroid or any
+ * vertex inside asphaltOwner, or within min half-width - 1 m of a centerline
+ * point — segment containment misses fans past hairpin apexes), then every
+ * triangle wound against its strip's majority. Returns a new strip, or null
+ * when nothing was dropped.
+ */
+function filterStripTriangles(
+  strip: SurfaceStrip,
+  owner: (x: number, z: number) => number,
+  nearAsphalt: (x: number, z: number) => boolean,
+): SurfaceStrip | null {
+  const p = strip.positions;
+  const ind = strip.indices;
+  const count = ind.length / 3;
+  const keep = new Uint8Array(count).fill(1);
+  const signs = new Int8Array(count);
+  const exempt = strip.surface === 'asphalt' || strip.surface === 'kerb';
+  let changed = false;
+  for (let t = 0; t < count; t++) {
+    const a = 3 * ind[3 * t];
+    const b = 3 * ind[3 * t + 1];
+    const c = 3 * ind[3 * t + 2];
+    if (!exempt) {
+      const cx3 = (p[a] + p[b] + p[c]) / 3;
+      const cz3 = (p[a + 2] + p[b + 2] + p[c + 2]) / 3;
+      const onAsphalt =
+        owner(cx3, cz3) !== -1 ||
+        owner(p[a], p[a + 2]) !== -1 ||
+        owner(p[b], p[b + 2]) !== -1 ||
+        owner(p[c], p[c + 2]) !== -1 ||
+        nearAsphalt(cx3, cz3);
+      if (onAsphalt) {
+        keep[t] = 0;
+        changed = true;
+        continue;
+      }
+    }
+    const area2 = signedArea2(p, a, b, c);
+    signs[t] = area2 > 0 ? 1 : area2 < 0 ? -1 : 0;
+  }
+  let pos = 0;
+  let neg = 0;
+  for (let t = 0; t < count; t++) {
+    if (signs[t] > 0) pos++;
+    else if (signs[t] < 0) neg++;
+  }
+  const majority = pos >= neg ? 1 : -1;
+  for (let t = 0; t < count; t++) {
+    if (keep[t] === 1 && signs[t] !== 0 && signs[t] !== majority) {
+      keep[t] = 0;
+      changed = true;
+    }
+  }
+  if (!changed) return null;
+  const out = new Uint32Array(ind.length);
+  let m = 0;
+  for (let t = 0; t < count; t++) {
+    if (keep[t] === 0) continue;
+    out[m++] = ind[3 * t];
+    out[m++] = ind[3 * t + 1];
+    out[m++] = ind[3 * t + 2];
+  }
+  return { surface: strip.surface, positions: strip.positions, indices: out.subarray(0, m), uvs: strip.uvs };
 }
 
 export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
@@ -354,8 +546,19 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       end,
       (idx) => {
         const pushed = track.kerbs.some((k) => k.side === seg.side && segmentCovers(k, idx, n));
-        const inner = sign * (halfWidthAt(track, seg.side, idx) + (pushed ? KERB_WIDTH : 0));
-        const outer = inner + sign * seg.widthMeters;
+        let inner = sign * (halfWidthAt(track, seg.side, idx) + (pushed ? KERB_WIDTH : 0));
+        let outer = inner + sign * seg.widthMeters;
+        const corner = cornerCurvature(cx, idx);
+        if (corner !== null && corner.side === seg.side) {
+          // Inner side of a corner: the column further out cannot pass 0.9 x radius
+          // of curvature or the ribbon folds past the corner centre.
+          const cap = INNER_CURVE_CLAMP * corner.radius;
+          const [near, far] = Math.abs(inner) <= Math.abs(outer) ? [inner, outer] : [outer, inner];
+          const limited = Math.sign(far || near || 1) * Math.min(Math.abs(far), cap);
+          const capped = Math.abs(limited) < Math.abs(near) ? near : limited;
+          if (far === outer) outer = capped;
+          else inner = capped;
+        }
         const latMin = Math.min(inner, outer);
         const latMax = Math.max(inner, outer);
         return [latMin, latMax, latMin / UV_SCALE, latMax / UV_SCALE];
@@ -366,9 +569,51 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     if (rows.length > 0) strips.push(makeStrip(seg.surface, rows, false));
   }
 
+  const escapeStrips = escapeRoadStrips(track);
   strips.push(vergeStrip(track, 'left'));
   strips.push(vergeStrip(track, 'right'));
-  strips.push(...escapeRoadStrips(track));
+  strips.push(...escapeStrips);
 
+  // Escape strips are appended verbatim (141 pins them against escapeRoadStrips);
+  // the builder already trims/drops their polylines so they stay clean.
+  const unfiltered = new Set(escapeStrips);
+  const owner = asphaltOwner(track);
+  const nearAsphalt = nearAsphaltQuery(track);
+  for (let i = 0; i < strips.length; i++) {
+    if (unfiltered.has(strips[i])) continue;
+    const filtered = filterStripTriangles(strips[i], owner, nearAsphalt);
+    if (filtered) strips[i] = filtered;
+  }
   return strips;
+}
+
+/**
+ * Rows (2-vertex row index of the strip's leading row) of triangles that dip
+ * onto asphalt or park a centroid within min half-width - 1 m of a centerline
+ * point. The builder trims escape-road mouths until this comes back empty;
+ * interior rows mean the road crosses another track part and is dropped.
+ */
+export function stripOffenceRows(track: TrackDataV2, strip: SurfaceStrip): number[] {
+  const owner = asphaltOwner(track);
+  const nearAsphalt = nearAsphaltQuery(track);
+  const p = strip.positions;
+  const ind = strip.indices;
+  const rows: number[] = [];
+  for (let t = 0; t + 2 < ind.length; t += 3) {
+    const a = 3 * ind[t];
+    const b = 3 * ind[t + 1];
+    const c = 3 * ind[t + 2];
+    const x = (p[a] + p[b] + p[c]) / 3;
+    const z = (p[a + 2] + p[b + 2] + p[c + 2]) / 3;
+    if (
+      owner(x, z) !== -1 ||
+      owner(p[a], p[a + 2]) !== -1 ||
+      owner(p[b], p[b + 2]) !== -1 ||
+      owner(p[c], p[c + 2]) !== -1 ||
+      nearAsphalt(x, z)
+    ) {
+      rows.push(Math.floor(t / 6));
+    }
+  }
+  return rows;
 }

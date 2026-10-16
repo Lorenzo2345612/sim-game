@@ -466,10 +466,11 @@ describe('155 close parallel sections acceptance', () => {
       ) as TrackDataV2;
       // 149 adds the sausages array to every rebuilt track.
       const strip = (t: TrackDataV2): Record<string, unknown> => {
-        const copy: Record<string, unknown> = { ...t };
+        const copy: Record<string, unknown> = { ...t, terrain: { ...t.terrain, heights: [] } };
         delete copy.sausages;
         delete copy.pit;
         delete copy.barriers;
+        delete copy.escapeRoads;
         return copy;
       };
       expect(strip(track), `${id}: JSON changed (sausages ignored)`).toEqual(strip(prev));

@@ -165,7 +165,7 @@ describe('141 escape road / foam post-coder gaps', () => {
 
   it('POST6: foam blocks yaw with the path around an L corner: segment-start outward normal shifts them 0.3 m and rotates their depth axis', () => {
     const centerline: [number, number][] = Array.from({ length: 30 }, (_, i) =>
-      i <= 14 ? [0, -2 * i] : [2 * (i - 14), -28],
+      i <= 14 ? [0, -2 * i] : [-2 * (i - 14), -28],
     );
     const track = makeTrack(centerline, zeros(30), [
       { start: 13, end: 15, side: 'right', type: 'foam', offsetMeters: 10 },
@@ -174,8 +174,8 @@ describe('141 escape road / foam post-coder gaps', () => {
     const q = Math.SQRT1_2;
     const line: [number, number][] = [
       [10, -26],
-      [10 * q, -28 + 10 * q],
-      [2, -18],
+      [10 * q, -28 - 10 * q],
+      [-2, -38],
     ];
     const seg0 = Math.hypot(line[1][0] - line[0][0], line[1][1] - line[0][1]);
     const total = 2 * seg0;
@@ -183,7 +183,7 @@ describe('141 escape road / foam post-coder gaps', () => {
     expect(object.foamBlocks).toBe(count);
     const normals: [number, number][] = [
       [1, 0],
-      [q, q],
+      [q, -q],
     ];
     const seen: BlockState[] = [];
     const colors = ['foamBlue', 'foamRed', 'foamWhite'];

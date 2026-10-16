@@ -5,7 +5,7 @@ import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTra
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { buildSausages, type SausageOverride } from './sausages';
-import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads } from './hazards';
+import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads, trimEscapeRoads } from './hazards';
 import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
 import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
@@ -85,7 +85,7 @@ function placeGrandstands(
   });
 }
 
-function buildTrackV2(config: TrackConfig): TrackDataV2 {
+function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRoads: number } {
   const geojson = JSON.parse(
     readFileSync(join('assets/source/tracks', `${config.geojson}.geojson`), 'utf8'),
   ) as GeoJsonLineFeatureCollection;
@@ -168,8 +168,10 @@ function buildTrackV2(config: TrackConfig): TrackDataV2 {
     data.halfWidthLeft = parallel.halfLeft;
     data.halfWidthRight = parallel.halfRight;
   }
+  const trimmed = trimEscapeRoads(data);
+  data.escapeRoads = trimmed.roads;
   clampTerrainBelowStrips(data.terrain, buildTrackSurfaces(data));
-  return data;
+  return { data, droppedEscapeRoads: trimmed.dropped };
 }
 
 const TRACKS = JSON.parse(
@@ -180,7 +182,7 @@ mkdirSync('public/tracks', { recursive: true });
 const only = process.argv.slice(2);
 for (const track of TRACKS) {
   if (only.length && !only.includes(track.id)) continue;
-  const data = buildTrackV2(track);
+  const { data, droppedEscapeRoads } = buildTrackV2(track);
   const dev = Math.abs(data.lengthMeters - data.officialLengthMeters) / data.officialLengthMeters;
   if (dev > 0.01) {
     console.error(`${track.id}: length deviation ${(dev * 100).toFixed(2)}% exceeds 1%`);
@@ -189,6 +191,7 @@ for (const track of TRACKS) {
   writeFileSync(`public/tracks/${track.id}.json`, JSON.stringify(data));
   console.log(
     `${track.id}: ${data.centerline.length} points, ${data.lengthMeters} m (official ${data.officialLengthMeters} m, deviation ${(dev * 100).toFixed(2)}%), ` +
-    `${data.trees.reduce((s, t) => s + t.data.length / 4, 0)} trees`,
+    `${data.trees.reduce((s, t) => s + t.data.length / 4, 0)} trees, ` +
+    `${data.escapeRoads?.length ?? 0} escape roads (${droppedEscapeRoads} dropped)`,
   );
 }

@@ -47,10 +47,14 @@ describe('106 new tracks in game', () => {
     ).trim();
     expect(baseRev, 'git merge-base master HEAD').toMatch(/^[0-9a-f]{7,40}$/);
     const strip = (t: Record<string, unknown>): Record<string, unknown> => {
-      const copy = { ...t };
+      const copy: Record<string, unknown> = {
+        ...t,
+        terrain: { ...(t.terrain as Record<string, unknown>), heights: [] },
+      };
       delete copy.sausages;
       delete copy.pit;
       delete copy.barriers;
+      delete copy.escapeRoads;
       return copy;
     };
     for (const file of TRACK_FILES) {

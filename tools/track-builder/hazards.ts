@@ -1,5 +1,6 @@
 import type { Point2 } from '../../src/track/geo';
-import type { BarrierSegment, EscapeRoad, RunoffSegment, Side } from '../../src/core/types';
+import type { BarrierSegment, EscapeRoad, RunoffSegment, Side, TrackDataV2 } from '../../src/core/types';
+import { asphaltOwner, escapeRoadStrips, stripOffenceRows } from '../../src/track/surfaces';
 import { detectCorners, type CornerRun } from './corners';
 
 export interface BrakingCorner extends CornerRun { dropKmh: number; kind: 'heavy' | 'medium' | 'none' }
@@ -198,4 +199,57 @@ export function detectEscapeRoads(points: Point2[]): EscapeRoad[] {
     out.push({ points: road, width: ESCAPE_WIDTH });
   }
   return out;
+}
+
+/**
+ * Trims each escape road polyline so its first and last point lie outside the
+ * asphalt of every centerline point, and drops whole roads that still cross
+ * asphalt between their ends (the road would run over the track).
+ */
+export function trimEscapeRoads(track: TrackDataV2): { roads: EscapeRoad[]; dropped: number } {
+  const owner = asphaltOwner(track);
+  const roads: EscapeRoad[] = [];
+  let dropped = 0;
+  for (const road of track.escapeRoads ?? []) {
+    const pts = road.points;
+    let a = 0;
+    let b = pts.length - 1;
+    while (a <= b && owner(pts[a][0], pts[a][1]) !== -1) a++;
+    while (b >= a && owner(pts[b][0], pts[b][1]) !== -1) b--;
+    const inner = pts.slice(a, b + 1);
+    if (
+      inner.length < 2 ||
+      inner.some((p) => owner(p[0], p[1]) !== -1)
+    ) {
+      dropped++;
+      continue;
+    }
+    // Escape strips bypass the runtime overlap filter (141 pins them verbatim),
+    // so a road may only be stored when its whole strip is clean. Mouth rows
+    // that still dip onto the asphalt are trimmed; interior offences drop the road.
+    let points = inner;
+    let kept = false;
+    for (;;) {
+      const candidate: EscapeRoad = { points, width: road.width };
+      const strip = escapeRoadStrips({ ...track, escapeRoads: [candidate] })[0];
+      const offences = strip ? stripOffenceRows(track, strip) : [0];
+      if (offences.length === 0) {
+        roads.push(candidate);
+        kept = true;
+        break;
+      }
+      const head = offences.filter((r) => r <= 1);
+      const tail = offences.filter((r) => r >= points.length - 3);
+      if (head.length > 0) {
+        points = points.slice(Math.max(...head) + 1);
+      } else if (tail.length > 0) {
+        points = points.slice(0, Math.min(...tail));
+      }
+      // Interior offences, or mouth trimming that ate the whole road, drop it.
+      if (head.length === 0 && tail.length === 0) break;
+      if (points.length < 2) break;
+    }
+    if (!kept) dropped++;
+  }
+  return { roads, dropped };
 }

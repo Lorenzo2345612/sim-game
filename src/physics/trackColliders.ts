@@ -85,6 +85,7 @@ export function addTrackColliders(
   );
   registerSurface(terrain, 'grass');
   for (const strip of strips) {
+    if (strip.indices.length === 0) continue;
     const collider = world.createCollider(
       RAPIER.ColliderDesc.trimesh(strip.positions, strip.indices),
     );
