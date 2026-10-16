@@ -111,7 +111,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 106 | Add Mexico City, Daytona, Lusail, Sakhir, Braselton, Elkhart Lake and Sepang to the game | done | 044, 099, 102, 141, 143, 155 |
 | 107 | Car sound data | done | 058, 072 |
 | 108 | Engine synth DSP core | done | - |
-| 109 | Engine AudioWorklet and EngineAudio integration | pending | 107, 108, 054, 070 |
+| 109 | Engine AudioWorklet and EngineAudio integration | in progress | 107, 108, 054, 070 |
 | 110 | Audio effects | pending | 109 |
 | 111 | Audio mix | pending | 110 |
 | 112 | Prototype models through the car pipeline | done | 071, 075 |

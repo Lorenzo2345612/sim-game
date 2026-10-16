@@ -1476,7 +1476,7 @@
     {
       "num": "109",
       "title": "Engine AudioWorklet and EngineAudio integration",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "107",
         "108",
