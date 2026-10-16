@@ -59,8 +59,28 @@ export function loadPreset(storage: KeyValueStorage): Preset {
   return 'high';
 }
 
+/** The stored settings object as-is; corrupt or non-object payloads read as empty. */
+function storedSettings(storage: KeyValueStorage): Record<string, unknown> {
+  let raw: string | null = null;
+  try {
+    raw = storage.getItem(SETTINGS_KEY);
+  } catch {
+    /* treat as missing */
+  }
+  if (raw === null) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // corrupt JSON falls through to an empty object
+  }
+  return {};
+}
+
 export function savePreset(storage: KeyValueStorage, preset: Preset): void {
-  storage.setItem(SETTINGS_KEY, JSON.stringify({ preset }));
+  storage.setItem(SETTINGS_KEY, JSON.stringify({ ...storedSettings(storage), preset }));
 }
 
 export type CompoundOption = 'soft' | 'medium' | 'hard';
@@ -105,4 +125,12 @@ export function loadGameOptions(storage: KeyValueStorage): GameOptions {
     }
   }
   return { ...DEFAULT_GAME_OPTIONS };
+}
+
+/** Writes wear/fuel/compound into settings, keeping every other stored key (e.g. preset). */
+export function saveGameOptions(storage: KeyValueStorage, opts: GameOptions): void {
+  storage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify({ ...storedSettings(storage), wear: opts.wear, fuel: opts.fuel, compound: opts.compound }),
+  );
 }

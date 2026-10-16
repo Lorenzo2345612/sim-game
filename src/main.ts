@@ -2,6 +2,7 @@ import './ui/theme.css';
 import './ui/hud.css';
 import './ui/hudV2.css';
 import './ui/hudTyres.css';
+import './ui/setupHud.css';
 import * as THREE from 'three';
 import { EngineAudio } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
@@ -48,6 +49,7 @@ import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES } from './ui/menu';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
+import { SetupHud } from './ui/setupHud';
 
 export interface SceneStats {
   barriers: number;
@@ -543,7 +545,7 @@ async function startGame(trackId: string): Promise<void> {
   const gamepad = new GamepadInput();
 
   const hud = new HudV2(document.getElementById('hud') as HTMLElement);
-  const activeCompound = baseSpec.tyres.compounds[compound];
+  let activeCompound = baseSpec.tyres.compounds[compound];
   const hudTyres = new HudTyres(document.body);
   const tyresData: HudTyresData = {
     tempC: [0, 0, 0, 0],
@@ -558,6 +560,12 @@ async function startGame(trackId: string): Promise<void> {
   };
   const minimap = new Minimap(document.body, track.centerline);
   const fpsOverlay = new FpsOverlay(document.body, window);
+
+  const setupHud = new SetupHud(document.body);
+  const refreshSetupHud = (): void => {
+    setupHud.show(loadSetup(carId, track.id, baseSpec, window.localStorage), tune.compound, baseSpec);
+  };
+  if (setupHud.visible) refreshSetupHud();
 
   const ghostRecorder = new GhostRecorder(track.id);
   let ghost = loadGhost(window.localStorage, track.id);
@@ -658,6 +666,7 @@ async function startGame(trackId: string): Promise<void> {
       simInput = mergeInputs(keyboard.update(dt), gamepad.getInput());
       if (simInput.shiftUp) game.shiftUp();
       if (simInput.shiftDown) game.shiftDown();
+      if (gamepad.takeSetupHudToggle()) toggleSetupHud();
       game.step(simInput);
       if (lapActive) {
         const state = game.getCurrentState();
@@ -798,6 +807,10 @@ async function startGame(trackId: string): Promise<void> {
     game.dispose();
     game = next;
     gameSpec = nextSpec;
+    activeCompound = baseSpec.tyres.compounds[tune.compound];
+    tyresData.compound = tune.compound;
+    tyresData.optTempC = activeCompound.optTempC;
+    tyresData.tempWindowC = activeCompound.tempWindowC;
     tyresData.pressureKpa = gameSpec.tyres.pressureKpa;
     autoGearbox = true;
     lapActive = false;
@@ -836,13 +849,23 @@ async function startGame(trackId: string): Promise<void> {
     carId,
     trackId: track.id,
     storage: window.localStorage,
-    onApply: () => restart().catch(onError),
+    compound: tune.compound,
+    onApply: () => {
+      tune.compound = loadGameOptions(window.localStorage).compound;
+      restart().catch(onError);
+    },
     onClose: showPauseMenu,
   });
 
   const openSetup = (): void => {
     menu?.hide();
     setupPanel.open();
+  };
+
+  const toggleSetupHud = (): void => {
+    if (paused || setupPanel.visible) return;
+    if (setupHud.visible) setupHud.hide();
+    else refreshSetupHud();
   };
 
   const onKeydown = (event: KeyboardEvent): void => {
@@ -875,6 +898,9 @@ async function startGame(trackId: string): Promise<void> {
         autoGearbox = !autoGearbox;
         game.setGearMode(autoGearbox ? 'auto' : 'manual');
         break;
+      case 'KeyI':
+        toggleSetupHud();
+        break;
     }
   };
 
@@ -888,6 +914,7 @@ async function startGame(trackId: string): Promise<void> {
     hudTyres.dispose();
     minimap.dispose();
     fpsOverlay.dispose();
+    setupHud.dispose();
     setupPanel.dispose();
     game.dispose();
     for (const disposable of disposables) disposable.dispose();

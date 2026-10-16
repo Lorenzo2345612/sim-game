@@ -7,6 +7,7 @@ const BUTTON_SHIFT_DOWN = 4;
 const BUTTON_SHIFT_UP = 5;
 const BUTTON_BRAKE = 6;
 const BUTTON_THROTTLE = 7;
+const BUTTON_SETUP_HUD = 8;
 
 const RUMBLE_CHANGE_MS = 50;
 const RUMBLE_KEEPALIVE_MS = 100;
@@ -39,8 +40,10 @@ const buttonValue = (pad: Gamepad, index: number): number => {
 export class GamepadInput {
   private shiftUpPending = false;
   private shiftDownPending = false;
+  private setupHudPending = false;
   private prevShiftUp = false;
   private prevShiftDown = false;
+  private prevSetupHud = false;
   private steer = 0;
   private throttle = 0;
   private brake = 0;
@@ -65,6 +68,7 @@ export class GamepadInput {
       this.brake = 0;
       this.prevShiftUp = false;
       this.prevShiftDown = false;
+      this.prevSetupHud = false;
       return;
     }
 
@@ -81,6 +85,17 @@ export class GamepadInput {
     const up = buttonPressed(pad, BUTTON_SHIFT_UP);
     if (up && !this.prevShiftUp) this.shiftUpPending = true;
     this.prevShiftUp = up;
+
+    const setupHud = buttonPressed(pad, BUTTON_SETUP_HUD);
+    if (setupHud && !this.prevSetupHud) this.setupHudPending = true;
+    this.prevSetupHud = setupHud;
+  }
+
+  /** Consumes the pending Back/Select/Share edge (setup HUD toggle). */
+  takeSetupHudToggle(): boolean {
+    const pending = this.setupHudPending;
+    this.setupHudPending = false;
+    return pending;
   }
 
   getInput(): DriverInput {

@@ -1,28 +1,21 @@
-import type { CarSpec } from '../physics/carSpec';
+import { loadGameOptions, saveGameOptions, type CompoundOption } from '../core/settings';
+import type { CarSpec, SetupKey } from '../physics/carSpec';
 import type { Setup, SetupStorage } from '../physics/setup';
-import { clampSetup, loadSetup, presetSetup, saveSetup } from '../physics/setup';
+import { clampSetup, defaultSetup, loadSetup, presetSetup, saveSetup } from '../physics/setup';
 
 export interface SetupPanelOptions {
   spec: CarSpec;
   carId: string;
   trackId: string;
   storage: SetupStorage;
+  compound: CompoundOption;
   onApply(s: Setup): void;
   onClose(): void;
 }
 
-type SetupKey = keyof Setup;
+const PSI_PER_KPA = 6.894757;
 
-const GROUPS: { title: string; keys: SetupKey[] }[] = [
-  { title: 'Wings', keys: ['frontWing', 'rearWing'] },
-  { title: 'Brake bias', keys: ['brakeBias'] },
-  { title: 'Final drive', keys: ['finalDrive'] },
-  { title: 'Anti-roll', keys: ['arbFront', 'arbRear'] },
-  { title: 'Ride height', keys: ['rideHeight'] },
-  { title: 'Tyre pressure', keys: ['tyrePressureKpa'] },
-];
-
-const LABELS: Record<SetupKey, string> = {
+export const SETUP_LABELS: Record<SetupKey, string> = {
   frontWing: 'Front wing',
   rearWing: 'Rear wing',
   brakeBias: 'Brake bias',
@@ -30,10 +23,80 @@ const LABELS: Record<SetupKey, string> = {
   arbFront: 'Front anti-roll bar',
   arbRear: 'Rear anti-roll bar',
   rideHeight: 'Ride height',
-  tyrePressureKpa: 'Tyre pressure (kPa)',
+  tyrePressureKpa: 'Tyre pressure',
 };
 
+export function formatSetupValue(key: SetupKey, value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  switch (key) {
+    case 'frontWing':
+    case 'rearWing':
+      return String(Math.round(value));
+    case 'brakeBias':
+      return `${(value * 100).toFixed(1)}% F`;
+    case 'finalDrive':
+      return value.toFixed(2);
+    case 'arbFront':
+    case 'arbRear':
+      return `${Math.round(value / 1000)} kN/m`;
+    case 'rideHeight': {
+      const mm = Math.round(value * 1000);
+      return `${mm > 0 ? '+' : ''}${mm} mm`;
+    }
+    case 'tyrePressureKpa':
+      return `${(value / PSI_PER_KPA).toFixed(1)} psi (${Math.round(value)} kPa)`;
+  }
+}
+
+/** Dim delta against the car default in the row's own unit; empty once it rounds back to zero. */
+function formatSetupDelta(key: SetupKey, value: number, base: number): string {
+  if (!Number.isFinite(value)) return '';
+  const d = value - base;
+  const sign = d > 0 ? '+' : '−';
+  const a = Math.abs(d);
+  switch (key) {
+    case 'frontWing':
+    case 'rearWing': {
+      const n = Math.round(a);
+      return n === 0 ? '' : `${sign}${n}`;
+    }
+    case 'brakeBias': {
+      const n = Math.round(a * 1000) / 10;
+      return n === 0 ? '' : `${sign}${n.toFixed(1)}%`;
+    }
+    case 'finalDrive': {
+      const n = Math.round(a * 100) / 100;
+      return n === 0 ? '' : `${sign}${n.toFixed(2)}`;
+    }
+    case 'arbFront':
+    case 'arbRear': {
+      const n = Math.round(a / 1000);
+      return n === 0 ? '' : `${sign}${n} kN/m`;
+    }
+    case 'rideHeight': {
+      const n = Math.round(a * 1000);
+      return n === 0 ? '' : `${sign}${n} mm`;
+    }
+    case 'tyrePressureKpa': {
+      const n = Math.round(a);
+      return n === 0 ? '' : `${sign}${n} kPa`;
+    }
+  }
+}
+
+const GROUPS: { title: string; keys: SetupKey[] }[] = [
+  { title: 'Aero', keys: ['frontWing', 'rearWing'] },
+  { title: 'Brakes', keys: ['brakeBias'] },
+  { title: 'Gearing', keys: ['finalDrive'] },
+  { title: 'Suspension', keys: ['arbFront', 'arbRear', 'rideHeight'] },
+  { title: 'Tyres', keys: ['tyrePressureKpa'] },
+];
+
 const PRESETS = ['stable', 'balanced', 'aggressive'] as const;
+
+const COMPOUNDS: CompoundOption[] = ['soft', 'medium', 'hard'];
+const COMPOUND_NAMES: Record<CompoundOption, string> = { soft: 'Soft', medium: 'Medium', hard: 'Hard' };
+const COMPOUND_LETTERS: Record<CompoundOption, string> = { soft: 'S', medium: 'M', hard: 'H' };
 
 const STYLE = `
 #setup-panel {
@@ -51,8 +114,8 @@ const STYLE = `
 #setup-panel .setup-box {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: min(440px, 92vw);
+  gap: 10px;
+  width: min(880px, 94vw);
   max-height: 92vh;
   overflow-y: auto;
   padding: 24px;
@@ -61,12 +124,22 @@ const STYLE = `
   border-radius: var(--ui-radius);
 }
 #setup-panel .setup-title {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   font-size: 26px;
   font-weight: 800;
   font-style: italic;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+#setup-panel .setup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 28px;
+}
+@media (max-width: 900px) {
+  #setup-panel .setup-grid {
+    grid-template-columns: 1fr;
+  }
 }
 #setup-panel .setup-group {
   display: flex;
@@ -74,6 +147,9 @@ const STYLE = `
   gap: 6px;
   padding-top: 8px;
   border-top: 1px solid var(--ui-border);
+}
+#setup-panel .setup-group:last-child {
+  grid-column: 1 / -1;
 }
 #setup-panel .setup-group-title {
   font-size: 12px;
@@ -83,65 +159,151 @@ const STYLE = `
   color: var(--ui-text-dim);
 }
 #setup-panel .setup-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-#setup-panel .setup-row-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(96px, auto) auto auto minmax(80px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
+}
+#setup-panel .setup-label {
+  cursor: pointer;
+  white-space: nowrap;
 }
 #setup-panel .setup-value {
   color: var(--ui-accent);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#setup-panel .setup-delta {
+  min-width: 4.5em;
+  text-align: right;
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#setup-panel .setup-steps {
+  display: flex;
+  gap: 4px;
+}
+#setup-panel .setup-step {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  font: 700 15px var(--ui-font);
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+  transition: border-color var(--ui-fast);
+}
+#setup-panel .setup-step:hover {
+  border-color: var(--ui-accent);
 }
 #setup-panel input[type='range'] {
   width: 100%;
   accent-color: var(--ui-accent);
 }
-#setup-panel .setup-actions {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+#setup-panel .setup-compounds {
+  display: flex;
   gap: 8px;
-  margin-top: 8px;
 }
-#setup-panel .setup-actions button {
-  grid-column: span 2;
-  padding: 10px 8px;
-  font-size: 15px;
+#setup-panel .compound-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 4px;
+  font: 600 13px var(--ui-font);
   color: var(--ui-text);
   background: transparent;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
+  cursor: pointer;
+  transition: border-color var(--ui-fast);
+}
+#setup-panel .compound-btn:hover {
+  border-color: var(--ui-accent);
+}
+#setup-panel .compound-btn.selected {
+  border-color: var(--ui-accent);
+  background: rgba(242, 183, 5, 0.1);
+}
+#setup-panel .compound-letter {
+  font-size: 18px;
+  font-weight: 800;
+  font-style: italic;
+}
+#setup-panel .compound-btn[data-compound='soft'] .compound-letter {
+  color: var(--ui-bad);
+}
+#setup-panel .compound-btn[data-compound='medium'] .compound-letter {
+  color: var(--ui-accent);
+}
+#setup-panel .compound-btn[data-compound='hard'] .compound-letter {
+  color: var(--ui-text);
+}
+#setup-panel .compound-opt {
+  font-size: 11px;
+  color: var(--ui-text-dim);
+}
+#setup-panel .setup-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+}
+#setup-panel .setup-footer .setup-spacer {
+  flex: 1;
+}
+#setup-panel .setup-footer button {
+  padding: 9px 14px;
+  font: 600 14px var(--ui-font);
+  font-stretch: condensed;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: transform var(--ui-fast), border-color var(--ui-fast);
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
   cursor: pointer;
+  transition:
+    transform var(--ui-fast),
+    border-color var(--ui-fast),
+    background var(--ui-fast);
 }
-#setup-panel .setup-actions button:hover {
+#setup-panel .setup-footer button:hover {
   transform: translateY(-1px);
   border-color: var(--ui-accent);
 }
-#setup-panel .setup-actions button:focus-visible {
+#setup-panel .setup-footer button:focus-visible,
+#setup-panel .setup-step:focus-visible,
+#setup-panel .compound-btn:focus-visible {
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
+#setup-panel .setup-footer .btn-primary {
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
 @media (prefers-reduced-motion: reduce) {
-  #setup-panel .setup-actions button {
+  #setup-panel .setup-footer button,
+  #setup-panel .setup-step,
+  #setup-panel .compound-btn {
     transition: none;
   }
-}
-#setup-panel .setup-apply,
-#setup-panel .setup-back {
-  grid-column: span 3;
 }
 `;
 
 interface SliderRow {
   input: HTMLInputElement;
   value: HTMLElement;
+  delta: HTMLElement;
 }
 
 export class SetupPanel {
@@ -149,6 +311,9 @@ export class SetupPanel {
   private readonly root: HTMLElement;
   private readonly style: HTMLStyleElement;
   private readonly rows = new Map<SetupKey, SliderRow>();
+  private readonly compoundButtons = new Map<CompoundOption, HTMLButtonElement>();
+  private selectedCompound: CompoundOption;
+  private appliedCompound: CompoundOption;
   private shown = false;
 
   constructor(
@@ -157,6 +322,8 @@ export class SetupPanel {
   ) {
     this.doc = parent.ownerDocument ?? document;
     const doc = this.doc;
+    this.selectedCompound = opts.compound;
+    this.appliedCompound = opts.compound;
 
     this.style = doc.createElement('style');
     this.style.textContent = STYLE;
@@ -175,6 +342,8 @@ export class SetupPanel {
 
     const initial = loadSetup(opts.carId, opts.trackId, opts.spec, opts.storage);
 
+    const grid = doc.createElement('div');
+    grid.className = 'setup-grid';
     for (const group of GROUPS) {
       const section = doc.createElement('section');
       section.className = 'setup-group';
@@ -182,50 +351,33 @@ export class SetupPanel {
       heading.className = 'setup-group-title';
       heading.textContent = group.title;
       section.appendChild(heading);
+      if (group.title === 'Tyres') section.appendChild(this.compoundRow());
       for (const key of group.keys) {
-        const range = opts.spec.setup[key];
-        const row = doc.createElement('label');
-        row.className = 'setup-row';
-        const head = doc.createElement('div');
-        head.className = 'setup-row-head';
-        const name = doc.createElement('span');
-        name.textContent = LABELS[key];
-        const value = doc.createElement('span');
-        value.className = 'setup-value';
-        head.append(name, value);
-        const input = doc.createElement('input');
-        input.type = 'range';
-        input.dataset.setup = key;
-        input.min = String(range.min);
-        input.max = String(range.max);
-        input.step = String(range.step);
-        input.value = String(initial[key]);
-        value.textContent = input.value;
-        input.addEventListener('input', () => {
-          value.textContent = input.value;
-        });
-        row.append(head, input);
-        section.appendChild(row);
-        this.rows.set(key, { input, value });
+        section.appendChild(this.sliderRow(key, initial[key]));
       }
-      box.appendChild(section);
+      grid.appendChild(section);
     }
+    box.appendChild(grid);
 
-    const actions = doc.createElement('div');
-    actions.className = 'setup-actions';
+    const footer = doc.createElement('div');
+    footer.className = 'setup-footer';
     for (const preset of PRESETS) {
-      const button = doc.createElement('button');
-      button.type = 'button';
-      button.textContent = preset.charAt(0).toUpperCase() + preset.slice(1);
-      button.addEventListener('click', () => this.setValues(presetSetup(opts.spec, preset)));
-      actions.appendChild(button);
+      const name = preset.charAt(0).toUpperCase() + preset.slice(1);
+      footer.appendChild(
+        this.button(name, '', () => this.setValues(presetSetup(opts.spec, preset))),
+      );
     }
-    actions.appendChild(this.button('Apply', 'setup-apply', () => this.apply()));
-    actions.appendChild(this.button('Back', 'setup-back', () => this.close()));
+    footer.appendChild(this.button('Reset', '', () => this.setValues(defaultSetup(opts.spec))));
+    const spacer = doc.createElement('span');
+    spacer.className = 'setup-spacer';
+    footer.appendChild(spacer);
+    footer.appendChild(this.button('Apply', 'btn-primary', () => this.apply()));
+    footer.appendChild(this.button('Close', '', () => this.close()));
 
-    box.appendChild(actions);
+    box.appendChild(footer);
     this.root.appendChild(box);
     parent.appendChild(this.root);
+    this.refreshCompound();
   }
 
   get visible(): boolean {
@@ -244,6 +396,8 @@ export class SetupPanel {
     this.shown = false;
     this.root.style.display = 'none';
     this.setValues(loadSetup(this.opts.carId, this.opts.trackId, this.opts.spec, this.opts.storage));
+    this.selectedCompound = this.appliedCompound;
+    this.refreshCompound();
     this.opts.onClose();
   }
 
@@ -259,6 +413,102 @@ export class SetupPanel {
     this.style.remove();
   }
 
+  private sliderRow(key: SetupKey, value: number): HTMLElement {
+    const doc = this.doc;
+    const range = this.opts.spec.setup[key];
+    const row = doc.createElement('div');
+    row.className = 'setup-row';
+    const label = doc.createElement('label');
+    label.className = 'setup-label';
+    label.htmlFor = `setup-${key}`;
+    label.textContent = SETUP_LABELS[key];
+    const formatted = doc.createElement('span');
+    formatted.className = 'setup-value';
+    const steps = doc.createElement('div');
+    steps.className = 'setup-steps';
+    const input = doc.createElement('input');
+    input.type = 'range';
+    input.id = `setup-${key}`;
+    input.dataset.setup = key;
+    input.min = String(range.min);
+    input.max = String(range.max);
+    input.step = String(range.step);
+    input.value = String(value);
+    input.setAttribute('aria-label', SETUP_LABELS[key]);
+    const delta = doc.createElement('span');
+    delta.className = 'setup-delta';
+    const stepBtn = (dir: 1 | -1, text: string): HTMLButtonElement => {
+      const button = doc.createElement('button');
+      button.type = 'button';
+      button.className = 'setup-step';
+      button.textContent = text;
+      button.setAttribute('aria-label', `${dir > 0 ? 'Increase' : 'Decrease'} ${SETUP_LABELS[key]}`);
+      button.addEventListener('click', () => this.step(key, dir));
+      return button;
+    };
+    steps.append(stepBtn(-1, '−'), stepBtn(1, '+'));
+    row.append(label, formatted, steps, input, delta);
+    input.addEventListener('input', () => this.refresh(key));
+    this.rows.set(key, { input, value: formatted, delta });
+    this.refresh(key);
+    return row;
+  }
+
+  private compoundRow(): HTMLElement {
+    const doc = this.doc;
+    const row = doc.createElement('div');
+    row.className = 'setup-compounds';
+    for (const compound of COMPOUNDS) {
+      const button = doc.createElement('button');
+      button.type = 'button';
+      button.className = 'compound-btn';
+      button.dataset.compound = compound;
+      button.setAttribute('aria-label', COMPOUND_NAMES[compound]);
+      const letter = doc.createElement('span');
+      letter.className = 'compound-letter';
+      letter.textContent = COMPOUND_LETTERS[compound];
+      const name = doc.createElement('span');
+      name.className = 'compound-name';
+      name.textContent = COMPOUND_NAMES[compound];
+      const opt = doc.createElement('span');
+      opt.className = 'compound-opt';
+      opt.textContent = `opt ${this.opts.spec.tyres.compounds[compound].optTempC}°C`;
+      button.append(letter, name, opt);
+      button.addEventListener('click', () => {
+        this.selectedCompound = compound;
+        this.refreshCompound();
+      });
+      row.appendChild(button);
+      this.compoundButtons.set(compound, button);
+    }
+    return row;
+  }
+
+  private refreshCompound(): void {
+    for (const [compound, button] of this.compoundButtons) {
+      const selected = compound === this.selectedCompound;
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+  }
+
+  private step(key: SetupKey, dir: 1 | -1): void {
+    const row = this.rows.get(key);
+    if (!row) return;
+    const range = this.opts.spec.setup[key];
+    const next = Number(row.input.value) + dir * range.step;
+    row.input.value = String(Math.min(Math.max(next, range.min), range.max));
+    this.refresh(key);
+  }
+
+  private refresh(key: SetupKey): void {
+    const row = this.rows.get(key);
+    if (!row) return;
+    const value = Number(row.input.value);
+    row.value.textContent = formatSetupValue(key, value);
+    row.delta.textContent = formatSetupDelta(key, value, this.opts.spec.setup[key].default);
+  }
+
   private button(text: string, className: string, onClick: () => void): HTMLButtonElement {
     const button = this.doc.createElement('button');
     button.type = 'button';
@@ -271,6 +521,11 @@ export class SetupPanel {
   private apply(): void {
     const setup = clampSetup(this.opts.spec, this.getValues());
     saveSetup(this.opts.carId, this.opts.trackId, setup, this.opts.storage);
+    this.appliedCompound = this.selectedCompound;
+    saveGameOptions(this.opts.storage, {
+      ...loadGameOptions(this.opts.storage),
+      compound: this.appliedCompound,
+    });
     this.opts.onApply(setup);
     this.close();
   }
@@ -278,7 +533,7 @@ export class SetupPanel {
   private setValues(s: Setup): void {
     for (const [key, row] of this.rows) {
       row.input.value = String(s[key]);
-      row.value.textContent = row.input.value;
+      this.refresh(key);
     }
   }
 }
