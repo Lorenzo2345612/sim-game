@@ -2187,7 +2187,7 @@
     {
       "num": "158",
       "title": "City renderer: buildings, facades, water",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "099",
         "157"
