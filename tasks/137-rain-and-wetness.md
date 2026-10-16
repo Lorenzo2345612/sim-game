@@ -34,7 +34,7 @@ export function gripFactor(cls: CompoundClass, wetness: number): number;
 export function wearMultiplier(cls: CompoundClass, wetness: number): number; // 3 for inter/wet when wetness < 0.2, else 1
 export class TrackWeather {
   constructor(seed: number);
-  setRain(r: number): void;          // clamped to [0, 1]
+  setRain(r: number): void;          // clamped to [0, 1]; rain starts 0 (dry)
   setWetness(w: number): void;       // clamped to [0, 1] (initial state and test hook)
   update(dt: number, lineUsage: number): void; // lineUsage = cars per minute on the racing line, clamped >= 0
   readonly wetness: number;          // [0, 1], starts 0
