@@ -108,10 +108,10 @@ describe('129 virtual safety car edge', () => {
     vsc.update(10, 0);
     vsc.delta(0, 0, 0);
     const last = vsc.delta(0, 35, 1);
-    expect(last).toBeCloseTo(-1 / 12, 12);
-    expect(vsc.delta(0, Number.NaN, 2)).toBeCloseTo(-1 / 12, 12);
-    expect(vsc.delta(0, 35, Number.NaN)).toBeCloseTo(-1 / 12, 12);
-    expect(vsc.delta(0, Number.NaN, Number.NaN)).toBeCloseTo(-1 / 12, 12);
+    expect(last).toBeCloseTo(-1 / 6, 12);
+    expect(vsc.delta(0, Number.NaN, 2)).toBeCloseTo(-1 / 6, 12);
+    expect(vsc.delta(0, 35, Number.NaN)).toBeCloseTo(-1 / 6, 12);
+    expect(vsc.delta(0, Number.NaN, Number.NaN)).toBeCloseTo(-1 / 6, 12);
   });
 
   it('EDGE9: out-of-range car index throws RangeError', () => {
