@@ -3013,7 +3013,7 @@
     {
       "num": "210",
       "title": "Reverse speed cap and gamepad trigger deadzone",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "fix",
