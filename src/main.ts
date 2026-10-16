@@ -23,6 +23,7 @@ import type { Telemetry } from './physics/vehicle';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
+import { createSteeringWheel, disposeSteeringWheel, setSteeringWheelAngle } from './render/steeringWheel';
 import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
@@ -82,6 +83,7 @@ export interface SceneStats {
   directionalLights: number;
   maxWhiteAlbedo: number;
   decals: number;
+  steeringWheel: { visible: boolean; angle: number };
 }
 
 declare global {
@@ -133,6 +135,9 @@ function resolveCarId(params: URLSearchParams, storage: Storage): string {
 // five SwiftShader workers per host and contention pushes frames past 1 s; catching
 // up costs only physics time (240 steps ≈ 48 ms, ≈ 0.2 ms/step).
 const MAX_SIM_STEPS_PER_FRAME = 240;
+
+// Cockpit steering wheel leans back (top away from the driver); radians.
+const STEERING_WHEEL_TILT = -(20 * Math.PI) / 180;
 
 const status = document.getElementById('status');
 
@@ -408,6 +413,7 @@ async function startGame(trackId: string): Promise<void> {
     directionalLights: 0,
     maxWhiteAlbedo: 0,
     decals: 0,
+    steeringWheel: { visible: false, angle: 0 },
   };
 
   if ('version' in track) {
@@ -531,6 +537,17 @@ async function startGame(trackId: string): Promise<void> {
   });
   scene.add(car.root);
   disposables.push(car);
+
+  const cockpitWheel = createSteeringWheel(baseSpec.cockpit.wheelRadius);
+  cockpitWheel.position.set(
+    baseSpec.cockpit.wheel.x,
+    baseSpec.cockpit.wheel.y,
+    baseSpec.cockpit.wheel.z,
+  );
+  cockpitWheel.rotation.x = STEERING_WHEEL_TILT;
+  cockpitWheel.visible = false;
+  car.root.add(cockpitWheel);
+  disposables.push({ dispose: () => disposeSteeringWheel(cockpitWheel) });
 
   const modelRes = await fetch(baseSpec.model.url.replace(/\.glb$/, '.json'));
   const modelMeta = modelRes.ok ? ((await modelRes.json()) as { paintMaterials?: string[] }) : {};
@@ -778,6 +795,7 @@ async function startGame(trackId: string): Promise<void> {
       const { alpha } = loop.advance(frame);
       interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
       car.update(interp);
+      setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
       cameraRig.update(interp, frame);
       game.getTelemetry(telemetry);
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
@@ -816,6 +834,7 @@ async function startGame(trackId: string): Promise<void> {
     } else {
       gamepad.rumble(0, 0, performance.now());
     }
+    cockpitWheel.visible = cameraRig.mode === 'cockpit';
     if (frame > 0) fpsAvg += (1 / frame - fpsAvg) * 0.1;
     frameStats.fps = fpsAvg;
     frameStats.drawCalls = handle.renderer.info.render.calls;
@@ -992,6 +1011,7 @@ async function startGame(trackId: string): Promise<void> {
         ibl: scene.environment !== null,
         directionalLights: countDirectionalLights(scene),
         maxWhiteAlbedo: maxWhiteAlbedo(),
+        steeringWheel: { visible: cockpitWheel.visible, angle: cockpitWheel.rotation.z },
         fogColor: fog
           ? ([fog.color.r, fog.color.g, fog.color.b] as [number, number, number])
           : ([0, 0, 0] as [number, number, number]),
