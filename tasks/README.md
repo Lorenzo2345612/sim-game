@@ -211,3 +211,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | in progress | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | pending | 208 |
+| 210 | Reverse speed cap and gamepad trigger deadzone | in progress | - |

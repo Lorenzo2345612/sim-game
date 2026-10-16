@@ -3009,6 +3009,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/209-setup-panel-v2.md"
+    },
+    {
+      "num": "210",
+      "title": "Reverse speed cap and gamepad trigger deadzone",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "simple",
+      "type": "fix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/210-reverse-cap-trigger-deadzone.md"
     }
   ]
 }
