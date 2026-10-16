@@ -116,7 +116,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 111 | Audio mix | pending | 110 |
 | 112 | Prototype models through the car pipeline | done | 071, 075 |
 | 113 | Prototype CarSpecs from the lab files | done | 112, 072, 058 |
-| 114 | Car selection and credits list the prototypes | pending | 113, 073, 074 |
+| 114 | Car selection and credits list the prototypes | in progress | 113, 073, 074 |
 | 115 | Cockpit data per car (eye, steering wheel anchor, lock) | done | 058, 066, 072, 107, 113 |
 | 116 | Animated steering wheel in cockpit view | pending | 047, 054, 115 |
 | 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
