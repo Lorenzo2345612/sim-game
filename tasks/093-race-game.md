@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 2
-Depends on: 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092
+Depends on: 008, 043, 065, 070, 073, 087, 088, 089, 090, 091, 092, 169
 Complexity: complex
 Type: feature
 Models: standard
@@ -14,20 +14,21 @@ Roles: acceptance, coder, reviewer, tester-pre, tester
 
 ## Context
 
-Generalises the single-car `Game` (`src/game/game.ts`, keep it unchanged and working). Uses `Vehicle` (065/070: constructed from a `CarSpec`, `setInput`, `prePhysicsStep`, `getState`, `reset`), car loading from 073 (`public/cars/<id>.json`), `AiDriver` (089), `trafficDecision`/`difficultyParams` (090), `StartSequence`/`gridSlots`/`isJumpStart` (091), `RaceClassification` (092), `computeRacingLine` (087), `carLimitsFromSpec`/`speedProfile` (088), `TrackProgress`. Conventions as in `docs/plans/phase2-race.md` header (no `Math.random` in sim; seeded mulberry32 from `config.seed`). Acceptance tests: Vitest in `tests/unit/acceptance/093-race-game.test.ts` (AT1–AT4, Node) and Playwright `tests/e2e/acceptance/093-race-game.spec.ts` (AT5).
+Generalises the single-car `Game` (`src/game/game.ts`; behaviour stays unchanged). The car is `VehicleModel` (`src/physics/vehicleModel.ts`, 169/070; `src/physics/vehicle.ts` only re-exports it as `Vehicle`): `new VehicleModel(world, spec, spawn)`, `setInput`, `prePhysicsStep`, `getState`, `reset(spawn)`, `getTelemetry().fuelKg`. Cars load from `public/cars/<id>.json` via `parseCarSpec` (`src/physics/carSpec`). Existing APIs: `AiDriver(line, speeds, params?: Partial<AiParams>)`: `setLateralOffset`, `setSpeedCap`, `update(obs, dt, out)` (`src/ai/aiDriver`); `trafficDecision(self, others, lapLength, halfWidth, lineOffsetAhead, curvatureAhead)`, `difficultyParams(d)` (`src/ai/traffic`); `computeRacingLine(centerline, halfWidth)` and `mengerCurvature(ax,az,bx,bz,cx,cz)` (`src/ai/racingLine`); `carLimitsFromSpec(spec, fuelKg)`, `speedProfile(line, lim)` (`src/ai/speedProfile`); `new StartSequence(rng)` (`update(dt)`, `phase`, `lights`, `goTime`), `isJumpStart(moved, phase)` (`src/race/startSequence`); `gridSlots(track, count)` (`src/race/grid`); `new RaceClassification(carCount, laps, lapLength)` (`update(car, lapDistance, time)`, `addPenalty`, `standings()`, `finished`) (`src/race/classification`); `new TrackProgress(centerline)` (`src/track/trackProgress`, `update(x,z)` returns a reused `{index, distance, lateral}`). Track loading in tests: `parseTrackData(JSON)` from `src/track/parseTrackData`. Seeded mulberry32 from `config.seed` (a local copy in `raceGame.ts`; no `Math.random`). Acceptance tests: Vitest `tests/unit/acceptance/093-race-game.test.ts` (AT1-AT4, Node) and Playwright `tests/e2e/acceptance/093-race-game.spec.ts` (AT5).
 
 ## Files
 
-- `src/game/raceGame.ts` — create
-- `src/physics/vehicle.ts` — modify: wheel rays ignore every vehicle chassis collider (not only their own); chassis collider gets a collision group so cars collide with each other
-- `src/main.ts` — modify: `?race=1&track=&car=&ai=&laps=&diff=&seed=` starts `RaceGame`; `__SIMGAME__` gains `raceStandings(): readonly Standing[]`, `carCount(): number`, `startLights(): number`
+- `src/game/raceGame.ts` - create
+- `src/game/game.ts` - modify: extract two exported helpers used by `Game.create`/`Game.step` and `RaceGame` (no behaviour change): `configureVehicle(vehicle: VehicleModel, trackId: string, tune?: GameTune): TrackConditions` (applies `setCompound`/`setMultipliers` when `tune` is given, then `setTrackConditions(conditionsFor(trackId))`) and `class AutoReverse { update(vehicle: VehicleModel, input: DriverInput, forwardSpeed: number): void }` (the auto-mode reverse rule of `Game.step`, task 178)
+- `src/physics/vehicleModel.ts` - modify: the chassis collider (~line 190) gets a collision group; both `world.castRayAndGetNormal` wheel-ray calls (~343 and ~599) ignore every car chassis collider (collision-group ray filter), not only their own body; chassis colliders collide with each other; collisions with terrain/track/barriers unchanged
+- `src/main.ts` - modify: `?race=1&track=&car=&ai=&laps=&diff=&seed=` starts `RaceGame` (car/spec resolved as in `startGame`); in a race the fixed loop steps `RaceGame` instead of `Game` and the player's camera, HUD (`HudV2`, `Minimap`) and audio follow car 0 (AI cars are drawn by 094; lap timer/ghost/setup hotkeys may stay inert in a race); `__SIMGAME__` gains `raceStandings(): readonly Standing[]`, `carCount(): number`, `startLights(): number`
 
 ## Steps
 
 ```ts
 export interface RaceConfig { trackId: string; carId: string; laps: number; aiCount: number; difficulty: Difficulty; seed: number }
 export class RaceGame {
-  static create(track: TrackDataV2, spec: CarSpec, config: RaceConfig): Promise<RaceGame>;
+  static create(track: TrackDataV2, spec: CarSpec, config: RaceConfig, tune?: GameTune): Promise<RaceGame>;
   step(playerInput: DriverInput): void;                 // one FIXED_DT tick
   getStates(out: VehicleState[]): VehicleState[];       // index 0 = player; reused objects
   getPrevStates(): readonly VehicleState[];             // for interpolation
@@ -41,16 +42,16 @@ export class RaceGame {
 }
 ```
 
-Types: `Difficulty` from `src/ai/traffic`, `Standing` from `src/race/classification`, `CarSpec` from `src/physics/carSpec`, `DriverInput`, `VehicleState`, `TrackDataV2` from `src/core/types`.
+Types: `Difficulty` from `src/ai/traffic`, `Standing` from `src/race/classification`, `CarSpec` from `src/physics/carSpec`, `GameTune` from `src/game/game`, `DriverInput`, `VehicleState`, `TrackDataV2` from `src/core/types`. `main.ts` builds `tune` and the player's `spec` exactly as `startGame` does (`loadSetup`/`applySetup`).
 
-1. Cars: aiCount clamped to 0–15; slots from `gridSlots(track, aiCount + 1)`; the player takes the LAST slot, AI cars slots 0.. in order. All cars use the same `CarSpec`. One racing line (`computeRacingLine(track.centerline, widthMeters/2)`) + speed profile (`carLimitsFromSpec(spec, initial fuel)`) shared; per AI `AiDriver` with `speedScale` from `difficultyParams`; seeded rng gives each AI a small speedScale jitter ±0.01.
-2. Before 'go' every car gets brake 1 (throttle passes through, AI throttle 0); steering of the player is ignored. At 'go' normal control. Jump start: `isJumpStart` on distance moved from the slot; each car penalised once with `classification.addPenalty(car, 5)`.
-3. Per tick per AI: `TrackProgress` (index = racing-line point index) → `trafficDecision` (halfWidth = `widthMeters/2`, `lineOffsetAhead` = `line.offsets` ~30 m ahead, `curvatureAhead` = `mengerCurvature` of line points there; `AiObservation.yaw = atan2(-fx,-fz)` from the state quaternion, `speed = forwardSpeed`) → → `setLateralOffset`/`setSpeedCap` → `update` → `setInput`. Then step the world once, update `RaceClassification` with each car's lap distance and `simTime − goTime` (time 0 = go). Cars start behind the line.
-4. Stuck: an AI car with speed < 1 m/s for 5 s after go is reset onto the centerline at its progress, facing along the track (AI only; player never).
-5. Mistakes (`mistakesPerLap`) are NOT implemented here.
-6. Vitest: `RaceGame.create` is usable in Node (no WebGL); load spec/track from `public/` with `fs`.
+1. Per-car setup = same as `Game.create`: `initPhysics()`, `createPhysicsWorld(track)`, one `VehicleModel` per car, `configureVehicle` on every car, state buffers via `createVehicleState(4)`. The player (index 0) additionally applies `AutoReverse` each tick (default gearbox mode of `VehicleModel`, as `Game`).
+2. aiCount clamped 0-15; slots from `gridSlots(track, aiCount + 1)`; the player takes the LAST slot, AI cars slots 0.. in order (AI k = index k+1). All cars use the same `CarSpec`. One racing line (`computeRacingLine(track.centerline, track.widthMeters/2)`) + `speedProfile(line, carLimitsFromSpec(spec, fuelKg))` (`fuelKg` = player `getTelemetry().fuelKg`) shared; per AI an `AiDriver` with `speedScale` from `difficultyParams` plus seeded jitter in [-0.01, 0.01].
+3. Before 'go' every car gets brake 1 (player throttle passes through, AI throttle 0; player steering ignored). At 'go' normal control. Jump start: `isJumpStart` on distance moved from the slot; each car penalised once with `addPenalty(car, 5)`.
+4. Per tick per AI: `TrackProgress` (index = racing-line point index) -> `trafficDecision` (halfWidth = `widthMeters/2`, `lineOffsetAhead` = `line.offsets` ~30 m ahead, `curvatureAhead` = `mengerCurvature` of line points there; `AiObservation.yaw = atan2(-fx,-fz)` from the state quaternion, `speed = forwardSpeed`) -> `setLateralOffset`/`setSpeedCap` -> `update` -> `setInput`. Then step the world once and update `RaceClassification` with each car's lap distance and `simTime - goTime` (time 0 = go). Cars start behind the line.
+5. Stuck: an AI car with speed < 1 m/s for 5 s after go is `reset` onto the centerline at its progress, facing along the track (AI only; player never).
+6. `mistakesPerLap` is NOT implemented. `RaceGame.create` works in Node (no WebGL); tests load spec/track from `public/` with `fs`.
 
-Conventions: deterministic (same config → identical results); `step` after `dispose` throws; invalid `aiCount` is clamped, never throws; no per-tick allocation in the AI loop.
+Conventions: deterministic (same config -> identical results); `step` after `dispose` throws; invalid `aiCount` is clamped, never throws; no per-tick allocation in the AI loop.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
@@ -78,4 +79,6 @@ npx playwright test 093-   # this task's e2e files only; never the full e2e suit
 
 ## Out of scope
 
-Rendering AI cars, start-light visuals, HUD (094); menu and results (095); pit stops, damage, mistakes, wheel-to-wheel penalties, ghost, lap timer UI changes, changes to `Game`.
+Rendering AI cars, start-light visuals, HUD (094); menu and results (095); pit stops, damage, mistakes, wheel-to-wheel penalties, ghost, lap timer UI changes, any `Game` behaviour change (the helper extraction is behaviour-neutral).
+
+Frozen tests: none need editing (single-car physics, `Game` and `/?track=` flows are unchanged; verified by grep of `tests/` for vehicleModel/game/main users). If an existing test fails because of the collision-group change, that is a bug in the change, not a test edit.
