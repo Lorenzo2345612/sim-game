@@ -57,4 +57,4 @@ Dynamics changes, per-car setup storage, car stats display, model or pipeline ch
 
 ## Planner-authorised test edits
 
-- `tests/e2e/acceptance/073-car-selection.spec.ts` line with `toHaveCount(4)`: change to `toHaveCount(6)` (f4, gt3-a, gt3-b, gt3-c, lmp2-a, hyper-a). Nothing else in that file.
+- `tests/e2e/acceptance/073-car-selection.spec.ts` line with `toHaveCount(4)`: change to `toHaveCount(6)`; the `values` toEqual becomes `['f4','gt3-a','gt3-b','gt3-c','lmp2-a','hyper-a']` and the `names` toEqual becomes `['F4','GT3 A','GT3 B','GT3 C','LMP2 A','Hypercar A']`. Nothing else in that file.
