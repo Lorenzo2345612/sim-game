@@ -113,7 +113,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 108 | Engine synth DSP core | done | - |
 | 109 | Engine AudioWorklet and EngineAudio integration | done | 107, 108, 054, 070 |
 | 110 | Audio effects | done | 109 |
-| 111 | Audio mix | pending | 110 |
+| 111 | Audio mix | in progress | 110 |
 | 112 | Prototype models through the car pipeline | done | 071, 075 |
 | 113 | Prototype CarSpecs from the lab files | done | 112, 072, 058 |
 | 114 | Car selection and credits list the prototypes | done | 113, 073, 074 |
