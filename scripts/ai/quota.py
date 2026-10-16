@@ -18,7 +18,7 @@ KIMI_URL = "https://api.kimi.com/coding/v1/usages"
 CLAUDE_URL = "https://api.anthropic.com/api/oauth/usage"
 CLAUDE_CREDS = Path(os.environ.get("CLAUDE_CONFIG_DIR_PLANNER") or os.environ.get("CLAUDE_CONFIG_DIR")
                     or Path.home() / ".claude") / ".credentials.json"
-CONSOLES = {"qwen": "https://bailian.console.aliyun.com", "mimo": "https://platform.xiaomimimo.com"}
+CONSOLES = {"mimo": "https://platform.xiaomimimo.com"}
 KEYS = {"glm": "GLM_API_KEY", "kimi": "KIMI_API_KEY"}
 LOW = 0.10
 _cache = {}
@@ -142,7 +142,7 @@ def low_5h(provider):
 
 def main():
     args = [a for a in sys.argv[1:] if a != "--json"]
-    names = args or ["glm", "kimi", "qwen", "mimo", "claude"]
+    names = args or ["glm", "kimi", "mimo", "claude"]
     result = {n: cached(n, 0) for n in names}
     low = any(isinstance(v, list) and any(w["limit"] and w["remaining"] / w["limit"] < LOW for w in v)
               for v in result.values())

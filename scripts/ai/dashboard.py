@@ -593,7 +593,7 @@ def task_detail(num):
 
 
 def quota_providers():
-    return [*orch.provider_caps(), "claude"]
+    return list(dict.fromkeys([*orch.provider_caps(), "claude"]))
 
 
 def quota_view():

@@ -15,7 +15,7 @@ const fmtClock = v => { const d = new Date(v); return isNaN(d) ? '' : tzSec.form
 const fmtN = n => n >= 1e9 ? (n/1e9).toFixed(2)+' B' : n >= 1e6 ? (n/1e6).toFixed(2)+' M' : n >= 1e3 ? (n/1e3).toFixed(1)+' k' : String(Math.round(n || 0));
 const usd = n => !n ? '$0' : '$' + (n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n.toFixed(3));
 const dur = s => s >= 3600 ? `${Math.floor(s/3600)}h ${String(Math.round(s%3600/60)).padStart(2,'0')}m` : s >= 60 ? `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s` : `${s}s`;
-const PROVIDERS = ['glm', 'kimi', 'qwen', 'mimo', 'deepseek', 'claude'];
+const PROVIDERS = ['glm', 'kimi', 'mimo', 'deepseek', 'claude'];
 const provVar = p => PROVIDERS.includes(p) ? `var(--p-${p})` : 'var(--faint)';
 const provDot = p => `<i class="dot" style="background:${provVar(p)}"></i>`;
 const resultChip = r => r === 'pass' ? '<span class="chip ok">pass</span>' : r === 'fail' ? '<span class="chip bad">fail</span>'
