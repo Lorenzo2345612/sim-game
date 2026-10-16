@@ -217,7 +217,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | done | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | done | - |
 | 215 | Hybrid and active-aero contract | done | - |
-| 216 | ERS energy model | in progress | 215 |
+| 216 | ERS energy model | done | 215 |
 | 217 | Active-aero zones from the centerline | in progress | - |
 | 218 | Active-aero state and aero blend | done | 215 |
 | 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
