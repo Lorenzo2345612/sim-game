@@ -69,5 +69,15 @@
       "175",
       "157"
     ]
+  },
+  "taskProviders": {
+    "description": "Per-task provider override for any role: {task: {provider: [roles]}}.",
+    "207": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "tester"
+      ]
+    }
   }
 }

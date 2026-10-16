@@ -126,6 +126,9 @@ def assigned_provider(args):
         return None
     exp = json.loads(EXPERIMENTS_PATH.read_text())
     num = task_number(args)
+    for provider, roles in exp.get("taskProviders", {}).get(num or "", {}).items():
+        if args.role in roles:
+            return provider
     split = exp.get("testerSplit", {})
     if args.role in split.get("roles", []) and num and num.isdigit():
         providers = split["providers"]
