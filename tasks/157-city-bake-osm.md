@@ -51,6 +51,7 @@ Conventions: heights in metres, round to 0.1; `<` for the corridor drop (a ring 
 
 - `tests/unit/edge/157-city-bake.post.test.ts`: every `pointInPolygon(pt, ring as Point2[])` on a ring from `coastlineWaterRings` becomes `pointInPolygon(pt, ring.map((p): Point2 => [p.lon, p.lat]))`. No other change.
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts` line ~145: the track id filter also excludes `f.endsWith('-env.json')` and `f.endsWith('.style.json')` (they are not track files). No other change.
+- Every test that enumerates `public/tracks/*.json` as track files must also skip `f.endsWith('-env.json')` and `f.endsWith('.style.json')`. Only that filter changes, in each of these files that read `public/tracks`: `tests/unit/acceptance/156-environment-type-ground-vegetation.test.ts` (~32), `tests/unit/game/176-track-geometry-audit.test.ts` (~14), `tests/unit/acceptance/176-track-geometry-overlaps.test.ts` (~14), `tests/unit/edge/176-escape-road-trim-edge.test.ts` (~13), `tests/unit/edge/141-escape-foam.post.test.ts` (~218), `tests/unit/acceptance/173-pit-range.test.ts` (~33).
 - Commit the generated `public/tracks/<id>-env.json` files (3).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
