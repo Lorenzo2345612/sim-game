@@ -41,6 +41,7 @@ SESSIONS = ROOT / ".ai/sessions"
 SCHEMAS = ROOT / "ai/schemas"
 WORKER_CONFIG_DIR = Path.home() / ".claude-workers"
 REPORT_LIMIT = 4000
+CLAUDE_MARGIN = 0.15  # stop subscription workers at 85 % of the 5 h window so it never passes 90 %
 HEAVY_TIMEOUT_MIN = 40  # heavy runs (hard tasks, stall retries) may generate for longer
 DEFAULT_STALL_MIN = 8  # kill a worker whose session transcript has not changed for this long
 QUOTA_PATTERNS = ("429", "402", "quota", "insufficient", "balance", "rate limit", "rate_limit",
@@ -351,7 +352,7 @@ def under_cap(provider_name):
     value = quota.cached(provider_name, ttl=120)
     if not isinstance(value, list):
         return False
-    return not any(w["window"] == "5h" and w["limit"] and w["remaining"] / w["limit"] < quota.LOW for w in value)
+    return not any(w["window"] == "5h" and w["limit"] and w["remaining"] / w["limit"] < CLAUDE_MARGIN for w in value)
 
 
 def looks_like_quota(text):
