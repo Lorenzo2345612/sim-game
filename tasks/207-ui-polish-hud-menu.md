@@ -88,10 +88,15 @@ Additions allowed by this section:
   - LED `i` (0-14) has the class `hud2-led on` when `rpm ≥ SHIFT_LIGHT_RPM × (0.80 + 0.2 × i / 14)` (LED 14 = `SHIFT_LIGHT_RPM`); otherwise it has `hud2-led`.
   - At `rpm ≥ HUD_MAX_RPM − 200` (limiter), all 15 LEDs get `hud2-led on limiter`; the flashing is a CSS animation.
   - Colour classes are fixed at creation: `led-green` for 0-4, `led-amber` for 5-9, `led-red` for 10-14.
+  - So the full class list is `hud2-led <colour>` plus `on`/`limiter` when they apply. "Has `hud2-led`" above means the base class plus its colour class, with no `on` and no `limiter`.
   - Class writes go through the existing `setClass` (which writes only on change), so two consecutive `update` calls with the same rpm make zero LED class writes.
 - **Track details panel:** `div.track-details` inside `#menu .track-select`, a details panel that shows the focused or hovered card. It is built once and its text is updated on focus or hover.
 
 Self-review is required. After the tests pass, run AT10 and open `test-results/207/menu.png` and `test-results/207/hud.png` with the Read tool. Compare them against the references above and iterate on the CSS until they would pass for a shipped racing game: aligned, consistent spacing, nothing cramped, no default-browser look. Report what you changed after looking.
+
+## Planner-authorised test edits
+
+- `tests/unit/edge/207-led-rules.post.test.ts`, test "limiter clears when rpm drops": replace `l.className === 'hud2-led'` with `l.classes.has('hud2-led') && !l.classes.has('on') && !l.classes.has('limiter')`. Nothing else in that file changes.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
