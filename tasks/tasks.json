@@ -2430,7 +2430,7 @@
     {
       "num": "176",
       "title": "Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "173"
       ],
