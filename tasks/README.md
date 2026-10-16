@@ -179,4 +179,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 175 | Fontana banking data | pending | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | in progress | 099 |
-| 178 | Auto-mode reverse (standstill brake engages reverse) | pending | 065 |
+| 178 | Auto-mode reverse (standstill brake engages reverse) | in progress | 065 |
