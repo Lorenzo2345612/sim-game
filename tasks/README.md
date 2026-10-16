@@ -182,7 +182,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
 | 179 | TrackStyle schema, defaults and parser | done | - |
 | 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174, 175 |
-| 181 | Tools: `track:locate` and `check:styles` | pending | 179 |
+| 181 | Tools: `track:locate` and `check:styles` | in progress | 179 |
 | 182 | Pit building and grandstand styling | pending | 180 |
 | 183 | Kerb colours per segment and run-off paint | pending | 180 |
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | pending | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |

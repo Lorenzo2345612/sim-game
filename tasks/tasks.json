@@ -2501,7 +2501,7 @@
     {
       "num": "181",
       "title": "Tools: `track:locate` and `check:styles`",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "179"
       ],
