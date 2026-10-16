@@ -117,3 +117,7 @@ Merge note 2 (planner): master moved again: task 160 added landmarks to `tools/t
 ## Planner-authorised test edit (AT7 timing)
 
 `tests/e2e/acceptance/174-track-banking.spec.ts` AT7: hold 3 s instead of 5 s; ignore any sample whose `getSimTime()` is > t0 + 3.5 s (under load the browser can step several sim seconds per frame); require at least 3 counted samples. Sampling: poll in a loop with a short real-time wait (~50 ms) and read state on every iteration until `getSimTime()` > t0 + 3.5, so samples exist even when the browser steps several sim seconds per frame; run the asphalt and dy assertions on every counted sample. Assertions otherwise unchanged. No `src/` change, no other cleanup. Nothing else in that file.
+
+## Merge note (planner)
+
+Branch squashed onto master; `public/tracks/{baku,lasvegas,singapore}.json` were taken from master (159 trackside). Regenerate exactly those three with the builder (`npm run build:tracks -- baku lasvegas singapore`, or the equivalent per-track invocation), commit them, re-run Verification. Do not `git merge` again; no other change.
