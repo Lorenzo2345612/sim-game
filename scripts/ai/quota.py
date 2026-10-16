@@ -115,10 +115,18 @@ def cached(provider, ttl=60):
         hit = _cache.get(provider)
         if hit and time.time() - hit[0] < ttl:
             return hit[1]
+    shared = Path(__file__).resolve().parents[2] / ".ai" / f"usage-{provider}.json"
     try:
-        value = get(provider)
+        if provider == "claude" and shared.exists() and time.time() - json.loads(shared.read_text())["t"] < max(ttl, 90):
+            value = json.loads(shared.read_text())["windows"]  # another process read it recently
+        else:
+            value = get(provider)
+            if provider == "claude" and isinstance(value, list):
+                shared.write_text(json.dumps({"t": time.time(), "windows": value}))
     except Exception as e:  # noqa: BLE001
         value = {"error": str(e)[:120]}
+        if shared.exists() and time.time() - json.loads(shared.read_text())["t"] < 600:
+            value = json.loads(shared.read_text())["windows"]  # rate-limited: last good reading
     with _lock:
         _cache[provider] = (time.time(), value)
     return value

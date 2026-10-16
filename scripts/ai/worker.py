@@ -288,7 +288,7 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
         time.sleep(5)
         now = time.time()
         if oauth and now >= next_quota:
-            next_quota = now + 60
+            next_quota = now + 120
             if not under_cap(provider_name):
                 proc.kill()
                 proc.wait()
@@ -348,8 +348,10 @@ def run_worker(args, role, provider_name, model, allow_resume=True):
 
 def under_cap(provider_name):
     """Strict check for subscription providers: unknown usage counts as over the cap."""
-    value = quota.cached(provider_name)
-    return isinstance(value, list) and not quota.low_5h(provider_name)
+    value = quota.cached(provider_name, ttl=120)
+    if not isinstance(value, list):
+        return False
+    return not any(w["window"] == "5h" and w["limit"] and w["remaining"] / w["limit"] < quota.LOW for w in value)
 
 
 def looks_like_quota(text):
