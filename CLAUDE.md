@@ -10,11 +10,12 @@ Web simulator of single-seaters on real circuits. Requirements and decisions in 
 |---|---|---|---|
 | Planner | Claude Opus (main session) | Complex feature analysis and the acceptance tests table of every spec; nothing else | Write code in `src/`, `tests/`, `tools/` (blocked by hook) |
 | Planning subagents | Claude Sonnet | Simple feature analysis, spec writing/review, dispatch orchestration, research | Edit acceptance tables |
-| acceptance | Qwen `qwen3.8-flash` | Turns the acceptance table into failing tests in `tests/unit/acceptance/` before coding | Edit `src/` |
+| acceptance | MiMo `mimo-v2.6-flash` (Qwen plan ended 2026-10-16) | Turns the acceptance table into failing tests in `tests/unit/acceptance/` before coding | Edit `src/` |
 | coder | GLM `glm-5.3-flash` (heavy: `glm-5.3`) | Implements a spec | Design or expand scope |
-| tester-pre / tester | Qwen `qwen3.8-flash` (heavy: `qwen3.8-max`) | Complex tasks only: edge tests before coding, gap tests after | Edit `src/` or acceptance tests |
+| tester-pre / tester | MiMo `mimo-v2.6-flash` (heavy: `mimo-v2.6-pro`) | Complex tasks only: edge tests before coding, gap tests after | Edit `src/` or acceptance tests |
 | reviewer | Kimi `k3-256k` (heavy: `k3`, 1M ctx, ~2× quota) | Validates against the spec, runs checks | Edit files |
-| fixer | DeepSeek `deepseek-v4.1-flash` via Bailian | Second opinion when the coder gets stuck | — |
+| fixer | MiMo `mimo-v2.6-pro` | Second opinion when the coder gets stuck | — |
+| Sonnet lane | Claude `claude-sonnet-5-5` (subscription) | Coder for tasks listed under `claude` in `ai/experiments.json`; stops at 85 % of the 5 h window | — |
 | fallback | Xiaomi MiMo `mimo-v2.6-flash` (heavy: `mimo-v2.6-pro`) | Replaces any role when its provider runs out of quota (automatic) | — |
 
 To move all roles to MiMo: `SIMGAME_PROVIDER=mimo`. For a single run: `--provider mimo`.
