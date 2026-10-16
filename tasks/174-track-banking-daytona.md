@@ -111,3 +111,5 @@ Then rerun typecheck, lint, `npm test` and the 174 e2e. No other changes.
 ## Planner-authorised test edits (2026-10-16)
 
 - `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else.
+
+Merge note 2 (planner): master moved again: task 160 added landmarks to `tools/track-builder/buildTrack.ts` (imports `projectLonLat`, `Landmark`, `LandmarkKind`; `TrackConfig.landmarks`; `data.landmarks`). Merge master into the branch again and keep both sides (landmarks and bank). Rebuild the affected track JSONs if the build output changes, rerun typecheck, lint, tests and the 174 e2e.
