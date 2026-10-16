@@ -133,7 +133,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   };
   const barriers = applyMedianWalls(
     applyFoamBarriers(
-      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit),
+      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment),
       corners,
     ),
     parallel,

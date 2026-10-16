@@ -33,6 +33,7 @@ import { createBarrierObject } from './render/barrierRenderer';
 import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createLandmarks } from './render/landmarks';
 import { createDistanceBoards } from './render/distanceBoards';
+import { createStreetFurniture, loadLampModel } from './render/streetFurniture';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
@@ -64,6 +65,8 @@ export interface SceneStats {
   startGantries: number;
   distanceBoards: number;
   buildings: number;
+  lamps: number;
+  sidewalks: number;
   landmarks: number;
   sky: boolean;
   shadows: boolean;
@@ -388,6 +391,8 @@ async function startGame(trackId: string): Promise<void> {
     startGantries: 0,
     distanceBoards: 0,
     buildings: 0,
+    lamps: 0,
+    sidewalks: 0,
     landmarks: 0,
     sky: false,
     shadows: false,
@@ -453,6 +458,11 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(boards.group);
     disposables.push(boards);
 
+    if (environmentType === 'city') await loadLampModel();
+    const furniture = createStreetFurniture(track);
+    scene.add(furniture.group);
+    disposables.push(furniture);
+
     // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
     // quads) being the farthest level.
@@ -505,6 +515,8 @@ async function startGame(trackId: string): Promise<void> {
     } catch {
       // a missing or malformed env file leaves the track without a city
     }
+    stats.lamps = furniture.lamps;
+    stats.sidewalks = furniture.sidewalks;
   } else {
     const trackObj = createTrackObject(buildRibbon(track.centerline, track.widthMeters, 0.02), track);
     scene.add(trackObj.group);
