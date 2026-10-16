@@ -1739,7 +1739,7 @@
     {
       "num": "127",
       "title": "Track limits strikes",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "092"
       ],
@@ -1752,7 +1752,7 @@
     {
       "num": "128",
       "title": "Yellow and blue flags",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "092"
       ],
@@ -1765,7 +1765,7 @@
     {
       "num": "129",
       "title": "Virtual safety car",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "088",
         "092"
@@ -1830,7 +1830,7 @@
     {
       "num": "133",
       "title": "Replay recorder (all cars)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
