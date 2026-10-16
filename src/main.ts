@@ -10,7 +10,7 @@ import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { loadGameOptions, loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
-import type { DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
+import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { loadLivery, type Livery } from './game/livery';
@@ -29,6 +29,7 @@ import { createTerrainMaterial, groundPalette, terrainTrackDistance } from './re
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
+import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createDistanceBoards } from './render/distanceBoards';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
@@ -60,6 +61,7 @@ export interface SceneStats {
   pitBuildings: number;
   startGantries: number;
   distanceBoards: number;
+  buildings: number;
   sky: boolean;
   shadows: boolean;
   environment: string;
@@ -370,6 +372,7 @@ async function startGame(trackId: string): Promise<void> {
   const disposables: { dispose(): void }[] = [];
   let shadows: ShadowRig | null = null;
   let treeField: TreeField | null = null;
+  let city: CityObject | null = null;
   const stats: SceneStats = {
     barriers: 0,
     foamBlocks: 0,
@@ -379,6 +382,7 @@ async function startGame(trackId: string): Promise<void> {
     pitBuildings: 0,
     startGantries: 0,
     distanceBoards: 0,
+    buildings: 0,
     sky: false,
     shadows: false,
     environment: '',
@@ -477,6 +481,19 @@ async function startGame(trackId: string): Promise<void> {
     stats.pitBuildings = 1;
     stats.startGantries = 1;
     stats.distanceBoards = boards.count;
+
+    // Baked OSM city (157); absent on non-city tracks, ignored on failure.
+    try {
+      const envRes = await fetch(`/tracks/${track.id}-env.json`);
+      if (envRes.ok) {
+        city = createCityObject(await envRes.json() as CityEnv, makeTerrainY(track.terrain));
+        scene.add(city.group);
+        stats.buildings = city.buildings;
+        disposables.push(city);
+      }
+    } catch {
+      // a missing or malformed env file leaves the track without a city
+    }
   } else {
     const trackObj = createTrackObject(buildRibbon(track.centerline, track.widthMeters, 0.02), track);
     scene.add(trackObj.group);
@@ -753,6 +770,7 @@ async function startGame(trackId: string): Promise<void> {
       emitParticles(frame);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
+      city?.update(game.simTime);
       minimap.update(interp.position.x, interp.position.z);
 
       const info = game.getLapInfo();

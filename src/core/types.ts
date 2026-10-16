@@ -65,6 +65,12 @@ export interface Board { index: number; side: Side; offset: number; label: 50 | 
 /** Small yellow kerb on the inside of a chicane apex; offset is metres from the centerline on `side`, length metres along the track. */
 export interface Sausage { index: number; side: Side; offset: number; length: number }
 export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
+
+/** Baked city environment (tools/env/osmBuildings.ts), served from public/tracks/<id>-env.json. */
+export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone';
+export interface Building { ring: [number, number][]; height: number; material: BuildingMaterial }
+export interface Wall { line: [number, number][]; height: number; thickness: number }
+export interface CityEnv { buildings: Building[]; walls: Wall[]; water: [number, number][][] }
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
   /** Ground palette and vegetation set; parser defaults a missing value to 'parkland'. */
