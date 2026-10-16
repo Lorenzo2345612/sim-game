@@ -3048,7 +3048,7 @@
     {
       "num": "213",
       "title": "Consistent tyre compounds for GT3, LMP2 and Hypercar",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",

@@ -214,7 +214,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
 | 211 | Fontana Sports Car Course (oval + infield layout) | pending | 174 |
 | 212 | Ghost delta goes wild from the second lap | done | - |
-| 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | in progress | - |
+| 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | done | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | in progress | - |
 | 215 | Hybrid and active-aero contract | in progress | - |
 | 216 | ERS energy model | pending | 215 |
