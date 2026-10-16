@@ -14,7 +14,7 @@ A pure `TrackWeather` integrates track wetness from rain, `gripFactor` gives the
 
 ## Context
 
-Design: `docs/plans/game-features.md` section 137. M2.2 compound/pit-service tasks will build on this; this task only adds the data and the pure model, no pit or strategy logic. `src/physics/carSpec.ts` (058: `TyreName = 'soft'|'medium'|'hard'`, `TyreCompound`, `parseCarSpec`, `tyres.compounds: Record<TyreName, TyreCompound>`). Slick = soft/medium/hard. `weather.ts` imports only types from `carSpec.ts`. Note `src/physics/tyreState.ts` already exports a different `gripFactor`; the new one lives in `weather.ts` and is imported by its module path. Applying it in `Vehicle` is task 139.
+Design: `docs/plans/game-features.md` section 137. M2.2 compound/pit-service tasks build on this; this task only adds the data and the pure model, no pit, strategy or vehicle wiring. Current code: `src/physics/carSpec.ts` (`TyreName = 'soft'|'medium'|'hard'`, `TyreCompound` with `mu0, Fz0, loadSens, Bx..Ey, optTempC, tempWindowC, heatCoef, coolCoef, wearRate, wearGripLoss, cliffWear`, `parseCarSpec`, private helper `compound(root, path)`, `tyres.compounds: Record<TyreName, TyreCompound>`); cars in `public/cars/*.json` (f4, gt3-a..d, hyper-a, lmp2-a) have only soft/medium/hard. Slick = soft/medium/hard. `weather.ts` imports only types from `carSpec.ts`. `src/physics/tyreState.ts` already exports a different `gripFactor(c, s, p, opt)`; the new one lives in `weather.ts` and is imported by module path (alias `wetGripFactor` when both are needed). Applying it in `VehicleModel` (`src/physics/vehicleModel.ts`; `vehicle.ts` only re-exports it as `Vehicle`) is task 139; do not touch `vehicleModel.ts`, `tyreState.ts` or `trackConditions.ts` (214 wear/ambient multiplier stays independent of rain).
 
 ## Files
 
@@ -22,6 +22,7 @@ Design: `docs/plans/game-features.md` section 137. M2.2 compound/pit-service tas
 - `src/physics/carSpec.ts` — modify: `TyreName` gains `'inter' | 'wet'`; `parseCarSpec` fills them
 - `tests/unit/physics/weather.test.ts` — create (edge cases)
 - `tests/unit/acceptance/137-rain-and-wetness.test.ts` — create (acceptance worker)
+- `tests/unit/acceptance/058-car-spec.test.ts` — planner-authorised edit: AT1 line 61 `Object.keys(spec.tyres.compounds).sort()` now expects `['hard', 'inter', 'medium', 'soft', 'wet']`. No other frozen test changes (213/072/113/214 read only soft/medium/hard).
 
 ## Steps
 
@@ -43,7 +44,7 @@ export class TrackWeather {
 
 1. `update`: `wetness += dt · (0.02·rain − (rain < 0.05 ? 0.004·(1 + 0.1·lineUsage) : 0))`, then clamp to [0, 1] (forward Euler per call).
 2. `gripFactor` (wetness clamped to [0, 1]): slick `1 − 0.45·w`; inter `0.93 − 0.15·|w − 0.5|·2`; wet `0.85 + 0.05·w`.
-3. `parseCarSpec`: when `tyres.compounds.inter` / `.wet` are absent they are derived from `medium` (all fields copied, `mu0` × 0.93 / × 0.88); when present they are parsed like the other compounds. Existing car JSONs need no edit. Fix any type error from the wider `TyreName` by narrowing, with no behaviour change (settings `compound` stays `soft|medium|hard`).
+3. `parseCarSpec`: when `tyres.compounds.inter` / `.wet` are absent they are derived from `medium` (all fields copied, `mu0` × 0.93 / × 0.88); when present they are parsed with the existing `compound()` helper. Existing car JSONs need no edit. Fix type errors from the wider `TyreName` by narrowing, no behaviour change (settings `CompoundOption`, `COMPOUNDS` in `setupPanel.ts` and `hudTyres` stay `soft|medium|hard`).
 
 Conventions: no rounding; `dt <= 0` or non-finite → no change; non-finite `rain`/`wetness` inputs ignored; `seed` stored, unused for now; drying applies only when `rain < 0.05` (strict).
 
@@ -59,7 +60,7 @@ Conventions: no rounding; `dt <= 0` or non-finite → no change; non-finite `rai
 ## Acceptance criteria
 
 - [ ] All AT rows pass; edge tests pass (clamps, drying with line usage, derived compound values).
-- [ ] `npm run typecheck` and the existing carSpec/vehicle tests pass unchanged.
+- [ ] `npm run typecheck` and the existing carSpec/vehicle tests pass unchanged (except the 058 AT1 edit above).
 
 ## Verification
 
@@ -71,5 +72,5 @@ npm test
 
 ## Out of scope
 
-- Applying grip/wear in `Vehicle`, rain schedules, AI, HUD, visuals (tasks 138, 139).
+- Applying grip/wear in `VehicleModel`, rain schedules, AI, HUD, visuals (tasks 138, 139).
 - Pit-stop tyre changes and compound choice UI (M2.2), tuning real inter/wet curves.

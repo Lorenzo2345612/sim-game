@@ -14,24 +14,24 @@ The vehicle model changes its behaviour according to its `DamageState`: less dow
 
 ## Context
 
-M2.4, design `docs/plans/late-features.md` ("146"). Read the current code first: this task runs after 144 (`src/physics/damage.ts`) and 070 (`src/physics/vehicle.ts`, aero in `src/physics/aero.ts`, per-wheel solver `wheelSolver.ts`); adapt file names to what exists, keep the public contract. `Vehicle.damage` / `damageMode` are created by 145; if 145 has not run, add them here exactly as 145's spec says (`damage: DamageState`, `damageMode: DamageMode`, default `'full'`). Effects apply only when `damageMode === 'full'`. Wheel order FL, FR, RL, RR; positive steer = left. Guides: `ai/guides/architecture.md`, `ai/guides/testing.md`, `ai/guides/vehicle-dynamics.md`.
+M2.4, design `docs/plans/late-features.md` ("146"). The car is `VehicleModel` in `src/physics/vehicleModel.ts` (`src/physics/vehicle.ts` only re-exports it as `Vehicle`; edit `vehicleModel.ts`). `src/physics/damage.ts` (144) exists: `DamageState`, `DamageEffects { aeroFront, aeroRear, toe[4], gripScale[4] }`, `createDamageState()`, `damageEffects(state, out?)`. `VehicleModel` has no damage fields yet. Wheel order FL, FR, RL, RR; positive steer = left. Current step flow: wheel rays/suspension, per-wheel `w.steer` (set from `this.steer` for wheels 0-1, 0 for rear), per-wheel `w.grip` (compound x surface x dirt factors) passed as the tyre-solver factor, then `aeroForces(spec, speed, meanX, undefined, this.aeroOut)` and impulses. Effects apply only when `damageMode === 'full'`. Guides: `ai/guides/architecture.md`, `ai/guides/testing.md`, `ai/guides/vehicle-dynamics.md`.
 
 ## Files
 
-- `src/physics/vehicle.ts` — modify: read `damageEffects(this.damage)` each step; add `getDownforce(out?: { front: number; rear: number }): { front: number; rear: number }` (N, last step).
-- `src/physics/aero.ts` — modify only if needed to scale front/rear downforce separately (drag unchanged).
+- `src/physics/vehicleModel.ts` — modify: public `damage: DamageState` (init `createDamageState()`), `damageMode: 'off' | 'visual' | 'full'` (default `'full'`; if 145 has landed, import its `DamageMode` from `src/physics/contactEvents.ts` and reuse its fields instead of redeclaring); read `damageEffects(this.damage, this.fx)` each step; add `getDownforce(out?: { front: number; rear: number }): { front: number; rear: number }` (N, last step, after damage scaling).
 - `tests/unit/acceptance/146-damage-effects.test.ts` — create (acceptance worker).
+- `src/physics/aero.ts` is NOT modified: scale `aeroOut.front/rear` after `aeroForces`. No frozen test changes (zero damage = identical results for 065/066/070).
 
 ## Steps
 
 1. Front/rear downforce multiplied by `aeroFront`/`aeroRear`; drag unchanged.
-2. Per-wheel `toe` (rad) added to that wheel's steer angle (after the driver steer).
-3. Each wheel's tyre force (longitudinal and lateral) multiplied by `gripScale[i]`.
-4. Detached wheel `i`: no suspension force and no tyre force from it; wheel ray still ignored; on the transition to detached, add one sphere collider to the chassis body at the corner: sphere radius 0.12 m, centre at (hub x, hub y − wheelRadius + 0.12, hub z) in car-local, friction 0.8, no mass contribution (mass 0 / density 0). Created once per detached wheel; removed on `reset()` together with `damage` reset.
-5. `damageMode !== 'full'` → all of the above skipped (state is still tracked).
-6. Reuse the `DamageEffects` object each step (no allocation).
+2. Per-wheel `toe` (rad) added to that wheel's steer angle (`w.steer`, after the driver steer).
+3. Each wheel's tyre force (longitudinal and lateral) multiplied by `gripScale[i]` (via its `w.grip` factor).
+4. Detached wheel `i`: no suspension force and no tyre force from it; wheel ray still ignored; on the transition to detached, add one sphere collider to the chassis body at the corner: radius 0.12 m, centre at (hub x, hub y − wheelRadius + 0.12, hub z) in car-local, friction 0.8, density 0. Created once per detached wheel; removed on `reset()` together with `damage` reset.
+5. `damageMode !== 'full'` → all of the above skipped (state still tracked).
+6. Reuse one `DamageEffects` object each step (no allocation).
 
-Conventions: SI units; NaN-free outputs for any `DamageState`; `reset(spawn)` clears `damage` via `createDamageState()` fields in place.
+Conventions: SI units; NaN-free outputs for any `DamageState`; `reset(spawn)` clears `damage` in place (fields reset as `createDamageState()` returns).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
