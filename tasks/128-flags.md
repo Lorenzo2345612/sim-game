@@ -42,7 +42,7 @@ export class FlagState {
 - `blueFor(X)`: true when some running car Y (`!retired`, Y ≠ X) satisfies `Y.distance − X.distance > lapLength / 2` AND Y is behind X on track by `0 <= (X.lapDistance − Y.lapDistance) mod lapLength <= 200` m. Retired X → false.
 - Overtake: between consecutive updates two running cars swap order by `distance` (strict, ties are not swaps) and both cars' sectors currently show non-green → one entry `{ car: overtaker, passed: overtaken }`, reported once (cleared when read).
 
-Conventions: sector argument outside 1..3 and unknown car index → `RangeError`; boundaries as written (`>=`, `<`, `<=`); non-finite car fields make that car ignored; `update` does not mutate `cars`; no per-call allocation except the returned array of `overtakeUnderYellow`.
+Conventions: sector argument outside 1..3 and unknown car index → `RangeError`; boundaries as written (`>=`, `<`, `<=`); non-finite car fields make that car ignored; `update` does not mutate `cars`; no per-call allocation except the returned array of `overtakeUnderYellow`. Overtake entries ordered by overtaker index, then passed index. Known car index = `0 <= car < cars.length` of the last `update` (before the first update every index is unknown → `RangeError`; `sectorFlag` before the first update → 'green'). `update` with non-finite `time` or `time` < previous time is ignored (no state change).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
