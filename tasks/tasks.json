@@ -2402,7 +2402,7 @@
     {
       "num": "174",
       "title": "Track banking (cross-slope) + Daytona",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "106",
         "155"
