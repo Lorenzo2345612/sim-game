@@ -74,7 +74,7 @@ Rebuilding changes `escapeRoads` and `barriers` on monza/spa/silverstone. In the
 - `tests/unit/acceptance/097-terrain-below-strips.test.ts` AT3, `098-osm-runoffs.test.ts` AT5, `106-new-tracks-in-game.test.ts` AT5, `140-paved-runoffs.test.ts` AT5, `142-kerbs-every-corner.test.ts` AT5, `155-close-parallel.test.ts` AT5, `tests/unit/edge/142-kerbs-every-corner.post.test.ts`.
 - 097 AT3 may also need `terrain.heights` to differ, which it already ignores.
 - In the full-object comparisons (106 AT5, 155 AT5) also blank `terrain.heights` (fewer strips change the terrain clamp), as 097 AT3 does.
-- `tests/unit/edge/141-escape-foam.post.test.ts` POST6 (foam blocks 0 vs 11 on a synthetic L corner) is NOT authorised: it is a regression; foam/escape-road barriers of a road must survive the step 4 barrier filter (exclude only vertices on the asphalt of a different part of the track).
+- `tests/unit/edge/141-escape-foam.post.test.ts` POST6: option (c). Its fixture puts a right-side foam run 10 m inside a 90° right-hand corner, i.e. on the other leg's asphalt, which is exactly what step 6 must remove. Mirror the fixture to a left-hand corner (`i <= 14 ? [0, -2 * i] : [-2 * (i - 14), -28]`) so the right-side foam lies on the outside, and recompute the expected `line` and `normals` with the same segment-start outward-normal rule; keep every assertion and the 45° corner-block check. Step 6 stays as written (no foam exemption).
 Any other failing test that pins counts still follows step 9.
 
 ## Out of scope
