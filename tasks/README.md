@@ -138,7 +138,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
 | 135 | Time of day presets | pending | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
-| 137 | Rain and track wetness model, wet compounds | in progress | 058, 115 |
+| 137 | Rain and track wetness model, wet compounds | done | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
 | 139 | Weather in races: config, forecast HUD, grip wiring, AI pace | pending | 078, 093, 130, 135, 137, 138 |
 | 140 | Builder: paved run-offs at heavy-braking corners, chicane escape roads, foam barrier placement | done | 098, 142 |
