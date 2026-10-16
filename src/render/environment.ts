@@ -43,6 +43,22 @@ export interface EnvironmentInfo {
   horizon: [number, number, number];
 }
 
+// Below the half-float max 65504: suns exceeding it become Inf/NaN in half-float PMREM targets.
+export const HDR_MAX = 60000;
+
+export function clampHdrData(data: Float32Array, max: number): number {
+  let changed = 0;
+  for (let i = 0; i < data.length; i++) {
+    if (i % 4 === 3) continue;
+    const v = data[i];
+    if (v > max || !Number.isFinite(v)) {
+      data[i] = max;
+      changed++;
+    }
+  }
+  return changed;
+}
+
 const HORIZON_BAND_DEG = 5;
 
 // Equirect RGBA float32 with row 0 = zenith; mean RGB over rows within ±5° of the horizon.
@@ -96,6 +112,8 @@ export async function applyEnvironment(
   loader.setDataType(THREE.FloatType);
   const texture = await loader.loadAsync(`/hdri/${name}_2k.hdr`);
   const image = texture.image as { data: Float32Array; width: number; height: number };
+  clampHdrData(image.data, HDR_MAX);
+  texture.needsUpdate = true;
   const raw = horizonColor(image.data, image.width, image.height);
   const horizon: [number, number, number] = [clamp01(raw[0]), clamp01(raw[1]), clamp01(raw[2])];
 
