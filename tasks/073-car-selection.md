@@ -51,6 +51,10 @@ npm test
 npx playwright test 073-   # this task's e2e files only; never the full e2e suite
 ```
 
+## Planner-authorised test edits
+
+- `tests/unit/edge/053-f4-car.post.test.ts` POST9: replace the `src/` grep for `models/f4.glb` with: `public/cars/f4.json` has `model.url === '/models/f4.glb'`, that file exists under `public/`, and some file in `src/` reads `model.url` (regex `model\.url`). Title: "the game loads the F4 model from its car spec (057, 073)". Change nothing else.
+
 ## Out of scope
 
 Per-car setup storage, car stats display, livery colours, AI cars, changes to the dynamics or to model files.
