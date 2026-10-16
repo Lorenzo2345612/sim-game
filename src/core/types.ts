@@ -71,6 +71,8 @@ export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone';
 export interface Building { ring: [number, number][]; height: number; material: BuildingMaterial }
 export interface Wall { line: [number, number][]; height: number; thickness: number }
 export interface CityEnv { buildings: Building[]; walls: Wall[]; water: [number, number][][] }
+export type LandmarkKind = 'cylinder-tower' | 'flame-towers' | 'twin-deck' | 'wheel' | 'lattice-tower';
+export interface Landmark { kind: LandmarkKind; x: number; z: number; height: number; heading?: number } // local metres, heading rad
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
   /** Ground palette and vegetation set; parser defaults a missing value to 'parkland'. */
@@ -87,6 +89,7 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   escapeRoads?: EscapeRoad[];
   boards?: Board[];
   sausages?: Sausage[];
+  landmarks?: Landmark[];
   /** Metres from the centerline to the left/right edge per index; absent when no section is narrowed. */
   halfWidthLeft?: number[];
   halfWidthRight?: number[];

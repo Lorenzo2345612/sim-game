@@ -247,6 +247,7 @@
   },
   {
     "id": "baku",
+    "landmarks": [{"kind":"cylinder-tower","lon":49.8372,"lat":40.3665,"height":29},{"kind":"flame-towers","lon":49.8267,"lat":40.3597,"height":190}],
     "name": "Baku",
     "country": "Azerbaijan",
     "geojson": "az-baku",
@@ -297,6 +298,7 @@
   },
   {
     "id": "singapore",
+    "landmarks": [{"kind":"twin-deck","lon":103.8607,"lat":1.2834,"height":194},{"kind":"wheel","lon":103.8631,"lat":1.2893,"height":165}],
     "name": "Singapore",
     "country": "Singapore",
     "geojson": "sg-marina-bay",
@@ -321,6 +323,7 @@
   },
   {
     "id": "lasvegas",
+    "landmarks": [{"kind":"lattice-tower","lon":-115.1707,"lat":36.1127,"height":165}],
     "name": "Las Vegas",
     "country": "United States",
     "geojson": "us-lasvegas",

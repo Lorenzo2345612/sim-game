@@ -30,6 +30,7 @@ import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
 import { createCityObject, type CityObject } from './render/cityRenderer';
+import { createLandmarks } from './render/landmarks';
 import { createDistanceBoards } from './render/distanceBoards';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
@@ -62,6 +63,7 @@ export interface SceneStats {
   startGantries: number;
   distanceBoards: number;
   buildings: number;
+  landmarks: number;
   sky: boolean;
   shadows: boolean;
   environment: string;
@@ -383,6 +385,7 @@ async function startGame(trackId: string): Promise<void> {
     startGantries: 0,
     distanceBoards: 0,
     buildings: 0,
+    landmarks: 0,
     sky: false,
     shadows: false,
     environment: '',
@@ -481,6 +484,11 @@ async function startGame(trackId: string): Promise<void> {
     stats.pitBuildings = 1;
     stats.startGantries = 1;
     stats.distanceBoards = boards.count;
+
+    const landmarks = createLandmarks(track, makeTerrainY(track.terrain));
+    scene.add(landmarks.group);
+    stats.landmarks = landmarks.count;
+    disposables.push(landmarks);
 
     // Baked OSM city (157); absent on non-city tracks, ignored on failure.
     try {

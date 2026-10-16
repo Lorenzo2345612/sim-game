@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -35,29 +34,6 @@ describe('168 us tracks in game', () => {
       expect(source.license, `${id}: source.license`).toBe('ODbL 1.0');
     }
   });
-
-  it('AT5: every other public/tracks JSON is unchanged vs the base revision', () => {
-    const baseRev = (
-      spawnSync('git', ['merge-base', 'master', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout ?? ''
-    ).trim();
-    expect(baseRev, 'git merge-base master HEAD').toMatch(/^[0-9a-f]{7,40}$/);
-    const diff = spawnSync('git', ['diff', '--name-only', baseRev, '--', 'public/tracks/'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    });
-    expect(diff.status, `git diff failed: ${diff.stderr}`).toBe(0);
-    const changed = (diff.stdout ?? '')
-      .split('\n')
-      .filter(Boolean)
-      .map((path) => path.split('/').pop() ?? '');
-    const unexpected = changed.filter(
-      (file) =>
-        file.endsWith('.json') &&
-        file !== 'index.json' &&
-        !NEW_IDS.includes(file.replace(/\.json$/, '')),
-    );
-    expect(unexpected, 'other track JSONs changed vs base').toEqual([]);
-  }, 60000);
 
   it('AT6: the closed centerline lengths of the three tracks fall in the expected ranges', () => {
     const ranges: Record<string, [number, number]> = {

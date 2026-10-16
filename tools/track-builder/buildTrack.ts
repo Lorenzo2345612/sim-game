@@ -15,8 +15,8 @@ import { clipPitRange } from './pitRange';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
 import { biomeFor, placeTrees, type Biome } from './trees';
 import type { DemGrid } from '../dem/fetchDem';
-import { bboxCenter, polylineLength, type Point2 } from '../../src/track/geo';
-import type { Grandstand, PitLane, Side, TrackDataV2, TreeSpecies } from '../../src/core/types';
+import { bboxCenter, polylineLength, projectLonLat, type Point2 } from '../../src/track/geo';
+import type { Grandstand, Landmark, LandmarkKind, PitLane, Side, TrackDataV2, TreeSpecies } from '../../src/core/types';
 
 interface GrandstandConfig {
   atMeters: number;
@@ -37,6 +37,7 @@ interface TrackConfig extends TrackSourceConfig {
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
   sausages?: SausageOverride[];
+  landmarks?: { kind: LandmarkKind; lon: number; lat: number; height: number; heading?: number }[];
 }
 
 const SPECIES_PRESETS: Record<string, { preset: string; heightMeters: number }> = {
@@ -152,6 +153,13 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     heightMeters: SPECIES_PRESETS[sp.name].heightMeters,
   }));
 
+  const landmarks: Landmark[] = (config.landmarks ?? []).map((l) => {
+    const [[x, z]] = projectLonLat([[l.lon, l.lat]], origin);
+    const out: Landmark = { kind: l.kind, x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100, height: l.height };
+    if (l.heading !== undefined) out.heading = l.heading;
+    return out;
+  });
+
   const data: TrackDataV2 = {
     ...base,
     version: 2,
@@ -170,6 +178,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     sausages,
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
+  if (landmarks.length > 0) data.landmarks = landmarks;
   if (parallel.any) {
     data.halfWidthLeft = parallel.halfLeft;
     data.halfWidthRight = parallel.halfRight;
