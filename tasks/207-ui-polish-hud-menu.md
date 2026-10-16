@@ -66,6 +66,29 @@ Each file styles itself with its own hard-coded colours.
    - Transitions are 120–200 ms, and none under `prefers-reduced-motion: reduce`.
 4. **Keep contracts.** Every existing id, class, `data-*` attribute and text that `tests/` reference stays present. Before changing any class or attribute, run `grep -rn` on `tests/`. Behaviour, keyboard handling and `window.__SIMGAME__` are unchanged.
 
+## Visual references (the look to aim for)
+
+The result must look like a modern racing game, not a web page. Borrow the design language, never logos, names, fonts or images, of:
+- **F1 24/25 (Codemasters):** slanted panels made with `skewX(-10deg … -12deg)` on a pseudo-element so the text stays upright. A coloured accent stripe runs down the left edge of each panel. Labels are uppercase and condensed. The timing block shows the lap counter `LAP 3/10` and current/last/best times, with the delta in a green/red box.
+- **Assetto Corsa Competizione:**
+  - Bottom-centre cluster: the gear is the biggest glyph in the middle, the speed sits below it and the unit is tiny.
+  - A row of 15 shift-light LEDs above the cluster: 5 green, 5 amber, 5 red. They light progressively with rpm, and all of them flash at the limiter.
+  - Compact tyre widget: four rounded rectangles coloured by state, with fuel next to it.
+- **Gran Turismo 7:** clean, airy spacing. Small uppercase labels with wide letter-spacing (0.08–0.12 em) above big values. Thin 1 px dividers. Restrained colour: mostly off-white on near-black, with one accent.
+- **Forza Motorsport menus:**
+  - A big left-aligned title with a skewed accent bar.
+  - Large selectable tiles with a raise-and-glow selection state.
+  - The selected track's details sit in a side panel next to the grid: big outline, length, turns if known, and country as text.
+  - Secondary info is dimmed.
+
+Typography: use the stack `"Barlow Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif` with `font-stretch: condensed`. No downloads, so it uses whatever the machine has. Numbers are bold, italic or oblique as in F1, and tabular.
+
+Additions allowed by this section:
+- **Shift-light LEDs:** a row of 15 `span.hud2-led` inside the hudV2 panel, created once. Each frame toggles one class per LED, and only when its on/off state changes. Keep `.hud2-rpm-bar` and its `style.width` update (unit tests read it); style it as a thin line under the LEDs.
+- **Track details panel:** a details panel in the track select that shows the focused or hovered card. It is built once and its text is updated on focus or hover.
+
+Self-review is required. After the tests pass, run AT10 and open `test-results/207/menu.png` and `test-results/207/hud.png` with the Read tool. Compare them against the references above and iterate on the CSS until they would pass for a shipped racing game: aligned, consistent spacing, nothing cramped, no default-browser look. Report what you changed after looking.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Write them in `tests/e2e/acceptance/207-ui-polish.spec.ts`. Helpers: hex/rgb(a) → HSL and relative luminance (WCAG) in the spec file.
