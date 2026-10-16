@@ -15,30 +15,105 @@
   pointer-events: none;
 }
 
+.tyres-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 0 0.1em;
+  line-height: 1.1;
+}
+
+.tyres-compound {
+  font-weight: 800;
+  font-size: 1.15em;
+}
+
+.compound-soft {
+  color: var(--ui-bad);
+}
+
+.compound-medium {
+  color: var(--ui-accent);
+}
+
+.compound-hard {
+  color: var(--ui-text);
+}
+
+.tyres-pressure {
+  font-weight: 600;
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .tyre {
-  min-width: 3.2em;
-  padding: 0.4em 0.3em;
+  position: relative;
+  min-width: 3.4em;
+  padding: 0.3em 0.5em;
   box-sizing: border-box;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-style: italic;
+  border-left: 2px solid transparent;
   border-radius: 5px;
   background: rgba(150, 165, 185, 0.2);
+  overflow: hidden;
   transition: background var(--ui-fast);
 }
 
+.tyre-temp {
+  font-size: 1.55em;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tyre-wear {
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ui-text-dim);
+}
+
+.tyre-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--ui-text-dim);
+  opacity: 0.8;
+  transform-origin: bottom;
+}
+
+/* head is div 1 and fuel div 6, so the even tiles (2, 4) sit in the left column. */
+.tyre:nth-of-type(even) .tyre-bar {
+  left: 2px;
+}
+
+.tyre:nth-of-type(odd) .tyre-bar {
+  right: 2px;
+}
+
 .tyre-blue {
-  background: rgba(46, 120, 230, 0.8);
+  background: rgba(46, 120, 230, 0.4);
+  border-left-color: rgba(46, 120, 230, 0.95);
 }
 
 .tyre-green {
-  background: rgba(40, 160, 90, 0.8);
+  background: rgba(40, 160, 90, 0.4);
+  border-left-color: rgba(40, 160, 90, 0.95);
 }
 
 .tyre-red {
-  background: rgba(220, 60, 50, 0.85);
+  background: rgba(220, 60, 50, 0.45);
+  border-left-color: rgba(220, 60, 50, 0.95);
+}
+
+.tyre.dirty {
+  box-shadow: inset 0 0 0 2px rgba(158, 118, 64, 0.9);
 }
 
 .fuel {

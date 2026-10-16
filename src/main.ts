@@ -345,7 +345,8 @@ async function startGame(trackId: string): Promise<void> {
     fuel: queryMultiplier(params.get('fuel'), gameOpts.fuel),
   };
   const freshSpec = (): CarSpec => applySetup(baseSpec, loadSetup(carId, track.id, baseSpec, window.localStorage));
-  let game = await Game.create(track, freshSpec(), tune);
+  let gameSpec = freshSpec();
+  let game = await Game.create(track, gameSpec, tune);
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
@@ -547,10 +548,13 @@ async function startGame(trackId: string): Promise<void> {
   const tyresData: HudTyresData = {
     tempC: [0, 0, 0, 0],
     wear: [0, 0, 0, 0],
+    dirt: [0, 0, 0, 0],
     optTempC: activeCompound.optTempC,
     tempWindowC: activeCompound.tempWindowC,
     fuelL: 0,
     meanLapL: null,
+    compound: tune.compound,
+    pressureKpa: gameSpec.tyres.pressureKpa,
   };
   const minimap = new Minimap(document.body, track.centerline);
   const fpsOverlay = new FpsOverlay(document.body, window);
@@ -757,6 +761,7 @@ async function startGame(trackId: string): Promise<void> {
       for (let i = 0; i < 4; i++) {
         tyresData.tempC[i] = telemetry.wheels[i].tempC;
         tyresData.wear[i] = telemetry.wheels[i].wear;
+        tyresData.dirt[i] = telemetry.wheels[i].dirt ?? 0;
       }
       tyresData.fuelL = telemetry.fuelKg / baseSpec.fuel.densityKgL;
       const meanFuelKg = game.meanLapFuel();
@@ -783,7 +788,8 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   const restart = async (): Promise<void> => {
-    const next = await Game.create(track, freshSpec(), tune);
+    const nextSpec = freshSpec();
+    const next = await Game.create(track, nextSpec, tune);
     // The session may have been torn down while the new Game was being created.
     if (!running) {
       next.dispose();
@@ -791,6 +797,8 @@ async function startGame(trackId: string): Promise<void> {
     }
     game.dispose();
     game = next;
+    gameSpec = nextSpec;
+    tyresData.pressureKpa = gameSpec.tyres.pressureKpa;
     autoGearbox = true;
     lapActive = false;
     lapWasValid = true;

@@ -4,13 +4,13 @@ import type { Surface } from '../core/types';
 export const DIRT_PICKUP: Record<Surface, number> = {
   asphalt: 0,
   kerb: 0,
-  grass: 0.02,
-  gravel: 0.04,
+  grass: 0.01,
+  gravel: 0.02,
   runoff: 0,
 };
 // Exponential cleaning length on asphalt/kerb/runoff, m.
-export const DIRT_CLEAN_LENGTH = 400;
-export const DIRT_GRIP_LOSS = 0.25;
+export const DIRT_CLEAN_LENGTH = 150;
+export const DIRT_GRIP_LOSS = 0.1;
 
 function isPaved(surface: Surface): boolean {
   return surface === 'asphalt' || surface === 'kerb' || surface === 'runoff';

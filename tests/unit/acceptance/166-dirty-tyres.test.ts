@@ -94,8 +94,8 @@ describe('166 dirty tyres acceptance', () => {
 
   it('AT1: dirt 0 picks up 0.4 on gravel and 0.2 on grass at 10 m/s for 1 s', async () => {
     const updateDirt = await loadUpdateDirt();
-    expect(updateDirt(0, 'gravel', 10, 1)).toBeCloseTo(0.4, 12);
-    expect(updateDirt(0, 'grass', 10, 1)).toBeCloseTo(0.2, 12);
+    expect(updateDirt(0, 'gravel', 10, 1)).toBeCloseTo(0.2, 12);
+    expect(updateDirt(0, 'grass', 10, 1)).toBeCloseTo(0.1, 12);
   });
 
   it('AT2: dirt 0.9 on gravel at 30 m/s for 1 s clamps to 1', async () => {
@@ -103,17 +103,17 @@ describe('166 dirty tyres acceptance', () => {
     expect(updateDirt(0.9, 'gravel', 30, 1)).toBeCloseTo(1, 12);
   });
 
-  it('AT3: dirt 1 on asphalt, kerb and runoff decays by e^-1 over 400 m', async () => {
+  it('AT3: dirt 1 on asphalt, kerb and runoff decays by e^-1 over 150 m', async () => {
     const updateDirt = await loadUpdateDirt();
     const e = Math.exp(-1);
-    expect(updateDirt(1, 'asphalt', 40, 10)).toBeCloseTo(e, 12);
-    expect(updateDirt(1, 'kerb', 40, 10)).toBeCloseTo(e, 12);
-    expect(updateDirt(1, 'runoff', 40, 10)).toBeCloseTo(e, 12);
+    for (const surface of ['asphalt', 'kerb', 'runoff'] as const) {
+      expect(updateDirt(1, surface, 15, 10)).toBeCloseTo(e, 12);
+    }
   });
 
   it('AT4: negative speed accumulates dirt by |speed|', async () => {
     const updateDirt = await loadUpdateDirt();
-    expect(updateDirt(0, 'grass', -10, 1)).toBeCloseTo(0.2, 12);
+    expect(updateDirt(0, 'grass', -10, 1)).toBeCloseTo(0.1, 12);
   });
 
   it('AT5: non-finite dirt gives 0; non-finite speed or negative dt leaves dirt unchanged', async () => {
@@ -123,14 +123,14 @@ describe('166 dirty tyres acceptance', () => {
     expect(updateDirt(0.5, 'grass', 10, -1)).toBeCloseTo(0.5, 12);
   });
 
-  it('AT6: dirtGripFactor loses 25% grip on asphalt and kerb and stays 1 off-track', async () => {
+  it('AT6: dirtGripFactor loses 10% grip on asphalt and kerb and stays 1 off-track', async () => {
     const dirtGripFactor = await loadDirtGripFactor();
-    expect(dirtGripFactor(1, 'asphalt')).toBeCloseTo(0.75, 12);
-    expect(dirtGripFactor(0.5, 'kerb')).toBeCloseTo(0.875, 12);
+    expect(dirtGripFactor(1, 'asphalt')).toBeCloseTo(0.9, 12);
+    expect(dirtGripFactor(0.5, 'kerb')).toBeCloseTo(0.95, 12);
     expect(dirtGripFactor(1, 'grass')).toBeCloseTo(1, 12);
     expect(dirtGripFactor(1, 'gravel')).toBeCloseTo(1, 12);
     expect(dirtGripFactor(0, 'asphalt')).toBeCloseTo(1, 12);
-    expect(dirtGripFactor(3, 'asphalt')).toBeCloseTo(0.75, 12);
+    expect(dirtGripFactor(3, 'asphalt')).toBeCloseTo(0.9, 12);
   });
 
   it('AT7: F4 on gravel starts clean and rear wheels pick up dirt in 2 s of full throttle', () => {

@@ -13,6 +13,7 @@ class FakeEl {
   parent: FakeEl | null = null;
   text: string | null = null;
   textWrites = 0;
+  style: Record<string, string> = { transform: '' };
 
   constructor(public ownerDocument: FakeDoc, public tag: string) {}
 
@@ -56,10 +57,13 @@ class FakeDoc {
 const base: HudTyresData = {
   tempC: [90, 90, 90, 90],
   wear: [1, 1, 1, 1],
+  dirt: [0, 0, 0, 0],
   optTempC: 90,
   tempWindowC: 40,
   fuelL: 50,
   meanLapL: null,
+  compound: 'medium',
+  pressureKpa: 140,
 };
 
 function setup(): { hud: HudTyres; container: FakeEl; doc: FakeDoc } {
@@ -124,7 +128,7 @@ describe('HudTyres dom', () => {
       'tyre-red',
       'tyre-green',
     ]);
-    expect(tyres.map((t) => t.text)).toEqual(['50%', '100%', '0%', '100%']);
+    expect(tyres.map((t) => findByClass(t, 'tyre-wear')[0].text)).toEqual(['50%', '100%', '0%', '100%']);
     expect(findByClass(container, 'fuel')[0].text).toBe('50.0 L · —');
   });
 
@@ -133,7 +137,7 @@ describe('HudTyres dom', () => {
     hud.update({ ...base, wear: [0.875, 0.124, 1.5, -0.2] });
     hud.update({ ...base, wear: [0.875], tempC: [90] });
     const tyres = findByClass(container, 'tyre');
-    expect(tyres.map((t) => t.text)).toEqual(['88%', '—', '—', '—']);
+    expect(tyres.map((t) => findByClass(t, 'tyre-wear')[0].text)).toEqual(['88%', '—', '—', '—']);
   });
 
   it('swaps tyre colours between updates', () => {
