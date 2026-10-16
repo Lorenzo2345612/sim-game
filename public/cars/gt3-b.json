@@ -78,10 +78,10 @@
     "pressureKpa": 180,
     "compounds": {
       "soft": {
-        "mu0": 1.7489999999999999,
-        "Fz0": 2000,
+        "mu0": 1.643,
+        "Fz0": 3800,
         "loadSens": 0.1,
-        "Bx": 14,
+        "Bx": 12,
         "Cx": 1.55,
         "Ex": 0,
         "By": 9,
@@ -89,9 +89,9 @@
         "Ey": 0,
         "optTempC": 85,
         "tempWindowC": 40,
-        "heatCoef": 0.00012,
+        "heatCoef": 6e-05,
         "coolCoef": 0.002,
-        "wearRate": 8e-08,
+        "wearRate": 4e-8,
         "wearGripLoss": 0.25,
         "cliffWear": 0.8
       },
@@ -114,10 +114,10 @@
         "cliffWear": 0.8
       },
       "hard": {
-        "mu0": 1.5675,
-        "Fz0": 2000,
+        "mu0": 1.4725,
+        "Fz0": 3800,
         "loadSens": 0.1,
-        "Bx": 14,
+        "Bx": 12,
         "Cx": 1.55,
         "Ex": 0,
         "By": 9,
@@ -125,9 +125,9 @@
         "Ey": 0,
         "optTempC": 95,
         "tempWindowC": 40,
-        "heatCoef": 0.00012,
+        "heatCoef": 6e-05,
         "coolCoef": 0.002,
-        "wearRate": 2e-08,
+        "wearRate": 9.200000000000001e-9,
         "wearGripLoss": 0.25,
         "cliffWear": 0.8
       }
