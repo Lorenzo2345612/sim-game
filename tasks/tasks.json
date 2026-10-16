@@ -2187,7 +2187,7 @@
     {
       "num": "158",
       "title": "City renderer: buildings, facades, water",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "099",
         "157"
@@ -2201,7 +2201,7 @@
     {
       "num": "159",
       "title": "Street-circuit trackside: walls, sidewalks, lamps, billboards",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "141",
         "157"
