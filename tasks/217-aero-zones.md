@@ -30,7 +30,7 @@ export const AERO_ZONE_WINDOW_M = 50; export const AERO_ZONE_MAX_CURVATURE = 1 /
 export function deriveAeroZones(centerline: [number, number][]): AeroZone[];
 export function inAeroZone(zones: readonly AeroZone[], d: number, lapLength: number): boolean;
 ```
-2. Cumulative arc length s_i, L = total (closed). Point i is straight when |dtheta| / AERO_ZONE_WINDOW_M < AERO_ZONE_MAX_CURVATURE, where dtheta (wrapped to (-pi, pi]) = heading of the segment starting at the point nearest arc s_i + 25 minus heading of the segment starting at the point nearest s_i - 25 (arc positions circular).
+2. Cumulative arc length s_i, L = total (closed). Point i is straight when |dtheta| / AERO_ZONE_WINDOW_M < AERO_ZONE_MAX_CURVATURE, where dtheta (wrapped to (-pi, pi]) = heading of the segment starting at the point nearest arc s_i + 25 minus heading of the segment starting at the point nearest s_i - 25 (arc positions circular). "Nearest" = the point with the smallest circular arc distance; on an exact tie take the point with the larger arc position (the later one along the lap).
 3. Zones = maximal circular runs of straight points whose run length (s_last - s_first, circular) >= AERO_ZONE_MIN_LENGTH_M; start = s_first, end = start + run length. All points straight → `[{ start: 0, end: L }]`. Sorted by start; a run wrapping the line keeps start < L and end > L.
 4. `inAeroZone`: d taken modulo L (positive modulo); true when (d - start) mod L <= end - start for some zone. Empty zones → false.
 
