@@ -73,6 +73,8 @@ npx playwright test 106- 140- 155-
 Rebuilding changes `escapeRoads` and `barriers` on monza/spa/silverstone. In the legacy "unchanged vs base revision" checks, also exclude `escapeRoads` and `barriers` from the comparison (as 173 did for `pit`); change nothing else:
 - `tests/unit/acceptance/097-terrain-below-strips.test.ts` AT3, `098-osm-runoffs.test.ts` AT5, `106-new-tracks-in-game.test.ts` AT5, `140-paved-runoffs.test.ts` AT5, `142-kerbs-every-corner.test.ts` AT5, `155-close-parallel.test.ts` AT5, `tests/unit/edge/142-kerbs-every-corner.post.test.ts`.
 - 097 AT3 may also need `terrain.heights` to differ, which it already ignores.
+- In the full-object comparisons (106 AT5, 155 AT5) also blank `terrain.heights` (fewer strips change the terrain clamp), as 097 AT3 does.
+- `tests/unit/edge/141-escape-foam.post.test.ts` POST6 (foam blocks 0 vs 11 on a synthetic L corner) is NOT authorised: it is a regression; foam/escape-road barriers of a road must survive the step 4 barrier filter (exclude only vertices on the asphalt of a different part of the track).
 Any other failing test that pins counts still follows step 9.
 
 ## Out of scope
