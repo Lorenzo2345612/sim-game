@@ -35,8 +35,8 @@ export function sausagePose(track: TrackDataV2, s: Sausage): { position: Vec3; y
 ```
 
 1. Profile: trapezoid 0.5 m wide at the base, 0.25 m at the top, 0.13 m tall, 6 m long (`Sausage.length`), along the track tangent.
-2. One `InstancedMesh` (vertex colours, shared geometry for equal length) for all sausages; instance matrix from `sausagePose`.
-3. Pose: centerline point at `index` + right-normal (central difference of neighbours) · (±`offset`: +right, −left); y = `elevation[index]`; yaw aligns local Z with the tangent.
+2. One `InstancedMesh` (vertex colours) per distinct `Sausage.length`, all children of one returned `Group`; current track data uses a single length, so one mesh; instance matrix from `sausagePose`.
+3. Pose: centerline point at `index` + right-normal (central difference of neighbours; the centerline is a closed loop, so indices wrap: index 0 uses n−1 and 1, the last uses n−2 and 0) · (±`offset`: +right, −left); y = `elevation[index]`; yaw aligns local Z with the tangent.
 4. Collider per sausage: `RAPIER.ColliderDesc.convexHull(sausageHullPoints(length))`, fixed, translated/rotated by `sausagePose`; the wheel raycasts must hit it. Same friction as kerb strips.
 5. `createSausages`: `count` = sausages; `dispose()` frees geometry and material.
 
