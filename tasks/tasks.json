@@ -1670,7 +1670,7 @@
     {
       "num": "122",
       "title": "Livery editor screen",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "044",
         "073",
