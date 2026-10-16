@@ -3160,7 +3160,7 @@
     {
       "num": "222",
       "title": "Per-car RPM range in the HUD",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",

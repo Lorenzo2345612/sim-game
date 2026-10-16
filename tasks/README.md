@@ -223,6 +223,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
 | 220 | Overtake and ERS mode controls | done | 215 |
 | 221 | OW-26 car definition and calibration | pending | 219 |
-| 222 | Per-car RPM range in the HUD | in progress | - |
+| 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | pending | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | pending | 221 |
