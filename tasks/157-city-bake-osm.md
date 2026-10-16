@@ -47,6 +47,12 @@ export function heightOf(tags: Record<string, string>): number;
 
 Conventions: heights in metres, round to 0.1; `<` for the corridor drop (a ring exactly at the limit is kept); unparsable height tag falls through to the next rule; coordinates [x, z] in track local metres; inputs not mutated.
 
+## Planner-authorised test edits
+
+- `tests/unit/edge/157-city-bake.post.test.ts`: every `pointInPolygon(pt, ring as Point2[])` on a ring from `coastlineWaterRings` becomes `pointInPolygon(pt, ring.map((p): Point2 => [p.lon, p.lat]))`. No other change.
+- `tests/unit/edge/142-kerbs-every-corner.post.test.ts` line ~145: the track id filter also excludes `f.endsWith('-env.json')` and `f.endsWith('.style.json')` (they are not track files). No other change.
+- Commit the generated `public/tracks/<id>-env.json` files (3).
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
