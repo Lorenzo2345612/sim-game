@@ -2469,7 +2469,7 @@
     {
       "num": "179",
       "title": "TrackStyle schema, defaults and parser",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

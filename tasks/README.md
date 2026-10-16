@@ -180,7 +180,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
-| 179 | TrackStyle schema, defaults and parser | in progress | - |
+| 179 | TrackStyle schema, defaults and parser | done | - |
 | 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174, 175 |
 | 181 | Tools: `track:locate` and `check:styles` | pending | 179 |
 | 182 | Pit building and grandstand styling | pending | 180 |
