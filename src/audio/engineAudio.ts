@@ -1,4 +1,7 @@
 import { DEFAULT_CAR_SOUND, type CarSound } from '../physics/carSpec';
+import { LIMITER_RPM } from '../physics/gearbox';
+import type { Surface } from '../core/types';
+import { crackleSchedule, kerbRumbleHz, shiftEnvelope, windGain } from './effects';
 import { firingHz } from './engineSynth';
 // Bundled as its own worker-style asset; addModule needs the URL string, not a URL object.
 import engineWorkletUrl from './engineWorklet.ts?worker&url';
@@ -21,8 +24,36 @@ const SQUEAL_MAX = 0.5;
 const IDLE_RPM = 900;
 const WORKLET_LEVEL = 0.5;
 const WORKLET_SEED = 1;
+const KERB_STRIPE_M = 1.5;
+const KERB_GAIN = 0.3;
+const KERB_BAND_HZ = 120;
+const GRAVEL_GAIN = 0.35;
+const GRAVEL_FULL_MS = 20;
+const GRAVEL_LOWPASS_HZ = 500;
+const WIND_LOWPASS_HZ = 1200;
+const SHIFT_LEN_S = 0.08;
+const CRACKLE_GAIN = 0.4;
+const CRACKLE_ATTACK_S = 0.004;
+const CRACKLE_DECAY_S = 0.05;
+const CRACKLE_BAND_HZ = 2000;
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
+
+interface EffectNodes {
+  windNoise: AudioBufferSourceNode;
+  windFilter: BiquadFilterNode;
+  windGain: GainNode;
+  kerbNoise: AudioBufferSourceNode;
+  kerbFilter: BiquadFilterNode;
+  kerbAmp: GainNode;
+  kerbLfo: OscillatorNode;
+  kerbDepth: GainNode;
+  gravelNoise: AudioBufferSourceNode;
+  gravelFilter: BiquadFilterNode;
+  gravelGain: GainNode;
+  crackleFilter: BiquadFilterNode;
+  crackleBus: GainNode;
+}
 
 export function engineParams(rpm: number, throttle: number): EngineParams {
   return {
@@ -66,6 +97,16 @@ export class EngineAudio {
   private moduleState: 'none' | 'loading' | 'ready' | 'failed' = 'none';
   private lastRpm = 0;
   private lastThrottle = 0;
+  private limiterRpm = LIMITER_RPM;
+  private windBase = 0;
+  private kerbBase = 0;
+  private gravelBase = 0;
+  private shiftActive = false;
+  private shiftStart = 0;
+  private prevShifting = false;
+  private noiseBuffer: AudioBuffer | null = null;
+  private effectNodes: EffectNodes | null = null;
+  private readonly scheduledCrackle = new Set<AudioBufferSourceNode>();
 
   constructor(
     createContext: () => AudioContext = () => new AudioContext(),
@@ -182,6 +223,8 @@ export class EngineAudio {
 
   update(rpm: number, throttle: number, slipRatios: readonly number[]): void {
     if (this.disposed) return;
+    const offsets = crackleSchedule(this.lastThrottle, throttle, rpm, this.limiterRpm, this.sound.crackle, Math.random);
+    if (offsets.length > 0) this.scheduleCrackle(offsets);
     this.lastRpm = rpm;
     this.lastThrottle = throttle;
     const { frequencyHz, gain } = engineParams(rpm, throttle);
@@ -209,6 +252,34 @@ export class EngineAudio {
     this.applyGains();
   }
 
+  setLimiterRpm(rpm: number): void {
+    if (Number.isFinite(rpm) && rpm > 0) this.limiterRpm = rpm;
+  }
+
+  updateEffects(s: { speed: number; surface: Surface; shifting: boolean; slipRatios: readonly number[] }): void {
+    if (this.disposed) return;
+    if (!this.effectNodes) this.initEffects();
+    const now = this.ctx.currentTime;
+    if (s.shifting && !this.prevShifting) {
+      this.shiftActive = true;
+      this.shiftStart = now;
+    }
+    this.prevShifting = s.shifting;
+    this.windBase = windGain(s.speed);
+    const onKerb = s.surface === 'kerb';
+    this.kerbBase = onKerb ? KERB_GAIN : 0;
+    if (onKerb) {
+      this.effectNodes?.kerbLfo.frequency.setTargetAtTime(
+        kerbRumbleHz(Math.abs(s.speed), KERB_STRIPE_M),
+        now,
+        SMOOTHING,
+      );
+    }
+    this.gravelBase = s.surface === 'gravel' ? GRAVEL_GAIN * Math.min(1, Math.abs(s.speed) / GRAVEL_FULL_MS) : 0;
+    this.squealBase = tyreSquealGain(s.slipRatios);
+    this.applyGains();
+  }
+
   setMasterVolume(v: number): void {
     this.masterVolume = clamp(v, 0, 1);
     if (!this.disposed) this.applyGains();
@@ -218,6 +289,20 @@ export class EngineAudio {
     if (this.disposed) return;
     this.disposed = true;
     this.running = false;
+    for (const src of this.scheduledCrackle) {
+      try {
+        src.stop();
+      } catch {
+        /* already stopped */
+      }
+      try {
+        src.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    }
+    this.scheduledCrackle.clear();
+    this.disposeEffects();
     this.disconnectWorklet();
     for (const node of [this.oscEngine, this.oscSub, this.squealNoise]) {
       try {
@@ -250,10 +335,166 @@ export class EngineAudio {
   private applyGains(): void {
     const now = this.ctx.currentTime;
     const m = this.masterVolume;
-    this.engineGain.gain.setTargetAtTime(this.engineBase * m, now, SMOOTHING);
-    this.subGain.gain.setTargetAtTime(this.subBase * m, now, SMOOTHING);
+    const env = this.shiftGainEnv(now);
+    this.engineGain.gain.setTargetAtTime(this.engineBase * m * env, now, SMOOTHING);
+    this.subGain.gain.setTargetAtTime(this.subBase * m * env, now, SMOOTHING);
     this.squealGain.gain.setTargetAtTime(this.squealBase * m, now, SMOOTHING);
-    this.workletGain?.gain.setTargetAtTime(WORKLET_LEVEL * m, now, SMOOTHING);
+    this.workletGain?.gain.setTargetAtTime(WORKLET_LEVEL * m * env, now, SMOOTHING);
+    const fx = this.effectNodes;
+    if (fx) {
+      fx.windGain.gain.setTargetAtTime(this.windBase * m, now, SMOOTHING);
+      // Base + LFO depth pulse the kerb noise between 0 and the peak gain at the rumble rate.
+      fx.kerbAmp.gain.setTargetAtTime(this.kerbBase * 0.5 * m, now, SMOOTHING);
+      fx.kerbDepth.gain.setTargetAtTime(this.kerbBase * 0.5 * m, now, SMOOTHING);
+      fx.gravelGain.gain.setTargetAtTime(this.gravelBase * m, now, SMOOTHING);
+      fx.crackleBus.gain.setTargetAtTime(m, now, SMOOTHING);
+    }
+  }
+
+  private shiftGainEnv(now: number): number {
+    if (!this.shiftActive) return 1;
+    const t = now - this.shiftStart;
+    if (t >= SHIFT_LEN_S) {
+      this.shiftActive = false;
+      return 1;
+    }
+    return shiftEnvelope(t);
+  }
+
+  private initEffects(): void {
+    if (this.disposed || this.effectNodes) return;
+    const now = this.ctx.currentTime;
+
+    const windNoise = this.createNoiseSource();
+    const windFilter = this.ctx.createBiquadFilter();
+    windFilter.type = 'lowpass';
+    windFilter.frequency.setValueAtTime(WIND_LOWPASS_HZ, now);
+    windFilter.Q.setValueAtTime(0.7, now);
+    const windGainNode = this.ctx.createGain();
+    windNoise.connect(windFilter);
+    windFilter.connect(windGainNode);
+    windGainNode.connect(this.ctx.destination);
+
+    const kerbNoise = this.createNoiseSource();
+    const kerbFilter = this.ctx.createBiquadFilter();
+    kerbFilter.type = 'bandpass';
+    kerbFilter.frequency.setValueAtTime(KERB_BAND_HZ, now);
+    kerbFilter.Q.setValueAtTime(0.9, now);
+    const kerbAmp = this.ctx.createGain();
+    const kerbLfo = this.ctx.createOscillator();
+    kerbLfo.type = 'sine';
+    kerbLfo.frequency.setValueAtTime(0, now);
+    const kerbDepth = this.ctx.createGain();
+    kerbLfo.connect(kerbDepth);
+    kerbDepth.connect(kerbAmp.gain);
+    kerbNoise.connect(kerbFilter);
+    kerbFilter.connect(kerbAmp);
+    kerbAmp.connect(this.ctx.destination);
+
+    const gravelNoise = this.createNoiseSource();
+    const gravelFilter = this.ctx.createBiquadFilter();
+    gravelFilter.type = 'lowpass';
+    gravelFilter.frequency.setValueAtTime(GRAVEL_LOWPASS_HZ, now);
+    gravelFilter.Q.setValueAtTime(0.7, now);
+    const gravelGainNode = this.ctx.createGain();
+    gravelNoise.connect(gravelFilter);
+    gravelFilter.connect(gravelGainNode);
+    gravelGainNode.connect(this.ctx.destination);
+
+    const crackleFilter = this.ctx.createBiquadFilter();
+    crackleFilter.type = 'bandpass';
+    crackleFilter.frequency.setValueAtTime(CRACKLE_BAND_HZ, now);
+    crackleFilter.Q.setValueAtTime(1, now);
+    const crackleBus = this.ctx.createGain();
+    crackleFilter.connect(crackleBus);
+    crackleBus.connect(this.ctx.destination);
+
+    for (const src of [windNoise, kerbNoise, gravelNoise, kerbLfo]) {
+      try {
+        src.start();
+      } catch {
+        /* already started */
+      }
+    }
+
+    this.effectNodes = {
+      windNoise,
+      windFilter,
+      windGain: windGainNode,
+      kerbNoise,
+      kerbFilter,
+      kerbAmp,
+      kerbLfo,
+      kerbDepth,
+      gravelNoise,
+      gravelFilter,
+      gravelGain: gravelGainNode,
+      crackleFilter,
+      crackleBus,
+    };
+    this.applyGains();
+  }
+
+  private disposeEffects(): void {
+    const fx = this.effectNodes;
+    if (!fx) return;
+    this.effectNodes = null;
+    for (const src of [fx.windNoise, fx.kerbNoise, fx.gravelNoise, fx.kerbLfo]) {
+      try {
+        src.stop();
+      } catch {
+        /* never started */
+      }
+      try {
+        src.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    }
+    for (const node of [fx.windFilter, fx.windGain, fx.kerbFilter, fx.kerbAmp, fx.kerbDepth, fx.gravelFilter, fx.gravelGain, fx.crackleFilter, fx.crackleBus]) {
+      try {
+        node.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    }
+  }
+
+  private scheduleCrackle(offsets: readonly number[]): void {
+    const fx = this.effectNodes;
+    if (!fx || !this.running) return;
+    const now = this.ctx.currentTime;
+    for (const offset of offsets) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.ensureNoiseBuffer();
+      const g = this.ctx.createGain();
+      const t0 = now + offset;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(CRACKLE_GAIN, t0 + CRACKLE_ATTACK_S);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + CRACKLE_ATTACK_S + CRACKLE_DECAY_S);
+      src.connect(g);
+      g.connect(fx.crackleFilter);
+      this.scheduledCrackle.add(src);
+      src.onended = () => {
+        this.scheduledCrackle.delete(src);
+        try {
+          src.disconnect();
+        } catch {
+          /* already disconnected */
+        }
+        try {
+          g.disconnect();
+        } catch {
+          /* already disconnected */
+        }
+      };
+      try {
+        src.start(t0);
+        src.stop(t0 + CRACKLE_ATTACK_S + CRACKLE_DECAY_S);
+      } catch {
+        /* context rejects scheduling */
+      }
+    }
   }
 
   private initWorklet(): void {
@@ -346,13 +587,20 @@ export class EngineAudio {
   }
 
   private createNoiseSource(): AudioBufferSourceNode {
-    const rate = this.ctx.sampleRate;
-    const buffer = this.ctx.createBuffer(1, Math.max(1, Math.floor(rate)), rate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
+    source.buffer = this.ensureNoiseBuffer();
     source.loop = true;
     return source;
+  }
+
+  private ensureNoiseBuffer(): AudioBuffer {
+    if (!this.noiseBuffer) {
+      const rate = this.ctx.sampleRate;
+      const buffer = this.ctx.createBuffer(1, Math.max(1, Math.floor(rate)), rate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      this.noiseBuffer = buffer;
+    }
+    return this.noiseBuffer;
   }
 }

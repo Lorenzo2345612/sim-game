@@ -159,6 +159,8 @@ let engineAudio: EngineAudio | null = null;
 let audioResumed = false;
 
 const NO_SLIP: readonly number[] = [0, 0, 0, 0];
+// Reused per frame by updateEffects; never reallocated in the loop.
+const effectState = { speed: 0, surface: 'asphalt' as Surface, shifting: false, slipRatios: [0, 0, 0, 0] };
 
 const TONE_MAPPING_NAMES: Record<number, string> = {
   [THREE.NoToneMapping]: 'None',
@@ -504,6 +506,7 @@ async function startGame(trackId: string): Promise<void> {
   if (!specRes.ok) throw new Error(`Could not load ${carId}.json`);
   const baseSpec = parseCarSpec(await specRes.json());
   engineAudio?.setSound(baseSpec.sound);
+  engineAudio?.setLimiterRpm(baseSpec.engine.limiterRpm);
 
   const gameOpts = loadGameOptions(window.localStorage);
   const qCompound = params.get('compound');
@@ -919,6 +922,7 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   let autoGearbox = true;
+  let lastGear = game.gear();
   let paused = false;
   let running = true;
   let last = -1;
@@ -985,6 +989,18 @@ async function startGame(trackId: string): Promise<void> {
 
       updateGhostCar(info.currentLapTime);
       engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
+      const gearNow = game.gear();
+      effectState.speed = Math.abs(interp.forwardSpeed);
+      effectState.surface = game.surfaceUnderCar();
+      effectState.shifting = gearNow !== lastGear;
+      lastGear = gearNow;
+      for (let i = 0; i < 4; i++) {
+        const w = telemetry.wheels[i];
+        const kappa = Math.abs(w.kappa);
+        const alpha = Math.abs(w.alpha);
+        effectState.slipRatios[i] = kappa > alpha ? kappa : alpha;
+      }
+      engineAudio?.updateEffects(effectState);
     } else {
       gamepad.rumble(0, 0, performance.now());
     }
@@ -1013,6 +1029,7 @@ async function startGame(trackId: string): Promise<void> {
     }
     game.dispose();
     game = next;
+    lastGear = game.gear();
     gameSpec = nextSpec;
     activeCompound = baseSpec.tyres.compounds[tune.compound];
     tyresData.compound = tune.compound;
