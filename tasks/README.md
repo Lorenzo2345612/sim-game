@@ -208,4 +208,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 204 | Sepang style data (`sepang.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
 | 205 | Lusail style data (`lusail.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
-| 207 | UI polish: shared theme, HUD and menus | in progress | - |
+| 207 | UI polish: shared theme, HUD and menus | done | - |

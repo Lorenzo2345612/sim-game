@@ -2978,7 +2978,7 @@
     {
       "num": "207",
       "title": "UI polish: shared theme, HUD and menus",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
