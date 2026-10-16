@@ -22,7 +22,7 @@ export interface SetupRange {
 export type SetupRanges = Record<SetupKey, SetupRange>;
 export type PresetName = 'stable' | 'balanced' | 'aggressive';
 export type PresetSetup = Record<SetupKey, number>;
-export type TyreName = 'soft' | 'medium' | 'hard';
+export type TyreName = 'soft' | 'medium' | 'hard' | 'inter' | 'wet';
 
 export interface TyreCompound {
   mu0: number;
@@ -416,10 +416,19 @@ export function parseCarSpec(json: unknown): CarSpec {
 
   const optPressureKpa = num(json, 'tyres.optPressureKpa');
   const pressureKpa = optNum(json, 'tyres.pressureKpa') ?? optPressureKpa;
+  const medium = compound(json, 'tyres.compounds.medium');
   const compounds = {
     soft: compound(json, 'tyres.compounds.soft'),
-    medium: compound(json, 'tyres.compounds.medium'),
+    medium,
     hard: compound(json, 'tyres.compounds.hard'),
+    inter:
+      pick(json, 'tyres.compounds.inter') === undefined
+        ? { ...medium, mu0: medium.mu0 * 0.93 }
+        : compound(json, 'tyres.compounds.inter'),
+    wet:
+      pick(json, 'tyres.compounds.wet') === undefined
+        ? { ...medium, mu0: medium.mu0 * 0.88 }
+        : compound(json, 'tyres.compounds.wet'),
   };
 
   const aero = {
