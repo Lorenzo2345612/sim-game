@@ -1,0 +1,10 @@
+*
+!package.json
+!package-lock.json
+!index.html
+!vite.config.ts
+!tsconfig.json
+!src
+!public
+!tools
+!deploy/web

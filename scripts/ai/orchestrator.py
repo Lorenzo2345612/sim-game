@@ -121,6 +121,18 @@ def prefetch_set():
     return {n for m in later if m.get("status") != "approved" for n in m.get("prefetch", [])}
 
 
+def publish(mid):
+    """Push master and the milestone tag to GitHub; Railway deploys branch `release` (deploy/web)."""
+    for args in (("push", "-q", "origin", "master"), ("push", "-q", "-f", "origin", f"refs/tags/{mid.lower()}"),
+                 ("push", "-q", "-f", "origin", "HEAD:refs/heads/release")):
+        r = git(*args)
+        if r.returncode != 0:
+            event(None, "publish", f"{mid} git {' '.join(args)} FAILED: {r.stderr.strip()[-200:]}")
+            return False
+    event(None, "publish", f"{mid} pushed; Railway deploys release")
+    return True
+
+
 def build_milestone(m):
     """Build a playable bundle into builds/<id>/, tag the commit and stop for user approval."""
     out = BUILDS / m["id"]
@@ -131,6 +143,7 @@ def build_milestone(m):
     ok = build.returncode == 0
     if ok:
         git("tag", "-f", m["id"].lower())
+        publish(m["id"])
     ms = read_milestones()
     for x in ms:
         if x["id"] == m["id"]:
