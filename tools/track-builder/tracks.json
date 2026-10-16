@@ -120,7 +120,13 @@
       { "atMeters": -500, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 12, "roof": false },
       { "atMeters": 2800, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
-    "pit": { "fromMeters": -400, "toMeters": 190, "side": "left" }
+    "pit": { "fromMeters": -400, "toMeters": 190, "side": "left" },
+    "banking": [
+      { "fromMeters": 2290, "toMeters": 3180, "degrees": 31, "raisedSide": "right" },
+      { "fromMeters": 3180, "toMeters": 3680, "degrees": 2, "raisedSide": "right" },
+      { "fromMeters": 4090, "toMeters": 5150, "degrees": 31, "raisedSide": "right" },
+      { "fromMeters": 5150, "toMeters": 160, "degrees": 18, "raisedSide": "right" }
+    ]
   },
   {
     "id": "lusail",

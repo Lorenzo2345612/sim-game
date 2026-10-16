@@ -4,7 +4,12 @@ export interface Quat { x: number; y: number; z: number; w: number }
 /** Normalised driver controls. steer: -1 = full left, +1 = full right. */
 export interface DriverInput { throttle: number; brake: number; steer: number; reset: boolean; shiftUp?: boolean; shiftDown?: boolean; overtake?: boolean; ersCycle?: boolean }
 
-export interface SpawnPose { position: Vec3; yaw: number }
+export interface SpawnPose {
+  position: Vec3;
+  yaw: number;
+  /** Roll in radians about the car's local forward axis, positive = right side up. */
+  roll?: number;
+}
 
 export interface WheelState {
   /** Wheel centre in world space. */
@@ -93,5 +98,7 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   /** Metres from the centerline to the left/right edge per index; absent when no section is narrowed. */
   halfWidthLeft?: number[];
   halfWidthRight?: number[];
+  /** Cross-slope in radians per centerline index; positive = right edge higher. Absent or zero = flat. */
+  bank?: number[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

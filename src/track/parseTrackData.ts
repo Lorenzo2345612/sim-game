@@ -12,7 +12,7 @@ function validateBarriers(barriers: unknown): void {
   }
 }
 
-/** Validates fetched track JSON; v2 gets `environment`, `escapeRoads`, `boards` and `sausages` defaulted. */
+/** Validates fetched track JSON; v2 gets `environment`, `escapeRoads`, `boards`, `sausages` and `bank` defaulted. */
 export function parseTrackData(json: unknown): TrackData | TrackDataV2 {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) {
     throw new Error('Track data must be an object');
@@ -25,6 +25,10 @@ export function parseTrackData(json: unknown): TrackData | TrackDataV2 {
     if (!Array.isArray(out.escapeRoads)) out.escapeRoads = [] as EscapeRoad[];
     if (!Array.isArray(out.boards)) out.boards = [] as Board[];
     if (!Array.isArray(out.sausages)) out.sausages = [] as Sausage[];
+    if (!Array.isArray(out.bank)) {
+      const n = Array.isArray(out.centerline) ? (out.centerline as unknown[]).length : 0;
+      out.bank = new Array<number>(n).fill(0);
+    }
     return out as unknown as TrackDataV2;
   }
   return obj as unknown as TrackData;

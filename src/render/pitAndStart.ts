@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Terrain, TrackDataV2 } from '../core/types';
+import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
 export interface StartLights { object: THREE.Group; setLights(n: number): void }
@@ -75,12 +76,18 @@ export function createPitBuilding(track: TrackDataV2): THREE.Group {
 
   const samples: number[] = [];
   const n = track.centerline.length;
-  for (let i = track.pit.start; ; i = (i + 1) % n) {
-    samples.push(track.elevation[i]);
-    if (i === track.pit.end) break;
-  }
   const near = track.widthMeters / 2 + EDGE_OFFSET;
   const far = near + BUILDING_DEPTH;
+  const sideSign = track.pit.side === 'right' ? 1 : -1;
+  for (let i = track.pit.start; ; i = (i + 1) % n) {
+    samples.push(track.elevation[i]);
+    // Cross-slope of the ground beside the track at the building's offsets.
+    const tanB = bankTanAt(track, i);
+    if (tanB !== 0) {
+      samples.push(track.elevation[i] + sideSign * near * tanB, track.elevation[i] + sideSign * far * tanB);
+    }
+    if (i === track.pit.end) break;
+  }
   if (track.terrain) {
     const corner = (u: number, v: number): number =>
       terrainY(track.terrain, sx + dx * u + nx * v, sz + dz * u + nz * v);
@@ -143,9 +150,12 @@ export function createStartGantry(track: TrackDataV2): THREE.Group {
   const group = new THREE.Group();
   group.position.set(track.centerline[0][0], track.elevation[0], track.centerline[0][1]);
   group.rotation.y = tangentYaw(track);
+  // Local +z is the right of the driving direction: each pillar base sits on the banked ground.
+  const tanB = bankTanAt(track, 0);
   for (const sign of [-1, 1]) {
     const pillar = new THREE.Mesh(pillarGeometry, material);
     pillar.name = 'gantry';
+    pillar.position.y = sign * pillarZ * tanB;
     pillar.position.z = sign * pillarZ;
     group.add(pillar);
   }

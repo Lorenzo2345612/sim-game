@@ -10,6 +10,7 @@ import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
 import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
 import { layoutBarriers } from './barriers';
+import { bankProfile, type BankRange } from './banking';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
 import { clipPitRange } from './pitRange';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
@@ -37,6 +38,7 @@ interface TrackConfig extends TrackSourceConfig {
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
   sausages?: SausageOverride[];
+  banking?: BankRange[];
   landmarks?: { kind: LandmarkKind; lon: number; lat: number; height: number; heading?: number }[];
 }
 
@@ -104,6 +106,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const cum = cumulativeLengths(centerline);
 
   const spacing = lapLength / centerline.length;
+  const bank = bankProfile(cum, lapLength, config.banking ?? []);
   const smoothed = smoothProfile(centerlineHeights(grid, centerline, origin), spacing, config.profileSigmaM ?? 60);
   // Grade is Δh per actual segment run, so the shortest segment binds the uniform clamp
   let minRun = Infinity;
@@ -142,7 +145,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const escapeRoads = detectEscapeRoads(centerline);
   const boards = buildBoards(centerline, config.widthMeters, barriers);
   const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
-  const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
+  const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset, bank);
   const biome = biomeFor(config.environment ?? 'parkland', config.biome);
   const trees = placeTrees(config.id, centerline, terrain, barriers, biome);
   const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
@@ -165,6 +168,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     version: 2,
     environment: config.environment ?? 'parkland',
     elevation,
+    bank,
     kerbs: kerbsFinal,
     runoffs: runoffsFinal,
     barriers,

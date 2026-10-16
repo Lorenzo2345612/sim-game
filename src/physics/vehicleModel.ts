@@ -135,6 +135,16 @@ function newWheel(mount: [number, number, number], x0: number, pos: [number, num
   };
 }
 
+/** Body rotation of a spawn pose: yaw about Y, then roll about the local Z axis (positive = right side up). */
+function spawnRotation(spawn: SpawnPose): RAPIER.Rotation {
+  const sy = Math.sin(spawn.yaw / 2);
+  const cy = Math.cos(spawn.yaw / 2);
+  const r = spawn.roll ?? 0;
+  const sz = Math.sin(r / 2);
+  const cz = Math.cos(r / 2);
+  return { x: sy * sz, y: sy * cz, z: cy * sz, w: cy * cz };
+}
+
 // In-house tyre/suspension/powertrain model on a Rapier rigid body (task 065).
 // Per tick: rays + suspension, gravity-predicted slip, powertrain/aids, solveWheel, aero, impulses.
 export class VehicleModel {
@@ -183,12 +193,7 @@ export class VehicleModel {
   constructor(world: RAPIER.World, spec: CarSpec, spawn: SpawnPose) {
     this.world = world;
     this.spec = spec;
-    const q: RAPIER.Rotation = {
-      x: 0,
-      y: Math.sin(spawn.yaw / 2),
-      z: 0,
-      w: Math.cos(spawn.yaw / 2),
-    };
+    const q = spawnRotation(spawn);
     this.body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(spawn.position.x, spawn.position.y, spawn.position.z)
@@ -742,12 +747,7 @@ export class VehicleModel {
   }
 
   reset(spawn: SpawnPose): void {
-    const q: RAPIER.Rotation = {
-      x: 0,
-      y: Math.sin(spawn.yaw / 2),
-      z: 0,
-      w: Math.cos(spawn.yaw / 2),
-    };
+    const q = spawnRotation(spawn);
     this.body.setTranslation(spawn.position, true);
     this.body.setRotation(q, true);
     this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);

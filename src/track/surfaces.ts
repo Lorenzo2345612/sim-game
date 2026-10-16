@@ -116,6 +116,12 @@ export function halfWidthAt(track: TrackDataV2, side: Side, i: number): number {
   return v === undefined ? track.widthMeters / 2 : v;
 }
 
+/** tan of the per-index cross-slope; 0 when the track has no banking. */
+export function bankTanAt(track: TrackDataV2, i: number): number {
+  const b = track.bank?.[i];
+  return b === undefined || b === 0 ? 0 : Math.tan(b);
+}
+
 /**
  * Index of a centerline point whose asphalt contains (x, z): |lateral| <=
  * halfWidthAt - margin (per side) with the projection inside the point's own
@@ -210,7 +216,7 @@ function segmentRows(
   start: number,
   end: number,
   latOf: Lateral,
-  yOf: (idx: number) => number,
+  yOf: (idx: number, lat: number) => number,
   vScale: number,
 ): Vertex[][] {
   const cx = track.centerline;
@@ -236,11 +242,10 @@ function segmentRows(
     prevZ = z;
     const [latMin, latMax, u0, u1] = latOf(idx);
     const [rx, rz] = rightNormal(cx, idx);
-    const y = yOf(idx);
     const v = s / vScale;
     rows.push([
-      { x: x + rx * latMin, y, z: z + rz * latMin, u: u0, v },
-      { x: x + rx * latMax, y, z: z + rz * latMax, u: u1, v },
+      { x: x + rx * latMin, y: yOf(idx, latMin), z: z + rz * latMin, u: u0, v },
+      { x: x + rx * latMax, y: yOf(idx, latMax), z: z + rz * latMax, u: u1, v },
     ]);
   }
   // Re-base v on the original start row so it stays 0 there and negative on the pre-row.
@@ -313,12 +318,13 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
       }
     }
     const y = track.elevation[i] ?? 0;
+    const tanB = bankTanAt(track, i);
     const [rx, rz] = rightNormal(cx, i);
     const v = s / UV_SCALE;
     const cols: Vertex[] = [
-      { x: cx[i][0] + rx * sign * outer, y: y - VERGE_DROP, z: cx[i][1] + rz * sign * outer, u: (sign * outer) / UV_SCALE, v },
-      { x: cx[i][0] + rx * sign * flat, y, z: cx[i][1] + rz * sign * flat, u: (sign * flat) / UV_SCALE, v },
-      { x: cx[i][0] + rx * sign * inner, y, z: cx[i][1] + rz * sign * inner, u: (sign * inner) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * outer, y: y + sign * outer * tanB - VERGE_DROP, z: cx[i][1] + rz * sign * outer, u: (sign * outer) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * flat, y: y + sign * flat * tanB, z: cx[i][1] + rz * sign * flat, u: (sign * flat) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * inner, y: y + sign * inner * tanB, z: cx[i][1] + rz * sign * inner, u: (sign * inner) / UV_SCALE, v },
     ];
     // makeStrip expects columns ordered by increasing lateral.
     if (sign > 0) cols.reverse();
@@ -371,7 +377,8 @@ export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
           road.points[i][1] - road.points[i - 1][1],
         );
       }
-      // Vertex y follows the elevation of the nearest centerline point by XZ distance.
+      // Vertex y follows the elevation and cross-slope of the nearest centerline
+      // point by XZ distance, at the vertex's signed offset from that centerline.
       let best = 0;
       let bestD2 = Infinity;
       for (let k = 0; k < track.centerline.length; k++) {
@@ -383,14 +390,27 @@ export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
           best = k;
         }
       }
-      const y = (track.elevation[best] ?? 0) + RUNOFF_Y;
+      const [brx, brz] = rightNormal(track.centerline, best);
+      const [bx, bz] = track.centerline[best];
+      const base = (track.elevation[best] ?? 0) + RUNOFF_Y;
+      const tanB = bankTanAt(track, best);
       const [rx, rz] = roadLateral(road.points, i);
       const [x, z] = road.points[i];
       const v = s / UV_SCALE;
-      rows.push([
-        { x: x - rx * half, y, z: z - rz * half, u: -half / UV_SCALE, v },
-        { x: x + rx * half, y, z: z + rz * half, u: half / UV_SCALE, v },
-      ]);
+      const cols: Array<[number, number, number]> = [
+        [x - rx * half, z - rz * half, -half],
+        [x + rx * half, z + rz * half, half],
+      ];
+      rows.push(
+        cols.map(([vx, vz, lat]) => ({
+          x: vx,
+          // Each column lifts by its own signed offset from the centerline.
+          y: base + ((vx - bx) * brx + (vz - bz) * brz) * tanB,
+          z: vz,
+          u: lat / UV_SCALE,
+          v,
+        })),
+      );
     }
     strips.push(rewindToMajority(makeStrip('runoff', rows, false)));
   }
@@ -506,12 +526,13 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
     const [rx, rz] = rightNormal(cx, i);
     const y = elev(i) + ASPHALT_Y;
+    const tanB = bankTanAt(track, i);
     const v = s / UV_SCALE;
     const halfL = halfWidthAt(track, 'left', i);
     const halfR = halfWidthAt(track, 'right', i);
     asphaltRows.push([
-      { x: cx[i][0] - rx * halfL, y, z: cx[i][1] - rz * halfL, u: -halfL / UV_SCALE, v },
-      { x: cx[i][0] + rx * halfR, y, z: cx[i][1] + rz * halfR, u: halfR / UV_SCALE, v },
+      { x: cx[i][0] - rx * halfL, y: y - halfL * tanB, z: cx[i][1] - rz * halfL, u: -halfL / UV_SCALE, v },
+      { x: cx[i][0] + rx * halfR, y: y + halfR * tanB, z: cx[i][1] + rz * halfR, u: halfR / UV_SCALE, v },
     ]);
   }
   strips.push(makeStrip('asphalt', asphaltRows, true));
@@ -530,7 +551,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
         const latOuter = sign * (halfWidthAt(track, seg.side, idx) + KERB_WIDTH);
         return [Math.min(latInner, latOuter), Math.max(latInner, latOuter), uMin, 1 - uMin];
       },
-      (idx) => elev(idx) + KERB_Y,
+      (idx, lat) => elev(idx) + KERB_Y + lat * bankTanAt(track, idx),
       KERB_UV_V,
     );
     if (rows.length > 0) strips.push(makeStrip('kerb', rows, false));
@@ -563,7 +584,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
         const latMax = Math.max(inner, outer);
         return [latMin, latMax, latMin / UV_SCALE, latMax / UV_SCALE];
       },
-      (idx) => elev(idx) + RUNOFF_Y,
+      (idx, lat) => elev(idx) + RUNOFF_Y + lat * bankTanAt(track, idx),
       UV_SCALE,
     );
     if (rows.length > 0) strips.push(makeStrip(seg.surface, rows, false));

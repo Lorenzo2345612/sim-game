@@ -46,9 +46,20 @@ function nearestIndex(g: CellGrid, x: number, z: number, centerline: Point2[]): 
   return best;
 }
 
+function rightNormalAt(cx: Point2[], i: number): [number, number] {
+  const n = cx.length;
+  const prev = cx[(i - 1 + n) % n];
+  const next = cx[(i + 1) % n];
+  const dx = next[0] - prev[0];
+  const dz = next[1] - prev[1];
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-9) return [0, -1];
+  return [-dz / len, dx / len];
+}
+
 export function buildTerrain(
   grid: DemGrid, centerline: Point2[], elevation: number[],
-  origin: LonLat, widthMeters: number, maxBarrierOffset: number,
+  origin: LonLat, widthMeters: number, maxBarrierOffset: number, bank?: number[],
 ): Terrain {
   if (centerline.length < 2) {
     throw new Error('buildTerrain: centerline needs >= 2 points');
@@ -98,7 +109,12 @@ export function buildTerrain(
       const idx = nearestIndex(cells, x, z, centerline);
       if (idx >= 0) {
         const d = Math.hypot(x - centerline[idx][0], z - centerline[idx][1]);
-        const flat = elevation[idx] - DIP;
+        // The corridor follows the cross-slope so the banked sections blend back
+        // to the natural height instead of stepping at the verge edge.
+        const bankAngle = bank === undefined ? 0 : bank[idx] ?? 0;
+        const [rx, rz] = rightNormalAt(centerline, idx);
+        const lateral = (x - centerline[idx][0]) * rx + (z - centerline[idx][1]) * rz;
+        const flat = elevation[idx] - DIP + lateral * (bankAngle === 0 ? 0 : Math.tan(bankAngle));
         if (d <= corridor) {
           h = flat;
         } else if (d < corridor + BLEND) {

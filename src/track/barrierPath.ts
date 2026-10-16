@@ -1,5 +1,5 @@
 import type { BarrierSegment, Side, TrackDataV2 } from '../core/types';
-import { halfWidthAt } from './surfaces';
+import { bankTanAt, halfWidthAt } from './surfaces';
 
 export interface BarrierVertex {
   index: number;
@@ -60,7 +60,7 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
       index: i,
       x: cx[i][0] + sign * seg.offsetMeters * rx,
       z: cx[i][1] + sign * seg.offsetMeters * rz,
-      y: track.elevation[i] ?? 0,
+      y: (track.elevation[i] ?? 0) + sign * seg.offsetMeters * bankTanAt(track, i),
       type: seg.type,
     };
   };

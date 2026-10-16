@@ -1,5 +1,5 @@
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
-import { halfWidthAt } from './surfaces';
+import { bankTanAt, halfWidthAt } from './surfaces';
 
 const MARKING_Y = 0.025;
 const EDGE_WIDTH = 0.12;
@@ -84,11 +84,12 @@ function edgeLine(track: TrackDataV2, sign: 1 | -1): SurfaceStrip {
     const lats = sign > 0 ? [inner, half] : [-half, -inner];
     const [rx, rz] = rightNormal(cx, i);
     const y = (track.elevation[i] ?? 0) + MARKING_Y;
+    const tanB = bankTanAt(track, i);
     const v = s / UV_SCALE;
     rows.push(
       lats.map((lat) => ({
         x: cx[i][0] + rx * lat,
-        y,
+        y: y + lat * tanB,
         z: cx[i][1] + rz * lat,
         u: lat / UV_SCALE,
         v,
@@ -108,9 +109,17 @@ function startLine(track: TrackDataV2): SurfaceStrip {
   const z = cx[0][1] + (cx[1][1] - cx[0][1]) * t;
   const [rx, rz] = rightNormal(cx, 0);
   const y = (track.elevation[0] ?? 0) + MARKING_Y;
+  // Both rows belong to index 0, so they share its cross-slope; the advanced row
+  // measures d from its own position, projected on the index-0 normal.
+  const tanB = bankTanAt(track, 0);
   const rows: Vertex[][] = [
-    [-half, half].map((lat) => ({ x: cx[0][0] + rx * lat, y, z: cx[0][1] + rz * lat, u: lat / UV_SCALE, v: 0 })),
-    [-half, half].map((lat) => ({ x: x + rx * lat, y, z: z + rz * lat, u: lat / UV_SCALE, v: START_LENGTH / UV_SCALE })),
+    [-half, half].map((lat) => ({ x: cx[0][0] + rx * lat, y: y + lat * tanB, z: cx[0][1] + rz * lat, u: lat / UV_SCALE, v: 0 })),
+    [-half, half].map((lat) => {
+      const vx = x + rx * lat;
+      const vz = z + rz * lat;
+      const d = (vx - cx[0][0]) * rx + (vz - cx[0][1]) * rz;
+      return { x: vx, y: y + d * tanB, z: vz, u: lat / UV_SCALE, v: START_LENGTH / UV_SCALE };
+    }),
   ];
   return makeStrip('asphalt', rows, false);
 }

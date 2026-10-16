@@ -46,9 +46,11 @@ export function spawnFromTrack(track: TrackData | TrackDataV2): SpawnPose {
   const dx = next[0] - p[0];
   const dz = next[1] - p[1];
   const ground = 'elevation' in track ? track.elevation[n - 5] ?? 0 : 0;
+  const roll = 'elevation' in track ? track.bank?.[n - 5] ?? 0 : 0;
   return {
     position: { x: p[0], y: ground + 0.6, z: p[1] },
     yaw: Math.atan2(-dx, -dz),
+    roll,
   };
 }
 
@@ -249,9 +251,11 @@ export class Game {
     const p = centerline[idx];
     const next = centerline[(idx + 1) % n];
     const ground = 'elevation' in this.track ? this.track.elevation[idx] ?? 0 : 0;
+    const roll = 'elevation' in this.track ? this.track.bank?.[idx] ?? 0 : 0;
     this.vehicle.reset({
       position: { x: p[0], y: ground + 0.6, z: p[1] },
       yaw: Math.atan2(-(next[0] - p[0]), -(next[1] - p[1])),
+      roll,
     });
     this.progress.reset();
     this.lapTimer.reset();

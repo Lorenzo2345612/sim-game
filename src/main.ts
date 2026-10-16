@@ -49,7 +49,7 @@ import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
-import { buildTrackSurfaces } from './track/surfaces';
+import { bankTanAt, buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
@@ -429,6 +429,7 @@ function isSoftwareGl(renderer: THREE.WebGLRenderer): boolean {
   return /swiftshader|llvmpipe|software/i.test(String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)));
 }
 
+/** Ground height of a trackside point: centerline elevation plus its cross-slope at the signed lateral offset. */
 function nearestElevation(track: TrackDataV2, x: number, z: number): number {
   let best = 0;
   let bestD2 = Infinity;
@@ -441,7 +442,14 @@ function nearestElevation(track: TrackDataV2, x: number, z: number): number {
       best = i;
     }
   }
-  return track.elevation[best] ?? 0;
+  const n = track.centerline.length;
+  const prev = track.centerline[(best - 1 + n) % n];
+  const next = track.centerline[(best + 1) % n];
+  const tx = next[0] - prev[0];
+  const tz = next[1] - prev[1];
+  const len = Math.hypot(tx, tz) || 1;
+  const lat = ((x - track.centerline[best][0]) * -tz + (z - track.centerline[best][1]) * tx) / len;
+  return (track.elevation[best] ?? 0) + lat * bankTanAt(track, best);
 }
 
 /** Time and distance along the centerline of every ghost sample, for the lap-delta lookup. */

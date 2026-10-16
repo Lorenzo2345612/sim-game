@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Board, TrackDataV2 } from '../core/types';
+import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
 export interface DistanceBoards { group: THREE.Group; count: number; dispose(): void }
@@ -96,7 +97,7 @@ export function createDistanceBoards(track: TrackDataV2, makeAtlas?: () => THREE
       const nx = -tz;
       const nz = tx;
       const sign = b.side === 'right' ? 1 : -1;
-      const y = track.elevation[i] ?? 0;
+      const y = (track.elevation[i] ?? 0) + sign * b.offset * bankTanAt(track, i);
       const px = centerline[i][0] + nx * sign * b.offset;
       const pz = centerline[i][1] + nz * sign * b.offset;
 
