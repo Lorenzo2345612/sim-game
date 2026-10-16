@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 2
-Depends on: 092, 093
+Depends on: 092
 Complexity: simple
 Type: feature
 Models: standard

@@ -1741,8 +1741,7 @@
       "title": "Track limits strikes",
       "status": "pending",
       "deps": [
-        "092",
-        "093"
+        "092"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -1755,8 +1754,7 @@
       "title": "Yellow and blue flags",
       "status": "pending",
       "deps": [
-        "092",
-        "093"
+        "092"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -1770,8 +1768,7 @@
       "status": "pending",
       "deps": [
         "088",
-        "092",
-        "093"
+        "092"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -1834,9 +1831,7 @@
       "num": "133",
       "title": "Replay recorder (all cars)",
       "status": "pending",
-      "deps": [
-        "093"
-      ],
+      "deps": [],
       "complexity": "simple",
       "type": "feature",
       "models": "standard",
