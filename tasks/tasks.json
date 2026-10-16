@@ -3044,6 +3044,28 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/212-ghost-delta-wrap.md"
+    },
+    {
+      "num": "213",
+      "title": "Consistent tyre compounds for GT3, LMP2 and Hypercar",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/213-compound-consistency.md"
+    },
+    {
+      "num": "214",
+      "title": "Track conditions: asphalt abrasion and track temperature",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/214-track-conditions.md"
     }
   ]
 }
