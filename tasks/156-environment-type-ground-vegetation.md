@@ -75,3 +75,10 @@ npx playwright test 156-   # this task's e2e files only; never the full e2e suit
 
 - City buildings, water, landmarks, street furniture (157–160).
 - New textures or models (planner installs them); per-track biome tuning beyond the defaults above.
+
+## Planner-authorised test edits
+
+The new top-level `environment` key breaks the pinned-JSON comparisons of older tasks. The coder adds `delete <copy>.environment;` (same pattern as the existing `sausages` deletions) to the strip/pin helpers in exactly these places and changes nothing else in them:
+- `tests/unit/acceptance/106-new-tracks-in-game.test.ts` (helper around lines 54-69)
+- `tests/unit/acceptance/097-terrain-below-strips.test.ts` (helper around lines 160-182)
+- `tests/unit/acceptance/155-close-parallel.test.ts` (helper around lines 468-476)
