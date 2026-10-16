@@ -594,11 +594,22 @@ def write_decision(d):
         (DECISIONS / f"{d['num']}-{d['stage']}.json").write_text(json.dumps(d, indent=2) + "\n")
 
 
+def claude_5h_used():
+    """Last cached 5 h usage of the Claude subscription (percent); unknown counts as full."""
+    try:
+        d = json.loads((ROOT / ".ai/usage-claude.json").read_text())
+        return next(w["used"] for w in d["windows"] if w["window"] == "5h")
+    except Exception:
+        return 100
+
+
 def claude_argv(var, name):
     cmd = os.environ.get(var)
     if cmd is None and not os.environ.get("ORCH_ROOT"):
         cmd = "default"
     if not cmd or cmd == "off":
+        return None
+    if cmd == "default" and claude_5h_used() >= 85:
         return None
     if cmd != "default":
         return shlex.split(cmd)
