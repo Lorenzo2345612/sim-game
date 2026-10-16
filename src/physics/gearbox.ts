@@ -15,7 +15,7 @@ const WHEEL_RADIUS_M = 0.33;
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const MIN_GEAR = 1;
 const REVERSE_RATIO = 3.0;
-const REVERSE_MAX_SPEED_MS = 30 / 3.6;
+export const REVERSE_MAX_SPEED_MS = 30 / 3.6;
 export const STOP_SPEED_MS = 0.5;
 export const REVERSE_HOLD_S = 0.4;
 

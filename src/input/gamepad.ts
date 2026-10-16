@@ -1,6 +1,7 @@
 import type { DriverInput } from '../core/types';
 
 export const GAMEPAD_DEADZONE = 0.08;
+export const TRIGGER_DEADZONE = 0.1;
 
 const BUTTON_SHIFT_DOWN = 4;
 const BUTTON_SHIFT_UP = 5;
@@ -22,6 +23,8 @@ const ignoreRejection = (result: unknown): void => {
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 const largerMag = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
+
+const triggerValue = (v: number): number => (v < TRIGGER_DEADZONE ? 0 : v);
 
 const buttonPressed = (pad: Gamepad, index: number): boolean => {
   const b = pad.buttons[index];
@@ -68,8 +71,8 @@ export class GamepadInput {
     const x = pad.axes.length > 0 ? pad.axes[0] : 0;
     const axis = Number.isFinite(x) ? x : 0;
     this.steer = Math.abs(axis) < GAMEPAD_DEADZONE ? 0 : clamp(axis, -1, 1);
-    this.throttle = buttonValue(pad, BUTTON_THROTTLE);
-    this.brake = buttonValue(pad, BUTTON_BRAKE);
+    this.throttle = triggerValue(buttonValue(pad, BUTTON_THROTTLE));
+    this.brake = triggerValue(buttonValue(pad, BUTTON_BRAKE));
 
     const down = buttonPressed(pad, BUTTON_SHIFT_DOWN);
     if (down && !this.prevShiftDown) this.shiftDownPending = true;

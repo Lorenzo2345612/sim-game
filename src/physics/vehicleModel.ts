@@ -1,6 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { CarSpec, TyreCompound, TyreName } from './carSpec';
-import { Gearbox, GearboxMode } from './gearbox';
+import { Gearbox, GearboxMode, REVERSE_MAX_SPEED_MS } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
 import { GRAVITY, SURFACE_GRIP } from '../core/constants';
 import { surfaceOf } from './trackColliders';
@@ -447,7 +447,13 @@ export class VehicleModel {
     const thr = this.input.throttle * tcScale(spec.aids.tc, this.drivenKappas);
     const rpmVal = engineRpm(spec, gear, omegaMean, thr);
     const rpmRaw = Math.abs(omegaMean * ratioTot) * RPM_PER_RPS;
-    const thrDrive = gear === -1 ? this.input.brake : thr;
+    // Past the reverse cap the drive is cut; engine braking (te < 0) still applies.
+    const thrDrive =
+      gear === -1
+        ? forwardSpeed <= -REVERSE_MAX_SPEED_MS
+          ? 0
+          : this.input.brake
+        : thr;
     let te = this.tank.empty() ? 0 : engineTorque(spec.engine, rpmVal, thrDrive);
     if (te < 0) {
       te *= Math.min(1, Math.max(0, (rpmRaw - spec.engine.idleRpm) / ENGINE_BRAKE_RAMP_RPM));
