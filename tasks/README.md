@@ -132,7 +132,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 128 | Yellow and blue flags | pending | 092, 093 |
 | 129 | Virtual safety car | pending | 088, 092, 093 |
 | 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
-| 131 | Telemetry recorder and store | in progress | 050, 070 |
+| 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | pending | 093 |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |

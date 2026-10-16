@@ -1802,7 +1802,7 @@
     {
       "num": "131",
       "title": "Telemetry recorder and store",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "050",
         "070"
