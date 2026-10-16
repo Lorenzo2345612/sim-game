@@ -3000,7 +3000,7 @@
     {
       "num": "209",
       "title": "Setup panel v2, tyre compound choice and setup overlay",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "208"
       ],

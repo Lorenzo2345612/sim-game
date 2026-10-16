@@ -210,5 +210,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 206 | Painted strip outside the kerbs | pending | 187 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | done | - |
-| 209 | Setup panel v2, tyre compound choice and setup overlay | in progress | 208 |
+| 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
