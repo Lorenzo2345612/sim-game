@@ -17,6 +17,15 @@ export interface EngineAudioStats {
   firingHz: number;
 }
 
+/** Context plus the bus gains and engine filter the Mixer drives. */
+export interface AudioMixNodes {
+  ctx: AudioContext;
+  master: GainNode;
+  engine: GainNode;
+  effects: GainNode;
+  engineFilter: BiquadFilterNode;
+}
+
 const SMOOTHING = 0.05;
 const SQUEAL_ON = 0.1;
 const SQUEAL_FULL = 0.2;
@@ -36,6 +45,7 @@ const CRACKLE_GAIN = 0.4;
 const CRACKLE_ATTACK_S = 0.004;
 const CRACKLE_DECAY_S = 0.05;
 const CRACKLE_BAND_HZ = 2000;
+const MIX_BYPASS_HZ = 22050;
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
@@ -107,6 +117,7 @@ export class EngineAudio {
   private noiseBuffer: AudioBuffer | null = null;
   private effectNodes: EffectNodes | null = null;
   private readonly scheduledCrackle = new Set<AudioBufferSourceNode>();
+  private mix: Omit<AudioMixNodes, 'ctx'> | null = null;
 
   constructor(
     createContext: () => AudioContext = () => new AudioContext(),
@@ -285,6 +296,49 @@ export class EngineAudio {
     if (!this.disposed) this.applyGains();
   }
 
+  /** Builds the mixer bus once and re-routes engine and effects through it; earlier connections are replaced. */
+  mixerNodes(): AudioMixNodes {
+    if (!this.mix) {
+      const now = this.ctx.currentTime;
+      const master = this.ctx.createGain();
+      const engine = this.ctx.createGain();
+      const effects = this.ctx.createGain();
+      const engineFilter = this.ctx.createBiquadFilter();
+      engineFilter.type = 'lowpass';
+      engineFilter.frequency.setValueAtTime(MIX_BYPASS_HZ, now);
+      engineFilter.Q.setValueAtTime(0.7, now);
+      engineFilter.connect(engine);
+      engine.connect(master);
+      effects.connect(master);
+      master.connect(this.ctx.destination);
+      this.lowpass.disconnect();
+      this.lowpass.connect(engineFilter);
+      this.squealGain.disconnect();
+      this.squealGain.connect(effects);
+      if (this.workletGain) {
+        this.workletGain.disconnect();
+        this.workletGain.connect(engineFilter);
+      }
+      const fx = this.effectNodes;
+      if (fx) {
+        for (const node of [fx.windGain, fx.kerbAmp, fx.gravelGain, fx.crackleBus]) {
+          node.disconnect();
+          node.connect(effects);
+        }
+      }
+      this.mix = { master, engine, effects, engineFilter };
+    }
+    return { ctx: this.ctx, ...this.mix };
+  }
+
+  private engineSink(): AudioNode {
+    return this.mix?.engineFilter ?? this.ctx.destination;
+  }
+
+  private effectsSink(): AudioNode {
+    return this.mix?.effects ?? this.ctx.destination;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -321,6 +375,15 @@ export class EngineAudio {
         node.disconnect();
       } catch {
         /* already disconnected */
+      }
+    }
+    if (this.mix) {
+      for (const node of [this.mix.master, this.mix.engine, this.mix.effects, this.mix.engineFilter]) {
+        try {
+          node.disconnect();
+        } catch {
+          /* already disconnected */
+        }
       }
     }
     try {
@@ -373,7 +436,7 @@ export class EngineAudio {
     const windGainNode = this.ctx.createGain();
     windNoise.connect(windFilter);
     windFilter.connect(windGainNode);
-    windGainNode.connect(this.ctx.destination);
+    windGainNode.connect(this.effectsSink());
 
     const kerbNoise = this.createNoiseSource();
     const kerbFilter = this.ctx.createBiquadFilter();
@@ -389,7 +452,7 @@ export class EngineAudio {
     kerbDepth.connect(kerbAmp.gain);
     kerbNoise.connect(kerbFilter);
     kerbFilter.connect(kerbAmp);
-    kerbAmp.connect(this.ctx.destination);
+    kerbAmp.connect(this.effectsSink());
 
     const gravelNoise = this.createNoiseSource();
     const gravelFilter = this.ctx.createBiquadFilter();
@@ -399,7 +462,7 @@ export class EngineAudio {
     const gravelGainNode = this.ctx.createGain();
     gravelNoise.connect(gravelFilter);
     gravelFilter.connect(gravelGainNode);
-    gravelGainNode.connect(this.ctx.destination);
+    gravelGainNode.connect(this.effectsSink());
 
     const crackleFilter = this.ctx.createBiquadFilter();
     crackleFilter.type = 'bandpass';
@@ -407,7 +470,7 @@ export class EngineAudio {
     crackleFilter.Q.setValueAtTime(1, now);
     const crackleBus = this.ctx.createGain();
     crackleFilter.connect(crackleBus);
-    crackleBus.connect(this.ctx.destination);
+    crackleBus.connect(this.effectsSink());
 
     for (const src of [windNoise, kerbNoise, gravelNoise, kerbLfo]) {
       try {
@@ -546,7 +609,7 @@ export class EngineAudio {
       });
       const gain = this.ctx.createGain();
       node.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.engineSink());
       this.workletNode = node;
       this.workletGain = gain;
     } catch {

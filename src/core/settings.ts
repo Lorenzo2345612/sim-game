@@ -134,3 +134,46 @@ export function saveGameOptions(storage: KeyValueStorage, opts: GameOptions): vo
     JSON.stringify({ ...storedSettings(storage), wear: opts.wear, fuel: opts.fuel, compound: opts.compound }),
   );
 }
+
+export interface Volumes {
+  master: number;
+  engine: number;
+  effects: number;
+}
+
+export const DEFAULT_VOLUMES: Volumes = { master: 0.8, engine: 1, effects: 1 };
+
+/** Finite numbers clamp to [0, 1]; missing or corrupt values fall back per field. */
+function volumeField(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+/** Stored volumes under the `volume` key; missing or corrupt entries read as the defaults. */
+export function loadVolumes(storage: KeyValueStorage): Volumes {
+  const volume = storedSettings(storage).volume;
+  if (typeof volume !== 'object' || volume === null || Array.isArray(volume)) {
+    return { ...DEFAULT_VOLUMES };
+  }
+  const stored = volume as { master?: unknown; engine?: unknown; effects?: unknown };
+  return {
+    master: volumeField(stored.master, DEFAULT_VOLUMES.master),
+    engine: volumeField(stored.engine, DEFAULT_VOLUMES.engine),
+    effects: volumeField(stored.effects, DEFAULT_VOLUMES.effects),
+  };
+}
+
+/** Writes volumes into settings, keeping every other stored key (e.g. preset). */
+export function saveVolumes(storage: KeyValueStorage, v: Volumes): void {
+  storage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify({
+      ...storedSettings(storage),
+      volume: {
+        master: volumeField(v.master, DEFAULT_VOLUMES.master),
+        engine: volumeField(v.engine, DEFAULT_VOLUMES.engine),
+        effects: volumeField(v.effects, DEFAULT_VOLUMES.effects),
+      },
+    }),
+  );
+}

@@ -5,11 +5,12 @@ import './ui/hudTyres.css';
 import './ui/setupHud.css';
 import * as THREE from 'three';
 import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
+import { Mixer } from './audio/mixer';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
-import { loadGameOptions, loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
+import { loadGameOptions, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
@@ -158,6 +159,7 @@ let session: Session | null = null;
 let rendererHandle: RendererHandle | null = null;
 // Page-lifetime audio: one AudioContext, created suspended and resumed on first gesture.
 let engineAudio: EngineAudio | null = null;
+let mixer: Mixer | null = null;
 let audioResumed = false;
 
 const NO_SLIP: readonly number[] = [0, 0, 0, 0];
@@ -493,6 +495,7 @@ async function startGame(trackId: string): Promise<void> {
   menu?.hide();
   // "Change track" leaves the audio paused behind the menu; a new session must not inherit it.
   engineAudio?.setPaused(false);
+  mixer?.setPaused(false);
   if (status) {
     status.textContent = 'Loading…';
     status.style.display = '';
@@ -1024,6 +1027,7 @@ async function startGame(trackId: string): Promise<void> {
   const resume = (): void => {
     paused = false;
     engineAudio?.setPaused(false);
+    mixer?.setPaused(false);
     menu?.hide();
   };
 
@@ -1111,6 +1115,7 @@ async function startGame(trackId: string): Promise<void> {
       }
       paused = true;
       engineAudio?.setPaused(true);
+      mixer?.setPaused(true);
       showPauseMenu();
       return;
     }
@@ -1118,6 +1123,7 @@ async function startGame(trackId: string): Promise<void> {
     switch (event.code) {
       case 'KeyC':
         cameraRig.next();
+        mixer?.setCameraMode(cameraRig.mode);
         break;
       case 'KeyQ':
         game.shiftDown();
@@ -1235,6 +1241,8 @@ async function main(): Promise<void> {
   menu = new Menu(menuRoot, window.localStorage, showLiveryEditor);
 
   engineAudio = new EngineAudio();
+  const mixNodes = engineAudio.mixerNodes();
+  mixer = new Mixer(mixNodes.ctx, mixNodes, loadVolumes(window.localStorage));
   window.addEventListener('keydown', resumeAudio, { once: true });
   document.addEventListener('click', resumeAudio, { once: true });
 
