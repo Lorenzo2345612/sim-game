@@ -3,6 +3,7 @@ import { FIXED_DT } from '../core/constants';
 import { copyVehicleState, createVehicleState } from '../core/interpolation';
 import type { DriverInput, LapEvent, SpawnPose, Surface, TrackData, TrackDataV2, VehicleState } from '../core/types';
 import { cumulativeLengths } from '../track/centerline';
+import { conditionsFor, type TrackConditions } from '../track/trackConditions';
 import { LapTimer } from '../track/lapTimer';
 import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
@@ -66,6 +67,7 @@ export class Game {
   private fuelSumKg = 0;
   private fuelLaps = 0;
   private reverseHoldT = 0;
+  private conditions: TrackConditions = conditionsFor('');
 
   private constructor(
     world: World,
@@ -101,6 +103,8 @@ export class Game {
       vehicle.setCompound(tune.compound);
       vehicle.setMultipliers(tune.wear, tune.fuel);
     }
+    const conditions = conditionsFor(track.id);
+    vehicle.setTrackConditions(conditions);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [
@@ -112,7 +116,13 @@ export class Game {
     vehicle.getState(current);
     const prev = createVehicleState(4);
     copyVehicleState(current, prev);
-    return new Game(world, vehicle, spawn, track, progress, lapTimer, prev, current);
+    const game = new Game(world, vehicle, spawn, track, progress, lapTimer, prev, current);
+    game.conditions = conditions;
+    return game;
+  }
+
+  trackConditions(): TrackConditions {
+    return this.conditions;
   }
 
   get simTime(): number {

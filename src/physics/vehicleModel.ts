@@ -9,9 +9,10 @@ import { rollingDrag } from './surfaceDrag';
 import { antiRoll, staticCompression, suspensionForce } from './suspension';
 import { relaxAlpha, V_LOW } from './tyre';
 import { dirtGripFactor, updateDirt } from './tyreDirt';
-import { gripFactor, newTyreState, updateTyreState, TyreState } from './tyreState';
+import { AMBIENT_C, gripFactor, newTyreState, updateTyreState, TyreState } from './tyreState';
 import { diffSplit, engineRpm, engineTorque } from './powertrain';
 import { absScale, brakeTorques, tcScale } from './brakes';
+import { trackWearMult, type TrackConditions } from '../track/trackConditions';
 import { FuelTank } from './fuel';
 import { solveWheel, WheelSolveInput, WheelSolveOutput } from './wheelSolver';
 import { aeroForces, AeroForces } from './aero';
@@ -164,6 +165,8 @@ export class VehicleModel {
   private compoundSpec: TyreCompound;
   private pressureKpa: number;
   private wearMult = 1;
+  private trackWearMult = 1;
+  private ambientC = AMBIENT_C;
   private fuelMult = 1;
   private massSet = -1;
   private steer = 0;
@@ -247,6 +250,11 @@ export class VehicleModel {
     this.compound = name;
     this.compoundSpec = this.spec.tyres.compounds[name];
     for (const w of this.wheels) w.tyre = newTyreState();
+  }
+
+  setTrackConditions(c: TrackConditions): void {
+    this.trackWearMult = trackWearMult(c);
+    this.ambientC = c.trackTempC;
   }
 
   setMultipliers(wear: number, fuel: number): void {
@@ -523,9 +531,10 @@ export class VehicleModel {
           slipPower,
           speed,
           dt,
-          this.wearMult,
+          this.wearMult * this.trackWearMult,
           this.pressureKpa,
           spec.tyres.optPressureKpa,
+          this.ambientC,
         );
       } else {
         w.kappa = 0;
@@ -535,9 +544,10 @@ export class VehicleModel {
           0,
           speed,
           dt,
-          this.wearMult,
+          this.wearMult * this.trackWearMult,
           this.pressureKpa,
           spec.tyres.optPressureKpa,
+          this.ambientC,
         );
       }
     }

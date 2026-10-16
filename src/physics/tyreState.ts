@@ -20,13 +20,14 @@ export function updateTyreState(
   wearMult: number,
   pressureKpa: number,
   optPressureKpa: number,
+  ambientC: number = AMBIENT_C,
 ): void {
   const power = Number.isFinite(slipPower) && slipPower > 0 ? slipPower : 0;
   const step = Number.isFinite(dt) && dt > 0 ? dt : 0;
   const mult = Number.isFinite(wearMult) && wearMult > 0 ? wearMult : 0;
   const spd = Number.isFinite(speed) && speed > 0 ? speed : 0;
   const heat = c.heatCoef * (pressureKpa / optPressureKpa) * power;
-  const cool = c.coolCoef * (s.tempC - AMBIENT_C) * (1 + 0.05 * spd);
+  const cool = c.coolCoef * (s.tempC - ambientC) * (1 + 0.05 * spd);
   s.tempC += (heat - cool) * step;
   s.wear = Math.min(1, Math.max(0, s.wear + c.wearRate * power * mult * step));
 }
