@@ -3081,7 +3081,7 @@
     {
       "num": "216",
       "title": "ERS energy model",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "215"
       ],
@@ -3105,7 +3105,7 @@
     {
       "num": "218",
       "title": "Active-aero state and aero blend",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "215"
       ],
@@ -3134,7 +3134,7 @@
     {
       "num": "220",
       "title": "Overtake and ERS mode controls",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "215"
       ],
