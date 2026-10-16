@@ -30,7 +30,7 @@ function tracksWithPit(): Array<{ id: string; track: TrackDataV2 }> {
   const dir = join(ROOT, 'public', 'tracks');
   const out: Array<{ id: string; track: TrackDataV2 }> = [];
   for (const name of readdirSync(dir)) {
-    if (!name.endsWith('.json')) continue;
+    if (!name.endsWith('.json') || name.endsWith('-env.json') || name.endsWith('.style.json')) continue;
     const track = JSON.parse(readFileSync(join(dir, name), 'utf8')) as TrackDataV2;
     if (track.pit) out.push({ id: track.id, track });
   }

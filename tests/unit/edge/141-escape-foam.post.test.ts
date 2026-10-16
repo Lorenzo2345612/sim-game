@@ -215,7 +215,9 @@ describe('141 escape road / foam post-coder gaps', () => {
   it('POST7: every shipped track has terrain clamped below its escape road strips (regeneration ran)', () => {
     const dir = join(ROOT, 'public', 'tracks');
     let sampled = 0;
-    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+    for (const file of readdirSync(dir).filter(
+      (f) => f.endsWith('.json') && !f.endsWith('-env.json') && !f.endsWith('.style.json'),
+    )) {
       const track = JSON.parse(readFileSync(join(dir, file), 'utf8')) as TrackDataV2;
       const roads = track.escapeRoads ?? [];
       if (roads.length === 0 || !track.terrain) continue;

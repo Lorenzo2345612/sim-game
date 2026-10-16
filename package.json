@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "build:tracks": "tsx tools/track-builder/buildTrack.ts",
+    "build:env": "tsx tools/env/bakeCity.ts",
     "build:track-index": "tsx tools/track-builder/buildTrackIndex.ts",
     "track:locate": "tsx tools/track-style/locate.ts",
     "check:styles": "tsx tools/track-style/checkStyles.ts",

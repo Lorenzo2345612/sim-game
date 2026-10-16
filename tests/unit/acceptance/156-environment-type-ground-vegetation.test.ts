@@ -29,7 +29,13 @@ const EXPECTED: Record<string, string> = {
 
 describe('156 environment type ground vegetation', () => {
   it('AT1: every track JSON in public/tracks declares the environment of the mapping', () => {
-    const files = readdirSync(TRACKS_DIR).filter((f) => f.endsWith('.json') && f !== 'index.json');
+    const files = readdirSync(TRACKS_DIR).filter(
+      (f) =>
+        f.endsWith('.json') &&
+        f !== 'index.json' &&
+        !f.endsWith('-env.json') &&
+        !f.endsWith('.style.json'),
+    );
     expect(files.length, 'track JSON files found').toBeGreaterThanOrEqual(Object.keys(EXPECTED).length);
     for (const file of files) {
       const id = file.replace(/\.json$/, '');
