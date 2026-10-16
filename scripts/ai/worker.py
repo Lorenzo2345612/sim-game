@@ -44,7 +44,7 @@ REPORT_LIMIT = 4000
 CLAUDE_MARGIN = 0.15  # stop subscription workers at 85 % of the 5 h window so it never passes 90 %
 HEAVY_TIMEOUT_MIN = 40  # heavy runs (hard tasks, stall retries) may generate for longer
 DEFAULT_STALL_MIN = 8  # kill a worker whose session transcript has not changed for this long
-QUOTA_PATTERNS = ("429", "402", "quota", "insufficient", "balance", "rate limit", "rate_limit",
+QUOTA_PATTERNS = ("429", "402", "403", "access to model denied", "not eligible", "quota", "insufficient", "balance", "rate limit", "rate_limit",
                   "usage limit", "exceeded", "余额", "限额", "额度")
 
 # Variables from the parent Claude Code session that must not leak into the worker.
