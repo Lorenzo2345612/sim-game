@@ -83,6 +83,12 @@ export function savePreset(storage: KeyValueStorage, preset: Preset): void {
   storage.setItem(SETTINGS_KEY, JSON.stringify({ ...storedSettings(storage), preset }));
 }
 
+/** Stored mirror toggle; missing or non-boolean values read as true (on). */
+export function loadMirrorSetting(storage: KeyValueStorage): boolean {
+  const mirror = storedSettings(storage).mirror;
+  return typeof mirror === 'boolean' ? mirror : true;
+}
+
 export type CompoundOption = 'soft' | 'medium' | 'hard';
 
 export interface GameOptions {

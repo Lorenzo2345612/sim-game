@@ -58,6 +58,16 @@ describe('savePreset / loadPreset round-trip', () => {
     savePreset(storage, 'low');
     expect(storage.getItem(SETTINGS_KEY)).toBe(first);
   });
+
+  it('keeps unrelated keys already in the stored object', () => {
+    const storage = new MapStorage();
+    storage.setItem(SETTINGS_KEY, JSON.stringify({ mirror: false, volume: { master: 0.5 } }));
+    savePreset(storage, 'medium');
+    const parsed = JSON.parse(storage.getItem(SETTINGS_KEY) as string) as Record<string, unknown>;
+    expect(parsed.preset).toBe('medium');
+    expect(parsed.mirror).toBe(false);
+    expect(parsed.volume).toEqual({ master: 0.5 });
+  });
 });
 
 describe('presetSettings', () => {

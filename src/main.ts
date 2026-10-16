@@ -10,7 +10,7 @@ import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
-import { loadGameOptions, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
+import { loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
@@ -24,6 +24,7 @@ import type { Telemetry } from './physics/vehicle';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
+import { VirtualMirror } from './render/mirror';
 import { createSteeringWheel, disposeSteeringWheel, setSteeringWheelAngle } from './render/steeringWheel';
 import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
 import { createTrackObject } from './render/trackRenderer';
@@ -112,6 +113,7 @@ declare global {
         passes: PassName[];
         exposure: number;
         bloom: { strength: number; threshold: number } | null;
+        mirrorRenders: number;
       };
       drawCalls(): number;
       cameraMode(): CameraMode;
@@ -766,6 +768,9 @@ async function startGame(trackId: string): Promise<void> {
   cameraRig.setCockpitEye(baseSpec.cockpit.eye);
   cameraRig.update(game.getCurrentState(), 0);
 
+  const mirror = new VirtualMirror(document.body, camera.far);
+  const mirrorEnabled = loadMirrorSetting(window.localStorage);
+
   const keyboard = new KeyboardInput(window);
   const gamepad = new GamepadInput();
 
@@ -938,6 +943,8 @@ async function startGame(trackId: string): Promise<void> {
   let running = true;
   let last = -1;
   let rafId = 0;
+  // Counts visible frames so the mirror renders on every other one.
+  let mirrorTick = 0;
   let fpsAvg = 0;
   const frameStats = { fps: 0, drawCalls: 0 };
 
@@ -1016,6 +1023,11 @@ async function startGame(trackId: string): Promise<void> {
       gamepad.rumble(0, 0, performance.now());
     }
     cockpitWheel.visible = cameraRig.mode === 'cockpit';
+    const mirrorVisible = mirrorEnabled && cameraRig.mode !== 'chase';
+    mirror.setVisible(mirrorVisible);
+    if (mirrorVisible && mirrorTick++ % 2 === 0) {
+      mirror.render(handle.renderer, scene, interp.position, interp.rotation);
+    }
     if (frame > 0) fpsAvg += (1 / frame - fpsAvg) * 0.1;
     frameStats.fps = fpsAvg;
     frameStats.drawCalls = handle.renderer.info.render.calls;
@@ -1151,6 +1163,7 @@ async function startGame(trackId: string): Promise<void> {
     hudTyres.dispose();
     minimap.dispose();
     fpsOverlay.dispose();
+    mirror.dispose();
     setupHud.dispose();
     setupPanel.dispose();
     game.dispose();
@@ -1210,6 +1223,7 @@ async function startGame(trackId: string): Promise<void> {
       bloom: post.bloom
         ? { strength: post.bloom.strength, threshold: post.bloom.threshold }
         : null,
+      mirrorRenders: mirror.renders,
     }),
     drawCalls: () => handle.renderer.info.render.calls,
     cameraMode: () => cameraRig.mode,
