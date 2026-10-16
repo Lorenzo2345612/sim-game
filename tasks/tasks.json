@@ -2989,7 +2989,7 @@
     {
       "num": "208",
       "title": "Tyre HUD details and dirt tuning",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
