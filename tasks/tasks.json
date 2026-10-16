@@ -2174,7 +2174,7 @@
     {
       "num": "157",
       "title": "City bake from OSM: buildings, old-city walls, water",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "106"
       ],
