@@ -16,6 +16,8 @@ import { trackWearMult, type TrackConditions } from '../track/trackConditions';
 import { FuelTank } from './fuel';
 import { solveWheel, WheelSolveInput, WheelSolveOutput } from './wheelSolver';
 import { aeroForces, AeroForces } from './aero';
+import { Ers, type ErsInput } from './ers';
+import { ActiveAero } from './activeAero';
 
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const ENGINE_BRAKE_RAMP_RPM = 1500;
@@ -140,6 +142,13 @@ export class VehicleModel {
   private readonly world: RAPIER.World;
   private readonly spec: CarSpec;
   private readonly input: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
+  private readonly ers?: Ers;
+  private readonly activeAero?: ActiveAero;
+  private readonly ersIn: ErsInput = { speedMs: 0, throttle: 0, brake: 0, overtake: false };
+  private readonly ersTel: ErsTelemetry = { socFrac: 0, powerW: 0, mode: 'balance', overtake: false, clipping: false, lapDeployJ: 0, lapHarvestJ: 0, deployCapJ: 0 };
+  private readonly aeroTel: AeroTelemetry = { blend: 0, inZone: false };
+  private ersCyclePrev = false;
+  private aeroZone = false;
   private readonly gearbox: Gearbox;
   private readonly tank: FuelTank;
   private readonly wheels: WheelModel[];
@@ -192,6 +201,8 @@ export class VehicleModel {
     this.tank = new FuelTank(spec.fuel);
     this.compoundSpec = spec.tyres.compounds[this.compound];
     this.pressureKpa = spec.tyres.pressureKpa;
+    if (spec.hybrid) this.ers = new Ers(spec.hybrid);
+    if (spec.activeAero) this.activeAero = new ActiveAero(spec.activeAero);
 
     // Static corner loads from the dry mass set the ride height the spec asks for.
     const pos = spec.wheels.positions;
@@ -216,6 +227,16 @@ export class VehicleModel {
     this.input.throttle = clampControl(input.throttle, 0, 1);
     this.input.brake = clampControl(input.brake, 0, 1);
     this.input.steer = clampControl(input.steer, -1, 1);
+    this.input.overtake = input.overtake ?? false;
+    this.input.ersCycle = input.ersCycle ?? false;
+  }
+
+  setAeroZone(inZone: boolean): void {
+    this.aeroZone = inZone;
+  }
+
+  ersNewLap(): void {
+    this.ers?.newLap();
   }
 
   gear(): number {
@@ -472,6 +493,21 @@ export class VehicleModel {
     const driveActive = gb.driveScale(forwardSpeed) > 0; // 0 while shifting or on the limiter
     te *= driveActive ? 1 : 0;
     if (te > 0) this.tank.burn((te * rpmVal) / RPM_PER_RPS, dt, this.fuelMult);
+    const ers = this.ers;
+    let tK = 0;
+    if (ers) {
+      const ci = this.input.ersCycle === true;
+      if (ci && !this.ersCyclePrev) ers.cycleMode();
+      this.ersCyclePrev = ci;
+      const ei = this.ersIn;
+      ei.speedMs = gear >= 1 && driveActive && !this.tank.empty() ? forwardSpeed : 0;
+      ei.throttle = thr;
+      ei.brake = this.input.brake;
+      ei.overtake = this.input.overtake ?? false;
+      const powerW = ers.step(ei, dt);
+      tK = powerW / (Math.max(rpmVal, spec.engine.idleRpm) / RPM_PER_RPS);
+      te += tK;
+    }
     const tIn = te * ratioTot * spec.gearbox.efficiency;
     const split = diffSplit(spec.diff, tIn, wheels[2].omega, wheels[3].omega, tIn >= 0);
     // Reflected engine inertia, except while the clutch slips or the box shifts.
@@ -480,6 +516,11 @@ export class VehicleModel {
         ? 0
         : (ratioTot * ratioTot * spec.engine.inertia) / 2;
     brakeTorques(spec.brakes, gb.brakeRequest(this.input), spec.brakes.bias, this.brakeT);
+    if (ers && ers.powerW < 0 && this.input.brake >= 0.05) {
+      const cut = Math.abs(tK * ratioTot * spec.gearbox.efficiency) / 2;
+      this.brakeT[2] = Math.max(0, this.brakeT[2] - cut);
+      this.brakeT[3] = Math.max(0, this.brakeT[3] - cut);
+    }
     const mass = this.massSet;
     const share = mass / 4;
     const wheelInertia = spec.wheels.inertia;
@@ -553,7 +594,10 @@ export class VehicleModel {
     }
 
     // Aero: downforce at the axle centres, drag at the CoM. rideDrop = static − current height.
-    aeroForces(spec, speed, meanX, undefined, this.aeroOut);
+    const blend = this.activeAero
+      ? this.activeAero.update(this.aeroZone, this.input.throttle, this.input.brake, dt)
+      : undefined;
+    aeroForces(spec, speed, meanX, undefined, this.aeroOut, blend);
     rotVec(q, 0, 0, spec.wheels.positions[0][2]);
     tmpPoint.x = p.x + rv.x;
     tmpPoint.y = p.y + rv.y;
@@ -635,6 +679,23 @@ export class VehicleModel {
     t.fuelKg = this.tank.massKg;
     t.rpm = this.rpm();
     t.gear = this.gearbox.gear;
+    const ers = this.ers;
+    if (ers) {
+      const e = (t.ers ??= this.ersTel);
+      e.socFrac = ers.socFrac;
+      e.powerW = ers.powerW;
+      e.mode = ers.mode;
+      e.overtake = ers.overtakeActive;
+      e.clipping = ers.clipping;
+      e.lapDeployJ = ers.lapDeployJ;
+      e.lapHarvestJ = ers.lapHarvestJ;
+      e.deployCapJ = ers.deployCapJ;
+    } else if (out) t.ers = undefined;
+    if (this.activeAero) {
+      const a = (t.aero ??= this.aeroTel);
+      a.blend = this.activeAero.blend;
+      a.inZone = this.aeroZone;
+    } else if (out) t.aero = undefined;
     return t;
   }
 
@@ -708,5 +769,11 @@ export class VehicleModel {
     this.input.throttle = 0;
     this.input.brake = 0;
     this.input.steer = 0;
+    this.input.overtake = false;
+    this.input.ersCycle = false;
+    this.ersCyclePrev = false;
+    this.ers?.reset();
+    this.activeAero?.reset();
+    this.aeroZone = false;
   }
 }

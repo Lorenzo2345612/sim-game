@@ -4,6 +4,7 @@ import { copyVehicleState, createVehicleState } from '../core/interpolation';
 import type { DriverInput, LapEvent, SpawnPose, Surface, TrackData, TrackDataV2, VehicleState } from '../core/types';
 import { cumulativeLengths } from '../track/centerline';
 import { conditionsFor, type TrackConditions } from '../track/trackConditions';
+import { deriveAeroZones, inAeroZone, type AeroZone } from '../track/aeroZones';
 import { LapTimer } from '../track/lapTimer';
 import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
@@ -68,6 +69,8 @@ export class Game {
   private fuelLaps = 0;
   private reverseHoldT = 0;
   private conditions: TrackConditions = conditionsFor('');
+  private readonly zones: AeroZone[];
+  private lastDistance = 0;
 
   private constructor(
     world: World,
@@ -88,6 +91,11 @@ export class Game {
     this.prev = prev;
     this.current = current;
     this.fuelLapStartKg = vehicle.getTelemetry().fuelKg;
+    this.zones = deriveAeroZones(track.centerline);
+  }
+
+  aeroZones(): readonly AeroZone[] {
+    return this.zones;
   }
 
   static async create(
@@ -136,6 +144,7 @@ export class Game {
       this.vehicle.reset(this.spawn);
       this.progress.reset();
       this.lapTimer.reset();
+      this.lastDistance = 0;
     }
     // Auto-mode reverse UX (task 178): the rule lives here, not in VehicleModel.
     if (this.vehicle.gearMode() !== 'auto' || input.reset) {
@@ -158,6 +167,7 @@ export class Game {
       }
     }
     this.vehicle.setInput(input);
+    this.vehicle.setAeroZone(inAeroZone(this.zones, this.lastDistance, this.progress.length));
     this.vehicle.prePhysicsStep(FIXED_DT);
     this.world.step();
     this.time += FIXED_DT;
@@ -167,9 +177,13 @@ export class Game {
       this.events.push(...this.lapTimer.invalidate());
     }
     const sample = this.progress.update(this.current.position.x, this.current.position.z);
+    this.lastDistance = sample.distance;
     const lapEvents = this.lapTimer.update(sample.distance, this.time);
     for (const ev of lapEvents) {
-      if (ev.type === 'lapStarted') this.fuelLapStartKg = this.vehicle.getTelemetry().fuelKg;
+      if (ev.type === 'lapStarted') {
+        this.fuelLapStartKg = this.vehicle.getTelemetry().fuelKg;
+        this.vehicle.ersNewLap();
+      }
       else if (ev.type === 'lapCompleted') this.closeLapFuel();
     }
     this.events.push(...lapEvents);
@@ -241,6 +255,7 @@ export class Game {
     });
     this.progress.reset();
     this.lapTimer.reset();
+    this.lastDistance = 0;
   }
 
   /**
