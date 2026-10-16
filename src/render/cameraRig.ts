@@ -21,6 +21,9 @@ export class CameraRig {
   private readonly cockpitEye: Vec3 = { ...COCKPIT_OFFSET };
   private current: CameraMode = 'chase';
   private shakeScale = 1;
+  private headX = 0;
+  private headZ = 0;
+  private cockpitFov = COCKPIT_FOV;
 
   constructor(camera: THREE.PerspectiveCamera) {
     this.camera = camera;
@@ -35,7 +38,7 @@ export class CameraRig {
   set mode(m: CameraMode) {
     if (m === this.current) return;
     this.current = m;
-    this.camera.fov = m === 'cockpit' ? COCKPIT_FOV : this.initialFov;
+    this.camera.fov = m === 'cockpit' ? this.cockpitFov : this.initialFov;
     this.camera.updateProjectionMatrix();
   }
 
@@ -52,7 +55,12 @@ export class CameraRig {
     }
     const offset = this.current === 'tcam' ? TCAM_OFFSET : this.cockpitEye;
     this.rotation.set(state.rotation.x, state.rotation.y, state.rotation.z, state.rotation.w);
-    this.offset.set(offset.x, offset.y, offset.z).applyQuaternion(this.rotation);
+    this.offset.set(offset.x, offset.y, offset.z);
+    if (this.current === 'cockpit') {
+      this.offset.x += this.headX;
+      this.offset.z += this.headZ;
+    }
+    this.offset.applyQuaternion(this.rotation);
     this.camera.position.set(
       state.position.x + this.offset.x,
       state.position.y + this.offset.y,
@@ -65,6 +73,19 @@ export class CameraRig {
     this.cockpitEye.x = eye.x;
     this.cockpitEye.y = eye.y;
     this.cockpitEye.z = eye.z;
+  }
+
+  setHeadOffset(x: number, z: number): void {
+    this.headX = x;
+    this.headZ = z;
+  }
+
+  setCockpitFov(fov: number): void {
+    this.cockpitFov = fov;
+    if (this.current === 'cockpit') {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   setShakeScale(s: number): void {

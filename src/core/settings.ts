@@ -89,6 +89,21 @@ export function loadMirrorSetting(storage: KeyValueStorage): boolean {
   return typeof mirror === 'boolean' ? mirror : true;
 }
 
+export interface CockpitSettings {
+  cockpitFov: number;
+  headMotion: boolean;
+}
+
+/** Cockpit FOV clamped to [50, 100] (default 75) and head-motion toggle (default true). */
+export function loadCockpitSettings(storage: KeyValueStorage): CockpitSettings {
+  const s = storedSettings(storage);
+  const fov = s.cockpitFov;
+  return {
+    cockpitFov: typeof fov === 'number' && Number.isFinite(fov) ? Math.min(100, Math.max(50, fov)) : 75,
+    headMotion: typeof s.headMotion === 'boolean' ? s.headMotion : true,
+  };
+}
+
 export type CompoundOption = 'soft' | 'medium' | 'hard';
 
 export interface GameOptions {

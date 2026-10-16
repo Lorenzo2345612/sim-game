@@ -10,7 +10,7 @@ import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
-import { loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
+import { loadCockpitSettings, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
@@ -22,6 +22,7 @@ import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import { applySetup, loadSetup } from './physics/setup';
 import type { Telemetry } from './physics/vehicle';
 import { CameraRig, type CameraMode } from './render/cameraRig';
+import { HeadMotion } from './render/headMotion';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
 import { VirtualMirror } from './render/mirror';
@@ -147,6 +148,8 @@ const MAX_SIM_STEPS_PER_FRAME = 240;
 
 // Cockpit steering wheel leans back (top away from the driver); radians.
 const STEERING_WHEEL_TILT = -(20 * Math.PI) / 180;
+
+const G = 9.81;
 
 const status = document.getElementById('status');
 
@@ -764,9 +767,12 @@ async function startGame(trackId: string): Promise<void> {
   scene.add(ghostCar.root);
   disposables.push(ghostCar);
 
+  const cockpitSettings = loadCockpitSettings(window.localStorage);
   const cameraRig = new CameraRig(camera);
   cameraRig.setCockpitEye(baseSpec.cockpit.eye);
+  cameraRig.setCockpitFov(cockpitSettings.cockpitFov);
   cameraRig.update(game.getCurrentState(), 0);
+  const headMotion = new HeadMotion();
 
   const mirror = new VirtualMirror(document.body, camera.far);
   const mirrorEnabled = loadMirrorSetting(window.localStorage);
@@ -819,6 +825,13 @@ async function startGame(trackId: string): Promise<void> {
     deltaSeconds: null,
     lapValid: true,
   };
+
+  // Head motion: car-frame velocity finite difference over the frame (reused temps).
+  const headPrevPos = new THREE.Vector3();
+  const headVel = new THREE.Vector3();
+  const headInvRot = new THREE.Quaternion();
+  const headPrevCar = { x: 0, z: 0 };
+  let headVelPrimed = false;
 
   const carProgress = new TrackProgress(track.centerline);
   const ghostState = createVehicleState(4);
@@ -972,6 +985,33 @@ async function startGame(trackId: string): Promise<void> {
       interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
       car.update(interp);
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
+      let latG = 0;
+      let longG = 0;
+      if (frame > 0) {
+        headVel
+          .set(
+            (interp.position.x - headPrevPos.x) / frame,
+            0,
+            (interp.position.z - headPrevPos.z) / frame,
+          )
+          .applyQuaternion(
+            headInvRot.set(interp.rotation.x, interp.rotation.y, interp.rotation.z, interp.rotation.w).invert(),
+          );
+        // Car faces -Z: forward velocity is -z; latG + = right, longG + = accelerating.
+        const right = headVel.x;
+        const fwd = -headVel.z;
+        if (headVelPrimed) {
+          latG = (right - headPrevCar.x) / frame / G;
+          longG = (fwd - headPrevCar.z) / frame / G;
+        } else {
+          headVelPrimed = true;
+        }
+        headPrevCar.x = right;
+        headPrevCar.z = fwd;
+      }
+      headPrevPos.copy(interp.position);
+      const head = headMotion.update(latG, longG, frame);
+      cameraRig.setHeadOffset(cockpitSettings.headMotion ? head.x : 0, cockpitSettings.headMotion ? head.z : 0);
       cameraRig.update(interp, frame);
       game.getTelemetry(telemetry);
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
@@ -1068,6 +1108,9 @@ async function startGame(trackId: string): Promise<void> {
     sectorTimes[2] = null;
     // dt = 1 s makes the chase camera close the gap in one call (near-snap) after the reset.
     cameraRig.update(game.getCurrentState(), 1);
+    // The teleport would read as one frame of huge acceleration; re-prime the head-motion velocity.
+    headVelPrimed = false;
+    headPrevPos.copy(game.getCurrentState().position);
     loop.reset();
   };
 
