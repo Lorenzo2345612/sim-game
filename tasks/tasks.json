@@ -2443,7 +2443,7 @@
     {
       "num": "177",
       "title": "Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "099"
       ],
