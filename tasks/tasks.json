@@ -1765,7 +1765,7 @@
     {
       "num": "129",
       "title": "Virtual safety car",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "088",
         "092"
