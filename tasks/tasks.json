@@ -2204,7 +2204,7 @@
     {
       "num": "159",
       "title": "Street-circuit trackside: walls, sidewalks, lamps, billboards",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "141",
         "157"

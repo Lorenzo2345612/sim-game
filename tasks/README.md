@@ -160,7 +160,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |
 | 157 | City bake from OSM: buildings, old-city walls, water | done | 106 |
 | 158 | City renderer: buildings, facades, water | done | 099, 157 |
-| 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | in progress | 141, 157 |
+| 159 | Street-circuit trackside: walls, sidewalks, lamps, billboards | done | 141, 157 |
 | 160 | Landmark proxies | done | 158 |
 | 161 | Fix minimap stretched to full screen and engine audio playing while paused | done | - |
 | 162 | Speed-dependent rolling drag on grass and gravel | done | 065, 169 |
