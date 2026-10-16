@@ -1752,7 +1752,7 @@
     {
       "num": "128",
       "title": "Yellow and blue flags",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "092"
       ],

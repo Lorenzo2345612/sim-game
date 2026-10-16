@@ -129,7 +129,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
-| 128 | Yellow and blue flags | in progress | 092 |
+| 128 | Yellow and blue flags | done | 092 |
 | 129 | Virtual safety car | in progress | 088, 092 |
 | 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
