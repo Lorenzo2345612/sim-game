@@ -2159,7 +2159,7 @@
     {
       "num": "156",
       "title": "Environment type per track: ground palette and vegetation",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "081",
         "101",
@@ -2174,7 +2174,7 @@
     {
       "num": "157",
       "title": "City bake from OSM: buildings, old-city walls, water",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "106"
       ],
@@ -2402,7 +2402,7 @@
     {
       "num": "174",
       "title": "Track banking (cross-slope) + Daytona",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "106",
         "155"
@@ -2443,7 +2443,7 @@
     {
       "num": "177",
       "title": "Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "099"
       ],
@@ -2452,6 +2452,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/177-hdri-halffloat-clamp.md"
+    },
+    {
+      "num": "178",
+      "title": "Auto-mode reverse (standstill brake engages reverse)",
+      "status": "pending",
+      "deps": [
+        "065"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/178-auto-reverse.md"
     }
   ]
 }
