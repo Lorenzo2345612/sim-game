@@ -77,6 +77,7 @@ export class Minimap {
     this.canvas = ownerDoc.createElement('canvas');
     this.canvas.width = size;
     this.canvas.height = size;
+    this.canvas.className = 'minimap';
     this.canvas.style.position = 'absolute';
     this.canvas.style.top = '12px';
     this.canvas.style.right = '12px';

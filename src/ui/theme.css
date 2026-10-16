@@ -1,0 +1,40 @@
+:root {
+  --ui-bg: rgba(6, 8, 12, 0.94);
+  --ui-panel: rgba(12, 15, 21, 0.62);
+  --ui-panel-solid: #0e1218;
+  --ui-card: #131922;
+  --ui-border: rgba(150, 165, 185, 0.28);
+  --ui-text: #dce1e7;
+  --ui-text-dim: #929cab;
+  --ui-accent: #f2b705;
+  --ui-accent-ink: #14100a;
+  --ui-good: #34d17a;
+  --ui-warn: #f2b705;
+  --ui-bad: #ee4b44;
+  --ui-radius: 8px;
+  --ui-gap: clamp(6px, 0.9vmin, 12px);
+  --ui-font: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', system-ui, sans-serif;
+  --ui-font-num: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', system-ui, sans-serif;
+  --ui-fast: 150ms;
+}
+
+.ui-num {
+  font-family: var(--ui-font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.ui-label {
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ui-fast: 0ms;
+  }
+}

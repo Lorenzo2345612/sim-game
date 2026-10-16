@@ -5,23 +5,24 @@
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 10, 14, 0.94);
+  background: var(--ui-bg);
   backdrop-filter: blur(6px);
-  color: #e6e9ee;
-  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-stretch: condensed;
 }
 
 #menu .menu-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-width: 260px;
+  gap: 12px;
+  min-width: 280px;
   max-height: 90vh;
-  padding: 24px;
+  padding: 28px 32px;
   box-sizing: border-box;
-  background: #0f1318;
-  border: 1px solid #2c3542;
-  border-radius: 10px;
+  background: var(--ui-panel-solid);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
 }
 
 #menu .track-select {
@@ -29,37 +30,126 @@
 }
 
 #menu .menu-title {
-  margin-bottom: 4px;
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
+  position: relative;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  font-size: 30px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+#menu .menu-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 72px;
+  height: 3px;
+  background: var(--ui-accent);
+  transform: skewX(-20deg);
 }
 
 #menu button {
-  padding: 12px 16px;
-  font-size: 16px;
-  background: #1c2430;
-  color: #e6e9ee;
-  border: 1px solid #3a4657;
-  border-radius: 6px;
+  box-sizing: border-box;
+  align-self: flex-start;
+  width: min(200px, 100%);
+  padding: 11px 18px;
+  font: 600 16px var(--ui-font);
+  font-stretch: condensed;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
   cursor: pointer;
+  transition:
+    transform var(--ui-fast),
+    border-color var(--ui-fast),
+    background var(--ui-fast);
 }
 
-#menu button:hover,
+#menu button.btn-primary {
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+#menu button:hover {
+  transform: translateY(-1px);
+  border-color: var(--ui-accent);
+}
+
 #menu button:focus-visible {
-  background: #2a3546;
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 #menu button.selected {
-  border-color: #f2c200;
+  border-color: var(--ui-accent);
+}
+
+#menu .track-body {
+  display: flex;
+  gap: 20px;
+  min-height: 0;
 }
 
 #menu .track-grid {
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
+  align-content: start;
   overflow-y: auto;
   min-height: 0;
+  padding: 4px;
+}
+
+#menu .track-details {
+  flex: 0 0 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--ui-card);
+  border: 1px solid var(--ui-border);
+  border-left: 4px solid var(--ui-accent);
+  border-radius: var(--ui-radius);
+}
+
+#menu .detail-outline {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+#menu .detail-outline path {
+  fill: none;
+  stroke: var(--ui-accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+#menu .detail-name {
+  font-size: 24px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#menu .detail-country,
+#menu .detail-length {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
 }
 
 #menu .track-card {
@@ -67,15 +157,25 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  width: auto;
   padding: 10px;
-  background: #161c24;
-  border: 2px solid #2c3542;
-  border-radius: 8px;
+  background: var(--ui-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
-#menu .track-card:focus {
-  border-color: #f2c200;
-  outline: none;
+#menu .track-card:hover,
+#menu .track-card:focus-visible,
+#menu .track-card.selected {
+  background: #19212c;
+  border-color: var(--ui-accent);
+}
+
+#menu .track-card:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
 }
 
 #menu .track-outline {
@@ -86,46 +186,61 @@
 
 #menu .track-outline path {
   fill: none;
-  stroke: #9aa4b2;
+  stroke: var(--ui-text-dim);
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
+  transition: stroke var(--ui-fast);
 }
 
 #menu .track-card:hover .track-outline path,
-#menu .track-card:focus .track-outline path,
+#menu .track-card:focus-visible .track-outline path,
 #menu .track-card.selected .track-outline path {
-  stroke: #f2c200;
+  stroke: var(--ui-accent);
 }
 
 #menu .track-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #e6e9ee;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ui-text);
 }
 
 #menu .track-meta {
-  font-size: 12px;
-  color: #9aa4b2;
+  font-size: 13px;
+  color: var(--ui-text-dim);
 }
 
 #menu .car-row {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
 }
 
 #menu .car-row label {
-  font-size: 14px;
-  color: #9aa4b2;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
 }
 
 #menu select {
   padding: 8px 12px;
-  font-size: 15px;
-  background: #1c2430;
-  color: #e6e9ee;
-  border: 1px solid #3a4657;
-  border-radius: 6px;
+  font: 600 15px var(--ui-font);
+  color: var(--ui-text);
+  background: var(--ui-card);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+#menu select:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #menu button,
+  #menu .track-outline path {
+    transition: none;
+  }
 }

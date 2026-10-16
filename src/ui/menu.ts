@@ -149,7 +149,7 @@ export class Menu {
     const panel = this.doc.createElement('div');
     panel.className = 'menu-panel';
     panel.appendChild(this.heading('Paused'));
-    panel.appendChild(this.action('Resume', handlers.onResume));
+    panel.appendChild(this.action('Resume', handlers.onResume, true));
     panel.appendChild(this.action('Restart', handlers.onRestart));
     if (handlers.onSetup) panel.appendChild(this.action('Setup', handlers.onSetup));
     panel.appendChild(this.action('Change track', handlers.onChangeTrack));
@@ -237,7 +237,11 @@ export class Menu {
     }
     const picker = this.carPicker(cars);
     if (picker) panel.appendChild(picker);
-    panel.appendChild(grid);
+    const body = this.doc.createElement('div');
+    body.className = 'track-body';
+    body.appendChild(grid);
+    body.appendChild(this.trackDetails(grid, entries));
+    panel.appendChild(body);
     panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
     this.wireCardKeys(grid);
     this.show(panel);
@@ -270,6 +274,41 @@ export class Menu {
       button.appendChild(meta);
     }
     return button;
+  }
+
+  // Side panel built once; focus/hover on a card only rewrites its text and outline path.
+  private trackDetails(grid: HTMLElement, entries: TrackIndexEntry[] | null): HTMLElement {
+    const box = this.doc.createElement('div');
+    box.className = 'track-details';
+    const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'detail-outline');
+    svg.setAttribute('viewBox', '-0.04 -0.04 1.08 1.08');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = this.doc.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(path);
+    const name = this.doc.createElement('div');
+    name.className = 'detail-name';
+    const country = this.doc.createElement('div');
+    country.className = 'detail-country';
+    const length = this.doc.createElement('div');
+    length.className = 'detail-length';
+    box.append(svg, name, country, length);
+    const show = (card: HTMLElement | null): void => {
+      const id = card?.dataset.track;
+      if (!id) return;
+      const entry = entries?.find((candidate) => candidate.id === id) ?? null;
+      name.textContent = entry?.name ?? TRACK_CHOICES.find((c) => c.id === id)?.name ?? id;
+      country.textContent = entry?.country ?? '';
+      length.textContent = entry ? `${entry.lengthKm.toFixed(3)} km` : '';
+      path.setAttribute('d', entry ? outlinePath(entry.outline) : '');
+    };
+    const cardOf = (event: Event): HTMLElement | null =>
+      event.target instanceof Element ? event.target.closest<HTMLElement>('.track-card') : null;
+    grid.addEventListener('focusin', (event) => show(cardOf(event)));
+    grid.addEventListener('mouseover', (event) => show(cardOf(event)));
+    show(grid.querySelector<HTMLElement>('.track-card.selected') ?? grid.querySelector<HTMLElement>('.track-card'));
+    return box;
   }
 
   private carPicker(cars: CarIndexEntry[] | null): HTMLElement | null {
@@ -341,8 +380,9 @@ export class Menu {
     return el;
   }
 
-  private action(label: string, onClick: () => void): HTMLButtonElement {
+  private action(label: string, onClick: () => void, primary = false): HTMLButtonElement {
     const button = this.doc.createElement('button');
+    button.className = primary ? 'btn-primary' : 'btn-secondary';
     button.textContent = label;
     button.addEventListener('click', onClick);
     return button;
@@ -376,7 +416,7 @@ export class Menu {
         link.textContent = entry.url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.style.color = '#7ab8ff';
+        link.style.color = 'var(--ui-accent)';
         row.append(`${entry.asset} — ${entry.author} — ${entry.license} — `, link);
         list.appendChild(row);
       }

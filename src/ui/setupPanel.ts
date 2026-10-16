@@ -43,9 +43,10 @@ const STYLE = `
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 10, 14, 0.82);
-  color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-stretch: condensed;
 }
 #setup-panel .setup-box {
   display: flex;
@@ -55,29 +56,31 @@ const STYLE = `
   max-height: 92vh;
   overflow-y: auto;
   padding: 24px;
-  background: #12161d;
-  border: 1px solid #2c3542;
-  border-radius: 10px;
+  background: var(--ui-panel-solid);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
 }
 #setup-panel .setup-title {
   margin-bottom: 4px;
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 #setup-panel .setup-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid #232b36;
+  border-top: 1px solid var(--ui-border);
 }
 #setup-panel .setup-group-title {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #9fb0c6;
+  color: var(--ui-text-dim);
 }
 #setup-panel .setup-row {
   display: flex;
@@ -91,12 +94,12 @@ const STYLE = `
   font-size: 14px;
 }
 #setup-panel .setup-value {
-  color: #f2c200;
+  color: var(--ui-accent);
   font-variant-numeric: tabular-nums;
 }
 #setup-panel input[type='range'] {
   width: 100%;
-  accent-color: #f2c200;
+  accent-color: var(--ui-accent);
 }
 #setup-panel .setup-actions {
   display: grid;
@@ -108,15 +111,27 @@ const STYLE = `
   grid-column: span 2;
   padding: 10px 8px;
   font-size: 15px;
-  color: #fff;
-  background: #1c2430;
-  border: 1px solid #3a4657;
-  border-radius: 6px;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform var(--ui-fast), border-color var(--ui-fast);
   cursor: pointer;
 }
-#setup-panel .setup-actions button:hover,
+#setup-panel .setup-actions button:hover {
+  transform: translateY(-1px);
+  border-color: var(--ui-accent);
+}
 #setup-panel .setup-actions button:focus-visible {
-  background: #2a3546;
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #setup-panel .setup-actions button {
+    transition: none;
+  }
 }
 #setup-panel .setup-apply,
 #setup-panel .setup-back {

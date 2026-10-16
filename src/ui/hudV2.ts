@@ -18,6 +18,8 @@ export interface HudV2Data {
 
 export const SHIFT_LIGHT_RPM = 8200;
 export const HUD_MAX_RPM = 9000;
+const LED_COUNT = 15;
+const LED_COLOURS = ['led-green', 'led-amber', 'led-red'];
 
 export function sectorColour(time: number | null, best: number | null): SectorColour {
   if (time === null) return 'none';
@@ -32,6 +34,13 @@ function formatDelta(delta: number | null): string {
 
 export class HudV2 {
   private panel: HTMLDivElement;
+  private timing: HTMLDivElement;
+  private ledRow: HTMLElement;
+  private leds: HTMLElement[] = [];
+  private ledThresholds: number[] = [];
+  private ledBase: string[] = [];
+  private ledOn: string[] = [];
+  private ledLimiter: string[] = [];
   private speedEl: HTMLElement;
   private lapEl: HTMLElement;
   private gearEl: HTMLElement;
@@ -51,9 +60,28 @@ export class HudV2 {
     const doc = container.ownerDocument;
     this.panel = doc.createElement('div');
     this.panel.className = 'hud2-panel';
+    this.timing = doc.createElement('div');
+    this.timing.className = 'hud-panel hud2-timing';
 
-    this.speedEl = this.add(doc, 'hud2-speed');
-    this.lapEl = this.add(doc, 'hud2-lap');
+    this.ledRow = this.add(doc, 'hud2-leds');
+    for (let i = 0; i < LED_COUNT; i++) {
+      const led = doc.createElement('span');
+      const base = `hud2-led ${LED_COLOURS[Math.floor(i / 5)]}`;
+      led.className = base;
+      this.lastClasses.set(led, base);
+      this.ledBase.push(base);
+      this.ledOn.push(`${base} on`);
+      this.ledLimiter.push(`${base} on limiter`);
+      this.ledThresholds.push(SHIFT_LIGHT_RPM * (0.8 + (0.2 * i) / (LED_COUNT - 1)));
+      this.ledRow.appendChild(led);
+      this.leds.push(led);
+    }
+
+    this.speedEl = this.add(doc, 'hud2-speed hud-speed');
+    this.lapEl = doc.createElement('div');
+    this.lapEl.className = 'hud2-lap hud-lap';
+    this.lastClasses.set(this.lapEl, 'hud2-lap hud-lap');
+    this.timing.appendChild(this.lapEl);
     this.gearEl = this.add(doc, 'hud2-gear');
 
     const track = doc.createElement('div');
@@ -81,7 +109,7 @@ export class HudV2 {
       sectors.appendChild(cell);
       this.sectorEls.push(cell);
     }
-    this.panel.appendChild(sectors);
+    this.timing.appendChild(sectors);
 
     const deltaRow = doc.createElement('div');
     deltaRow.className = 'hud2-delta-row';
@@ -93,7 +121,7 @@ export class HudV2 {
     this.deltaEl.className = 'delta';
     this.lastClasses.set(this.deltaEl, 'delta');
     deltaRow.appendChild(this.deltaEl);
-    this.panel.appendChild(deltaRow);
+    this.timing.appendChild(deltaRow);
 
     this.invalidEl = doc.createElement('div');
     this.invalidEl.className = 'invalid-badge';
@@ -102,9 +130,10 @@ export class HudV2 {
     this.lastTexts.set(this.invalidEl, 'INVALID');
     this.invalidEl.style.display = 'none';
     this.lastDisplays.set(this.invalidEl, 'none');
-    this.panel.appendChild(this.invalidEl);
+    this.timing.appendChild(this.invalidEl);
 
     container.appendChild(this.panel);
+    container.appendChild(this.timing);
   }
 
   private add(doc: Document, className: string): HTMLElement {
@@ -125,7 +154,7 @@ export class HudV2 {
     const valueEl = doc.createElement('span');
     valueEl.className = 'hud2-value';
     row.appendChild(valueEl);
-    this.panel.appendChild(row);
+    this.timing.appendChild(row);
     return valueEl;
   }
 
@@ -164,6 +193,14 @@ export class HudV2 {
     this.setWidth(this.rpmEl, `${pct.toFixed(1)}%`);
     this.setClass(this.rpmEl, `hud2-rpm-bar${rpm >= SHIFT_LIGHT_RPM ? ' shift' : ''}`);
 
+    const limiter = rpm >= HUD_MAX_RPM - 200;
+    for (let i = 0; i < LED_COUNT; i++) {
+      this.setClass(
+        this.leds[i],
+        limiter ? this.ledLimiter[i] : rpm >= this.ledThresholds[i] ? this.ledOn[i] : this.ledBase[i],
+      );
+    }
+
     this.setText(this.currentEl, formatLapTime(data.currentLapTime));
     this.setText(this.lastEl, formatLapTime(data.lastLapTime));
     this.setText(this.bestEl, formatLapTime(data.bestLapTime));
@@ -191,6 +228,7 @@ export class HudV2 {
 
   dispose(): void {
     this.panel.remove();
+    this.timing.remove();
     this.lastTexts.clear();
     this.lastClasses.clear();
     this.lastWidths.clear();

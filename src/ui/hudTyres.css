@@ -1,44 +1,57 @@
 .tyres {
-  position: absolute;
+  position: fixed;
   left: 12px;
   bottom: 12px;
-  display: flex;
-  gap: 6px;
-  align-items: flex-end;
-  font-family: monospace;
-  color: #fff;
-  max-width: calc(100vw - 24px);
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 4px;
+  align-items: stretch;
+  padding: 0.4em;
+  font-family: var(--ui-font);
+  font-stretch: condensed;
+  font-size: clamp(12px, 1.3vmin + 3px, 17px);
+  color: var(--ui-text);
+  pointer-events: none;
 }
 
 .tyre {
-  width: 52px;
-  height: 44px;
+  min-width: 3.2em;
+  padding: 0.4em 0.3em;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 6px;
+  font-weight: 700;
+  font-style: italic;
+  border-radius: 5px;
+  background: rgba(150, 165, 185, 0.2);
+  transition: background var(--ui-fast);
 }
 
 .tyre-blue {
-  background: rgba(30, 90, 220, 0.75);
+  background: rgba(46, 120, 230, 0.8);
 }
 
 .tyre-green {
-  background: rgba(30, 160, 60, 0.75);
+  background: rgba(40, 160, 90, 0.8);
 }
 
 .tyre-red {
-  background: rgba(220, 50, 40, 0.75);
+  background: rgba(220, 60, 50, 0.85);
 }
 
 .fuel {
-  margin-left: 8px;
-  font-size: 16px;
-  background: rgba(0, 0, 0, 0.55);
-  padding: 4px 8px;
-  border-radius: 6px;
+  grid-column: 1 / -1;
+  padding: 0.2em 0.4em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
   white-space: nowrap;
+  color: var(--ui-text-dim);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--ui-border);
+  border-radius: 0;
+  backdrop-filter: none;
 }

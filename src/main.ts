@@ -1,3 +1,4 @@
+import './ui/theme.css';
 import './ui/hud.css';
 import './ui/hudV2.css';
 import './ui/hudTyres.css';
