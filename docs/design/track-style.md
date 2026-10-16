@@ -21,7 +21,7 @@ Out of scope (owned elsewhere): vegetation and ground palette by environment typ
     "ranges": [{ "start": 0, "end": 0, "side": "left", "colors": ["#hex", "#hex"], "outerStrip": "#hex" }]
   },
   "runoffPaint": {
-    "pattern": "none | solid | stripes | bands",                              // stripes: across the run-off; bands: parallel to track
+    "pattern": "none | solid | stripes | bands",                              // stripes: across the run-off; bands: parallel to track; both cycle through colors in order (1-4); solid uses colors[0]
     "colors": ["#hex"],
     "stripeMeters": 2,
     "ranges": [{ "start": 0, "end": 0, "side": "left", "pattern": "stripes", "colors": ["#hex"], "stripeMeters": 2 }]
@@ -31,7 +31,7 @@ Out of scope (owned elsewhere): vegetation and ground palette by environment typ
     "armco": { "color": "#hex" },
     "tyres": { "beltColor": "#hex" },
     "foam": { "colors": ["#hex", "#hex"] },
-    "fence": { "heightMeters": 3, "types": ["armco"], "color": "#hex" },   // catch fence behind barriers of these types; 0 = none
+    "fence": { "heightMeters": 3, "types": ["armco"], "color": "#hex" },   // types ⊂ armco|tyres|wall|foam (BarrierSegment.type); 0 = none
     "ranges": [{ "start": 0, "end": 0, "side": "left", "fenceHeightMeters": 4 }]  // per barrier segment, any type
   },
   "pitBuilding": {
@@ -52,7 +52,7 @@ Out of scope (owned elsewhere): vegetation and ground palette by environment typ
 }
 ```
 
-Limits (parser rejects outside them): storeys 1-5, heightMeters 3-40 (pit), depthMeters 5-40, glazing 0-1, fence heightMeters 0-8, floodlight heightMeters 4-40, heads 1-12, spacingMeters 10-120, stripeMeters 0.5-10, seats 1-4 colours, kerb colours exactly 2, offsets 0-200 m, rows 4-40, props ≤ 60, fogDensityScale 0.25-4. Unknown keys: warning, ignored.
+Limits (parser rejects outside them): storeys 1-5, heightMeters 3-40 (pit), depthMeters 5-40, glazing 0-1, fence heightMeters 0-8, floodlight heightMeters 4-40, heads 1-12, spacingMeters 10-120, stripeMeters 0.5-10, seats 1-4 colours, kerb colours exactly 2, offsets 0-200 m, rows 4-40, props ≤ 60, fogDensityScale 0.25-4. Unknown keys: warning, ignored. Colours brighter than `#dadada` per channel (linear 0.7, the white-paint cap pinned by 172 AT3): each channel clamped to 0xda, warning.
 
 ## Tooling
 

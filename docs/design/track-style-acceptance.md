@@ -11,7 +11,7 @@ Spec writers copy each table verbatim into its spec. Design: `docs/design/track-
 | AT3 | `DEFAULT_TRACK_STYLE` | read | pitBuilding = `{storeys: 1, heightMeters: 4, depthMeters: 8, facade: '#b8bcc0', roof: null, doors: '#1c1c1e', accent: null, roofStyle: 'flat', glazing: 0}`; barriers.fence = `{heightMeters: 3, types: ['armco'], color: null}`; kerbs.colors null; runoffPaint.pattern 'none'; floodlights null; props `[]`; extraGrandstands `[]`; sky = `{hdri: null, fogDensityScale: 1}` |
 | AT4 | pitBuilding `{storeys: 3, heightMeters: 12, facade: '#A1B2C3', roofStyle: 'folded', glazing: 0.5}` | parse | those values kept, facade lower-cased `'#a1b2c3'`; unspecified pit keys keep defaults (depthMeters 8, doors '#1c1c1e') |
 | AT5 | `{version: 2}` | parse | exactly 1 error containing `version`; style deep-equals defaults |
-| AT6 | pitBuilding `{storeys: 6, facade: '#ffffff'}` | parse | 1 error containing `pitBuilding.storeys`; storeys 1; facade `'#ffffff'` |
+| AT6 | pitBuilding `{storeys: 6, facade: '#dadada'}` | parse | 1 error containing `pitBuilding.storeys`; storeys 1; facade `'#dadada'` |
 | AT7 | kerbs.colors `['#fff', '#000000']`; then `['#ff0000', '#ffffff', '#000000']` | parse each | each: 1 error containing `kerbs.colors`; kerbs.colors null |
 | AT8 | top-level key `foo: 1` and pitBuilding key `bar: 2` | parse | errors `[]`; 2 warnings, one containing `foo`, one containing `pitBuilding.bar` |
 | AT9 | barriers.ranges `[{start: 0, end: 100, fenceHeightMeters: 4}, {start: 90, end: 99, side: 'left', fenceHeightMeters: 5}]`, pointCount 100 | parse | 1 error containing `barriers.ranges[0]`; ranges = only the second entry |
@@ -26,6 +26,7 @@ Spec writers copy each table verbatim into its spec. Design: `docs/design/track-
 | AT18 | a deep-frozen input with every section | parse | does not throw; returned style shares no object with the input (mutating `style.props[0]` leaves the input unchanged) |
 | AT19 | source of `src/track/trackStyle.ts` | read text | contains no `from 'three'` |
 | AT20 | helper `tests/unit/acceptance/helpers/colour.ts` exporting `hsl(hex)` and `isRed, isOrange, isYellow, isGreen, isTeal, isBlue, isWhite, isLight, isDark, isCream, isGrey` per the design predicates | call | `isRed('#d0432d')`, `isGreen('#58d23a')`, `isCream('#cdb89a')`, `isWhite('#ffffff')`, `isGrey('#808080')`, `isBlue('#1f4fbf')`, `isYellow('#f2c400')`, `isTeal('#1f9e8f')` all true; `isRed('#58d23a')`, `isGreen('#d0432d')`, `isWhite('#cdb89a')` false |
+| AT21 | pitBuilding `{facade: '#ffffff', doors: '#f0e0d0'}` | parse | errors `[]`; 2 warnings containing `pitBuilding.facade` and `pitBuilding.doors`; facade `'#dadada'`, doors `'#dadad0'` (each channel clamped to ≤ 0xda, the white-paint cap of linear 0.7) |
 
 ## 180 Style loader, wiring, extra grandstands, debug hook
 
@@ -65,12 +66,12 @@ Spec writers copy each table verbatim into its spec. Design: `docs/design/track-
 |---|---|---|---|
 | AT1 | monza, DEFAULT style | `createPitBuilding(track, style)` | mesh `pit` material colour `#b8bcc0`; door material `#1c1c1e`; `userData.garageCount` unchanged from before the task; no mesh named `pitGlass` or `pitRoof` |
 | AT2 | pitBuilding `{storeys: 3, heightMeters: 12, depthMeters: 15}` | create | mesh `pit` bounding-box height ≥ 12 - 0.01 and depth 15 ± 0.01 (local Z extent); `userData.storeys` 3 |
-| AT3 | pitBuilding `{facade: '#ffffff', doors: '#333333'}` | create | `pit` colour `#ffffff`; every `garageDoor` colour `#333333` |
+| AT3 | pitBuilding `{facade: '#dadada', doors: '#333333'}` | create | `pit` colour `#dadada`; every `garageDoor` colour `#333333` |
 | AT4 | pitBuilding `{glazing: 0.4, storeys: 2, heightMeters: 9}` | create | a mesh `pitGlass` exists; its height = 0.4 × (9 - first-storey height) ± 0.05 where first-storey height = 9 / 2; its material is transparent or has metalness ≥ 0.5 |
 | AT5 | roofStyle each of `canopy`, `folded`, `sail`, `curved` | create | a mesh `pitRoof` exists; its top (world bbox max Y) ≥ pit top; for `flat` with roof colour set: `pitRoof` exists with that colour |
 | AT6 | accent `#cc0000` | create | a mesh `pitAccent` with colour `#cc0000` |
 | AT7 | any style from AT2-AT6 | create | building near face stays at `widthMeters/2 + 10` m from the chord (±0.05), so the building never overlaps the track |
-| AT8 | grandstands `{structure: '#cccccc', roof: '#ffffff', seats: ['#1f4fbf', '#f2c400'], roofStyle: 'sail'}` | `createGrandstand(g, load, style)` | structure meshes `#cccccc`; roof mesh `#ffffff`; a seat mesh/InstancedMesh with instance colours drawn only from the two seat colours, both used; roof mesh named `standRoof` with `userData.roofStyle === 'sail'` |
+| AT8 | grandstands `{structure: '#cccccc', roof: '#dadada', seats: ['#1f4fbf', '#dac400'], roofStyle: 'sail'}` | `createGrandstand(g, load, style)` | structure meshes `#cccccc`; roof mesh `#dadada`; a seat mesh/InstancedMesh with instance colours drawn only from the two seat colours, both used; roof mesh named `standRoof` with `userData.roofStyle === 'sail'` |
 | AT9 | DEFAULT style | createGrandstand | identical mesh names, counts and colours to calling without style |
 | AT10 | dispose after AT2-AT8 | `disposeGrandstand` / group traversal dispose | every geometry and material created is disposed (spy on dispose) |
 
@@ -79,10 +80,10 @@ Spec writers copy each table verbatim into its spec. Design: `docs/design/track-
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | STRAIGHT with kerbs `[{0,20,left},{40,60,left}]`, DEFAULT style | `createTrackSurfaceObject(strips, {style, track})` | exactly 1 mesh named `kerbs` (as today) |
-| AT2 | kerbs.colors `['#ff0000', '#00ff00']` | create | every kerb material has `userData.stripeColors` = `['#ff0000', '#00ff00']` |
-| AT3 | kerbs.colors default; ranges `[{start: 35, end: 70, side: 'left', colors: ['#f2c400', '#1f4fbf']}]` | create | 2 kerb meshes (`kerbs`, `kerbs:1`); the one whose geometry spans x 400..600 has stripeColors `['#f2c400', '#1f4fbf']`; the other uses the renderer default |
+| AT2 | kerbs.colors `['#da0000', '#00da00']` | create | every kerb material has `userData.stripeColors` = `['#da0000', '#00da00']` |
+| AT3 | kerbs.colors default; ranges `[{start: 35, end: 70, side: 'left', colors: ['#dac400', '#1f4fbf']}]` | create | 2 kerb meshes (`kerbs`, `kerbs:1`); the one whose geometry spans x 400..600 has stripeColors `['#dac400', '#1f4fbf']`; the other uses the renderer default |
 | AT4 | AT3 | count triangles | sum of triangles across kerb meshes = triangles of the single default mesh in AT1 |
-| AT5 | runoffs `[{0,20,left,'runoff',8}]`, runoffPaint `{pattern: 'stripes', colors: ['#d0432d', '#ffffff'], stripeMeters: 2}` | create | a mesh `runoffPaint` exists with `userData.pattern 'stripes'`, `userData.colors` as given, `userData.stripeMeters 2`; the `runoff` mesh no longer contains those triangles (triangle total of runoff + runoffPaint equals the default runoff count) |
+| AT5 | runoffs `[{0,20,left,'runoff',8}]`, runoffPaint `{pattern: 'stripes', colors: ['#d0432d', '#dadada'], stripeMeters: 2}` | create | a mesh `runoffPaint` exists with `userData.pattern 'stripes'`, `userData.colors` as given, `userData.stripeMeters 2`; the `runoff` mesh no longer contains those triangles (triangle total of runoff + runoffPaint equals the default runoff count) |
 | AT6 | runoffPaint pattern `'none'` (default) | create | no `runoffPaint` mesh |
 | AT7 | gravel run-off segment with a paint range covering it | create | gravel is never painted: no `runoffPaint` mesh; gravel triangle count unchanged |
 | AT8 | runoffPaint default `none`, ranges `[{start: 0, end: 20, side: 'left', pattern: 'solid', colors: ['#58d23a']}]` | create | `runoffPaint` mesh, pattern 'solid', colors `['#58d23a']` |
@@ -94,8 +95,8 @@ Spec writers copy each table verbatim into its spec. Design: `docs/design/track-
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | DEFAULT style | `createSurfaceMaterial(kind, load, macro, style)` for asphalt, grass, gravel | material `color` is white (1,1,1) as today |
-| AT2 | palette `{asphalt: '#808080', grass: '#c0d080', gravel: '#e0c090'}` | create | each material `.color.getHexString()` equals the given hex (in sRGB) |
-| AT3 | edgeLines `{color: '#f2c400'}` | `createTrackMarkingsObject(strips, style)` | marking material colour `#f2c400`; `registerWhitePaint` not called for it (not white) |
+| AT2 | palette `{asphalt: '#808080', grass: '#c0d080', gravel: '#dac090'}` | create | each material `.color.getHexString()` equals the given hex (in sRGB) |
+| AT3 | edgeLines `{color: '#dac400'}` | `createTrackMarkingsObject(strips, style)` | marking material colour `#dac400`; `registerWhitePaint` not called for it (not white) |
 | AT4 | DEFAULT style | createTrackMarkingsObject | colour unchanged from today (linear 0.7, 0.7, 0.7) and still registered as white paint |
 | AT5 | sky `{hdri: 'kloofendal_overcast_puresky'}` for track monza | `envNameFor('monza', style)` | `'kloofendal_overcast_puresky'`; with default style → `ENV_TABLE.monza` |
 | AT6 | sky `{fogDensityScale: 2}` | `fogDensityFor('monza', style)` | `2 × FOG_TABLE.monza.density` (±1e-12); default → unchanged |
@@ -113,10 +114,10 @@ Fixture: STRAIGHT with barriers `[{0,20,left,armco,8},{30,50,left,wall,8},{60,80
 | AT4 | DEFAULT fence; ranges `[{start: 60, end: 80, side: 'right', fenceHeightMeters: 4}]` | create | fenceMeters = 200 + 200 (±2): tyres segment gets a 4 m fence even though tyres is not in types |
 | AT5 | ranges `[{start: 0, end: 20, side: 'left', fenceHeightMeters: 0}]` | create | fenceMeters 0 (armco fence removed there) |
 | AT6 | fence color `'#2e8b57'` | create | fence material colour `#2e8b57` |
-| AT7 | concrete `{color: '#e8e8e8', bandColor: '#f2c400'}` | create | wall material colour `#e8e8e8`; a mesh `wallBand` exists with colour `#f2c400`, height 0.3 ± 0.01, along the 200 m wall only |
+| AT7 | concrete `{color: '#dadada', bandColor: '#dac400'}` | create | wall material colour `#dadada`; a mesh `wallBand` exists with colour `#dac400`, height 0.3 ± 0.01, along the 200 m wall only |
 | AT8 | armco `{color: '#9aa0a6'}` | create | armco material colour `#9aa0a6` |
 | AT9 | tyres `{beltColor: '#1f4fbf'}` | create | tyre instance colours alternate the existing white with `#1f4fbf` (linear ±1e-3) instead of red |
-| AT10 | foam `{colors: ['#d0432d', '#ffffff']}` | create | foam blocks use only those two colours, both present |
+| AT10 | foam `{colors: ['#d0432d', '#dadada']}` | create | foam blocks use only those two colours, both present |
 | AT11 | DEFAULT style | create with and without style | identical mesh names, counts, colours, instance counts |
 | AT12 | physics | barrier colliders before/after any style | identical (fence and band are render only) |
 
@@ -145,7 +146,7 @@ Fixture: STRAIGHT with barriers `[{0,20,left,armco,8},{30,50,left,wall,8},{60,80
 | AT4 | each of `tent`, `scoreboard`, `billboardRow`, `tower` beside the track (offset 10, side left) | create | one named child per prop; none intersects the asphalt (every bbox corner at least widthMeters/2 m from every centerline point, footbridge excepted) |
 | AT5 | `billboardRow` length 40 | inspect | it carries no text texture: materials have no `map` or a plain colour map only |
 | AT6 | prop with `index` on a hairpin such that the offset lands on the other leg | create | that prop is skipped and `userData.skipped` counts it |
-| AT7 | 60 props | create | ≤ 12 draw objects (props of the same type are instanced or merged) |
+| AT7 | 60 props: 20 tents, 20 marshalPosts, 20 billboardRows, each type with one of 2 colours | create | ≤ 12 draw objects (props of the same type and colour are instanced or merged) |
 | AT8 | dispose | `dispose()` | all geometries and materials disposed |
 | AT9 | e2e monza with a footbridge route style | `__SIMGAME__.sceneStats().props` | 1; without: 0 |
 
@@ -184,3 +185,17 @@ Signature rows (Sn), from each research doc's Top 10; colour predicates from the
 | 203 | bahrain | S1 grandstands.roofStyle 'sail', roof isWhite. S2 runoffPaint colours include isCream and isBlue. S3 floodlights style 'mast', heightMeters 25-30, heads ≥ 6, spacingMeters 50-70. S4 pitBuilding facade isCream, storeys 2. S5 ≥ 4 tent props isWhite. S6 palette.grass isCream (sand) |
 | 204 | sepang | S1 grandstands.roofStyle 'sail'. S2 edgeLines.color isBlue. S3 a runoffPaint range with isRed, isWhite, isYellow or isBlue (≥ 3 of them). S4 fence color isTeal. S5 pitBuilding facade isGrey, glazing ≥ 0.3 |
 | 205 | lusail | S1 floodlights non-null, style 'mast', heightMeters 25-30, heads ≥ 4. S2 fence color isTeal or isGreen. S3 runoffPaint ranges with isOrange, isBlue and a maroon (isRed with l ≤ 0.35) colour. S4 pitBuilding storeys 2. S5 palette.grass isCream (sand) |
+
+## 206 Kerb outer strip (`src/render/kerbOuterStrip.ts`, added in `main.ts`)
+
+Painted strip 0.6 m wide just outside each kerb (lateral from `halfWidthAt + KERB_WIDTH` to + 0.6), colour from `kerbs.outerStrip` or the matching kerb range's `outerStrip`. Render only; drawn over run-off/grass with polygonOffset.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | kerbs.outerStrip null and no range sets it | `createKerbOuterStrips(STRAIGHT + kerbs, style)` | null |
+| AT2 | STRAIGHT, kerbs `[{0, 20, left}]`, kerbs.outerStrip `'#2e8b57'` | create | one mesh `kerbOuterStrip`; every vertex z in [-(6 + KERB_WIDTH + 0.6) - 0.01, -(6 + KERB_WIDTH) + 0.01] and x in [0 - 0.01, 200 + 0.01]; material colour `#2e8b57`; `userData.meters` 200 ± 1 |
+| AT3 | kerbs `[{0, 20, left}, {40, 60, right}]`, outerStrip `'#2e8b57'`, range `{start: 35, end: 70, side: 'right', outerStrip: '#1f4fbf'}` | create | meshes `kerbOuterStrip` (`#2e8b57`, x 0..200, z < 0) and `kerbOuterStrip:1` (`#1f4fbf`, x 400..600, z > 0) |
+| AT4 | outerStrip null, the AT3 range only | create | only the right-side strip, `userData.meters` 200 ± 1 |
+| AT5 | AT2 with elevation 2 m everywhere | create | every vertex y in [2, 2.1] |
+| AT6 | dispose | `dispose()` | geometries and materials disposed |
+| AT7 | e2e `?track=budapest`, route style `{"version":1,"kerbs":{"outerStrip":"#2e8b57"}}` | `__SIMGAME__.sceneStats().kerbOuterStripMeters` | > 0; without the route 0 |
