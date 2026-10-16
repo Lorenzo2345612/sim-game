@@ -71,3 +71,4 @@ npx playwright test 160-   # this task's e2e files only; never the full e2e suit
 ## Planner-authorised test edits (2026-10-16)
 
 - `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else. (Tasks 159/174 have the same authorisation; if it is already gone after a merge, nothing to do.)
+- Landmarks verified by the planner: baku and singapore values stay. Las Vegas `lattice-tower` height 100 → 165 (half-scale Eiffel replica, 165 m); coordinates stay. Update any test literal of that height only if one exists, then rebuild lasvegas.
