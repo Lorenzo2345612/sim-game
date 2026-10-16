@@ -43,7 +43,13 @@ Same pattern as task 106. Track data, geojson (`us-fontana`, `us-cleveland`, `us
 | AT5 | public/tracks/ json of every other track | git diff vs base | unchanged |
 | AT6 | public/tracks/<id>.json for the three | centerline length | fontana 2300–2550 m, cleveland 3250–3550 m, detroit 2450–2700 m |
 
-Protected tests: no existing test pins the menu button count or the track list (`tests/e2e/acceptance/044-track-menu.spec.ts` checks only individual buttons), so no edits are authorised.
+## Planner-authorised edits
+
+The earlier note was wrong: 171 pins the track list. Authorised:
+- `tools/track-builder/tracks.json`: add `"country": "United States"` to fontana, cleveland and detroit.
+- Rebuild `public/tracks/index.json` with the existing index builder. Only the three new entries may be added, in `TRACK_CHOICES` order, with names `Fontana`, `Cleveland` and `Detroit`. Existing entries stay byte-identical; if the builder changes them, append the three entries by hand instead. AT5 ("every other track") excludes `index.json`.
+- `tests/e2e/acceptance/171-track-select-redesign.spec.ts`: in AT3, `toHaveCount(15)` becomes `toHaveCount(18)` and the test title says 18. Nothing else.
+- `tests/unit/acceptance/171-track-select-redesign.test.ts`: only the AT2 title text `15` becomes `18`; its assertions already follow `TRACK_CHOICES`.
 
 ## Acceptance criteria
 
