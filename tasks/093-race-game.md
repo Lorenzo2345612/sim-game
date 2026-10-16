@@ -82,3 +82,7 @@ npx playwright test 093-   # this task's e2e files only; never the full e2e suit
 Rendering AI cars, start-light visuals, HUD (094); menu and results (095); pit stops, damage, mistakes, wheel-to-wheel penalties, ghost, lap timer UI changes, any `Game` behaviour change (the helper extraction is behaviour-neutral).
 
 Frozen tests: none need editing (single-car physics, `Game` and `/?track=` flows are unchanged; verified by grep of `tests/` for vehicleModel/game/main users). If an existing test fails because of the collision-group change, that is a bug in the change, not a test edit.
+
+## Planner-authorised test edit (EDGE8)
+
+`tests/unit/edge/093-race-game-edge.test.ts` EDGE8: at 15 s neither AI reaches the easy speed target (≈49.5 m/s), so paths are identical. Change both `runCar(..., 1, 15)` calls in EDGE8 to a 45 s window (`runCar(..., 1, 45)`); keep the `+ 5` margin and the 120000 timeout (raise to 240000 if needed). Nothing else in that file. Difficulty wiring stays `speedScale` only.
