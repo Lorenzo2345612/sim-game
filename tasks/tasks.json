@@ -3048,7 +3048,7 @@
     {
       "num": "213",
       "title": "Consistent tyre compounds for GT3, LMP2 and Hypercar",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
@@ -3059,7 +3059,7 @@
     {
       "num": "214",
       "title": "Track conditions: asphalt abrasion and track temperature",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
