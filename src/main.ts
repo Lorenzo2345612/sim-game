@@ -13,6 +13,7 @@ import { loadGameOptions, loadPreset, parseQuality, presetSettings, type Preset 
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
+import { ghostTimeAt } from './game/ghostDelta';
 import { loadLivery, type Livery } from './game/livery';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
@@ -272,14 +273,16 @@ function nearestElevation(track: TrackDataV2, x: number, z: number): number {
   return track.elevation[best] ?? 0;
 }
 
-/** Distance along the centerline of every ghost sample, for the lap-delta lookup. */
-function ghostDistances(ghost: GhostLap, centerline: [number, number][]): Float64Array {
+/** Time and distance along the centerline of every ghost sample, for the lap-delta lookup. */
+function ghostProgress(ghost: GhostLap, centerline: [number, number][]): { times: Float64Array; dist: Float64Array } {
   const progress = new TrackProgress(centerline);
-  const out = new Float64Array(ghost.samples.length);
+  const times = new Float64Array(ghost.samples.length);
+  const dist = new Float64Array(ghost.samples.length);
   for (let i = 0; i < ghost.samples.length; i++) {
-    out[i] = progress.update(ghost.samples[i][1], ghost.samples[i][3]).distance;
+    times[i] = ghost.samples[i][0];
+    dist[i] = progress.update(ghost.samples[i][1], ghost.samples[i][3]).distance;
   }
-  return out;
+  return { times, dist };
 }
 
 function presetFromQuery(storage: Storage): Preset {
@@ -594,8 +597,7 @@ async function startGame(trackId: string): Promise<void> {
 
   const ghostRecorder = new GhostRecorder(track.id);
   let ghost = loadGhost(window.localStorage, track.id);
-  let ghostDist = ghost === null ? null : ghostDistances(ghost, track.centerline);
-  let ghostCursor = 0;
+  let ghostData = ghost === null ? null : ghostProgress(ghost, track.centerline);
   let lapActive = false;
   let lapWasValid = true;
 
@@ -644,16 +646,10 @@ async function startGame(trackId: string): Promise<void> {
 
   // Current lap time minus the ghost's time at the same track progress; null without a ghost.
   const ghostDelta = (lapTime: number | null): number | null => {
-    if (ghost === null || ghostDist === null || lapTime === null) return null;
+    if (ghost === null || ghostData === null || lapTime === null) return null;
     const d = carProgress.update(interp.position.x, interp.position.z).distance;
-    while (ghostCursor < ghostDist.length - 2 && ghostDist[ghostCursor + 1] <= d) ghostCursor++;
-    const j = Math.min(ghostCursor + 1, ghostDist.length - 1);
-    const a = ghost.samples[ghostCursor];
-    const b = ghost.samples[j];
-    const da = ghostDist[ghostCursor];
-    const db = ghostDist[j];
-    const u = db > da ? Math.min(1, Math.max(0, (d - da) / (db - da))) : 0;
-    return lapTime - (a[0] + (b[0] - a[0]) * u);
+    const t = ghostTimeAt(ghostData.times, ghostData.dist, d, lapTime, carProgress.length);
+    return t === null ? null : lapTime - t;
   };
 
   const handleLapEvents = (events: LapEvent[]): void => {
@@ -662,7 +658,6 @@ async function startGame(trackId: string): Promise<void> {
         ghostRecorder.start();
         lapActive = true;
         lapWasValid = true;
-        ghostCursor = 0;
         sectorTimes[0] = null;
         sectorTimes[1] = null;
         sectorTimes[2] = null;
@@ -678,7 +673,7 @@ async function startGame(trackId: string): Promise<void> {
         const lap = ghostRecorder.finishLap(lapWasValid, ev.lapTime);
         if (lap !== null && saveGhostIfFaster(window.localStorage, lap)) {
           ghost = lap;
-          ghostDist = ghostDistances(lap, track.centerline);
+          ghostData = ghostProgress(lap, track.centerline);
         }
       }
     }
@@ -841,7 +836,6 @@ async function startGame(trackId: string): Promise<void> {
     autoGearbox = true;
     lapActive = false;
     lapWasValid = true;
-    ghostCursor = 0;
     sectorTimes[0] = null;
     sectorTimes[1] = null;
     sectorTimes[2] = null;
