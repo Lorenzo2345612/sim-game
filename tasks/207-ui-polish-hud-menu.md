@@ -93,6 +93,12 @@ Self-review is required. After the tests pass, run AT10 and open `test-results/2
 
 Write them in `tests/e2e/acceptance/207-ui-polish.spec.ts`. Helpers: hex/rgb(a) → HSL and relative luminance (WCAG) in the spec file.
 
+Selectors and hooks (no discovery needed; do not grep the codebase, read only the files named here):
+- Menu: `#menu`, `#menu .menu-panel`, `.menu-title`, `button.track-card[data-track]`, `.track-name`, `#credits-btn`. `/` shows the menu; wait with `await expect(page.locator('#menu .menu-panel')).toBeVisible()`.
+- Game: `/?track=monza`. Wait with `page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 60000 })`.
+- HUD: `#hud` contains `.hud-panel` (with `.hud-speed`, `.hud-lap`), `.hud2-panel`, `.tyres` (tyres/fuel root). Minimap = the only `canvas` that is not `#game`.
+- Pattern to copy: `tests/e2e/acceptance/171-track-select-redesign.spec.ts` (menu) and `tests/e2e/acceptance/161-minimap-size-and-pause-audio.spec.ts` (minimap).
+
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
 | AT1 | e2e `/`, menu visible | read `getComputedStyle(document.documentElement)` | `--ui-bg`, `--ui-panel`, `--ui-border`, `--ui-text`, `--ui-text-dim`, `--ui-accent`, `--ui-good`, `--ui-warn`, `--ui-bad`, `--ui-radius` all non-empty |
