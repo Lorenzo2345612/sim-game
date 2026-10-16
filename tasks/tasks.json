@@ -3037,7 +3037,7 @@
     {
       "num": "212",
       "title": "Ghost delta goes wild from the second lap",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
