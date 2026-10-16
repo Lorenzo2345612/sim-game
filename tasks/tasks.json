@@ -1614,7 +1614,7 @@
     {
       "num": "118",
       "title": "Cockpit head motion and FOV setting",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "047",
         "115",
