@@ -38,6 +38,8 @@ export class HudV2 {
   private ledRow: HTMLElement;
   private leds: HTMLElement[] = [];
   private ledThresholds: number[] = [];
+  private shiftRpm = SHIFT_LIGHT_RPM;
+  private maxRpm = HUD_MAX_RPM;
   private ledBase: string[] = [];
   private ledOn: string[] = [];
   private ledLimiter: string[] = [];
@@ -72,10 +74,12 @@ export class HudV2 {
       this.ledBase.push(base);
       this.ledOn.push(`${base} on`);
       this.ledLimiter.push(`${base} on limiter`);
-      this.ledThresholds.push(SHIFT_LIGHT_RPM * (0.8 + (0.2 * i) / (LED_COUNT - 1)));
+      this.ledThresholds.push(0);
       this.ledRow.appendChild(led);
       this.leds.push(led);
     }
+
+    this.setRpmRange(SHIFT_LIGHT_RPM, HUD_MAX_RPM);
 
     this.speedEl = this.add(doc, 'hud2-speed hud-speed');
     this.lapEl = doc.createElement('div');
@@ -182,6 +186,13 @@ export class HudV2 {
     node.style.display = display;
   }
 
+  setRpmRange(shiftRpm: number, maxRpm: number): void {
+    if (!Number.isFinite(shiftRpm) || !Number.isFinite(maxRpm) || shiftRpm <= 0 || shiftRpm >= maxRpm) return;
+    this.shiftRpm = shiftRpm;
+    this.maxRpm = maxRpm;
+    for (let i = 0; i < LED_COUNT; i++) this.ledThresholds[i] = shiftRpm * (0.8 + (0.2 * i) / (LED_COUNT - 1));
+  }
+
   update(data: HudV2Data): void {
     const kmh = Number.isFinite(data.speedKmh) ? Math.round(data.speedKmh) : 0;
     this.setText(this.speedEl, `${kmh} km/h`);
@@ -189,11 +200,11 @@ export class HudV2 {
     this.setText(this.gearEl, data.gear === -1 ? 'R' : String(data.gear));
 
     const rpm = Number.isFinite(data.rpm) ? data.rpm : 0;
-    const pct = Math.min(100, Math.max(0, (rpm / HUD_MAX_RPM) * 100));
+    const pct = Math.min(100, Math.max(0, (rpm / this.maxRpm) * 100));
     this.setWidth(this.rpmEl, `${pct.toFixed(1)}%`);
-    this.setClass(this.rpmEl, `hud2-rpm-bar${rpm >= SHIFT_LIGHT_RPM ? ' shift' : ''}`);
+    this.setClass(this.rpmEl, `hud2-rpm-bar${rpm >= this.shiftRpm ? ' shift' : ''}`);
 
-    const limiter = rpm >= HUD_MAX_RPM - 200;
+    const limiter = rpm >= this.maxRpm - (200 * this.maxRpm) / HUD_MAX_RPM;
     for (let i = 0; i < LED_COUNT; i++) {
       this.setClass(
         this.leds[i],

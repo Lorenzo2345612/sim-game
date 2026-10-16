@@ -573,6 +573,7 @@ async function startGame(trackId: string): Promise<void> {
   const gamepad = new GamepadInput();
 
   const hud = new HudV2(document.getElementById('hud') as HTMLElement);
+  hud.setRpmRange(baseSpec.gearbox.upRpm, baseSpec.engine.limiterRpm);
   let activeCompound = baseSpec.tyres.compounds[compound];
   const hudTyres = new HudTyres(document.body);
   const tyresData: HudTyresData = {
