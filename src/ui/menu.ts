@@ -125,6 +125,7 @@ export class Menu {
   constructor(
     private readonly root: HTMLElement,
     private readonly storage: { getItem(k: string): string | null; setItem(k: string, v: string): void },
+    private readonly onLivery?: () => void,
   ) {
     this.doc = root.ownerDocument ?? document;
     if (!root.id) root.id = 'menu';
@@ -245,6 +246,7 @@ export class Menu {
     body.appendChild(grid);
     body.appendChild(this.trackDetails(grid, entries));
     panel.appendChild(body);
+    if (this.onLivery) panel.appendChild(this.action('Livery', this.onLivery));
     panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
     this.wireCardKeys(grid);
     this.show(panel);

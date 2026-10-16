@@ -14,7 +14,7 @@ import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain,
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { ghostTimeAt } from './game/ghostDelta';
-import { loadLivery, type Livery } from './game/livery';
+import { defaultLivery, loadLivery, type Livery } from './game/livery';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
@@ -51,6 +51,7 @@ import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
 import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES } from './ui/menu';
+import { LiveryEditor, type LiveryPreview } from './ui/liveryEditor';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
@@ -80,6 +81,7 @@ export interface SceneStats {
   groundTexture: string | null;
   carScreenRect: { x: number; y: number; w: number; h: number };
   liveryPrimary: string;
+  playerLivery: Livery;
   directionalLights: number;
   maxWhiteAlbedo: number;
   decals: number;
@@ -148,6 +150,7 @@ interface Session {
 }
 
 let menu: Menu | null = null;
+let liveryEditor: LiveryEditor | null = null;
 let session: Session | null = null;
 // One WebGL context for the page: a second WebGLRenderer on the same canvas would share it.
 let rendererHandle: RendererHandle | null = null;
@@ -203,6 +206,153 @@ function showTrackSelect(): void {
   menu?.showTrackSelect((id) => {
     startGame(id).catch(onError);
   });
+}
+
+function closeLiveryEditor(): void {
+  liveryEditor?.dispose();
+  liveryEditor = null;
+  showTrackSelect();
+}
+
+function showLiveryEditor(): void {
+  menu?.hide();
+  liveryEditor = new LiveryEditor(document.body, window.localStorage, CAR_IDS, createLiveryPreview, {
+    onBack: closeLiveryEditor,
+  });
+  liveryEditor.open();
+}
+
+const PREVIEW_PAINT = 'preview-paint';
+const PREVIEW_WIDTH = 660;
+const PREVIEW_HEIGHT = 440;
+// One turntable revolution every 10 s.
+const TURNTABLE_RAD_PER_S = (2 * Math.PI) / 10;
+
+// Second scene on the page's single renderer (a second WebGLRenderer would share the context);
+// each frame is blitted into the editor canvas through a 2d context.
+function createLiveryPreview(canvas: HTMLCanvasElement): LiveryPreview {
+  canvas.width = PREVIEW_WIDTH;
+  canvas.height = PREVIEW_HEIGHT;
+  const gameCanvas = document.getElementById('game') as HTMLCanvasElement | null;
+  if (!rendererHandle && gameCanvas) rendererHandle = createRenderer(gameCanvas);
+  const renderer = rendererHandle?.renderer ?? null;
+  const ctx = renderer ? canvas.getContext('2d') : null;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#141922');
+  const hemi = new THREE.HemisphereLight('#ffffff', '#3a4250', 1.2);
+  const sun = new THREE.DirectionalLight('#ffffff', 2.2);
+  sun.position.set(3, 6, 4);
+  const camera = new THREE.PerspectiveCamera(38, PREVIEW_WIDTH / PREVIEW_HEIGHT, 0.1, 100);
+  camera.position.set(0, 2.1, 7.6);
+  camera.lookAt(0, 0.4, 0);
+  scene.add(hemi, sun);
+
+  const stage = new THREE.Group();
+  scene.add(stage);
+
+  // Painted placeholder keeps the preview responsive while the glb loads.
+  const placeholder = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 0.55, 4.4),
+    new THREE.MeshStandardMaterial({ name: PREVIEW_PAINT, color: '#ffffff', roughness: 0.45 }),
+  );
+  placeholder.position.y = 0.5;
+  stage.add(placeholder);
+
+  let target: { root: THREE.Object3D; paint: string[]; bounds: THREE.Box3; decaled: boolean } = {
+    root: placeholder,
+    paint: [PREVIEW_PAINT],
+    bounds: new THREE.Box3().setFromObject(placeholder),
+    decaled: false,
+  };
+  let car: CarRenderer | null = null;
+  const carBounds = new THREE.Box3();
+  const restWorld = new THREE.Matrix4();
+  let decals: THREE.Mesh[] = [];
+  let appliedNumber = -1;
+  let loadToken = 0;
+  let livery = defaultLivery(0);
+
+  const applyCurrent = (): void => {
+    applyLivery(target.root, target.paint, livery, target.bounds);
+    if (!target.decaled || appliedNumber === livery.number) return;
+    disposeNumberDecals(decals);
+    decals = [];
+    car?.root.updateMatrixWorld(true);
+    decals = addNumberDecals(car!.root, carBounds, livery.number, 0.35, restWorld);
+    appliedNumber = livery.number;
+  };
+
+  const loadCar = async (carId: string): Promise<void> => {
+    const token = ++loadToken;
+    try {
+      const res = await fetch(`/cars/${carId}.json`);
+      if (!res.ok) throw new Error(`cars/${carId}.json HTTP ${res.status}`);
+      const spec = parseCarSpec(await res.json());
+      const metaRes = await fetch(spec.model.url.replace(/\.glb$/, '.json'));
+      const meta = metaRes.ok ? ((await metaRes.json()) as { paintMaterials?: string[] }) : {};
+      const bodyOffsetY = -(spec.suspension.front.restLength + spec.wheels.radius);
+      const next = await CarRenderer.load(spec.model.url, bodyOffsetY);
+      if (token !== loadToken) {
+        next.dispose();
+        return;
+      }
+      if (car) {
+        stage.remove(car.root);
+        car.dispose();
+      }
+      car = next;
+      stage.add(car.root);
+      car.root.updateMatrixWorld(true);
+      carBounds.setFromObject(car.root);
+      restWorld.copy((car.root.getObjectByName('body') ?? car.root).matrixWorld);
+      target = { root: car.root, paint: meta.paintMaterials ?? [], bounds: carBounds, decaled: true };
+      placeholder.visible = false;
+      appliedNumber = -1;
+      applyCurrent();
+    } catch {
+      // keep the placeholder; the editor stays usable without the model
+    }
+  };
+
+  let rafId = 0;
+  let disposed = false;
+  let bufferW = 0;
+  let bufferH = 0;
+  const frame = (now: number): void => {
+    if (disposed) return;
+    rafId = requestAnimationFrame(frame);
+    if (!renderer || !ctx) return;
+    stage.rotation.y = ((now / 1000) * TURNTABLE_RAD_PER_S) % (Math.PI * 2);
+    if (bufferW !== PREVIEW_WIDTH || bufferH !== PREVIEW_HEIGHT) {
+      renderer.setSize(PREVIEW_WIDTH, PREVIEW_HEIGHT, false);
+      bufferW = PREVIEW_WIDTH;
+      bufferH = PREVIEW_HEIGHT;
+    }
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+    ctx.drawImage(renderer.domElement, 0, 0, PREVIEW_WIDTH, PREVIEW_HEIGHT);
+  };
+  rafId = requestAnimationFrame(frame);
+
+  return {
+    setCar: (carId) => void loadCar(carId),
+    setLivery: (next) => {
+      livery = next;
+      applyCurrent();
+    },
+    dispose: () => {
+      disposed = true;
+      cancelAnimationFrame(rafId);
+      disposeNumberDecals(decals);
+      decals = [];
+      car?.dispose();
+      car = null;
+      placeholder.geometry.dispose();
+      disposeMaterial(placeholder.material as THREE.MeshStandardMaterial);
+      disposeScene(scene);
+    },
+  };
 }
 
 function disposeMaterial(material: THREE.Material): void {
@@ -389,6 +539,7 @@ async function startGame(trackId: string): Promise<void> {
   let shadows: ShadowRig | null = null;
   let treeField: TreeField | null = null;
   let city: CityObject | null = null;
+  let playerLivery = loadLivery(window.localStorage, baseSpec.id);
   const stats: SceneStats = {
     barriers: 0,
     foamBlocks: 0,
@@ -413,6 +564,7 @@ async function startGame(trackId: string): Promise<void> {
     groundTexture: null,
     carScreenRect: { x: 0, y: 0, w: 0, h: 0 },
     liveryPrimary: '',
+    playerLivery,
     directionalLights: 0,
     maxWhiteAlbedo: 0,
     decals: 0,
@@ -556,7 +708,6 @@ async function startGame(trackId: string): Promise<void> {
   const modelMeta = modelRes.ok ? ((await modelRes.json()) as { paintMaterials?: string[] }) : {};
   const paintMaterials = modelMeta.paintMaterials ?? [];
   const liveryBounds = paintBounds(car.root, paintMaterials);
-  let playerLivery = loadLivery(window.localStorage, baseSpec.id);
   applyLivery(car.root, paintMaterials, playerLivery, liveryBounds);
   const carBounds = new THREE.Box3().setFromObject(car.root);
   // Body rest pose at the capture of carBounds: the body moves under the always-identity car.root.
@@ -1009,6 +1160,7 @@ async function startGame(trackId: string): Promise<void> {
         ...stats,
         carScreenRect: carScreenRect(),
         liveryPrimary: liveryPrimaryOf(car.root) ?? '',
+        playerLivery,
         sky: scene.background !== null,
         shadows: handle.renderer.shadowMap.enabled,
         ibl: scene.environment !== null,
@@ -1055,7 +1207,7 @@ async function main(): Promise<void> {
   if (!status) throw new Error('Missing #status');
   const menuRoot = document.getElementById('menu');
   if (!menuRoot) throw new Error('Missing #menu');
-  menu = new Menu(menuRoot, window.localStorage);
+  menu = new Menu(menuRoot, window.localStorage, showLiveryEditor);
 
   engineAudio = new EngineAudio();
   window.addEventListener('keydown', resumeAudio, { once: true });
