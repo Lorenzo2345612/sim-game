@@ -286,9 +286,14 @@ describe('053 F4 car model post checks', () => {
     expect(pkg.scripts['build:f4']).toBe('tsx tools/assets/buildF4.ts');
   });
 
-  it('POST9: the game loads the F4 model (wired by 057)', () => {
+  it('POST9: the game loads the F4 model from its car spec (057, 073)', () => {
+    const carSpec = JSON.parse(readFileSync(join(ROOT, 'public', 'cars', 'f4.json'), 'utf8')) as {
+      model?: { url?: string };
+    };
+    expect(carSpec.model?.url).toBe('/models/f4.glb');
+    expect(statSync(join(ROOT, 'public', 'models', 'f4.glb')).isFile()).toBe(true);
     const files = walkSources(join(ROOT, 'src'));
-    expect(files.some((file) => /models\/f4\.glb/.test(readFileSync(file, 'utf8')))).toBe(true);
+    expect(files.some((file) => /model\.url/.test(readFileSync(file, 'utf8')))).toBe(true);
   });
 
   it('POST10: a fresh build reproduces the committed f4.glb and f4.json byte for byte', () => {

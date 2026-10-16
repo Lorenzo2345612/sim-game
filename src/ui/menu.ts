@@ -27,6 +27,17 @@ export const TRACK_CHOICES: TrackChoice[] = [
 
 export const LAST_TRACK_KEY = 'lastTrack';
 
+export const CAR_STORAGE_KEY = 'simgame.car';
+
+// Valid ids for the saved/?car= choice (main.ts validation); the picker lists /cars/index.json.
+export const CAR_IDS: readonly string[] = ['f4', 'gt3-a', 'gt3-b', 'gt3-c'];
+
+export interface CarIndexEntry {
+  id: string;
+  name: string;
+  category: string;
+}
+
 const ARROW_DELTAS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -81,6 +92,27 @@ function parseIndex(data: unknown): TrackIndexEntry[] | null {
   return entries;
 }
 
+function parseCarIndex(data: unknown): CarIndexEntry[] | null {
+  if (!Array.isArray(data)) return null;
+  const entries: CarIndexEntry[] = [];
+  for (const item of data) {
+    if (!item || typeof item !== 'object') return null;
+    const entry = item as Record<string, unknown>;
+    if (
+      typeof entry.id !== 'string' ||
+      entry.id === '' ||
+      typeof entry.name !== 'string' ||
+      entry.name === '' ||
+      typeof entry.category !== 'string' ||
+      entry.category === ''
+    ) {
+      return null;
+    }
+    entries.push({ id: entry.id, name: entry.name, category: entry.category });
+  }
+  return entries;
+}
+
 export class Menu {
   private readonly doc: Document;
   private shown = false;
@@ -102,9 +134,9 @@ export class Menu {
 
   showTrackSelect(onSelect: (id: string) => void): void {
     const token = ++this.trackRender;
-    void this.loadTrackIndex().then((entries) => {
+    void Promise.all([this.loadTrackIndex(), this.loadCarIndex()]).then(([entries, cars]) => {
       if (token !== this.trackRender) return;
-      this.renderTrackSelect(entries, onSelect);
+      this.renderTrackSelect(entries, cars, onSelect);
     });
   }
 
@@ -168,7 +200,21 @@ export class Menu {
     }
   }
 
-  private renderTrackSelect(entries: TrackIndexEntry[] | null, onSelect: (id: string) => void): void {
+  private async loadCarIndex(): Promise<CarIndexEntry[] | null> {
+    try {
+      const res = await fetch('/cars/index.json');
+      if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
+      return parseCarIndex(await res.json());
+    } catch {
+      return null;
+    }
+  }
+
+  private renderTrackSelect(
+    entries: TrackIndexEntry[] | null,
+    cars: CarIndexEntry[] | null,
+    onSelect: (id: string) => void,
+  ): void {
     const last = this.storage.getItem(LAST_TRACK_KEY);
     const panel = this.doc.createElement('div');
     panel.className = 'menu-panel track-select';
@@ -189,6 +235,8 @@ export class Menu {
       });
       grid.appendChild(button);
     }
+    const picker = this.carPicker(cars);
+    if (picker) panel.appendChild(picker);
     panel.appendChild(grid);
     panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
     this.wireCardKeys(grid);
@@ -222,6 +270,30 @@ export class Menu {
       button.appendChild(meta);
     }
     return button;
+  }
+
+  private carPicker(cars: CarIndexEntry[] | null): HTMLElement | null {
+    if (!cars || cars.length === 0) return null;
+    const row = this.doc.createElement('div');
+    row.className = 'car-row';
+    const label = this.doc.createElement('label');
+    label.textContent = 'Car';
+    label.htmlFor = 'car-picker';
+    const select = this.doc.createElement('select');
+    select.id = 'car-picker';
+    const saved = this.storage.getItem(CAR_STORAGE_KEY);
+    for (const car of cars) {
+      const option = this.doc.createElement('option');
+      option.value = car.id;
+      option.textContent = car.name;
+      if (car.id === saved) option.selected = true;
+      select.appendChild(option);
+    }
+    select.addEventListener('change', () => {
+      this.storage.setItem(CAR_STORAGE_KEY, select.value);
+    });
+    row.append(label, select);
+    return row;
   }
 
   // Arrow keys move focus to the nearest card strictly in that direction.

@@ -17,7 +17,6 @@ import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import { applySetup, loadSetup } from './physics/setup';
 import type { Telemetry } from './physics/vehicle';
-import { F4_CAR } from './physics/vehicleConfig';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
@@ -44,7 +43,7 @@ import { buildTrackMarkings } from './track/markings';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
-import { Menu, TRACK_CHOICES } from './ui/menu';
+import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES } from './ui/menu';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
@@ -80,6 +79,7 @@ declare global {
       getLap(): number;
       getSimTime(): number;
       trackId(): string;
+      carId(): string;
       surfaceUnderCar(): Surface;
       carPosition(): Vec3;
       trackHeightUnderCar(): number;
@@ -106,6 +106,13 @@ declare global {
 
 const TRACK_IDS = TRACK_CHOICES.map((c) => c.id);
 const DEFAULT_TRACK_ID = 'monza';
+const DEFAULT_CAR_ID = 'f4';
+
+// ?car= wins over the saved choice; an unknown id anywhere falls back to the default.
+function resolveCarId(params: URLSearchParams, storage: Storage): string {
+  const requested = params.get('car') ?? storage.getItem(CAR_STORAGE_KEY);
+  return requested !== null && CAR_IDS.includes(requested) ? requested : DEFAULT_CAR_ID;
+}
 
 // The v2 world renders below 15 fps on software GL (CI), where the default cap
 // (8 steps/frame) would run the simulation slower than wall time. 240 steps match
@@ -320,7 +327,7 @@ async function startGame(trackId: string): Promise<void> {
   const track: TrackData | TrackDataV2 = parseTrackData(await res.json());
 
   const params = new URLSearchParams(window.location.search);
-  const carId = params.get('car') ?? 'f4';
+  const carId = resolveCarId(params, window.localStorage);
   const specRes = await fetch(`/cars/${carId}.json`);
   if (!specRes.ok) throw new Error(`Could not load ${carId}.json`);
   const baseSpec = parseCarSpec(await specRes.json());
@@ -464,7 +471,8 @@ async function startGame(trackId: string): Promise<void> {
   }
 
   // Body origin sits on the ground; drop it so the model's contact plane meets the tyres at rest.
-  const car = await CarRenderer.load('/models/f4.glb', -(F4_CAR.suspensionRestLength + F4_CAR.wheelRadius));
+  const bodyOffsetY = -(baseSpec.suspension.front.restLength + baseSpec.wheels.radius);
+  const car = await CarRenderer.load(baseSpec.model.url, bodyOffsetY);
   car.root.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (mesh.isMesh) mesh.castShadow = true;
@@ -472,7 +480,7 @@ async function startGame(trackId: string): Promise<void> {
   scene.add(car.root);
   disposables.push(car);
 
-  const modelRes = await fetch('/models/f4.json');
+  const modelRes = await fetch(baseSpec.model.url.replace(/\.glb$/, '.json'));
   const modelMeta = modelRes.ok ? ((await modelRes.json()) as { paintMaterials?: string[] }) : {};
   const paintMaterials = modelMeta.paintMaterials ?? [];
   const liveryBounds = paintBounds(car.root, paintMaterials);
@@ -511,7 +519,7 @@ async function startGame(trackId: string): Promise<void> {
     return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
   };
 
-  const ghostCar = await CarRenderer.load('/models/f4.glb', -(F4_CAR.suspensionRestLength + F4_CAR.wheelRadius));
+  const ghostCar = await CarRenderer.load(baseSpec.model.url, bodyOffsetY);
   ghostCar.makeGhost();
   ghostCar.root.visible = false;
   scene.add(ghostCar.root);
@@ -577,8 +585,8 @@ async function startGame(trackId: string): Promise<void> {
     const r = ghostState.rotation;
     ghostQuat.set(r.x, r.y, r.z, r.w);
     for (let i = 0; i < ghostState.wheels.length; i++) {
-      const wp = F4_CAR.wheelPositions[i];
-      ghostWheel.set(wp.x, GHOST_WHEEL_DROP, wp.z).applyQuaternion(ghostQuat);
+      const wp = baseSpec.wheels.positions[i];
+      ghostWheel.set(wp[0], GHOST_WHEEL_DROP, wp[2]).applyQuaternion(ghostQuat);
       const w = ghostState.wheels[i];
       w.position.x = p.x + ghostWheel.x;
       w.position.y = p.y + ghostWheel.y;
@@ -674,7 +682,7 @@ async function startGame(trackId: string): Promise<void> {
       emissionAcc[i] -= count;
       const wp = wheel.position;
       particlePos.x = wp.x;
-      particlePos.y = wp.y - F4_CAR.wheelRadius;
+      particlePos.y = wp.y - baseSpec.wheels.radius;
       particlePos.z = wp.z;
       particleVel.x = speed * particleFwd.x;
       particleVel.y = 0;
@@ -886,6 +894,7 @@ async function startGame(trackId: string): Promise<void> {
     getLap: () => game.getLapInfo().lap,
     getSimTime: () => game.simTime,
     trackId: () => track.id,
+    carId: () => carId,
     carPosition: () => {
       const p = game.getCurrentState().position;
       return { x: p.x, y: p.y, z: p.z };
