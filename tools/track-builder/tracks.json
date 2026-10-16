@@ -371,7 +371,9 @@
   {
     "id": "fontana",
     "name": "Fontana Inner",
+    "country": "United States",
     "geojson": "us-fontana",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/fontana.json",
     "maxGrade": 0.03,
     "widthMeters": 15,
@@ -393,7 +395,9 @@
   {
     "id": "cleveland",
     "name": "Cleveland Burke Lakefront",
+    "country": "United States",
     "geojson": "us-cleveland",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/cleveland.json",
     "maxGrade": 0.03,
     "widthMeters": 15,
@@ -415,7 +419,9 @@
   {
     "id": "detroit",
     "name": "Detroit Downtown",
+    "country": "United States",
     "geojson": "us-detroit",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
     "dem": "assets/source/dem/detroit.json",
     "maxGrade": 0.03,
     "widthMeters": 12,

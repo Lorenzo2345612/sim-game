@@ -23,6 +23,9 @@ export const TRACK_CHOICES: TrackChoice[] = [
   { id: 'singapore', name: 'Singapore' },
   { id: 'lasvegas', name: 'Las Vegas' },
   { id: 'spielberg', name: 'Spielberg' },
+  { id: 'fontana', name: 'Fontana' },
+  { id: 'cleveland', name: 'Cleveland' },
+  { id: 'detroit', name: 'Detroit' },
 ];
 
 export const LAST_TRACK_KEY = 'lastTrack';

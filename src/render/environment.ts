@@ -18,6 +18,9 @@ export const FOG_TABLE: Record<string, { density: number }> = {
   singapore: { density: 0.0005 },
   lasvegas: { density: 0.0003 },
   spielberg: { density: 0.0006 },
+  fontana: { density: 0.0004 },
+  cleveland: { density: 0.0005 },
+  detroit: { density: 0.0005 },
 };
 
 export const ENV_TABLE: Record<string, string> = {
@@ -36,6 +39,9 @@ export const ENV_TABLE: Record<string, string> = {
   singapore: 'kloofendal_48d_partly_cloudy_puresky',
   lasvegas: 'qwantani_noon_puresky',
   spielberg: 'kloofendal_48d_partly_cloudy_puresky',
+  fontana: 'qwantani_noon_puresky',
+  cleveland: 'kloofendal_48d_partly_cloudy_puresky',
+  detroit: 'kloofendal_48d_partly_cloudy_puresky',
 };
 
 export interface EnvironmentInfo {

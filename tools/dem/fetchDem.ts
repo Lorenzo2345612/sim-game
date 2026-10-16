@@ -82,6 +82,9 @@ const TRACKS = [
   { id: 'singapore', source: 'sg-marina-bay' },
   { id: 'lasvegas', source: 'us-lasvegas' },
   { id: 'spielberg', source: 'at-spielberg' },
+  { id: 'fontana', source: 'us-fontana' },
+  { id: 'cleveland', source: 'us-cleveland' },
+  { id: 'detroit', source: 'us-detroit' },
 ];
 
 function expandedBbox(source: string): Bbox {
