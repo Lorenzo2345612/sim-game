@@ -99,3 +99,11 @@ Spawning level on a 31° bank engages the bump stops and launches the car. This 
 - With `bank` absent or 0, behaviour is byte-identical to today: no change for other tracks.
 
 The coder adds a unit test in `tests/unit/physics/` that checks two things: a reset with roll 0.5 gives a body up vector at 0.5 ± 0.01 rad from world Y, and roll 0 matches the old quaternion.
+
+## Merge note (planner, 2026-10-16)
+
+Master moved on (157 added `environment`/`biomeFor` in `tools/track-builder/buildTrack.ts` and `src/track/parseTrackData.ts`). In the worktree run `git merge master`, then resolve:
+- `buildTrack.ts`: keep master's `biome = biomeFor(...)`, `placeTrees(..., biome)` and `environment`, plus this task's `bank` argument to `buildTerrain` and the `bank` field.
+- `parseTrackData.ts`: doc comment lists `environment`, `escapeRoads`, `boards`, `sausages` and `bank`.
+- `public/tracks/daytona.json`: take master's copy, then rebuild with `npx tsx tools/track-builder/buildTrack.ts daytona`.
+Then rerun typecheck, lint, `npm test` and the 174 e2e. No other changes.
