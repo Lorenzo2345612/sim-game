@@ -118,13 +118,13 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 113 | Prototype CarSpecs from the lab files | done | 112, 072, 058 |
 | 114 | Car selection and credits list the prototypes | done | 113, 073, 074 |
 | 115 | Cockpit data per car (eye, steering wheel anchor, lock) | done | 058, 066, 072, 107, 113 |
-| 116 | Animated steering wheel in cockpit view | pending | 047, 054, 115 |
+| 116 | Animated steering wheel in cockpit view | in progress | 047, 054, 115 |
 | 117 | Virtual rear-view mirror | pending | 047, 054, 070, 099, 105, 111 |
 | 118 | Cockpit head motion and FOV setting | pending | 047, 115, 117 |
 | 119 | Livery data, palette and storage | done | 072 |
 | 120 | Paint materials in the car pipeline and livery shader | done | 075, 112, 119 |
 | 121 | Race number decals | done | 120 |
-| 122 | Livery editor screen | pending | 044, 073, 074, 106, 114, 120, 121 |
+| 122 | Livery editor screen | in progress | 044, 073, 074, 106, 114, 120, 121 |
 | 123 | Driving line overlay coloured by action | pending | 088, 093, 118 |
 | 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
@@ -132,7 +132,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 128 | Yellow and blue flags | pending | 092, 093 |
 | 129 | Virtual safety car | pending | 088, 092, 093 |
 | 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
-| 131 | Telemetry recorder and store | pending | 050, 070 |
+| 131 | Telemetry recorder and store | in progress | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | pending | 093 |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
@@ -147,11 +147,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
-| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144 |
+| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144, 145 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
-| 150 | Sausage kerb render and colliders | pending | 141, 149 |
+| 150 | Sausage kerb render and colliders | in progress | 141, 149 |
 | 151 | Performance harness and budgets | pending | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
