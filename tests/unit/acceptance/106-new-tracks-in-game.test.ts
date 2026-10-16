@@ -52,6 +52,7 @@ describe('106 new tracks in game', () => {
         terrain: { ...(t.terrain as Record<string, unknown>), heights: [] },
       };
       delete copy.sausages;
+      delete copy.environment;
       delete copy.pit;
       delete copy.barriers;
       delete copy.escapeRoads;

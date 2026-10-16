@@ -1,7 +1,31 @@
 import type { Point2 } from '../../src/track/geo';
-import type { Terrain, TreeInstances, BarrierSegment } from '../../src/core/types';
+import type { EnvironmentType, Terrain, TreeInstances, BarrierSegment } from '../../src/core/types';
 
 export interface Biome { species: { name: string; weight: number }[]; density: number }
+
+const DEFAULT_BIOMES: Partial<Record<EnvironmentType, Biome>> = {
+  desert: {
+    species: [{ name: 'palm-date', weight: 0.5 }, { name: 'shrub-dry', weight: 0.4 }, { name: 'cactus', weight: 0.1 }],
+    density: 0.08,
+  },
+  tropical: {
+    species: [{ name: 'palm-coconut', weight: 0.6 }, { name: 'oak', weight: 0.4 }],
+    density: 0.5,
+  },
+  city: {
+    species: [{ name: 'palm-date', weight: 0.5 }, { name: 'oak', weight: 0.5 }],
+    density: 0.03,
+  },
+};
+
+const VEG_SPECIES = new Set(['palm-date', 'palm-coconut', 'cactus', 'shrub-dry']);
+
+/** Desert/tropical/city fall back to their default species unless the track names one itself. */
+export function biomeFor(environment: EnvironmentType, biome: Biome): Biome {
+  const fallback = DEFAULT_BIOMES[environment];
+  if (!fallback || biome.species.some((sp) => VEG_SPECIES.has(sp.name))) return biome;
+  return fallback;
+}
 
 const CELL = 12;
 const MAX_TREES = 6000;

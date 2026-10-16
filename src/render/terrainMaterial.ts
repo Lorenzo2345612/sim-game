@@ -1,9 +1,23 @@
 import * as THREE from 'three';
-import type { Terrain } from '../core/types';
+import type { EnvironmentType, Terrain } from '../core/types';
 import { applyAntiTiling } from './surfaceMaterials';
 
 const MACRO_URL = 'textures/macro-noise.png';
-const SET_DIRS = ['grass-mown', 'grass', 'grass-dark', 'dirt'] as const;
+const DIRT_DIR = 'dirt';
+
+/** Splat texture set of task 081 per environment: [A, B, C] under textures/ plus mown stripes. */
+export interface GroundPalette {
+  dirs: [string, string, string];
+  stripes: boolean;
+}
+
+export function groundPalette(type: EnvironmentType): GroundPalette {
+  if (type === 'desert') {
+    return { dirs: ['ground/sand', 'ground/dry', 'ground/sand-b'], stripes: false };
+  }
+  // parkland, forest, tropical and city share the grass sets; unknown types fall back here too.
+  return { dirs: ['grass-mown', 'grass', 'grass-dark'], stripes: true };
+}
 
 function defaultLoadTexture(url: string): THREE.Texture {
   const texture = new THREE.TextureLoader().load(url);
@@ -100,6 +114,7 @@ uniform sampler2D uGrassC;
 uniform sampler2D uDirt;
 uniform sampler2D uDirtNormal;
 uniform sampler2D uDirtRoughness;
+uniform float uStripes;
 vec3 terrainAntiTiled( sampler2D tex, vec2 uvA, vec2 uvB, float macroR, float macroG, float saturation, float tint ) {
 	vec3 c = mix( texture2D( tex, uvA ).rgb, texture2D( tex, uvB ).rgb, macroR );
 	c *= 1.0 + ( macroG - 0.5 ) * 0.24;
@@ -120,7 +135,8 @@ vec3 terrainC = terrainAntiTiled( uGrassC, vMapUv, terrainUvB, terrainMacroR, te
 float terrainBlend = texture2D( uMacro, vSurfaceWorldXz / 220.0 ).r;
 vec3 terrainGrass = mix( mix( sampledDiffuseColor.rgb, terrainB, smoothstep( 0.0, 0.5, terrainBlend ) ), terrainC, smoothstep( 0.5, 1.0, terrainBlend ) );
 if ( trackDist < 60.0 ) {
-	terrainGrass *= mod( floor( vSurfaceWorldXz.x / 12.0 ), 2.0 ) < 0.5 ? 1.06 : 0.94;
+	float terrainStripe = mod( floor( vSurfaceWorldXz.x / 12.0 ), 2.0 ) < 0.5 ? 1.06 : 0.94;
+	terrainGrass *= mix( 1.0, terrainStripe, uStripes );
 }
 vec3 terrainAlbedo = terrainGrass;
 if ( terrainDirtW > 0.0 ) {
@@ -207,8 +223,9 @@ float roughnessFactor = roughness;
 export function createTerrainMaterial(
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
   ground?: GroundOverlay,
+  palette: GroundPalette = groundPalette('parkland'),
 ): THREE.MeshStandardMaterial {
-  const sets = SET_DIRS.map((dir) => ({
+  const sets = [...palette.dirs, DIRT_DIR].map((dir) => ({
     color: loadTexture(`textures/${dir}/color.jpg`),
     normal: loadTexture(`textures/${dir}/normal.jpg`),
     roughness: loadTexture(`textures/${dir}/roughness.jpg`),
@@ -254,6 +271,7 @@ export function createTerrainMaterial(
     uMacro: { value: macro },
     uSaturation: { value: 0.9 },
     uTint: { value: 0.6 },
+    uStripes: { value: palette.stripes ? 1 : 0 },
   };
   if (groundTexture && ground) {
     uniforms.uGround = { value: groundTexture };

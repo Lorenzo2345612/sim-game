@@ -13,7 +13,7 @@ import { layoutBarriers } from './barriers';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
 import { clipPitRange } from './pitRange';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
-import { placeTrees, type Biome } from './trees';
+import { biomeFor, placeTrees, type Biome } from './trees';
 import type { DemGrid } from '../dem/fetchDem';
 import { bboxCenter, polylineLength, type Point2 } from '../../src/track/geo';
 import type { Grandstand, PitLane, Side, TrackDataV2, TreeSpecies } from '../../src/core/types';
@@ -44,6 +44,10 @@ const SPECIES_PRESETS: Record<string, { preset: string; heightMeters: number }> 
   ash: { preset: 'Ash Medium', heightMeters: 20 },
   aspen: { preset: 'Aspen Large', heightMeters: 25 },
   pine: { preset: 'Pine Large', heightMeters: 26 },
+  'palm-date': { preset: 'Palm Date', heightMeters: 9 },
+  'palm-coconut': { preset: 'Palm Coconut', heightMeters: 12 },
+  cactus: { preset: 'Cactus', heightMeters: 3 },
+  'shrub-dry': { preset: 'Shrub Dry', heightMeters: 1.2 },
 };
 
 function cumulativeLengths(centerline: Point2[]): number[] {
@@ -138,10 +142,11 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const boards = buildBoards(centerline, config.widthMeters, barriers);
   const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
   const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset);
-  const trees = placeTrees(config.id, centerline, terrain, barriers, config.biome);
+  const biome = biomeFor(config.environment ?? 'parkland', config.biome);
+  const trees = placeTrees(config.id, centerline, terrain, barriers, biome);
   const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
   const sausages = buildSausages(centerline, config.widthMeters, config.sausages);
-  const treeSpecies: TreeSpecies[] = config.biome.species.map((sp) => ({
+  const treeSpecies: TreeSpecies[] = biome.species.map((sp) => ({
     name: sp.name,
     preset: SPECIES_PRESETS[sp.name].preset,
     heightMeters: SPECIES_PRESETS[sp.name].heightMeters,
@@ -150,6 +155,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const data: TrackDataV2 = {
     ...base,
     version: 2,
+    environment: config.environment ?? 'parkland',
     elevation,
     kerbs: kerbsFinal,
     runoffs: runoffsFinal,

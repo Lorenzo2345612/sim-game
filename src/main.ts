@@ -9,7 +9,7 @@ import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { loadGameOptions, loadPreset, parseQuality, presetSettings, type Preset } from './core/settings';
-import type { DriverInput, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
+import type { DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { loadLivery, type Livery } from './game/livery';
@@ -24,13 +24,13 @@ import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from
 import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
 import { createTrackObject } from './render/trackRenderer';
 import { createTerrainMesh } from './render/terrainRenderer';
-import { createTerrainMaterial, terrainTrackDistance } from './render/terrainMaterial';
+import { createTerrainMaterial, groundPalette, terrainTrackDistance } from './render/terrainMaterial';
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
 import { createDistanceBoards } from './render/distanceBoards';
 import { createTreeField, type TreeField } from './render/treeField';
-import { loadTreeModels } from './render/treeModels';
+import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
 import { applyEnvironment, ShadowRig } from './render/environment';
@@ -61,6 +61,8 @@ export interface SceneStats {
   sky: boolean;
   shadows: boolean;
   environment: string;
+  environmentType: EnvironmentType;
+  treeSpecies: string[];
   ibl: boolean;
   horizonColor: [number, number, number];
   fogColor: [number, number, number];
@@ -377,6 +379,8 @@ async function startGame(trackId: string): Promise<void> {
     sky: false,
     shadows: false,
     environment: '',
+    environmentType: 'parkland',
+    treeSpecies: [],
     ibl: false,
     horizonColor: [0, 0, 0],
     fogColor: [0, 0, 0],
@@ -391,6 +395,8 @@ async function startGame(trackId: string): Promise<void> {
   if ('version' in track) {
     // v2: elevated terrain + textured surfaces + scenery replace the flat Phase 0 ground.
     ground.visible = false;
+    const environmentType: EnvironmentType = track.environment ?? 'parkland';
+    stats.environmentType = environmentType;
     const env = await applyEnvironment(scene, track.id, handle.renderer);
     stats.environment = env.name;
     stats.horizonColor = env.horizon;
@@ -407,7 +413,7 @@ async function startGame(trackId: string): Promise<void> {
     const trackDist = terrainTrackDistance(track.terrain, track.centerline, 600);
     const terrain = createTerrainMesh(
       track.terrain,
-      createTerrainMaterial(undefined, { url: groundUrl, rect: track.terrain }),
+      createTerrainMaterial(undefined, { url: groundUrl, rect: track.terrain }, groundPalette(environmentType)),
       trackDist,
     );
     terrain.receiveShadow = true;
@@ -438,6 +444,7 @@ async function startGame(trackId: string): Promise<void> {
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
     // quads) being the farthest level.
     const treeModels = await loadTreeModels();
+    Object.assign(treeModels, await loadGlbModels(track.treeSpecies.map((s) => s.name)));
     const trees = createTreeField(track.trees, track.treeSpecies, {
       models: treeModels,
       terrainY: makeTerrainY(track.terrain),
@@ -462,6 +469,7 @@ async function startGame(trackId: string): Promise<void> {
     stats.foamBlocks = barriers.foamBlocks;
     stats.escapeRoads = track.escapeRoads?.length ?? 0;
     stats.treeInstances = track.treeSpecies.reduce((n, s) => n + trees.instanceCount(s.name), 0);
+    stats.treeSpecies = track.treeSpecies.filter((s) => trees.instanceCount(s.name) > 0).map((s) => s.name);
     stats.grandstands = track.grandstands.length;
     stats.pitBuildings = 1;
     stats.startGantries = 1;

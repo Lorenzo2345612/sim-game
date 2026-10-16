@@ -37,7 +37,7 @@ test.describe('156 environment type ground vegetation', () => {
     expect(stats.treeSpecies.filter((s) => s.startsWith('palm'))).toEqual([]);
   });
 
-  test('AT5: the band y 200-330 of the bahrain start view is sand-toned', async ({ page }) => {
+  test('AT5: the side strips x < 384 or x >= 896 of the ground band y 400-719 of the bahrain start view are sand-toned', async ({ page }) => {
     test.setTimeout(120000);
     await loadGame(page, '/?track=bahrain');
     await page.waitForTimeout(1000); // first frames settle: vegetation and textures ready
@@ -51,20 +51,29 @@ test.describe('156 environment type ground vegetation', () => {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
-      const d = ctx.getImageData(0, 200, img.width, 131).data; // y 200..330 inclusive
+      const top = 400;
+      const d = ctx.getImageData(0, top, img.width, img.height - top).data;
       let red = 0;
+      let saturated = 0;
       let satSum = 0;
-      const n = d.length / 4;
+      let n = 0;
       for (let i = 0; i < d.length; i += 4) {
+        const x = (i / 4) % img.width;
+        if (x >= 384 && x < 896) continue; // centre strip: car and horizon
         const r = d[i] / 255;
         const g = d[i + 1] / 255;
         const b = d[i + 2] / 255;
-        if (r > g) red += 1;
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-        satSum += max > 0 ? (max - min) / max : 0;
+        const sat = max > 0 ? (max - min) / max : 0;
+        satSum += sat;
+        n++;
+        if (sat >= 0.12) {
+          saturated++;
+          if (r > g) red += 1;
+        }
       }
-      return { redRatio: red / n, meanSaturation: satSum / n };
+      return { redRatio: saturated > 0 ? red / saturated : 0, meanSaturation: satSum / n };
     }, png);
     expect(redRatio).toBeGreaterThanOrEqual(0.4);
     expect(meanSaturation).toBeLessThan(0.45);

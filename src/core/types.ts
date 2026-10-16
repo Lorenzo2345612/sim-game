@@ -44,6 +44,9 @@ export type LapEvent =
   | { type: 'lapCompleted'; lap: number; lapTime: number; isBest: boolean }
   | { type: 'lapInvalidated'; lap: number };
 
+/** Per-track look: ground palette and default vegetation. */
+export type EnvironmentType = 'parkland' | 'forest' | 'desert' | 'tropical' | 'city';
+
 export type Surface = 'asphalt' | 'kerb' | 'grass' | 'gravel' | 'runoff';
 export type Side = 'left' | 'right';
 /** Centerline index range; end is inclusive, segments may wrap (end < start). */
@@ -64,6 +67,8 @@ export interface Sausage { index: number; side: Side; offset: number; length: nu
 export interface SurfaceStrip { surface: Surface; positions: Float32Array; indices: Uint32Array; uvs: Float32Array } // task 031 builds, 032/037 consume
 export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   version: 2;
+  /** Ground palette and vegetation set; parser defaults a missing value to 'parkland'. */
+  environment?: EnvironmentType;
   elevation: number[];      // metres, per centerline point, relative to the start line (start = 0)
   kerbs: TrackSegment[];
   runoffs: RunoffSegment[];

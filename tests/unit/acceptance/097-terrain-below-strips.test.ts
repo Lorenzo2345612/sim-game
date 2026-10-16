@@ -168,6 +168,8 @@ describe('097 terrain below strips acceptance', () => {
       delete copy.boards;
       // 149 adds the sausages array to every rebuilt track.
       delete copy.sausages;
+      // 156 adds the environment key to every rebuilt track.
+      delete copy.environment;
       // 173 clips the pit range onto the nearest straight.
       delete copy.pit;
       return copy;

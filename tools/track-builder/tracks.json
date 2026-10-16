@@ -8,6 +8,7 @@
     "canopyRadiusCells": 3,
     "maxGrade": 0.04,
     "widthMeters": 12,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -32,6 +33,7 @@
     "dem": "assets/source/dem/spa.json",
     "maxGrade": 0.20,
     "widthMeters": 14,
+    "environment": "forest",
     "reverse": false,
     "biome": {
       "species": [
@@ -55,6 +57,7 @@
     "dem": "assets/source/dem/silverstone.json",
     "maxGrade": 0.04,
     "widthMeters": 12,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -79,6 +82,7 @@
     "dem": "assets/source/dem/mexico.json",
     "maxGrade": 0.04,
     "widthMeters": 13,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -103,6 +107,7 @@
     "dem": "assets/source/dem/daytona.json",
     "maxGrade": 0.04,
     "widthMeters": 15,
+    "environment": "tropical",
     "reverse": false,
     "biome": {
       "species": [
@@ -126,6 +131,7 @@
     "dem": "assets/source/dem/lusail.json",
     "maxGrade": 0.03,
     "widthMeters": 12,
+    "environment": "desert",
     "reverse": false,
     "biome": {
       "species": [
@@ -149,6 +155,7 @@
     "dem": "assets/source/dem/bahrain.json",
     "maxGrade": 0.04,
     "widthMeters": 15,
+    "environment": "desert",
     "reverse": false,
     "biome": {
       "species": [
@@ -172,6 +179,7 @@
     "dem": "assets/source/dem/braselton.json",
     "maxGrade": 0.12,
     "widthMeters": 12,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -196,6 +204,7 @@
     "dem": "assets/source/dem/elkhart.json",
     "maxGrade": 0.08,
     "widthMeters": 12,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -221,6 +230,7 @@
     "dem": "assets/source/dem/sepang.json",
     "maxGrade": 0.04,
     "widthMeters": 16,
+    "environment": "tropical",
     "reverse": false,
     "biome": {
       "species": [
@@ -244,6 +254,7 @@
     "dem": "assets/source/dem/baku.json",
     "maxGrade": 0.08,
     "widthMeters": 12,
+    "environment": "city",
     "reverse": false,
     "biome": {
       "species": [
@@ -267,6 +278,7 @@
     "dem": "assets/source/dem/budapest.json",
     "maxGrade": 0.08,
     "widthMeters": 13,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -292,6 +304,7 @@
     "dem": "assets/source/dem/singapore.json",
     "maxGrade": 0.04,
     "widthMeters": 12,
+    "environment": "city",
     "reverse": false,
     "biome": {
       "species": [
@@ -315,6 +328,7 @@
     "dem": "assets/source/dem/lasvegas.json",
     "maxGrade": 0.03,
     "widthMeters": 14,
+    "environment": "city",
     "reverse": false,
     "biome": {
       "species": [
@@ -338,6 +352,7 @@
     "dem": "assets/source/dem/spielberg.json",
     "maxGrade": 0.12,
     "widthMeters": 13,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -360,6 +375,7 @@
     "dem": "assets/source/dem/fontana.json",
     "maxGrade": 0.03,
     "widthMeters": 15,
+    "environment": "desert",
     "reverse": false,
     "biome": {
       "species": [
@@ -381,6 +397,7 @@
     "dem": "assets/source/dem/cleveland.json",
     "maxGrade": 0.03,
     "widthMeters": 15,
+    "environment": "parkland",
     "reverse": false,
     "biome": {
       "species": [
@@ -402,6 +419,7 @@
     "dem": "assets/source/dem/detroit.json",
     "maxGrade": 0.03,
     "widthMeters": 12,
+    "environment": "city",
     "reverse": false,
     "biome": {
       "species": [

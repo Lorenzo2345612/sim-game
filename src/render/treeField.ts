@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import type { TreeInstances, TreeSpecies, Vec3 } from '../core/types';
-import { bakedSpeciesFor, type BakedSpecies, type TreeModels } from './treeModels';
+import { bakedSpeciesFor, type ModelSpecies, type TreeModels, type TreeVariant } from './treeModels';
 
 export type Lod = 0 | 1 | 2;
 
@@ -95,7 +95,7 @@ interface SpeciesState {
 }
 
 function createVariants(
-  model: TreeModels[BakedSpecies],
+  model: TreeVariant[],
   total: number,
   baked: string,
   object: THREE.Object3D,
@@ -144,6 +144,7 @@ export function createTreeField(
   const counts: [number, number, number] = [0, 0, 0];
 
   for (const variants of Object.values(models)) {
+    if (!variants) continue;
     for (const variant of variants) {
       for (const lod of variant.lods) {
         for (const part of lod) {
@@ -167,18 +168,20 @@ export function createTreeField(
     countOf.set(spec.name, count);
   }
 
-  const totals = new Map<BakedSpecies, number>();
+  const totals = new Map<ModelSpecies, number>();
   for (const spec of presentSpecies) {
     const baked = bakedSpeciesFor(spec.name);
     totals.set(baked, (totals.get(baked) ?? 0) + countOf.get(spec.name)!);
   }
 
-  const groups = new Map<BakedSpecies, Group>();
+  const groups = new Map<ModelSpecies, Group>();
   for (const spec of presentSpecies) {
     const baked = bakedSpeciesFor(spec.name);
     if (!groups.has(baked)) {
+      const variants = models[baked];
+      if (!variants) throw new Error(`treeField: models missing species ${baked}`);
       groups.set(baked, {
-        variants: createVariants(models[baked], totals.get(baked)!, baked, object, meshes),
+        variants: createVariants(variants, totals.get(baked)!, baked, object, meshes),
         next: 0,
       });
     }

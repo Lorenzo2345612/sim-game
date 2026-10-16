@@ -468,6 +468,7 @@ describe('155 close parallel sections acceptance', () => {
       const strip = (t: TrackDataV2): Record<string, unknown> => {
         const copy: Record<string, unknown> = { ...t, terrain: { ...t.terrain, heights: [] } };
         delete copy.sausages;
+        delete copy.environment;
         delete copy.pit;
         delete copy.barriers;
         delete copy.escapeRoads;

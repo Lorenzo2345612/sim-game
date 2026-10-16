@@ -1,4 +1,4 @@
-import type { TrackData } from '../../src/core/types';
+import type { EnvironmentType, TrackData } from '../../src/core/types';
 import { bboxCenter, projectLonLat, polylineLength } from '../../src/track/geo';
 import { catmullRomClosed, resampleClosed } from '../../src/track/centerline';
 
@@ -13,6 +13,8 @@ export interface TrackSourceConfig {
   name: string;
   widthMeters: number;
   reverse: boolean;
+  /** Environment type copied into the track JSON; buildTrack defaults it to 'parkland'. */
+  environment?: EnvironmentType;
   source?: TrackSource;
 }
 
