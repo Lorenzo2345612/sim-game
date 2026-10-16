@@ -2985,6 +2985,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/207-ui-polish-hud-menu.md"
+    },
+    {
+      "num": "208",
+      "title": "Tyre HUD details and dirt tuning",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/208-tyre-hud-details.md"
     }
   ]
 }
