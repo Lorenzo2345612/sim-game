@@ -31,6 +31,7 @@ import { createTerrainMaterial, groundPalette, terrainTrackDistance } from './re
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
+import { createSausages } from './render/sausageRenderer';
 import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createLandmarks } from './render/landmarks';
 import { createDistanceBoards } from './render/distanceBoards';
@@ -59,6 +60,7 @@ import { SetupHud } from './ui/setupHud';
 
 export interface SceneStats {
   barriers: number;
+  sausages: number;
   foamBlocks: number;
   escapeRoads: number;
   treeInstances: number;
@@ -545,6 +547,7 @@ async function startGame(trackId: string): Promise<void> {
   let playerLivery = loadLivery(window.localStorage, baseSpec.id);
   const stats: SceneStats = {
     barriers: 0,
+    sausages: 0,
     foamBlocks: 0,
     escapeRoads: 0,
     treeInstances: 0,
@@ -618,6 +621,10 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(barriers.group);
     disposables.push(barriers);
 
+    const sausages = createSausages(track);
+    scene.add(sausages.group);
+    disposables.push(sausages);
+
     const boards = createDistanceBoards(track);
     scene.add(boards.group);
     disposables.push(boards);
@@ -653,6 +660,7 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(lights.object);
 
     stats.barriers = barriers.group.children.length;
+    stats.sausages = sausages.count;
     stats.foamBlocks = barriers.foamBlocks;
     stats.escapeRoads = track.escapeRoads?.length ?? 0;
     stats.treeInstances = track.treeSpecies.reduce((n, s) => n + trees.instanceCount(s.name), 0);

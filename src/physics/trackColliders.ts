@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
 import { barrierRuns } from '../track/barrierPath';
+import { sausageHullPoints, sausagePose } from '../track/sausages';
 import { buildTrackSurfaces } from '../track/surfaces';
 
 const WALL_BOTTOM = -0.3;
@@ -68,6 +69,19 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
   }
 }
 
+/** Fixed convex-hull per sausage, kerb surface and default friction like the kerb strips. */
+function addSausageColliders(world: RAPIER.World, track: TrackDataV2): void {
+  for (const s of track.sausages ?? []) {
+    const desc = RAPIER.ColliderDesc.convexHull(sausageHullPoints(s.length));
+    if (desc === null) continue;
+    const { position, yaw } = sausagePose(track, s);
+    desc
+      .setTranslation(position.x, position.y, position.z)
+      .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) });
+    registerSurface(world.createCollider(desc), 'kerb');
+  }
+}
+
 export function addTrackColliders(
   world: RAPIER.World,
   track: TrackDataV2,
@@ -91,6 +105,7 @@ export function addTrackColliders(
     );
     registerSurface(collider, strip.surface);
   }
+  addSausageColliders(world, track);
   addBarrierWalls(world, track);
 }
 
