@@ -953,7 +953,7 @@
     {
       "num": "070",
       "title": "Integrate the new vehicle model in the game",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "054",
         "057",
@@ -2430,7 +2430,7 @@
     {
       "num": "176",
       "title": "Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "173"
       ],

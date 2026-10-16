@@ -73,7 +73,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 067 | Car setups (pure) | done | 058 |
 | 068 | Setup screen | done | 058, 067, 044, 054 |
 | 069 | HUD tyres and fuel widget | done | 048, 065, 169 |
-| 070 | Integrate the new vehicle model in the game | waiting decision | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
+| 070 | Integrate the new vehicle model in the game | in progress | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
 | 073 | Car registry and selection | pending | 070, 044, 072 |
@@ -177,4 +177,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 173 | Pit building only along the straight | done | 106 |
 | 174 | Track banking (cross-slope) + Daytona | pending | 106, 155 |
 | 175 | Fontana banking data | pending | 168, 174 |
-| 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | pending | 173 |
+| 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | in progress | 173 |
