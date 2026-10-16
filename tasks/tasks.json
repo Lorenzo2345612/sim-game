@@ -2348,7 +2348,7 @@
     {
       "num": "170",
       "title": "Prototype B variants (LMP2 B, Hypercar B) - needs design",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "112",
         "113",
