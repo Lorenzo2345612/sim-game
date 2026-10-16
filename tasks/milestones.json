@@ -314,6 +314,30 @@
       ]
     },
     {
+      "id": "M2.1",
+      "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
+      "tasks": [
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092",
+        "093",
+        "094",
+        "095"
+      ],
+      "status": "open",
+      "prefetch": [
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092"
+      ]
+    },
+    {
       "id": "M1.2e",
       "title": "Visual fidelity per circuit (track style: pit, stands, kerbs, paint, barriers, fences, floodlights, props)",
       "tasks": [
@@ -380,30 +404,6 @@
         "119",
         "120",
         "121"
-      ]
-    },
-    {
-      "id": "M2.1",
-      "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
-      "tasks": [
-        "087",
-        "088",
-        "089",
-        "090",
-        "091",
-        "092",
-        "093",
-        "094",
-        "095"
-      ],
-      "status": "open",
-      "prefetch": [
-        "087",
-        "088",
-        "089",
-        "090",
-        "091",
-        "092"
       ]
     },
     {
