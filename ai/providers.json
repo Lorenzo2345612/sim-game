@@ -38,9 +38,9 @@
       "timeoutMin": 20
     },
     "coder": {
-      "provider": "glm",
-      "model": "glm-5.3-flash",
-      "heavyModel": "glm-5.3",
+      "provider": "mimo",
+      "model": "mimo-v2.6-flash",
+      "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/coder.md",
       "timeoutMin": 25
     },
