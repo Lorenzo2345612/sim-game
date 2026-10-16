@@ -216,3 +216,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 212 | Ghost delta goes wild from the second lap | done | - |
 | 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | in progress | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | in progress | - |
+| 215 | Hybrid and active-aero contract | pending | - |
+| 216 | ERS energy model | pending | 215 |
+| 217 | Active-aero zones from the centerline | pending | - |
+| 218 | Active-aero state and aero blend | pending | 215 |
+| 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
+| 220 | Overtake and ERS mode controls | pending | 215 |
+| 221 | OW-26 car definition and calibration | pending | 219 |
+| 222 | Per-car RPM range in the HUD | pending | - |
+| 223 | ERS and active-aero HUD widget | pending | 219, 221 |

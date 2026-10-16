@@ -3066,6 +3066,121 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/214-track-conditions.md"
+    },
+    {
+      "num": "215",
+      "title": "Hybrid and active-aero contract",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/215-hybrid-contract.md"
+    },
+    {
+      "num": "216",
+      "title": "ERS energy model",
+      "status": "pending",
+      "deps": [
+        "215"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/216-ers.md"
+    },
+    {
+      "num": "217",
+      "title": "Active-aero zones from the centerline",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/217-aero-zones.md"
+    },
+    {
+      "num": "218",
+      "title": "Active-aero state and aero blend",
+      "status": "pending",
+      "deps": [
+        "215"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/218-active-aero.md"
+    },
+    {
+      "num": "219",
+      "title": "Hybrid and active aero in the vehicle and game",
+      "status": "pending",
+      "deps": [
+        "215",
+        "216",
+        "217",
+        "218"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/219-hybrid-integration.md"
+    },
+    {
+      "num": "220",
+      "title": "Overtake and ERS mode controls",
+      "status": "pending",
+      "deps": [
+        "215"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/220-ers-controls.md"
+    },
+    {
+      "num": "221",
+      "title": "OW-26 car definition and calibration",
+      "status": "pending",
+      "deps": [
+        "219"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 1,
+      "spec": "tasks/221-ow26-car.md"
+    },
+    {
+      "num": "222",
+      "title": "Per-car RPM range in the HUD",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/222-hud-rpm-range.md"
+    },
+    {
+      "num": "223",
+      "title": "ERS and active-aero HUD widget",
+      "status": "pending",
+      "deps": [
+        "219",
+        "221"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/223-hud-ers.md"
     }
   ]
 }
