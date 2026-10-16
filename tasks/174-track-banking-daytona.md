@@ -107,3 +107,7 @@ Master moved on (157 added `environment`/`biomeFor` in `tools/track-builder/buil
 - `parseTrackData.ts`: doc comment lists `environment`, `escapeRoads`, `boards`, `sausages` and `bank`.
 - `public/tracks/daytona.json`: take master's copy, then rebuild with `npx tsx tools/track-builder/buildTrack.ts daytona`.
 Then rerun typecheck, lint, `npm test` and the 174 e2e. No other changes.
+
+## Planner-authorised test edits (2026-10-16)
+
+- `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else.

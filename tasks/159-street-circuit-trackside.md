@@ -68,3 +68,7 @@ npx playwright test 159-   # this task's e2e files only; never the full e2e suit
 
 - Buildings and water (158), landmarks (160).
 - Brand logos, readable text on billboards, night lamp lighting, lamp colliders.
+
+## Planner-authorised test edits (2026-10-16)
+
+- `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else.
