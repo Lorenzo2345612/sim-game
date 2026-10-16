@@ -4,7 +4,7 @@ import './ui/hudV2.css';
 import './ui/hudTyres.css';
 import './ui/setupHud.css';
 import * as THREE from 'three';
-import { EngineAudio } from './audio/engineAudio';
+import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
@@ -113,6 +113,8 @@ declare global {
       gear(): number;
       preset(): Preset;
       teleportToIndex(i: number): void;
+      rpm(): number;
+      audioStats(): EngineAudioStats;
       audioPaused(): boolean;
       setLivery(l: Partial<Livery>): void;
     };
@@ -351,6 +353,7 @@ async function startGame(trackId: string): Promise<void> {
   const specRes = await fetch(`/cars/${carId}.json`);
   if (!specRes.ok) throw new Error(`Could not load ${carId}.json`);
   const baseSpec = parseCarSpec(await specRes.json());
+  engineAudio?.setSound(baseSpec.sound);
 
   const gameOpts = loadGameOptions(window.localStorage);
   const qCompound = params.get('compound');
@@ -1030,6 +1033,9 @@ async function startGame(trackId: string): Promise<void> {
     gear: () => game.gear(),
     preset: () => preset,
     teleportToIndex: (i: number) => game.teleportToIndex(i),
+    rpm: () => game.rpm(),
+    audioStats: () =>
+      engineAudio?.getStats() ?? { running: false, engine: 'oscillator', firingHz: 0 },
     audioPaused: () => engineAudio?.paused ?? false,
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;

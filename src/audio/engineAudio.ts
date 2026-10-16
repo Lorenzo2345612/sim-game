@@ -1,6 +1,17 @@
+import { DEFAULT_CAR_SOUND, type CarSound } from '../physics/carSpec';
+import { firingHz } from './engineSynth';
+// Bundled as its own worker-style asset; addModule needs the URL string, not a URL object.
+import engineWorkletUrl from './engineWorklet.ts?worker&url';
+
 export interface EngineParams {
   frequencyHz: number;
   gain: number;
+}
+
+export interface EngineAudioStats {
+  running: boolean;
+  engine: 'worklet' | 'oscillator';
+  firingHz: number;
 }
 
 const SMOOTHING = 0.05;
@@ -8,6 +19,8 @@ const SQUEAL_ON = 0.1;
 const SQUEAL_FULL = 0.2;
 const SQUEAL_MAX = 0.5;
 const IDLE_RPM = 900;
+const WORKLET_LEVEL = 0.5;
+const WORKLET_SEED = 1;
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
@@ -47,9 +60,19 @@ export class EngineAudio {
   private running = false;
   private disposed = false;
   private pausedValue = false;
+  private sound: CarSound;
+  private workletNode: AudioWorkletNode | null = null;
+  private workletGain: GainNode | null = null;
+  private moduleState: 'none' | 'loading' | 'ready' | 'failed' = 'none';
+  private lastRpm = 0;
+  private lastThrottle = 0;
 
-  constructor(createContext: () => AudioContext = () => new AudioContext()) {
+  constructor(
+    createContext: () => AudioContext = () => new AudioContext(),
+    sound: CarSound = DEFAULT_CAR_SOUND,
+  ) {
     this.ctx = createContext();
+    this.sound = sound;
     const now = this.ctx.currentTime;
 
     this.lowpass = this.ctx.createBiquadFilter();
@@ -85,6 +108,21 @@ export class EngineAudio {
     this.squealGain.connect(this.ctx.destination);
 
     this.applyGains();
+    this.initWorklet();
+  }
+
+  setSound(sound: CarSound): void {
+    if (this.disposed) return;
+    this.sound = sound;
+    if (this.moduleState === 'ready') this.rebuildWorklet();
+  }
+
+  getStats(): EngineAudioStats {
+    return {
+      running: this.running,
+      engine: this.workletNode !== null ? 'worklet' : 'oscillator',
+      firingHz: firingHz(this.lastRpm, this.sound.cylinders),
+    };
   }
 
   start(): void {
@@ -144,14 +182,30 @@ export class EngineAudio {
 
   update(rpm: number, throttle: number, slipRatios: readonly number[]): void {
     if (this.disposed) return;
+    this.lastRpm = rpm;
+    this.lastThrottle = throttle;
     const { frequencyHz, gain } = engineParams(rpm, throttle);
-    this.engineBase = gain;
-    this.subBase = gain / 2;
     this.squealBase = tyreSquealGain(slipRatios);
-    const now = this.ctx.currentTime;
-    this.oscEngine.frequency.setTargetAtTime(frequencyHz, now, SMOOTHING);
-    this.oscSub.frequency.setTargetAtTime(frequencyHz * 2, now, SMOOTHING);
-    this.lowpass.frequency.setTargetAtTime(clamp(400 + frequencyHz * 4, 400, 6000), now, SMOOTHING);
+    if (this.workletNode) {
+      this.engineBase = 0;
+      this.subBase = 0;
+      try {
+        this.workletNode.port.postMessage({ rpm, throttle });
+      } catch {
+        /* port already closed */
+      }
+    } else if (this.moduleState === 'loading') {
+      // While addModule is pending the engine stays silent instead of doubling paths.
+      this.engineBase = 0;
+      this.subBase = 0;
+    } else {
+      this.engineBase = gain;
+      this.subBase = gain / 2;
+      const now = this.ctx.currentTime;
+      this.oscEngine.frequency.setTargetAtTime(frequencyHz, now, SMOOTHING);
+      this.oscSub.frequency.setTargetAtTime(frequencyHz * 2, now, SMOOTHING);
+      this.lowpass.frequency.setTargetAtTime(clamp(400 + frequencyHz * 4, 400, 6000), now, SMOOTHING);
+    }
     this.applyGains();
   }
 
@@ -164,6 +218,7 @@ export class EngineAudio {
     if (this.disposed) return;
     this.disposed = true;
     this.running = false;
+    this.disconnectWorklet();
     for (const node of [this.oscEngine, this.oscSub, this.squealNoise]) {
       try {
         node.stop();
@@ -198,6 +253,96 @@ export class EngineAudio {
     this.engineGain.gain.setTargetAtTime(this.engineBase * m, now, SMOOTHING);
     this.subGain.gain.setTargetAtTime(this.subBase * m, now, SMOOTHING);
     this.squealGain.gain.setTargetAtTime(this.squealBase * m, now, SMOOTHING);
+    this.workletGain?.gain.setTargetAtTime(WORKLET_LEVEL * m, now, SMOOTHING);
+  }
+
+  private initWorklet(): void {
+    if (this.disposed) return;
+    let worklet: AudioWorklet | undefined;
+    try {
+      worklet = this.ctx.audioWorklet;
+    } catch {
+      return;
+    }
+    if (!worklet || typeof worklet.addModule !== 'function') return;
+    this.moduleState = 'loading';
+    let module: Promise<void>;
+    try {
+      module = worklet.addModule(engineWorkletUrl);
+    } catch {
+      this.moduleState = 'failed';
+      return;
+    }
+    module
+      .then(() => {
+        if (this.disposed) return;
+        this.moduleState = 'ready';
+        this.rebuildWorklet();
+      })
+      .catch(() => {
+        this.moduleState = 'failed';
+        if (this.disposed) return;
+        const { gain } = engineParams(this.lastRpm, this.lastThrottle);
+        this.engineBase = gain;
+        this.subBase = gain / 2;
+        this.applyGains();
+      });
+  }
+
+  private rebuildWorklet(): void {
+    if (this.disposed || this.moduleState !== 'ready') return;
+    this.disconnectWorklet();
+    try {
+      const node = new AudioWorkletNode(this.ctx, 'engine-synth', {
+        numberOfInputs: 0,
+        outputChannelCount: [1],
+        processorOptions: {
+          cylinders: this.sound.cylinders,
+          exhaustLengthM: this.sound.exhaustLengthM,
+          intakeMix: this.sound.intakeMix,
+          seed: WORKLET_SEED,
+        },
+      });
+      const gain = this.ctx.createGain();
+      node.connect(gain);
+      gain.connect(this.ctx.destination);
+      this.workletNode = node;
+      this.workletGain = gain;
+    } catch {
+      this.moduleState = 'failed';
+      this.disconnectWorklet();
+      return;
+    }
+    try {
+      this.workletNode?.port.postMessage({ rpm: this.lastRpm, throttle: this.lastThrottle });
+    } catch {
+      /* node without a port still renders */
+    }
+    this.applyGains();
+  }
+
+  private disconnectWorklet(): void {
+    if (this.workletNode) {
+      try {
+        this.workletNode.port.close();
+      } catch {
+        /* port already closed */
+      }
+      try {
+        this.workletNode.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+      this.workletNode = null;
+    }
+    if (this.workletGain) {
+      try {
+        this.workletGain.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+      this.workletGain = null;
+    }
   }
 
   private createNoiseSource(): AudioBufferSourceNode {
