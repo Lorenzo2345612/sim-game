@@ -213,3 +213,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
 | 211 | Fontana Sports Car Course (oval + infield layout) | pending | 174 |
+| 212 | Ghost delta goes wild from the second lap | pending | - |

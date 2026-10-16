@@ -3033,6 +3033,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/211-fontana-sports-car-course.md"
+    },
+    {
+      "num": "212",
+      "title": "Ghost delta goes wild from the second lap",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/212-ghost-delta-wrap.md"
     }
   ]
 }
