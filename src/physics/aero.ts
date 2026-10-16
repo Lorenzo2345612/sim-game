@@ -14,6 +14,7 @@ export function aeroForces(
   rideDrop: number,
   setup?: { frontWing: number; rearWing: number },
   out?: AeroForces,
+  activeBlend?: number,
 ): AeroForces {
   const result = out ?? { front: 0, rear: 0, drag: 0 };
   const v = Math.abs(speedMs);
@@ -28,6 +29,14 @@ export function aeroForces(
     claFront += spec.aero.wingStep.claFront * dF;
     claRear += spec.aero.wingStep.claRear * dR;
     cda += spec.aero.wingStep.cda * dR;
+  }
+  const aa = spec.activeAero;
+  if (aa && activeBlend !== undefined && activeBlend > 0) {
+    const b = Math.min(1, activeBlend);
+    cda *= 1 - b * (1 - aa.dragScale);
+    const df = 1 - b * (1 - aa.downforceScale);
+    claFront *= df;
+    claRear *= df;
   }
   result.front = q * Math.max(0, claFront);
   result.rear = q * Math.max(0, claRear);
