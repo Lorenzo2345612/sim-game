@@ -1596,7 +1596,7 @@
     {
       "num": "117",
       "title": "Virtual rear-view mirror",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "047",
         "054",
