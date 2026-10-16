@@ -76,7 +76,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 070 | Integrate the new vehicle model in the game | done | 054, 057, 058, 065, 169, 066, 067, 068, 069 |
 | 071 | Generic car asset pipeline | done | 053 |
 | 072 | GT3 car definitions | done | 058, 071 |
-| 073 | Car registry and selection | in progress | 070, 044, 072 |
+| 073 | Car registry and selection | done | 070, 044, 072 |
 | 074 | Credits screen | done | 044 |
 | 075 | Car pipeline: textures and wheel nodes; build gt3-d | done | 071 |
 | 076 | GT3 D definition | done | 072, 075 |

@@ -1001,7 +1001,7 @@
     {
       "num": "073",
       "title": "Car registry and selection",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "070",
         "044",
