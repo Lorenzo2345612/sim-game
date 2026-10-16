@@ -3070,7 +3070,7 @@
     {
       "num": "215",
       "title": "Hybrid and active-aero contract",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",

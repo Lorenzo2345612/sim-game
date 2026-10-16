@@ -216,7 +216,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 212 | Ghost delta goes wild from the second lap | done | - |
 | 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | done | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | in progress | - |
-| 215 | Hybrid and active-aero contract | in progress | - |
+| 215 | Hybrid and active-aero contract | done | - |
 | 216 | ERS energy model | pending | 215 |
 | 217 | Active-aero zones from the centerline | in progress | - |
 | 218 | Active-aero state and aero blend | pending | 215 |
