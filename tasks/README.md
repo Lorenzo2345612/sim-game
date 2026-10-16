@@ -178,3 +178,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 174 | Track banking (cross-slope) + Daytona | pending | 106, 155 |
 | 175 | Fontana banking data | pending | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
+| 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | pending | 099 |

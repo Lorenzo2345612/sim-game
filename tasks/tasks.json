@@ -2439,6 +2439,19 @@
       "models": "heavy",
       "phase": 1,
       "spec": "tasks/176-track-geometry-overlaps.md"
+    },
+    {
+      "num": "177",
+      "title": "Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs)",
+      "status": "pending",
+      "deps": [
+        "099"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/177-hdri-halffloat-clamp.md"
     }
   ]
 }
