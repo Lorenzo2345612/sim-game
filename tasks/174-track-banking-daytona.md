@@ -60,7 +60,7 @@ Executable contract. Every row must be producible through the signatures in Step
 | AT4 | unit: monza.json (no `bank`) | parse + `buildTrackSurfaces` | all vertex heights identical (±1e-9) to the bank-less computation; parsed `bank` is all zeros |
 | AT5 | unit: built daytona.json | max \|bank\| inside each oval-turn range | in [30°, 32°]; tri-oval in [17°, 19°]; every index inside the infield ranges = 0 |
 | AT6 | unit: built daytona.json | for every track-surface vertex within the banked ranges, terrain height at its x,z | ≤ vertex y − 0.05 m |
-| AT7 | e2e `/?track=daytona`, teleport to the middle of the NASCAR turns 3–4 range | hold throttle 5 s sim time | `surfaceUnderCar` 'asphalt' throughout, speed > 30 km/h at the end, car y − `trackHeightUnderCar` stays in [0, 1] m |
+| AT7 | e2e `/?track=daytona`, teleport to the middle of the NASCAR turns 3–4 range | hold throttle 3 s sim time (only samples with sim time ≤ t0 + 3.5 s count; the unsteered car leaves the outside edge at ~7.2 s) | `surfaceUnderCar` 'asphalt' throughout, speed > 30 km/h at the end, car y − `trackHeightUnderCar` stays in [0, 1] m |
 
 AT5 ranges: turns 3-4 = 4090..5150 (and turns 1-2 = 2290..3180) measured on indices at least 60 m inside the range; tri-oval = 5150..160 wrapping, indices at least 60 m inside; infield = 210..2250 and Bus Stop = 3720..4055. AT7 teleport target: index nearest 4620 m (use `teleportToIndex`).
 
@@ -113,3 +113,7 @@ Then rerun typecheck, lint, `npm test` and the 174 e2e. No other changes.
 - `tests/unit/acceptance/168-us-tracks-in-game.test.ts`: delete the whole AT5 `it(...)` block ("other track JSONs changed vs base"). It only guarded task 168's own branch; 168 is merged. Remove imports left unused by that deletion. Nothing else.
 
 Merge note 2 (planner): master moved again: task 160 added landmarks to `tools/track-builder/buildTrack.ts` (imports `projectLonLat`, `Landmark`, `LandmarkKind`; `TrackConfig.landmarks`; `data.landmarks`). Merge master into the branch again and keep both sides (landmarks and bank). Rebuild the affected track JSONs if the build output changes, rerun typecheck, lint, tests and the 174 e2e.
+
+## Planner-authorised test edit (AT7 timing)
+
+`tests/e2e/acceptance/174-track-banking.spec.ts` AT7: hold 3 s instead of 5 s; ignore any sample whose `getSimTime()` is > t0 + 3.5 s (under load the browser can step several sim seconds per frame); require at least 3 counted samples. Assertions otherwise unchanged. Nothing else in that file.
