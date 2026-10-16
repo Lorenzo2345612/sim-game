@@ -35,11 +35,11 @@ updateEffects(s: { speed: number; surface: Surface; shifting: boolean; slipRatio
 ```
 
 - `Surface` is imported from the existing surface type (as used in `src/main.ts`).
-- Crackle: trigger when `prevThrottle > 0.5`, `throttle < 0.15`, `rpm ≥ 0.7·limiterRpm`; count = `round(3 + 5·crackle·rng())` clamped 3..8 only when `crackle > 0`; otherwise `[]`. Offsets uniform in [0, 0.6] via `rng`, sorted.
+- Crackle: trigger when `prevThrottle > 0.5`, `throttle < 0.15`, `rpm ≥ 0.7·limiterRpm`; count = `round(3 + 5·crackle·rng())` clamped 3..8 only when `crackle > 0`; otherwise `[]`. rng call order: first one draw for the count, then one draw per offset (`0.6·rng()`), then sort ascending.
 - `windGain`: piecewise linear through (0 m/s, 0), (40, 0.1), (80, 0.4); constant 0.4 above 80.
 - `kerbRumbleHz = speed / stripeMeters`; wiring uses stripe 1.5 m, active when surface is kerb, gain 0.3, band-passed noise modulated at that rate.
-- `shiftEnvelope`: 1 at t ≤ 0; linear to 0.3 over 0–0.02; hold 0.3 over 0.02–0.06; linear back to 1 over 0.06–0.08; 1 beyond. Wiring applies it to the engine gain for 0.08 s when `shifting` rises.
-- Gravel: low-passed noise gain 0.35 · min(1, speed/20) when surface is gravel; squeal as 051.
+- `shiftEnvelope`: 1 at t ≤ 0; linear to 0.3 over 0–0.02; hold 0.3 over 0.02–0.06; linear back to 1 over 0.06–0.08; 1 beyond. Wiring applies it to the engine gain for 0.08 s when `shifting` rises; a new rise during an active envelope restarts it at t = 0.
+- Gravel: low-passed noise gain 0.35 · min(1, speed/20) when surface is gravel; squeal: gain = existing `tyreSquealGain(slipRatios)` in `src/audio/engineAudio.ts` (all wheels, unchanged).
 
 Conventions: `crackleSchedule` non-finite inputs → `[]`; `windGain` negative speed → 0; `kerbRumbleHz` stripeMeters ≤ 0 → 0; `shiftEnvelope` t < 0 → 1; boundaries inclusive on the left of each segment; no mutation.
 
