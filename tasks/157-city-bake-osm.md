@@ -76,3 +76,7 @@ npm test
 
 - Rendering (158), trackside furniture (159), landmarks (160).
 - Roads, parks or terrain edits from OSM; any brand or name data.
+
+## Planner note (after two coder timeouts)
+
+The raw extracts `assets/source/osm/{baku,singapore,lasvegas}-city.json` are already in the worktree (valid, 1-2 k elements each), and `public/tracks/*-env.json` have been baked from them. Do not query Overpass again: no probe queries, no retries, no sleeps. `build:env` must read the cache when present, and every run in this task is offline. If something seems to need the network, stop and escalate. Finish from the current worktree state: verify, run the Verification commands, and report.
