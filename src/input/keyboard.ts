@@ -14,6 +14,7 @@ const RIGHT_KEYS = ['KeyD', 'ArrowRight'];
 export class KeyboardInput {
   private pressed = new Set<string>();
   private resetPending = false;
+  private ersCyclePending = false;
   private throttle = 0;
   private brake = 0;
   private steer = 0;
@@ -23,8 +24,12 @@ export class KeyboardInput {
     if (code === 'KeyR' && !(event as KeyboardEvent).repeat && !this.pressed.has('KeyR')) {
       this.resetPending = true;
     }
+    if (code === 'KeyB' && !(event as KeyboardEvent).repeat && !this.pressed.has('KeyB')) {
+      this.ersCyclePending = true;
+    }
     this.pressed.add(code);
-    if ((code === 'ArrowUp' || code === 'ArrowDown' || code === 'ArrowLeft' || code === 'ArrowRight') &&
+    if ((code === 'ArrowUp' || code === 'ArrowDown' || code === 'ArrowLeft' || code === 'ArrowRight' ||
+        code === 'Space') &&
         typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
@@ -59,7 +64,12 @@ export class KeyboardInput {
 
     const reset = this.resetPending;
     this.resetPending = false;
-    return { throttle: this.throttle, brake: this.brake, steer: this.steer, reset };
+    const ersCycle = this.ersCyclePending;
+    this.ersCyclePending = false;
+    return {
+      throttle: this.throttle, brake: this.brake, steer: this.steer, reset,
+      overtake: this.pressed.has('Space'), ersCycle,
+    };
   }
 
   dispose(): void {

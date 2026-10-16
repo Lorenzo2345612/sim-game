@@ -216,7 +216,7 @@ describe('mergeInputs edge cases', () => {
   it('merging zeros yields zeros and false flags', () => {
     const zero: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
     const merged = mergeInputs(zero, { ...zero, shiftUp: undefined, shiftDown: undefined });
-    expect(merged).toEqual({ throttle: 0, brake: 0, steer: 0, reset: false, shiftUp: false, shiftDown: false });
+    expect(merged).toEqual({ throttle: 0, brake: 0, steer: 0, reset: false, shiftUp: false, shiftDown: false, overtake: false, ersCycle: false });
   });
 
   it('gamepad output merges over keyboard output', () => {

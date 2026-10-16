@@ -3,6 +3,8 @@ import type { DriverInput } from '../core/types';
 export const GAMEPAD_DEADZONE = 0.08;
 export const TRIGGER_DEADZONE = 0.1;
 
+const BUTTON_OVERTAKE = 0;
+const BUTTON_ERS_CYCLE = 3;
 const BUTTON_SHIFT_DOWN = 4;
 const BUTTON_SHIFT_UP = 5;
 const BUTTON_BRAKE = 6;
@@ -41,6 +43,9 @@ export class GamepadInput {
   private shiftUpPending = false;
   private shiftDownPending = false;
   private setupHudPending = false;
+  private ersCyclePending = false;
+  private prevErsCycle = false;
+  private overtake = false;
   private prevShiftUp = false;
   private prevShiftDown = false;
   private prevSetupHud = false;
@@ -66,6 +71,8 @@ export class GamepadInput {
       this.steer = 0;
       this.throttle = 0;
       this.brake = 0;
+      this.overtake = false;
+      this.prevErsCycle = false;
       this.prevShiftUp = false;
       this.prevShiftDown = false;
       this.prevSetupHud = false;
@@ -77,6 +84,11 @@ export class GamepadInput {
     this.steer = Math.abs(axis) < GAMEPAD_DEADZONE ? 0 : clamp(axis, -1, 1);
     this.throttle = triggerValue(buttonValue(pad, BUTTON_THROTTLE));
     this.brake = triggerValue(buttonValue(pad, BUTTON_BRAKE));
+
+    this.overtake = buttonPressed(pad, BUTTON_OVERTAKE);
+    const ers = buttonPressed(pad, BUTTON_ERS_CYCLE);
+    if (ers && !this.prevErsCycle) this.ersCyclePending = true;
+    this.prevErsCycle = ers;
 
     const down = buttonPressed(pad, BUTTON_SHIFT_DOWN);
     if (down && !this.prevShiftDown) this.shiftDownPending = true;
@@ -106,7 +118,10 @@ export class GamepadInput {
       reset: false,
       shiftUp: this.shiftUpPending,
       shiftDown: this.shiftDownPending,
+      overtake: this.overtake,
+      ersCycle: this.ersCyclePending,
     };
+    this.ersCyclePending = false;
     this.shiftUpPending = false;
     this.shiftDownPending = false;
     return input;
@@ -182,5 +197,7 @@ export function mergeInputs(a: DriverInput, b: DriverInput): DriverInput {
     reset: a.reset || b.reset,
     shiftUp: (a.shiftUp ?? false) || (b.shiftUp ?? false),
     shiftDown: (a.shiftDown ?? false) || (b.shiftDown ?? false),
+    overtake: (a.overtake ?? false) || (b.overtake ?? false),
+    ersCycle: (a.ersCycle ?? false) || (b.ersCycle ?? false),
   };
 }
