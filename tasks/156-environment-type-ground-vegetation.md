@@ -55,7 +55,7 @@ Conventions: unknown type → parkland palette; missing `environment` → 'parkl
 | AT2 | unit groundPalette('desert') / ('parkland') | call | texture dirs [ground/sand, ground/dry, ground/sand-b] and stripes false / the current grass sets and stripes true |
 | AT3 | e2e `/?track=bahrain` | ready | `sceneStats().environmentType` 'desert'; `sceneStats().treeSpecies` includes 'palm-date'; no console errors |
 | AT4 | e2e `/?track=monza` | ready | environmentType 'parkland'; treeSpecies has no palm |
-| AT5 | e2e bahrain start screenshot, band y 200–330 | pixels | ≥ 40 % have R > G (sand), mean saturation < 0.45 |
+| AT5 | e2e bahrain start screenshot (1280 × 720), ground band y 400–719, side strips x < 384 and x ≥ 896 (excludes the car and the sky) | pixels with HSV saturation ≥ 0.12 (non-grey) | ≥ 40 % of them have R > G (sand); mean saturation of all band pixels < 0.45 |
 
 ## Acceptance criteria
 
@@ -82,3 +82,4 @@ The new top-level `environment` key breaks the pinned-JSON comparisons of older 
 - `tests/unit/acceptance/106-new-tracks-in-game.test.ts` (helper around lines 54-69)
 - `tests/unit/acceptance/097-terrain-below-strips.test.ts` (helper around lines 160-182)
 - `tests/unit/acceptance/155-close-parallel.test.ts` (helper around lines 468-476)
+- `tests/e2e/acceptance/156-environment-type-ground-vegetation.spec.ts` AT5: AT5 was re-scoped by the planner because the old band y 200–330 is ~44 % sky. Change the band to y 400–719, keep only x < 384 or x ≥ 896, count `R > G` only among pixels with saturation ≥ 0.12, and keep the mean-saturation check over all band pixels. Rename the test title to match. No other change.
