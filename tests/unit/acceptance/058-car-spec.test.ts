@@ -58,7 +58,7 @@ describe('058 car spec type, loader and F4 data acceptance', () => {
     const spec = parseCarSpec(f4Json());
     expect(spec.chassis.massKg).toBe(650);
     expect(spec.wheels.positions).toHaveLength(4);
-    expect(Object.keys(spec.tyres.compounds).sort()).toEqual(['hard', 'medium', 'soft']);
+    expect(Object.keys(spec.tyres.compounds).sort()).toEqual(['hard', 'inter', 'medium', 'soft', 'wet']);
     expect(Object.keys(spec.setup).sort()).toEqual([...SETUP_KEYS].sort());
     for (const key of Object.keys(spec.setup) as SetupKey[]) {
       const range = spec.setup[key];
