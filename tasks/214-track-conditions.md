@@ -49,8 +49,12 @@ Conventions: no rounding; clamp bounds inclusive; unknown id returns a copy (nev
 | AT2 | every id in `public/tracks/index.json` | `TRACK_CONDITIONS[id]` | defined; abrasion in [0.6, 1.6]; trackTempC in [10, 55] |
 | AT3 | `trackWearMult` | {1,30}, {1.5,30}, {1,50}, {1,10}, {0.7,15}, {1,90}, {1,-40} | 1, 1.5, 1.3, 0.7, 0.5425, 1.5, 0.7 (±1e-12) |
 | AT4 | `updateTyreState`, medium F4 compound, state {tempC 90, wear 0}, slipPower 0, speed 0, dt 1, wearMult 1, pressures 140/140 | ambient omitted / 25 / 50 | tempC = 90 − coolCoef×65 (omitted and 25 equal) / 90 − coolCoef×40 (±1e-9) |
-| AT5 | two Games on the Elkhart data with f4.json, one with `track.id` overridden to 'bahrain', the other to 'unknown-x'; identical scripted input (full throttle 6 s, then throttle 0.6 + steer 0.3 for 6 s) | after the script | for each wheel, wear_bahrain / wear_unknown = 1.5 (±1e-3 relative); `game.trackConditions()` returns {1.5,30} and {1,30} |
-| AT6 | same harness, ids 'sepang' vs 'unknown-x', same script | after the script | mean tyre tempC (4 wheels) of sepang ≥ unknown + 0.5 |
+| AT5 | two Games on the Elkhart data with f4.json, one with `track.id` overridden to 'bahrain', the other to 'unknown-x'; identical scripted input (full throttle 6 s, then full brake 2 s, steer 0; both stay on asphalt) | after the script | for each wheel, wear_bahrain / wear_unknown = 1.5 (±1e-3 relative); `game.trackConditions()` returns {1.5,30} and {1,30} |
+| AT6 | same harness, ids 'sepang' vs 'unknown-x', same script | after the script | mean tyre tempC (4 wheels) of sepang ≥ unknown + 0.3 |
+
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/214-track-conditions.test.ts`: the AT5/AT6 script becomes full throttle 6 s then `{throttle 0, brake 1, steer 0}` 2 s (the old steer 0.3 phase put one car on grass, so wear diverged ×12.8; planner probe: ratios 1.5000–1.5007, sepang +0.58 °C). AT6 threshold 0.5 → 0.3. Nothing else in that file.
 
 ## Acceptance criteria
 
