@@ -38,7 +38,7 @@ export function heightOf(tags: Record<string, string>): number;
 ```
 
 1. Fetch Overpass (buildings, `barrier=wall`, `historic=citywalls`, `natural=water`, basin, coastline, old-city `historic=*` areas) for the track bbox + 600 m; cache the raw response in `assets/source/osm/<id>-city.json`; reuse the cache when present (offline bake).
-2. Keep within 600 m of the centerline. Drop buildings whose ring comes closer than (track half width + max barrier offset + 5 m) to the centerline (use the track JSON's own values).
+2. Keep within 600 m of the centerline (applies to buildings, walls and water alike; a feature is kept when any vertex is within 600 m). Heights: `height` in metres; a value with an `ft` suffix is converted (× 0.3048), any other suffix is stripped and the number taken as metres. Drop buildings whose ring comes closer than (track half width + max barrier offset + 5 m) to the centerline (use the track JSON's own values).
 3. `heightOf`: `height` tag (metres; strip a unit suffix such as ` m`) → `building:levels` × 3.2 → type default (house 7; residential/apartments 15; commercial/retail/office 24; hotel 40; else 12).
 4. Material: height ≥ 40 → glass; historic tag or inside an old-city area → stone; residential/house → brick; else concrete (first match in this order).
 5. Walls: `barrier=wall`/`historic=citywalls` ways inside an old-city area → `{height 8, thickness 2.5}`.
