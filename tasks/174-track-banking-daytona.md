@@ -84,3 +84,7 @@ npx playwright test 174-
 - Fontana banking data (task 175), other tracks' banking.
 - Physics changes, banking-aware AI/racing line, camera or HUD changes.
 - Changing track JSON version, centerline, elevation or width logic.
+
+## Planner-authorised test edits
+
+- `tests/e2e/acceptance/174-track-banking.spec.ts`: replace `join(__dirname, '../../../public/tracks/daytona.json')` with `join(process.cwd(), 'public/tracks/daytona.json')` (the project is ESM; Playwright runs from the repo root). No other change to that file.
