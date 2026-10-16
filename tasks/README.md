@@ -218,7 +218,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 214 | Track conditions: asphalt abrasion and track temperature | done | - |
 | 215 | Hybrid and active-aero contract | done | - |
 | 216 | ERS energy model | done | 215 |
-| 217 | Active-aero zones from the centerline | in progress | - |
+| 217 | Active-aero zones from the centerline | done | - |
 | 218 | Active-aero state and aero blend | done | 215 |
 | 219 | Hybrid and active aero in the vehicle and game | pending | 215, 216, 217, 218 |
 | 220 | Overtake and ERS mode controls | done | 215 |
