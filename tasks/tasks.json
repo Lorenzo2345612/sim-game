@@ -2320,7 +2320,7 @@
     {
       "num": "168",
       "title": "Add Fontana, Cleveland and Detroit to the game",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "106",
         "155",
@@ -2989,13 +2989,26 @@
     {
       "num": "208",
       "title": "Tyre HUD details and dirt tuning",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
       "models": "standard",
       "phase": 1,
       "spec": "tasks/208-tyre-hud-details.md"
+    },
+    {
+      "num": "209",
+      "title": "Setup panel v2, tyre compound choice and setup overlay",
+      "status": "pending",
+      "deps": [
+        "208"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/209-setup-panel-v2.md"
     }
   ]
 }

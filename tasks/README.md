@@ -169,7 +169,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 165 | Gamepad rumble | done | 164 |
 | 166 | Dirty tyres | done | 065, 169, 162 |
 | 167 | Surface particles (stones, dust, grass clippings) | done | 165, 065, 169 |
-| 168 | Add Fontana, Cleveland and Detroit to the game | in progress | 106, 155, 156 |
+| 168 | Add Fontana, Cleveland and Detroit to the game | waiting decision | 106, 155, 156 |
 | 169 | Vehicle model swap-in and old-test migration | done | 065 |
 | 170 | Prototype B variants (LMP2 B, Hypercar B) - needs design | blocked | 112, 113, 114 |
 | 171 | Track select menu redesign | done | 106 |
@@ -209,4 +209,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 205 | Lusail style data (`lusail.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
-| 208 | Tyre HUD details and dirt tuning | pending | - |
+| 208 | Tyre HUD details and dirt tuning | in progress | - |
