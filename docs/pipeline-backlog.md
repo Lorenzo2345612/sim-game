@@ -8,3 +8,4 @@ Changes to `scripts/ai/*` and `ai/*` wanted while a milestone is open. Apply in 
 - Stale `<num>-<stage>.resolved.md` from an earlier round makes the orchestrator resume immediately while the new `.md` stays open (seen on 092); resolve by decision timestamp or archive old resolved files.
 - Coder timeouts on mimo-flash (092 twice, 25 min): auto-escalate to heavy after one TIMEOUT.
 - merge_task rebases task branches; a `git merge master` commit in the branch (merge-note fixes) is dropped and conflicts replay (159). Squash the branch onto master (`reset --soft master`) before rebasing.
+- auto-prefetch: when a task of a later milestone becomes ready (all deps done) and MiMo slots are free, run it without a manual `prefetch` edit (done by hand 6× on 2026-10-16).
