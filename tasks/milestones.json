@@ -297,6 +297,22 @@
       "status": "open"
     },
     {
+      "id": "M1.7",
+      "title": "Audio: per-car engine synthesis and effects",
+      "tasks": [
+        "107",
+        "108",
+        "109",
+        "110",
+        "111"
+      ],
+      "status": "open",
+      "prefetch": [
+        "108",
+        "107"
+      ]
+    },
+    {
       "id": "M1.2e",
       "title": "Visual fidelity per circuit (track style: pit, stands, kerbs, paint, barriers, fences, floodlights, props)",
       "tasks": [
@@ -333,22 +349,6 @@
       "prefetch": [
         "179",
         "181"
-      ]
-    },
-    {
-      "id": "M1.7",
-      "title": "Audio: per-car engine synthesis and effects",
-      "tasks": [
-        "107",
-        "108",
-        "109",
-        "110",
-        "111"
-      ],
-      "status": "open",
-      "prefetch": [
-        "108",
-        "107"
       ]
     },
     {
