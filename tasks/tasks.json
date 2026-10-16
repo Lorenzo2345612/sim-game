@@ -1245,7 +1245,7 @@
     {
       "num": "093",
       "title": "Multi-car race game",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "008",
         "043",
@@ -3192,6 +3192,19 @@
       "models": "heavy",
       "phase": 1,
       "spec": "tasks/224-ow26-model.md"
+    },
+    {
+      "num": "225",
+      "title": "Expert AI must not spin; difficulty orders pace",
+      "status": "pending",
+      "deps": [
+        "093"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/225-ai-grip-margin.md"
     }
   ]
 }

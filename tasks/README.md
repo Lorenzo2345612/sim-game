@@ -95,7 +95,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 090 | AI traffic decisions and difficulty | done | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
-| 093 | Multi-car race game | in progress | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
+| 093 | Multi-car race game | waiting decision | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119, 207 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094, 171 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
@@ -226,3 +226,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | pending | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | pending | 221 |
+| 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |

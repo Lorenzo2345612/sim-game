@@ -85,4 +85,4 @@ Frozen tests: none need editing (single-car physics, `Game` and `/?track=` flows
 
 ## Planner-authorised test edit (EDGE8)
 
-`tests/unit/edge/093-race-game-edge.test.ts` EDGE8: at 15 s neither AI reaches the easy speed target (≈49.5 m/s), so paths are identical. Change both `runCar(..., 1, 15)` calls in EDGE8 to a 45 s window (`runCar(..., 1, 45)`); keep the `+ 5` margin and the 120000 timeout (raise to 240000 if needed). Nothing else in that file. Difficulty wiring stays `speedScale` only.
+`tests/unit/edge/093-race-game-edge.test.ts`: delete the EDGE8 test case (difficulty pace). At speedScale 1.0 the expert AI spins at the first chicane, so it cannot pass with 093's wiring; the check moves to task 225 (AI grip margin). Nothing else in that file. Difficulty wiring stays `speedScale` only.
