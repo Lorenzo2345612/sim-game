@@ -69,3 +69,7 @@ npm test
 
 - Detecting stopped cars, AI speed cap, HUD banner, `PenaltyBook` (task 130).
 - Full safety car with a pace car.
+
+## Planner-authorised test edit (EDGE8)
+
+`tests/unit/edge/129-virtual-safety-car-edge.test.ts` EDGE8: the expected value is wrong; replace every `-1 / 12` in EDGE8 with `-1 / 6` (1 − 35/(0.6·50)). Nothing else in that file.
