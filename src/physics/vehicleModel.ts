@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { CarSpec, TyreCompound, TyreName } from './carSpec';
+import type { AeroTelemetry, ErsTelemetry } from './hybridTypes';
 import { Gearbox, GearboxMode, REVERSE_MAX_SPEED_MS } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
 import { GRAVITY, SURFACE_GRIP } from '../core/constants';
@@ -63,6 +64,8 @@ export interface Telemetry {
   fuelKg: number;
   rpm: number;
   gear: number;
+  ers?: ErsTelemetry;
+  aero?: AeroTelemetry;
 }
 
 interface WheelModel {

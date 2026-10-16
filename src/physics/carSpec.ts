@@ -1,3 +1,5 @@
+import type { ActiveAeroSpec, HybridSpec } from './hybridTypes';
+
 export type Vec3 = { x: number; y: number; z: number };
 
 export type SetupKey =
@@ -153,6 +155,8 @@ export interface CarSpec {
   };
   fuel: { capacityL: number; densityKgL: number; bsfc: number; startL: number };
   cockpit: CockpitSpec;
+  hybrid?: HybridSpec;
+  activeAero?: ActiveAeroSpec;
   setup: SetupRanges;
   presets: Record<PresetName, PresetSetup>;
 }
@@ -326,6 +330,41 @@ function cockpitSpec(root: unknown): CockpitSpec {
   return { eye, wheel, wheelRadius, lockDeg };
 }
 
+function posNum(root: unknown, path: string): number {
+  const v = num(root, path);
+  if (!(v > 0)) fail(path);
+  return v;
+}
+
+const HYBRID_FIELDS = [
+  'mgukW', 'batteryJ', 'deployJPerLap', 'harvestJPerLap', 'overtakeExtraJ', 'minSpeedMs',
+  'taperStartMs', 'taperEndMs', 'overtakeTaperStartMs', 'overtakeTaperEndMs',
+  'regenW', 'superClipW', 'liftHarvestW',
+] as const;
+
+function hybridSpec(root: unknown): HybridSpec | undefined {
+  const raw = pick(root, 'hybrid');
+  if (raw === undefined) return undefined;
+  if (typeof raw !== 'object' || raw === null) fail('hybrid');
+  const out = {} as Record<(typeof HYBRID_FIELDS)[number], number>;
+  for (const f of HYBRID_FIELDS) out[f] = posNum(root, `hybrid.${f}`);
+  if (!(out.taperStartMs < out.taperEndMs)) fail('hybrid.taperEndMs');
+  if (!(out.overtakeTaperStartMs < out.overtakeTaperEndMs)) fail('hybrid.overtakeTaperEndMs');
+  return out;
+}
+
+function activeAeroSpec(root: unknown): ActiveAeroSpec | undefined {
+  const raw = pick(root, 'activeAero');
+  if (raw === undefined) return undefined;
+  if (typeof raw !== 'object' || raw === null) fail('activeAero');
+  const dragScale = posNum(root, 'activeAero.dragScale');
+  if (dragScale > 1) fail('activeAero.dragScale');
+  const downforceScale = posNum(root, 'activeAero.downforceScale');
+  if (downforceScale > 1) fail('activeAero.downforceScale');
+  const transitionS = posNum(root, 'activeAero.transitionS');
+  return { dragScale, downforceScale, transitionS };
+}
+
 function boxInertia(massKg: number, half: Vec3): Vec3 {
   const w = half.x * 2;
   const h = half.y * 2;
@@ -439,6 +478,8 @@ export function parseCarSpec(json: unknown): CarSpec {
   };
 
   const cockpit = cockpitSpec(json);
+  const hybrid = hybridSpec(json);
+  const activeAero = activeAeroSpec(json);
 
   const setup = {
     frontWing: range(json, 'setup.frontWing'),
@@ -476,6 +517,8 @@ export function parseCarSpec(json: unknown): CarSpec {
     aids,
     fuel,
     cockpit,
+    ...(hybrid ? { hybrid } : {}),
+    ...(activeAero ? { activeAero } : {}),
     setup,
     presets,
   };

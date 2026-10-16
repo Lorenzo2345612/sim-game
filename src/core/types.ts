@@ -2,7 +2,7 @@ export interface Vec3 { x: number; y: number; z: number }
 export interface Quat { x: number; y: number; z: number; w: number }
 
 /** Normalised driver controls. steer: -1 = full left, +1 = full right. */
-export interface DriverInput { throttle: number; brake: number; steer: number; reset: boolean; shiftUp?: boolean; shiftDown?: boolean }
+export interface DriverInput { throttle: number; brake: number; steer: number; reset: boolean; shiftUp?: boolean; shiftDown?: boolean; overtake?: boolean; ersCycle?: boolean }
 
 export interface SpawnPose { position: Vec3; yaw: number }
 
