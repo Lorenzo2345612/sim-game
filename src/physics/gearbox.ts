@@ -16,8 +16,8 @@ const RPM_PER_RPS = 60 / (2 * Math.PI);
 const MIN_GEAR = 1;
 const REVERSE_RATIO = 3.0;
 const REVERSE_MAX_SPEED_MS = 30 / 3.6;
-const STOP_SPEED_MS = 0.5;
-const REVERSE_HOLD_S = 0.4;
+export const STOP_SPEED_MS = 0.5;
+export const REVERSE_HOLD_S = 0.4;
 
 export type GearboxMode = 'auto' | 'manual';
 export type PedalInput = { throttle: number; brake: number };
@@ -61,6 +61,11 @@ export class Gearbox {
 
   setMode(mode: GearboxMode): void {
     this.mode = mode;
+  }
+
+  setReverse(on: boolean): void {
+    this.reverseHoldT = 0;
+    this.setGear(on ? -1 : MIN_GEAR);
   }
 
   shiftUp(): void {

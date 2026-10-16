@@ -232,6 +232,14 @@ export class VehicleModel {
     this.gearbox.setMode(mode);
   }
 
+  setReverse(on: boolean): void {
+    this.gearbox.setReverse(on);
+  }
+
+  gearMode(): GearboxMode {
+    return this.gearbox.mode;
+  }
+
   setCompound(name: TyreName): void {
     this.compound = name;
     this.compoundSpec = this.spec.tyres.compounds[name];

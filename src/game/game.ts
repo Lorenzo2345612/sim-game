@@ -7,6 +7,7 @@ import { LapTimer } from '../track/lapTimer';
 import { TrackProgress } from '../track/trackProgress';
 import { createPhysicsWorld, initPhysics } from '../physics/physicsWorld';
 import type { GearboxMode } from '../physics/gearbox';
+import { REVERSE_HOLD_S, STOP_SPEED_MS } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle, type Telemetry } from '../physics/vehicle';
 import { parseCarSpec, type CarSpec, type TyreName } from '../physics/carSpec';
@@ -64,6 +65,7 @@ export class Game {
   private fuelLapStartKg = 0;
   private fuelSumKg = 0;
   private fuelLaps = 0;
+  private reverseHoldT = 0;
 
   private constructor(
     world: World,
@@ -124,6 +126,26 @@ export class Game {
       this.vehicle.reset(this.spawn);
       this.progress.reset();
       this.lapTimer.reset();
+    }
+    // Auto-mode reverse UX (task 178): the rule lives here, not in VehicleModel.
+    if (this.vehicle.gearMode() !== 'auto' || input.reset) {
+      this.reverseHoldT = 0;
+    } else {
+      const speed = this.current.forwardSpeed;
+      const stopped = Math.abs(speed) < STOP_SPEED_MS;
+      const hold =
+        stopped && input.brake >= 0.5 && input.throttle < 0.05 && this.vehicle.gear() >= 1;
+      if (!hold) this.reverseHoldT = 0;
+      else {
+        this.reverseHoldT += FIXED_DT;
+        if (this.reverseHoldT >= REVERSE_HOLD_S) {
+          this.vehicle.setReverse(true);
+          this.reverseHoldT = 0;
+        }
+      }
+      if (this.vehicle.gear() === -1 && stopped && input.throttle >= 0.5) {
+        this.vehicle.setReverse(false);
+      }
     }
     this.vehicle.setInput(input);
     this.vehicle.prePhysicsStep(FIXED_DT);
