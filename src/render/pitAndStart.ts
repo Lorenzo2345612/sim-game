@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { Terrain, TrackDataV2 } from '../core/types';
+import type { TrackDataV2 } from '../core/types';
+import { terrainHeightAt } from '../track/ground';
 import { DEFAULT_TRACK_STYLE, type ResolvedTrackStyle } from '../track/trackStyle';
 import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
@@ -29,27 +30,6 @@ function tangentYaw(track: TrackDataV2): number {
   const [x1, z1] = track.centerline[1];
   const len = Math.hypot(x1 - x0, z1 - z0) || 1;
   return Math.atan2(-(z1 - z0) / len, (x1 - x0) / len);
-}
-
-// Bilinear sample of the terrain grid; same convention as main.ts makeTerrainY
-// (heights column-major, col * (rows + 1) + row, origin = centre).
-function terrainY(t: Terrain, x: number, z: number): number {
-  const vertexRows = t.rows + 1;
-  const minX = t.originX - t.sizeX / 2;
-  const minZ = t.originZ - t.sizeZ / 2;
-  const fx = Math.min(Math.max(((x - minX) / t.sizeX) * t.cols, 0), t.cols);
-  const fz = Math.min(Math.max(((z - minZ) / t.sizeZ) * t.rows, 0), t.rows);
-  const j = Math.min(Math.floor(fx), t.cols - 1);
-  const i = Math.min(Math.floor(fz), t.rows - 1);
-  const tx = fx - j;
-  const tz = fz - i;
-  const h00 = t.heights[j * vertexRows + i];
-  const h10 = t.heights[(j + 1) * vertexRows + i];
-  const h01 = t.heights[j * vertexRows + i + 1];
-  const h11 = t.heights[(j + 1) * vertexRows + i + 1];
-  const h0 = h00 + (h10 - h00) * tx;
-  const h1 = h01 + (h11 - h01) * tx;
-  return h0 + (h1 - h0) * tz;
 }
 
 function pitPathLength(track: TrackDataV2): number {
@@ -103,7 +83,7 @@ export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle
   }
   if (track.terrain) {
     const corner = (u: number, v: number): number =>
-      terrainY(track.terrain, sx + dx * u + nx * v, sz + dz * u + nz * v);
+      terrainHeightAt(track.terrain, sx + dx * u + nx * v, sz + dz * u + nz * v);
     const edges: Array<[number, number]> = [
       [0, near], [0, far], [chordLength, near], [chordLength, far],
       [chordLength / 2, near], [chordLength / 2, far],

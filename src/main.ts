@@ -12,7 +12,7 @@ import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { loadCockpitSettings, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
-import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, Terrain, TrackData, TrackDataV2, Vec3 } from './core/types';
+import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3 } from './core/types';
 import { Game } from './game/game';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { ghostTimeAt } from './game/ghostDelta';
@@ -52,7 +52,8 @@ import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
-import { bankTanAt, buildTrackSurfaces } from './track/surfaces';
+import { groundHeightAt, terrainHeightAt } from './track/ground';
+import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
 import { parseTrackData } from './track/parseTrackData';
@@ -407,28 +408,6 @@ function countDirectionalLights(root: THREE.Object3D): number {
   return count;
 }
 
-// Bilinear sample of the terrain grid; heights are column-major (col * (rows + 1) + row).
-function makeTerrainY(t: Terrain): (x: number, z: number) => number {
-  const vertexRows = t.rows + 1;
-  const minX = t.originX - t.sizeX / 2;
-  const minZ = t.originZ - t.sizeZ / 2;
-  return (x, z) => {
-    const fx = THREE.MathUtils.clamp(((x - minX) / t.sizeX) * t.cols, 0, t.cols);
-    const fz = THREE.MathUtils.clamp(((z - minZ) / t.sizeZ) * t.rows, 0, t.rows);
-    const j = Math.min(Math.floor(fx), t.cols - 1);
-    const i = Math.min(Math.floor(fz), t.rows - 1);
-    const tx = fx - j;
-    const tz = fz - i;
-    const h00 = t.heights[j * vertexRows + i];
-    const h10 = t.heights[(j + 1) * vertexRows + i];
-    const h01 = t.heights[j * vertexRows + i + 1];
-    const h11 = t.heights[(j + 1) * vertexRows + i + 1];
-    const h0 = h00 + (h10 - h00) * tx;
-    const h1 = h01 + (h11 - h01) * tx;
-    return h0 + (h1 - h0) * tz;
-  };
-}
-
 // SwiftShader (CI e2e) vertex-shades the baked lod0 foliage at a cost the CPU rasterizer
 // cannot carry, so it starts at lod1 and skips the finest level entirely.
 function isSoftwareGl(renderer: THREE.WebGLRenderer): boolean {
@@ -436,29 +415,6 @@ function isSoftwareGl(renderer: THREE.WebGLRenderer): boolean {
   const info = gl.getExtension('WEBGL_debug_renderer_info') as { UNMASKED_RENDERER_WEBGL: GLenum } | null;
   if (!info) return false;
   return /swiftshader|llvmpipe|software/i.test(String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)));
-}
-
-/** Ground height of a trackside point: centerline elevation plus its cross-slope at the signed lateral offset. */
-function nearestElevation(track: TrackDataV2, x: number, z: number): number {
-  let best = 0;
-  let bestD2 = Infinity;
-  for (let i = 0; i < track.centerline.length; i++) {
-    const dx = track.centerline[i][0] - x;
-    const dz = track.centerline[i][1] - z;
-    const d2 = dx * dx + dz * dz;
-    if (d2 < bestD2) {
-      bestD2 = d2;
-      best = i;
-    }
-  }
-  const n = track.centerline.length;
-  const prev = track.centerline[(best - 1 + n) % n];
-  const next = track.centerline[(best + 1) % n];
-  const tx = next[0] - prev[0];
-  const tz = next[1] - prev[1];
-  const len = Math.hypot(tx, tz) || 1;
-  const lat = ((x - track.centerline[best][0]) * -tz + (z - track.centerline[best][1]) * tx) / len;
-  return (track.elevation[best] ?? 0) + lat * bankTanAt(track, best);
 }
 
 /** Time and distance along the centerline of every ghost sample, for the lap-delta lookup. */
@@ -674,6 +630,8 @@ async function startGame(trackId: string): Promise<void> {
       stats.props = props.group.userData.placed as number;
     }
 
+    const terrainY = (x: number, z: number): number => terrainHeightAt(track.terrain, x, z);
+
     // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
     // quads) being the farthest level.
@@ -681,7 +639,7 @@ async function startGame(trackId: string): Promise<void> {
     Object.assign(treeModels, await loadGlbModels(track.treeSpecies.map((s) => s.name)));
     const trees = createTreeField(track.trees, track.treeSpecies, {
       models: treeModels,
-      terrainY: makeTerrainY(track.terrain),
+      terrainY,
       minLod: softwareGl ? 1 : 0,
     });
     treeField = trees;
@@ -689,14 +647,14 @@ async function startGame(trackId: string): Promise<void> {
 
     for (const g of track.grandstands) {
       const stand = createGrandstand(g, undefined, trackStyle);
-      stand.position.y = nearestElevation(track, g.x, g.z);
+      stand.position.y = groundHeightAt(track, g.x, g.z);
       scene.add(stand);
     }
 
     const extras = extraGrandstands(track, trackStyle);
     for (const g of extras) {
       const stand = createGrandstand(g, undefined, trackStyle);
-      stand.position.y = nearestElevation(track, g.x, g.z);
+      stand.position.y = groundHeightAt(track, g.x, g.z);
       scene.add(stand);
     }
     stats.style = { id: trackId, loaded: loadedStyle.loaded, warnings: loadedStyle.warnings.length, extraGrandstands: extras.length };
@@ -725,7 +683,7 @@ async function startGame(trackId: string): Promise<void> {
     stats.startGantries = 1;
     stats.distanceBoards = boards.count;
 
-    const landmarks = createLandmarks(track, makeTerrainY(track.terrain));
+    const landmarks = createLandmarks(track, terrainY);
     scene.add(landmarks.group);
     stats.landmarks = landmarks.count;
     disposables.push(landmarks);
@@ -734,7 +692,7 @@ async function startGame(trackId: string): Promise<void> {
     try {
       const envRes = await fetch(`/tracks/${track.id}-env.json`);
       if (envRes.ok) {
-        city = createCityObject(await envRes.json() as CityEnv, makeTerrainY(track.terrain));
+        city = createCityObject(await envRes.json() as CityEnv, terrainY);
         scene.add(city.group);
         stats.buildings = city.buildings;
         disposables.push(city);
