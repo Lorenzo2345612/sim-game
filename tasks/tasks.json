@@ -3275,6 +3275,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/239-turbo-transients.md"
+    },
+    {
+      "num": "240",
+      "title": "Smooth bank transitions on ovals (auto ramp, smoothstep)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/240-smooth-bank-transitions.md"
     }
   ]
 }
