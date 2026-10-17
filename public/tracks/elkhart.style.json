@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#5c5d60", "grass": "#6fb63a", "gravel": "#b9ad95" },
+  "kerbs": {
+    "colors": ["#c4312a", "#d8a82a"],
+    "ranges": [
+      { "start": 2104, "end": 2160, "side": "left", "colors": ["#b8b8b4", "#a9a9a4"] },
+      { "start": 2747, "end": 2772, "side": "right", "colors": ["#b8b8b4", "#a9a9a4"] }
+    ]
+  },
+  "barriers": {
+    "concrete": { "color": "#c9c6bc", "bandColor": "#9a978e" },
+    "armco": { "color": "#9aa09a" },
+    "tyres": { "beltColor": "#a5a5a0" },
+    "fence": { "heightMeters": 4, "types": ["armco", "tyres", "wall"], "color": "#6e756b" },
+    "ranges": [
+      { "start": 1125, "end": 1200, "side": "right", "fenceHeightMeters": 4 },
+      { "start": 1594, "end": 1674, "side": "left", "fenceHeightMeters": 4 },
+      { "start": 2741, "end": 2798, "side": "right", "fenceHeightMeters": 4 }
+    ]
+  },
+  "pitBuilding": {
+    "storeys": 1, "heightMeters": 5, "depthMeters": 10,
+    "facade": "#b3b0a8", "roof": "#8f8f8a", "doors": "#2b2b2e", "accent": "#7d3a34",
+    "roofStyle": "flat", "glazing": 0.15
+  },
+  "grandstands": { "structure": "#a9adb0", "roof": "#7f8489", "seats": ["#c4312a", "#d8d8d2"], "roofStyle": "truss" },
+  "extraGrandstands": [],
+  "props": [
+    { "type": "footbridge", "index": 3086, "offsetMeters": 12, "lengthMeters": 25, "heightMeters": 8, "color": "#9aa3a0" },
+    { "type": "footbridge", "index": 802, "offsetMeters": 12, "lengthMeters": 25, "heightMeters": 8, "color": "#9aa3a0" },
+    { "type": "footbridge", "index": 1716, "offsetMeters": 12, "lengthMeters": 25, "heightMeters": 8, "color": "#9aa3a0" },
+    { "type": "footbridge", "index": 2009, "offsetMeters": 12, "lengthMeters": 25, "heightMeters": 8, "color": "#9aa3a0" },
+    { "type": "tent", "index": 1220, "side": "right", "offsetMeters": 40, "color": "#c4312a" },
+    { "type": "tent", "index": 1800, "side": "right", "offsetMeters": 50, "color": "#c4312a" },
+    { "type": "tent", "index": 2680, "side": "left", "offsetMeters": 35, "color": "#d8d8d2" },
+    { "type": "tent", "index": 2860, "side": "left", "offsetMeters": 45, "color": "#3a6ea8" }
+  ]
+}
