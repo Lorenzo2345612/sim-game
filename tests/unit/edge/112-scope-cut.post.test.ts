@@ -6,7 +6,7 @@ const ROOT = join(__dirname, '..', '..', '..');
 const CONFIG_DIR = join(ROOT, 'assets', 'cars');
 const MODELS = join(ROOT, 'public', 'models');
 
-const EXPECTED_IDS = ['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'gt3-d', 'hyper-a', 'lmp2-a'];
+const EXPECTED_IDS = ['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'gt3-d', 'hyper-a', 'lmp2-a', 'ow26'];
 const CUT_IDS = ['lmp2-b', 'hyper-b'];
 
 const IN_SCOPE_ROWS = [

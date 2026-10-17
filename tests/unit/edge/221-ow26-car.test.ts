@@ -69,8 +69,8 @@ describe('221 OW-26 edge', () => {
     expect(spec.name).toBe('OW-26 Hybrid');
   });
 
-  it('EDGE8: model.url is the /models/f4.glb placeholder', () => {
-    expect(loadSpec().model.url).toBe('/models/f4.glb');
+  it('EDGE8: model.url is /models/ow26.glb', () => {
+    expect(loadSpec().model.url).toBe('/models/ow26.glb');
   });
 
   it('EDGE9: setup ranges are well-formed and every preset value lies inside its range', () => {

@@ -3,7 +3,7 @@
   "name": "OW-26 Hybrid",
   "category": "open-wheel",
   "model": {
-    "url": "/models/f4.glb"
+    "url": "/models/ow26.glb"
   },
   "drive": "rwd",
   "chassis": {
@@ -23,27 +23,27 @@
   "wheels": {
     "positions": [
       [
-        -0.8,
+        -0.8159,
         0,
-        -1.84
+        -1.7032
       ],
       [
-        0.8,
+        0.8159,
         0,
-        -1.84
+        -1.7032
       ],
       [
-        -0.78,
+        -0.7728,
         0,
-        1.56
+        1.7032
       ],
       [
-        0.78,
+        0.7728,
         0,
-        1.56
+        1.7032
       ]
     ],
-    "radius": 0.36,
+    "radius": 0.357711,
     "width": 0.35,
     "inertia": 1.8
   },

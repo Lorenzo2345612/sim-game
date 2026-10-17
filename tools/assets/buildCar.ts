@@ -22,6 +22,7 @@ import {
   weld,
 } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
+import { KHRTextureTransform } from '@gltf-transform/extensions';
 import sharp from 'sharp';
 import { buildF4 } from './buildF4';
 
@@ -45,6 +46,9 @@ export interface CarPipelineConfig {
   wheelMaterials?: string[];
   wheelNodes?: string[];
   liveryMaterials: string[];
+  dropNodes?: string[];
+  neutralMaterials?: string[];
+  wheelTriBudget?: number;
   triBudget: number;
   maxTextureSize?: number;
   outGlb: string;
@@ -519,7 +523,7 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
   if (!config.wheelNodes?.length && !config.wheelMaterials?.length) {
     throw new Error('config must give wheelNodes or wheelMaterials');
   }
-  const io = new NodeIO();
+  const io = new NodeIO().registerExtensions([KHRTextureTransform]);
   const srcDoc = await io.read(join(ROOT, config.source));
   const wheelEntries = config.wheelNodes?.length ? parseWheelNodes(config.wheelNodes) : [];
   const wheelMaterials = config.wheelMaterials ?? [];
@@ -544,6 +548,17 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
     materialOf.set(name, material);
     if (role === 'body') bodyKeys.push(name);
   }
+
+  const dropNodes = new Set(config.dropNodes ?? []);
+  srcDoc
+    .getRoot()
+    .listScenes()[0]
+    .traverse((node) => {
+      const mesh = node.getMesh();
+      if (!mesh || !dropNodes.has(node.getName())) return;
+      node.setMesh(null);
+      if (!mesh.listParents().some((parent) => parent instanceof Node)) mesh.dispose();
+    });
 
   const usersOf = new Map<Mesh, Node[]>();
   srcDoc
@@ -703,7 +718,7 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
     const dst = doc
       .createMaterial(`body_${i}`)
       .setBaseColorFactor(colourOf.get(key) ?? DEFAULT_COLOUR);
-    if (srcMat) copyBodyTextures(doc, srcMat, dst, texCache);
+    if (srcMat && !matches(key, config.neutralMaterials ?? [])) copyBodyTextures(doc, srcMat, dst, texCache);
     materials.set(`body_${i}`, dst);
   });
 
@@ -762,6 +777,15 @@ async function buildGeneric(config: CarPipelineConfig): Promise<void> {
         ?.listPrimitives() ?? [],
     );
     const bodyPrims = allPrims.filter((p) => !wheelPrims.includes(p));
+    const wheelCap = config.wheelTriBudget;
+    if (wheelCap !== undefined && triCount(wheelPrims) > wheelCap) {
+      // wheel quadrant splits are triangle soup; weld first so the simplifier can collapse edges
+      await doc.transform(weld());
+      const ratio = wheelCap / triCount(wheelPrims);
+      for (const prim of wheelPrims) {
+        simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error: SIMPLIFY_ERROR });
+      }
+    }
     for (let pass = 0; pass < 8 && total > config.triBudget; pass++) {
       const wheelTris = triCount(wheelPrims);
       const bodyTris = triCount(bodyPrims);

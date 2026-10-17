@@ -1,0 +1,13 @@
+{
+  "source": "assets/vendor/cars/ow26-src/ow26-source.glb",
+  "forward": "+z",
+  "targetLength": 5.27,
+  "wheelMaterials": ["TIRE_SIDES", "TIRE_TREAD", "redbull_wheel_hub", "discs"],
+  "liveryMaterials": [],
+  "dropNodes": ["decals_layer1"],
+  "neutralMaterials": ["redbull_detail", "redbull_wheel_hub", "decal", "TAG_DRS_ON", "gp21_LCD", "chasis", "chassis2", "generics", "cockpit_metal", "gp21_cinture"],
+  "wheelTriBudget": 20000,
+  "triBudget": 70000,
+  "outGlb": "public/models/ow26.glb",
+  "outJson": "public/models/ow26.json"
+}

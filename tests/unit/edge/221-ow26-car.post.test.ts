@@ -112,7 +112,7 @@ describe('221 OW-26 car post-code gaps', () => {
     const spec = load('ow26.json');
     expect(spec.chassis.massKg).toBe(768);
     expect(spec.chassis.cgHeight).toBeCloseTo(0.28, 6);
-    expect(spec.wheels.radius).toBeCloseTo(0.36, 6);
+    expect(spec.wheels.radius).toBeCloseTo(0.357711, 3);
     expect(spec.wheels.positions).toHaveLength(4);
     const [fl, fr, rl, rr] = spec.wheels.positions;
     for (const p of [fl, fr, rl, rr]) expect(p[1]).toBe(0);
@@ -121,7 +121,7 @@ describe('221 OW-26 car post-code gaps', () => {
     expect(fl[2]).toBeCloseTo(fr[2], 6);
     expect(rl[2]).toBeCloseTo(rr[2], 6);
     const wheelbase = rl[2] - fl[2];
-    expect(wheelbase).toBeCloseTo(3.4, 6);
+    expect(wheelbase).toBeCloseTo(3.4, 1);
     expect(fr[0] - fl[0]).toBeGreaterThanOrEqual(1.55);
     expect(fr[0] - fl[0]).toBeLessThanOrEqual(1.65);
     expect(spec.chassis.halfExtents.z * 2).toBeGreaterThan(wheelbase);

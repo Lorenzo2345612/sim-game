@@ -1,0 +1,35 @@
+{
+  "paintMaterials": [
+    "body_2"
+  ],
+  "wheelRadius": 0.357711,
+  "wheelbase": 3.406492,
+  "trackFront": 1.631895,
+  "trackRear": 1.545539,
+  "wheels": [
+    {
+      "name": "wheel-front-left",
+      "x": -0.81639,
+      "y": 0.360141,
+      "z": -1.703248
+    },
+    {
+      "name": "wheel-front-right",
+      "x": 0.815505,
+      "y": 0.360142,
+      "z": -1.703244
+    },
+    {
+      "name": "wheel-back-left",
+      "x": -0.772327,
+      "y": 0.357711,
+      "z": 1.703244
+    },
+    {
+      "name": "wheel-back-right",
+      "x": 0.773212,
+      "y": 0.357711,
+      "z": 1.703248
+    }
+  ]
+}

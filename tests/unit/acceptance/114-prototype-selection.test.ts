@@ -17,6 +17,7 @@ const CREDITS_BEFORE_114 = [
   'GT3 car B source',
   'GT3 low-poly car source',
   'GT3 car D source',
+  'OW-26 car source',
 ];
 
 describe('114 prototype selection acceptance', () => {
