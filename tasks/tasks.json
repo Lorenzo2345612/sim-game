@@ -1269,7 +1269,7 @@
     {
       "num": "094",
       "title": "Race HUD and AI car rendering",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "057",
         "092",
@@ -1689,7 +1689,7 @@
     {
       "num": "123",
       "title": "Driving line overlay coloured by action",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "088",
         "093",
@@ -2003,7 +2003,7 @@
     {
       "num": "145",
       "title": "Contact impacts from Rapier into the damage model",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "070",
         "093",
@@ -2089,7 +2089,7 @@
     {
       "num": "151",
       "title": "Performance harness and budgets",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "093"
       ],
@@ -3125,7 +3125,7 @@
     {
       "num": "228",
       "title": "EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "227"
       ],
@@ -3175,7 +3175,7 @@
     {
       "num": "232",
       "title": "Offline engine render tool",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "227"
       ],
@@ -3212,7 +3212,7 @@
     {
       "num": "235",
       "title": "Barriers, colliders and boards follow the ground",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "233"
       ],
@@ -3279,7 +3279,7 @@
     {
       "num": "240",
       "title": "Smooth bank transitions on ovals (auto ramp, smoothstep)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

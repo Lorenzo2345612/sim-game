@@ -96,7 +96,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
 | 093 | Multi-car race game | done | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
-| 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119, 207 |
+| 094 | Race HUD and AI car rendering | in progress | 057, 092, 093, 119, 207 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094, 171 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
@@ -125,7 +125,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 120 | Paint materials in the car pipeline and livery shader | done | 075, 112, 119 |
 | 121 | Race number decals | done | 120 |
 | 122 | Livery editor screen | done | 044, 073, 074, 106, 114, 120, 121 |
-| 123 | Driving line overlay coloured by action | pending | 088, 093, 118 |
+| 123 | Driving line overlay coloured by action | in progress | 088, 093, 118 |
 | 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
@@ -146,13 +146,13 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
-| 145 | Contact impacts from Rapier into the damage model | pending | 070, 093, 144 |
+| 145 | Contact impacts from Rapier into the damage model | waiting decision | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144, 145 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
-| 151 | Performance harness and budgets | pending | 093 |
+| 151 | Performance harness and budgets | in progress | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
@@ -226,22 +226,22 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
-| 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
+| 225 | Expert AI must not spin; difficulty orders pace | waiting decision | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
-| 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | pending | 227 |
+| 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | waiting decision | 227 |
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
 | 231 | Per-car engine synth data | done | 226 |
-| 232 | Offline engine render tool | pending | 227 |
+| 232 | Offline engine render tool | in progress | 227 |
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
-| 235 | Barriers, colliders and boards follow the ground | in progress | 233 |
+| 235 | Barriers, colliders and boards follow the ground | waiting decision | 233 |
 | 236 | Pit building split into grounded pieces along the pit lane | in progress | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
 | 238 | Track QA camera and screenshot tool | in progress | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231 |
-| 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | pending | - |
+| 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | in progress | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | pending | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
