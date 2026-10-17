@@ -2572,7 +2572,7 @@
     {
       "num": "186",
       "title": "Floodlight poles along the track from the track style",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "180",
         "182",
@@ -3184,6 +3184,83 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/232-engine-render-tool.md"
+    },
+    {
+      "num": "233",
+      "title": "Shared ground-height sampler",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/233-ground-sampler.md"
+    },
+    {
+      "num": "234",
+      "title": "Grandstands and props grounded on terrain with plinths",
+      "status": "pending",
+      "deps": [
+        "233"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/234-grounded-stands-props.md"
+    },
+    {
+      "num": "235",
+      "title": "Barriers, colliders and boards follow the ground",
+      "status": "pending",
+      "deps": [
+        "233"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/235-barriers-boards-ground.md"
+    },
+    {
+      "num": "236",
+      "title": "Pit building split into grounded pieces along the pit lane",
+      "status": "pending",
+      "deps": [
+        "234"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/236-pit-building-pieces.md"
+    },
+    {
+      "num": "237",
+      "title": "Track QA report CLI: clearance, relief, layout checks",
+      "status": "pending",
+      "deps": [
+        "235",
+        "236"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/237-track-qa-report.md"
+    },
+    {
+      "num": "238",
+      "title": "Track QA camera and screenshot tool",
+      "status": "pending",
+      "deps": [
+        "233"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/238-track-qa-shots.md"
     }
   ]
 }

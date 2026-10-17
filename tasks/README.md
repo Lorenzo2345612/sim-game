@@ -187,7 +187,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 183 | Kerb colours per segment and run-off paint | done | 180 |
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | done | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |
 | 185 | Barrier colours, wall band and configurable catch fence from the track style | done | 180 |
-| 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
+| 186 | Floodlight poles along the track from the track style | in progress | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | done | 180 |
 | 188 | Monza track style data | done | 181 |
 | 189 | Spa track style data | done | 181, 188 |
@@ -234,3 +234,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
 | 231 | Per-car engine synth data | done | 226 |
 | 232 | Offline engine render tool | pending | 227 |
+| 233 | Shared ground-height sampler | pending | - |
+| 234 | Grandstands and props grounded on terrain with plinths | pending | 233 |
+| 235 | Barriers, colliders and boards follow the ground | pending | 233 |
+| 236 | Pit building split into grounded pieces along the pit lane | pending | 234 |
+| 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
+| 238 | Track QA camera and screenshot tool | pending | 233 |

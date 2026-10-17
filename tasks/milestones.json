@@ -386,6 +386,27 @@
       ]
     },
     {
+      "id": "M1.11",
+      "title": "Track fidelity: grounded objects, pit pieces, track QA",
+      "tasks": [
+        "233",
+        "234",
+        "235",
+        "236",
+        "237",
+        "238"
+      ],
+      "status": "open",
+      "prefetch": [
+        "233",
+        "234",
+        "235",
+        "236",
+        "237",
+        "238"
+      ]
+    },
+    {
       "id": "M1.10",
       "title": "Engine audio v2: crank-angle synth, per-car engines, mix",
       "tasks": [
@@ -402,7 +423,10 @@
         "226",
         "230",
         "227",
-        "231"
+        "231",
+        "228",
+        "229",
+        "232"
       ]
     },
     {
