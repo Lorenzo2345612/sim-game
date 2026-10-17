@@ -2537,7 +2537,7 @@
     {
       "num": "184",
       "title": "Palette tints, edge-line colour and sky overrides from the track style",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "180",
         "183",
