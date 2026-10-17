@@ -206,7 +206,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 202 | Las Vegas style data (`lasvegas.style.json`) | in progress | 181, 188 |
 | 203 | Bahrain style data (`bahrain.style.json`) | in progress | 181, 188 |
 | 204 | Sepang style data (`sepang.style.json`) | in progress | 181, 188 |
-| 205 | Lusail style data (`lusail.style.json`) | pending | 181, 188 |
+| 205 | Lusail style data (`lusail.style.json`) | in progress | 181, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | done | - |
