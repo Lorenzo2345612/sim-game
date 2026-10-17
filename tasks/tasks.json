@@ -2414,7 +2414,7 @@
     {
       "num": "175",
       "title": "Fontana banking data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "168",
         "174"
@@ -3022,7 +3022,7 @@
     {
       "num": "211",
       "title": "Fontana Sports Car Course (oval + infield layout)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "174"
       ],

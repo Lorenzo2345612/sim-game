@@ -176,7 +176,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
 | 173 | Pit building only along the straight | done | 106 |
 | 174 | Track banking (cross-slope) + Daytona | done | 106, 155 |
-| 175 | Fontana banking data | pending | 168, 174 |
+| 175 | Fontana banking data | in progress | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
@@ -212,7 +212,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 208 | Tyre HUD details and dirt tuning | done | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
-| 211 | Fontana Sports Car Course (oval + infield layout) | pending | 174 |
+| 211 | Fontana Sports Car Course (oval + infield layout) | in progress | 174 |
 | 212 | Ghost delta goes wild from the second lap | done | - |
 | 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | done | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | done | - |
