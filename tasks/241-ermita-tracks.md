@@ -53,6 +53,7 @@ Conventions: metres; bounds inclusive; a missing id in tracks.json or missing `t
 
 ## Planner-authorised test edits
 
+- `tests/unit/acceptance/241-ermita-tracks.test.ts` AT4: the hashes for `daytona.json`, `fontana.json`, `fontana-roval.json` are stale (240 changed them on master); replace every AT4 hash with the sha of the file at current `master` (`git show master:<path> | sha256sum`), nothing else.
 - `tests/unit/acceptance/241-ermita-tracks.test.ts` AT8: grandstand bound 0.3 → 0.45 m (table updated).
 - `tests/unit/acceptance/217-aero-zones.test.ts` AT5: exempt only `ermita-centro` and `ermita-veloz` from the `>= 1` zone count (their longest straight is < `AERO_ZONE_MIN_LENGTH_M`); keep every other assertion; do not change the constant.
 - `tests/unit/edge/241-ermita-tracks-edge.test.ts` EDGE8: remove the max-channel mean <= 116 bound (contradicts the ±25 alignment bound); keep the alignment check.
