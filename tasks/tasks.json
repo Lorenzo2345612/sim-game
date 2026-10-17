@@ -3268,7 +3268,8 @@
       "status": "pending",
       "deps": [
         "228",
-        "231"
+        "231",
+        "244"
       ],
       "complexity": "complex",
       "type": "feature",
@@ -3323,6 +3324,20 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/243-arroyo-bridges.md"
+    },
+    {
+      "num": "244",
+      "title": "Engine voice timbre v2.1 (approved preview)",
+      "status": "pending",
+      "deps": [
+        "228",
+        "231"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/244-engine-voice-timbre.md"
     }
   ]
 }
