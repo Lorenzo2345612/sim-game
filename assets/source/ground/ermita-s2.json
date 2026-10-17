@@ -1,0 +1,18 @@
+{
+ "texture": "ermita-s2.jpg",
+ "bounds": {
+  "lonMin": -103.0404,
+  "latMin": 22.5693,
+  "lonMax": -103.02,
+  "latMax": 22.6019
+ },
+ "widthPx": 1191,
+ "heightPx": 2048,
+ "topIsNorth": true,
+ "source": "Copernicus Sentinel-2 L2A TCI (visual), earth-search STAC",
+ "scene": "S2B_13QFF_20260220_0_L2A",
+ "date": "2026-02-20",
+ "cloudCover": 6e-05,
+ "toneGain": 0.9054263234138489,
+ "note": "Union bbox of the 5 ermita layouts + 300 m margin; bilinear, equirectangular lon/lat grid (not UTM). Crop per track by lon/lat."
+}
