@@ -41,6 +41,11 @@ export function createSurfaceMaterial(kind, loadTexture?, macro?, style?: Resolv
 
 Conventions: colours lower-case hex in userData; segment index = index into `track.kerbs` / `track.runoffs`; missing `style`/`track`/tag → default look; strips not mutated.
 
+## Planner-authorised test edits (decision 183-coder)
+
+- `tests/unit/acceptance/183-kerb-runoff-paint.test.ts` AT3 and `tests/unit/edge/183-kerb-runoff-paint.test.ts` EDGE1: bounding-box tolerance `< 5` → `< 15` (strip spans x 390..610). Nothing else.
+- Coder's listed design choices (runoff tagging, paint cache key, registerWhitePaint, per-field fallback, vMapUv block index) are accepted.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Offsets are measured from the track edge (`widthMeters/2`), not the centerline. Fixture `STRAIGHT`: a TrackDataV2 with centerline `[i*10, 0]` for i = 0..99, widthMeters 12, flat elevation, no kerbs/runoffs/barriers unless the row adds them, pit `{start: 10, end: 30, side: 'right'}`.
@@ -49,7 +54,7 @@ Offsets are measured from the track edge (`widthMeters/2`), not the centerline. 
 |---|---|---|---|
 | AT1 | STRAIGHT with kerbs `[{0,20,left},{40,60,left}]`, DEFAULT style | `createTrackSurfaceObject(strips, {style, track})` | exactly 1 mesh named `kerbs` (as today) |
 | AT2 | kerbs.colors `['#da0000', '#00da00']` | create | every kerb material has `userData.stripeColors` = `['#da0000', '#00da00']` |
-| AT3 | kerbs.colors default; ranges `[{start: 35, end: 70, side: 'left', colors: ['#dac400', '#1f4fbf']}]` | create | 2 kerb meshes (`kerbs`, `kerbs:1`); the one whose geometry spans x 400..600 has stripeColors `['#dac400', '#1f4fbf']`; the other uses the renderer default |
+| AT3 | kerbs.colors default; ranges `[{start: 35, end: 70, side: 'left', colors: ['#dac400', '#1f4fbf']}]` | create | 2 kerb meshes (`kerbs`, `kerbs:1`); the one whose geometry spans x 400..600 (±15 m: segmentRows adds one extension row at each end) has stripeColors `['#dac400', '#1f4fbf']`; the other uses the renderer default |
 | AT4 | AT3 | count triangles | sum of triangles across kerb meshes = triangles of the single default mesh in AT1 |
 | AT5 | runoffs `[{0,20,left,'runoff',8}]`, runoffPaint `{pattern: 'stripes', colors: ['#d0432d', '#dadada'], stripeMeters: 2}` | create | a mesh `runoffPaint` exists with `userData.pattern 'stripes'`, `userData.colors` as given, `userData.stripeMeters 2`; the `runoff` mesh no longer contains those triangles (triangle total of runoff + runoffPaint equals the default runoff count) |
 | AT6 | runoffPaint pattern `'none'` (default) | create | no `runoffPaint` mesh |

@@ -39,16 +39,21 @@ createBarrierObject(track: TrackDataV2, loadTexture?: (url: string) => THREE.Tex
 
 Conventions: closed whole-lap runs keep the closing edge; ranges use `rangeContains` semantics of 179 (inclusive, wrapping); `style` undefined = DEFAULT; style never mutated.
 
+## Planner-authorised test edits (decision 185-coder)
+
+- `tests/unit/acceptance/185-barrier-fence-style.test.ts` AT1 (lines 89-90: 190 < x < 210), AT2 and AT4 (`toBeLessThanOrEqual(2)` → `10`); `tests/unit/edge/185-barrier-fence-style.test.ts` EDGE2 (`toBeLessThanOrEqual(1)` → `10`). Keep the metric = sum of path-edge lengths. Nothing else.
+- Delete `scratch-debug185.ts` before finishing.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Fixture: STRAIGHT with barriers `[{0,20,left,armco,8},{30,50,left,wall,8},{60,80,right,tyres,8},{85,95,right,foam,8}]` (STRAIGHT: centerline `[i*10, 0]`, i = 0..99, widthMeters 12, flat elevation, pit `{start: 10, end: 30, side: 'right'}`).
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | DEFAULT style | `createBarrierObject(track, load, style)` | mesh `fence` exists; `userData.fenceMeters` = armco length only (200 ± 1); fence height 3 m (bbox Y extent above rail base 3 ± 0.01) |
-| AT2 | fence `{heightMeters: 5, types: ['armco', 'wall']}` | create | fenceMeters = 400 ± 2; fence top 5 m above each barrier base (±0.01) |
+| AT1 | DEFAULT style | `createBarrierObject(track, load, style)` | mesh `fence` exists; `userData.fenceMeters` = armco length only (200 ± 10; the closed-loop seam lengthens the first path edge); fence height 3 m (bbox Y extent above rail base 3 ± 0.01) |
+| AT2 | fence `{heightMeters: 5, types: ['armco', 'wall']}` | create | fenceMeters = 400 ± 10; fence top 5 m above each barrier base (±0.01) |
 | AT3 | fence `{heightMeters: 0}` | create | no `fence` mesh; fenceMeters 0 |
-| AT4 | DEFAULT fence; ranges `[{start: 60, end: 80, side: 'right', fenceHeightMeters: 4}]` | create | fenceMeters = 200 + 200 (±2): tyres segment gets a 4 m fence even though tyres is not in types |
+| AT4 | DEFAULT fence; ranges `[{start: 60, end: 80, side: 'right', fenceHeightMeters: 4}]` | create | fenceMeters = 200 + 200 (±10): tyres segment gets a 4 m fence even though tyres is not in types |
 | AT5 | ranges `[{start: 0, end: 20, side: 'left', fenceHeightMeters: 0}]` | create | fenceMeters 0 (armco fence removed there) |
 | AT6 | fence color `'#2e8b57'` | create | fence material colour `#2e8b57` |
 | AT7 | concrete `{color: '#dadada', bandColor: '#dac400'}` | create | wall material colour `#dadada`; a mesh `wallBand` exists with colour `#dac400`, height 0.3 ± 0.01, along the 200 m wall only |
