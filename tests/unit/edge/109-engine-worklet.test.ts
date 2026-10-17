@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { EngineAudio } from '../../../src/audio/engineAudio';
 import type { CarSound } from '../../../src/physics/carSpec';
+import { legacySynthSpec } from '../../../src/audio/soundSpec';
 
 interface EngineStats {
   running: boolean;
@@ -230,7 +231,13 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 8; i++) await Promise.resolve();
 }
 
-const V8_SOUND: CarSound = { cylinders: 8, exhaustLengthM: 1.4, intakeMix: 0.25, crackle: 0.5 };
+const V8_SOUND: CarSound = {
+  cylinders: 8,
+  exhaustLengthM: 1.4,
+  intakeMix: 0.25,
+  crackle: 0.5,
+  synth: legacySynthSpec({ cylinders: 8, exhaustLengthM: 1.4, intakeMix: 0.25, crackle: 0.5 }),
+};
 
 afterEach(() => {
   delete globals.AudioWorkletNode;

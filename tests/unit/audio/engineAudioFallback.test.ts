@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { EngineAudio } from '../../../src/audio/engineAudio';
 import type { CarSound } from '../../../src/physics/carSpec';
+import { legacySynthSpec } from '../../../src/audio/soundSpec';
 
 class FakeParam {
   value: number;
@@ -146,7 +147,13 @@ const flush = async (turns = 4): Promise<void> => {
   for (let i = 0; i < turns; i++) await Promise.resolve();
 };
 
-const SOUND: CarSound = { cylinders: 8, exhaustLengthM: 1.5, intakeMix: 0.4, crackle: 0.1 };
+const SOUND: CarSound = {
+  cylinders: 8,
+  exhaustLengthM: 1.5,
+  intakeMix: 0.4,
+  crackle: 0.1,
+  synth: legacySynthSpec({ cylinders: 8, exhaustLengthM: 1.5, intakeMix: 0.4, crackle: 0.1 }),
+};
 
 afterEach(() => {
   delete (globalThis as { AudioWorkletNode?: unknown }).AudioWorkletNode;

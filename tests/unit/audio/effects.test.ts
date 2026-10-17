@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { crackleSchedule, kerbRumbleHz, shiftEnvelope, windGain } from '../../../src/audio/effects';
 import { EngineAudio } from '../../../src/audio/engineAudio';
 import type { CarSound } from '../../../src/physics/carSpec';
+import { legacySynthSpec } from '../../../src/audio/soundSpec';
 
 class FakeParam {
   value: number;
@@ -126,7 +127,13 @@ class FakeContext {
   }
 }
 
-const SOUND: CarSound = { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 1 };
+const SOUND: CarSound = {
+  cylinders: 4,
+  exhaustLengthM: 1.2,
+  intakeMix: 0.3,
+  crackle: 1,
+  synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 1 }),
+};
 
 function audioWith(ctx: FakeContext, sound: CarSound = SOUND): EngineAudio {
   return new EngineAudio(() => ctx as unknown as AudioContext, sound);
@@ -256,7 +263,13 @@ describe('110 EngineAudio effect wiring', () => {
 
   it('the engine keeps working when updateEffects is never called', () => {
     const ctx = new FakeContext();
-    const audio = audioWith(ctx, { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0 });
+    const audio = audioWith(ctx, {
+      cylinders: 4,
+      exhaustLengthM: 1.2,
+      intakeMix: 0.3,
+      crackle: 0,
+      synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0 }),
+    });
     audio.start();
     audio.update(3000, 1, [0, 0, 0, 0]);
     expect(ctx.gains[0].gain.value).toBeCloseTo(0.6 * 0.5, 9);

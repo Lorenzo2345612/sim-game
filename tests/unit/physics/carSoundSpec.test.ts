@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { parseCarSpec, DEFAULT_CAR_SOUND } from '../../../src/physics/carSpec';
+import { legacySynthSpec } from '../../../src/audio/soundSpec';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -27,7 +28,13 @@ describe('car sound spec', () => {
     const json = f4();
     delete json.sound;
     const sound = soundOf(json);
-    expect(sound).toEqual({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 });
+    expect(sound).toEqual({
+      cylinders: 4,
+      exhaustLengthM: 1.2,
+      intakeMix: 0.3,
+      crackle: 0.2,
+      synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }),
+    });
     expect(sound).toEqual(DEFAULT_CAR_SOUND);
     expect(sound).not.toBe(DEFAULT_CAR_SOUND);
     sound.crackle = 1;
@@ -40,12 +47,14 @@ describe('car sound spec', () => {
       exhaustLengthM: 1.2,
       intakeMix: 0.3,
       crackle: 0.2,
+      synth: legacySynthSpec({ cylinders: 8, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }),
     });
     expect(soundOf(withSound({ intakeMix: 0.9 }))).toEqual({
       cylinders: 4,
       exhaustLengthM: 1.2,
       intakeMix: 0.9,
       crackle: 0.2,
+      synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.9, crackle: 0.2 }),
     });
     expect(soundOf(withSound({}))).toEqual(DEFAULT_CAR_SOUND);
   });
@@ -101,7 +110,13 @@ describe('car sound spec', () => {
       const json = JSON.parse(
         readFileSync(join(ROOT, 'public', 'cars', file), 'utf8'),
       ) as unknown;
-      expect(soundOf(json), file).toEqual({ cylinders, exhaustLengthM, intakeMix, crackle });
+      expect(soundOf(json), file).toEqual({
+        cylinders,
+        exhaustLengthM,
+        intakeMix,
+        crackle,
+        synth: legacySynthSpec({ cylinders, exhaustLengthM, intakeMix, crackle }),
+      });
     }
   });
 });

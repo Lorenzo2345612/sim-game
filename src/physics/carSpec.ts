@@ -1,3 +1,8 @@
+import {
+  legacySynthSpec,
+  parseEngineSynth,
+  type EngineSynthSpec,
+} from '../audio/soundSpec';
 import type { ActiveAeroSpec, HybridSpec } from './hybridTypes';
 
 export type Vec3 = { x: number; y: number; z: number };
@@ -58,6 +63,7 @@ export interface CarSound {
   exhaustLengthM: number;
   intakeMix: number;
   crackle: number;
+  synth: EngineSynthSpec;
 }
 
 export const DEFAULT_CAR_SOUND: CarSound = {
@@ -65,6 +71,7 @@ export const DEFAULT_CAR_SOUND: CarSound = {
   exhaustLengthM: 1.2,
   intakeMix: 0.3,
   crackle: 0.2,
+  synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }),
 };
 
 export type CarCategory = 'open-wheel' | 'gt3' | 'gt4' | 'touring' | 'prototype' | 'lmp2' | 'hypercar';
@@ -301,7 +308,14 @@ function carSound(root: unknown): CarSound {
   if (intakeMix < 0 || intakeMix > 1) fail('sound.intakeMix');
   const crackle = optNum(root, 'sound.crackle') ?? DEFAULT_CAR_SOUND.crackle;
   if (crackle < 0 || crackle > 1) fail('sound.crackle');
-  return { cylinders, exhaustLengthM, intakeMix, crackle };
+  const { spec: synth, errors } = parseEngineSynth(pick(root, 'sound.synth'), {
+    cylinders,
+    exhaustLengthM,
+    intakeMix,
+    crackle,
+  });
+  if (errors.length > 0) throw new Error('Invalid car spec: sound.' + errors[0]);
+  return { cylinders, exhaustLengthM, intakeMix, crackle, synth };
 }
 
 const COCKPIT_WHEEL_OFFSET: Vec3 = { x: 0, y: -0.15, z: -0.45 };

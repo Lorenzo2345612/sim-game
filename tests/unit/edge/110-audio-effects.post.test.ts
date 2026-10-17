@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { crackleSchedule, kerbRumbleHz, shiftEnvelope, windGain } from '../../../src/audio/effects';
 import { EngineAudio } from '../../../src/audio/engineAudio';
 import type { CarSound } from '../../../src/physics/carSpec';
+import { legacySynthSpec } from '../../../src/audio/soundSpec';
 
 class FakeParam {
   value: number;
@@ -144,7 +145,13 @@ class FakeContext {
   }
 }
 
-const SOUND: CarSound = { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 1 };
+const SOUND: CarSound = {
+  cylinders: 4,
+  exhaustLengthM: 1.2,
+  intakeMix: 0.3,
+  crackle: 1,
+  synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 1 }),
+};
 
 function audioWith(ctx: FakeContext, sound: CarSound = SOUND): EngineAudio {
   return new EngineAudio(() => ctx as unknown as AudioContext, sound);
