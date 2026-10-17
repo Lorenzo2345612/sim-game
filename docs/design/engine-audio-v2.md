@@ -174,3 +174,33 @@ Test base: 228 base with `turbo {centerHz 3000, spanHz 3000, gain 0.05, lagS 0.4
 | AT12 | parse raws: valve 'x'; flutter 2; wastegate −1; wastegateKind 'y'; downLagS 9; and a valid turbo with all five fields | parse | each invalid has ≥ 1 error containing `synth.turbo`; valid round-trips the five values; a turbo without them keeps them absent |
 | AT13 | car JSONs | parse `sound.synth.turbo` | f4 valve 'bpv', flutter 0.4; hyper-a valve 'bpv', flutter 0, wastegate 0.3, 'internal'; ow26 valve 'bpv', flutter 0, wastegate 0.5, 'external'; each downLagS = 1.5 × its lagS (± 1e-9) |
 | AT14 | — | all 226, 227, 228 and 231 acceptance tests | pass |
+
+## 244 — Voice timbre v2.1 (user-approved preview "H5")
+
+Why: the 227 core sounded like a round wave with flanging. Three cascaded high-feedback tubes make fixed comb peaks that the engine harmonics sweep through (flanger), the smooth wide kernel keeps only lows, and identical cylinders give no sub-orders (no character). The user A/B'd previews and approved "H5" for every car. Reference prototype (not production code, read for exact maths): `docs/design/engine-audio-ref/voice-h5.ts` (core) and `render-h5.ts` (layers as prototyped, run with `NAME=H5 PIPE_K=1.5 CYLVAR=0.28 BASS_DB=8 BASS_HZ=160 POPW=1.8`). Research: `docs/research/engine-audio/pops-turbo-muffling.md`.
+
+Core changes (`src/audio/engineVoice.ts`):
+1. Kernel: Hann rise over the first 4 % of the width, then `exp(-5d)·(1-d)` decay, d ∈ [0,1] over the rest. Export the table as `PULSE_KERNEL` (Float64Array, length KERNEL_N + 2).
+2. Tubes: `REFLECTION` −0.25, `LOOP_LP_HZ` 1800 (exported constants).
+3. Per-cylinder traits, drawn once in the constructor and on `reset()` from `mulberry32(seed·7919 + 13)`, for i = 0..cyl−1 in order, three draws each: `amp_i = 1 + cylVar·(2r−1)`, `off_i = 7·cylVar·(2r−1)` degrees, `runner_i = 2·(0.35 + 0.25r)/480` s. Firing angle = firingDeg[i] + off_i (+ jitter). Pulse amplitude × amp_i. Each pulse is also written a second time delayed by runner_i (fractional, linear split) with gain −0.35 into the same bank buffer (one bounce, no feedback). Injection buffers sized for max pulse + max runner.
+4. Exhaust path = everything derived from the pulse train (core tubes, 228 block modes, pops). After the 228 muffling low-pass: if `turbo` ≠ null a second identical 2-pole low-pass stage; then an RBJ low-shelf (S = 1) at 160 Hz, gain `bassDb`; then × `exhaustGain`; then the soft clip. Intake, turbo and whine layers bypass shelf and exhaustGain.
+5. Pops replace the 228 crackle model: the overrun window opens when throttle falls below 0.05 having been ≥ 0.5 (each new lift restarts it); pops possible from 0.08 s to 2.2 s after the lift, only while throttle < 0.05 and rpm > 3500. At each firing event inside the window, fire a pop with probability `rate / firingEventsPerSecond`, `rate = 20·crackle·min(1, rpm/8000)·exp(−t/0.8)` (t = time since lift), minimum 25 ms between pops. A pop is a kernel pulse injected into both bank buffers, amplitude 2.2·U(0.6, 1.4) of a full-load pulse, width U(3.6, 9) ms (not clamped by MAX_PULSE_S). Public read-only `popCount` (total pops since construction/reset). All draws from the voice PRNG.
+6. `reset()` restores every layer state (boost, phases, filters, overrun window, pop counter, traits) so a reset voice renders identically to a fresh one.
+
+Spec fields (`soundSpec.ts`): `cylVar` [0, 0.5] default 0.28; `bassDb` [0, 12] default 8; `exhaustGain` (0, 2] default 1. Parser errors as for other fields.
+
+Data (`public/cars/*.json` `sound.synth`): every car `pipeM` and `tailM` × 1.5 (cap 5); gt3-d `firingDeg` [0,72,144,216,288,360,432,504,576,648] (even-fire V10); ow26 firing unchanged (90/150 uneven, research confirmed); turbo cars (f4, hyper-a, ow26) `drive` 1.4 and `exhaustGain` f4 0.8, hyper-a 0.6, ow26 0.6; NA cars `drive` 2.0; `crackle`: f4, gt3-*, lmp2-a 0.8; hyper-a 0.25; ow26 0.2.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `PULSE_KERNEL` | read | argmax index / KERNEL_N in [0.035, 0.045]; value at index KERNEL_N ≤ 1e-9; non-increasing after the argmax |
+| AT2 | f4 and gt3-c synth from `public/cars` with `jitterDeg` 0, `jitterAmp` 0; voice seed 1, 48 kHz | for rpm 3000..7000 step 250, load 1, throttle 1: render 0.8 s, RMS of the last 0.5 s | max RMS / min RMS ≤ 1.6 per car (no comb sweep) |
+| AT3 | same specs, `cylVar` 0.28 | steady 3000 rpm, load 1, 1.3 s, Hann-windowed DFT of the last 1.0 s | energy at orders 0.5, 1, 1.5 summed ≥ −20 dB relative to the firing order (cyl/2) |
+| AT4 | f4 synth with `turbo` null, `drive` 0.5, `exhaustGain` 0.6 vs 1.0, same seed | steady 6000 rpm, load 1, 1 s | RMS ratio (0.6 / 1.0) in [0.5, 0.72] |
+| AT5 | gt3-a synth, `bassDb` 8 vs 0, same seed | steady 4000 rpm, load 1, 1 s, DFT | energy below 250 Hz rises ≥ 5 dB; energy above 1 kHz changes ≤ 1.5 dB |
+| AT6 | f4 synth (crackle 0.8), seed 1 | 2 s at 6500 rpm throttle 1, then throttle 0 / load 0 with rpm 6000 for 3 s, blocks of 128, record `popCount` per block | ≥ 3 pops between 0.08 and 2.2 s after the lift; none before 0.08 s or after 2.2 s; consecutive pops ≥ 25 ms apart (block resolution); `crackle` 0 → 0 pops; throttle kept at 1 → 0 pops; rpm 3000 during overrun → 0 pops |
+| AT7 | any car synth | render 1 s mixed controls, `reset()`, render again | both renders bit-identical; two voices with the same seed bit-identical |
+| AT8 | `public/cars/*.json` | compare with `git show master:` at test-writing time | `pipeM`/`tailM` = 1.5 × master (±1e-9, cap 5); gt3-d firingDeg as above; ow26 firingDeg unchanged; drive/exhaustGain/crackle as in the data list |
+| AT9 | `parseEngineSynth` | `cylVar` 0.6, `bassDb` −1, `exhaustGain` 0 | one error each naming `synth.cylVar`, `synth.bassDb`, `synth.exhaustGain`; absent → defaults 0.28, 8, 1 |
+
+Frozen-test edits authorised: assertions in 227/228/231 acceptance and edge tests that encode the old kernel shape, reflection, loop low-pass, crackle timing/arming, car `pipeM`/`tailM`/gt3-d firing or the "bit-identical to 227" layer-off rule may be updated to the v2.1 behaviour; the coder lists every changed assertion in the report.
