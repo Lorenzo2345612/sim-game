@@ -61,3 +61,7 @@ npm test
 ## Out of scope
 
 - New engine DSP, per-car synth data (231), mixer (230), render tool (232), e2e changes.
+
+## Planner answers
+
+- After `rebuildWorklet` (on `setSound`), re-post the last control state to the new node's port immediately, using the same message shape as the regular per-frame update; no new message type.
