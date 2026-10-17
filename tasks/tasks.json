@@ -2589,7 +2589,7 @@
       "title": "Generic trackside props from the track style",
       "status": "pending",
       "deps": [
-        "186"
+        "180"
       ],
       "complexity": "simple",
       "type": "feature",
@@ -2856,7 +2856,8 @@
       "title": "Painted strip outside the kerbs",
       "status": "pending",
       "deps": [
-        "187"
+        "180",
+        "183"
       ],
       "complexity": "simple",
       "type": "feature",
