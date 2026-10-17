@@ -1,6 +1,7 @@
 import './menu.css';
 import type { TrackIndexEntry } from '../../tools/track-builder/buildTrackIndex';
 import type { CreditEntry } from '../../tools/assets/buildCredits';
+import type { Difficulty } from '../ai/traffic';
 
 export interface TrackChoice {
   id: string;
@@ -35,6 +36,23 @@ export const CAR_STORAGE_KEY = 'simgame.car';
 
 // Valid ids for the saved/?car= choice (main.ts validation); the picker lists /cars/index.json.
 export const CAR_IDS: readonly string[] = ['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'lmp2-a', 'hyper-a', 'ow26'];
+
+export interface QuickRaceOptions {
+  trackId: string;
+  laps: number;
+  aiCount: number;
+  difficulty: Difficulty;
+}
+
+const QUICK_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
+const DEFAULT_DIFFICULTY: Difficulty = 'medium';
+
+// Empty or non-finite input falls back; a finite value outside the range is clamped.
+function clampInt(raw: string, min: number, max: number, fallback: number): number {
+  if (raw.trim() === '') return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : fallback;
+}
 
 export interface CarIndexEntry {
   id: string;
@@ -137,11 +155,11 @@ export class Menu {
     return this.shown;
   }
 
-  showTrackSelect(onSelect: (id: string) => void): void {
+  showTrackSelect(onSelect: (id: string) => void, onQuickRace?: (o: QuickRaceOptions) => void): void {
     const token = ++this.trackRender;
     void Promise.all([this.loadTrackIndex(), this.loadCarIndex()]).then(([entries, cars]) => {
       if (token !== this.trackRender) return;
-      this.renderTrackSelect(entries, cars, onSelect);
+      this.renderTrackSelect(entries, cars, onSelect, onQuickRace);
     });
   }
 
@@ -219,6 +237,7 @@ export class Menu {
     entries: TrackIndexEntry[] | null,
     cars: CarIndexEntry[] | null,
     onSelect: (id: string) => void,
+    onQuickRace?: (o: QuickRaceOptions) => void,
   ): void {
     const last = this.storage.getItem(LAST_TRACK_KEY);
     const panel = this.doc.createElement('div');
@@ -248,10 +267,91 @@ export class Menu {
     body.appendChild(this.trackDetails(grid, entries));
     panel.appendChild(body);
     if (this.onLivery) panel.appendChild(this.action('Livery', this.onLivery));
-    panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect)));
+    if (onQuickRace) {
+      const qr = this.action('Quick race', () => this.showQuickRace(onSelect, onQuickRace, cars));
+      qr.id = 'quick-race';
+      panel.appendChild(qr);
+    }
+    panel.appendChild(this.creditsAction(() => this.showTrackSelect(onSelect, onQuickRace)));
     this.wireCardKeys(grid);
     this.show(panel);
     focus?.focus();
+  }
+
+  private showQuickRace(
+    onSelect: (id: string) => void,
+    onQuickRace: (o: QuickRaceOptions) => void,
+    cars: CarIndexEntry[] | null,
+  ): void {
+    const panel = this.doc.createElement('div');
+    panel.className = 'menu-panel';
+    panel.id = 'qr-panel';
+    panel.appendChild(this.heading('Quick race'));
+    const last = this.storage.getItem(LAST_TRACK_KEY);
+    const track = this.doc.createElement('select');
+    track.id = 'qr-track';
+    for (const choice of TRACK_CHOICES) {
+      const option = this.doc.createElement('option');
+      option.value = choice.id;
+      option.textContent = choice.name;
+      if (choice.id === last) option.selected = true;
+      track.appendChild(option);
+    }
+    panel.appendChild(this.fieldRow('Track', track));
+    const picker = this.carPicker(cars);
+    if (picker) panel.appendChild(picker);
+    const laps = this.numberInput('qr-laps', 1, 50, 5);
+    panel.appendChild(this.fieldRow('Laps', laps));
+    const ai = this.numberInput('qr-ai', 0, 15, 11);
+    panel.appendChild(this.fieldRow('Opponents', ai));
+    const diff = this.doc.createElement('select');
+    diff.id = 'qr-diff';
+    for (const level of QUICK_DIFFICULTIES) {
+      const option = this.doc.createElement('option');
+      option.value = level;
+      option.textContent = level;
+      if (level === DEFAULT_DIFFICULTY) option.selected = true;
+      diff.appendChild(option);
+    }
+    panel.appendChild(this.fieldRow('Difficulty', diff));
+    const start = this.action(
+      'Start',
+      () => {
+        this.storage.setItem(LAST_TRACK_KEY, track.value);
+        onQuickRace({
+          trackId: track.value,
+          laps: clampInt(laps.value, 1, 50, 5),
+          aiCount: clampInt(ai.value, 0, 15, 11),
+          difficulty: QUICK_DIFFICULTIES.includes(diff.value as Difficulty) ? (diff.value as Difficulty) : DEFAULT_DIFFICULTY,
+        });
+      },
+      true,
+    );
+    start.id = 'qr-start';
+    panel.appendChild(start);
+    panel.appendChild(this.action('Back', () => this.showTrackSelect(onSelect, onQuickRace)));
+    this.show(panel);
+    track.focus();
+  }
+
+  private numberInput(id: string, min: number, max: number, value: number): HTMLInputElement {
+    const input = this.doc.createElement('input');
+    input.id = id;
+    input.type = 'number';
+    input.min = String(min);
+    input.max = String(max);
+    input.value = String(value);
+    return input;
+  }
+
+  private fieldRow(label: string, control: HTMLElement): HTMLElement {
+    const row = this.doc.createElement('div');
+    row.className = 'car-row qr-row';
+    const el = this.doc.createElement('label');
+    el.textContent = label;
+    el.htmlFor = control.id;
+    row.append(el, control);
+    return row;
   }
 
   private trackCard(choice: TrackChoice, entry: TrackIndexEntry | null): HTMLButtonElement {

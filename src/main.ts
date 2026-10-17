@@ -70,13 +70,14 @@ import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
 import { HudErs, type HudErsData } from './ui/hudErs';
-import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES } from './ui/menu';
+import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES, type QuickRaceOptions } from './ui/menu';
 import { LiveryEditor, type LiveryPreview } from './ui/liveryEditor';
 import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
 import { RaceHud, type RaceHudData } from './ui/raceHud';
+import { Results, type ResultsRow } from './ui/results';
 
 export interface QaCameraInfo {
   kind: 'chase' | 'top' | 'view';
@@ -170,6 +171,8 @@ declare global {
       raceStandings(): readonly Standing[];
       carCount(): number;
       startLights(): number;
+      /** Race only: ends the race immediately and shows the results overlay (095). */
+      finishRaceNow?(): void;
       qaCamera(view: QaCameraView): QaCameraInfo;
     };
   }
@@ -228,11 +231,18 @@ interface PlayerSim {
 const RACE_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 const NO_EVENTS: LapEvent[] = [];
 
-function intFromQuery(params: URLSearchParams, name: string, fallback: number): number {
+function intFromQuery(
+  params: URLSearchParams,
+  name: string,
+  fallback: number,
+  min = -Infinity,
+  max = Infinity,
+): number {
   const raw = params.get(name);
   if (raw === null || raw.trim() === '') return fallback;
   const n = Number(raw);
-  return Number.isFinite(n) ? Math.floor(n) : fallback;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(n)));
 }
 
 function raceConfigFromQuery(params: URLSearchParams, trackId: string, carId: string): RaceConfig {
@@ -240,11 +250,21 @@ function raceConfigFromQuery(params: URLSearchParams, trackId: string, carId: st
   return {
     trackId,
     carId,
-    laps: Math.max(1, intFromQuery(params, 'laps', 3)),
-    aiCount: intFromQuery(params, 'ai', 5),
+    laps: intFromQuery(params, 'laps', 5, 1, 50),
+    aiCount: intFromQuery(params, 'ai', 11, 0, 15),
     difficulty: RACE_DIFFICULTIES.includes(diff as Difficulty) ? (diff as Difficulty) : 'medium',
     seed: intFromQuery(params, 'seed', 1),
   };
+}
+
+function resultRows(standings: readonly Standing[]): ResultsRow[] {
+  return standings.map((s) => ({
+    position: s.position,
+    name: s.car === 0 ? 'You' : `AI ${s.car}`,
+    totalTime: s.totalTime,
+    bestLap: s.bestLap,
+    penalty: s.penalty,
+  }));
 }
 
 const emptyLapInfo = (): LapInfo => ({
@@ -256,6 +276,7 @@ const emptyLapInfo = (): LapInfo => ({
 });
 
 let menu: Menu | null = null;
+let results: Results | null = null;
 let liveryEditor: LiveryEditor | null = null;
 let session: Session | null = null;
 // One WebGL context for the page: a second WebGLRenderer on the same canvas would share it.
@@ -312,9 +333,28 @@ function endSession(): void {
 }
 
 function showTrackSelect(): void {
-  menu?.showTrackSelect((id) => {
-    startGame(id).catch(onError);
-  });
+  menu?.showTrackSelect(
+    (id) => {
+      startGame(id).catch(onError);
+    },
+    (o) => {
+      startQuickRace(o).catch(onError);
+    },
+  );
+}
+
+// Quick race keeps the URL the single source of the race config, same as ?race=1 (093).
+function startQuickRace(o: QuickRaceOptions): Promise<void> {
+  const params = new URLSearchParams();
+  params.set('race', '1');
+  params.set('track', o.trackId);
+  params.set('laps', String(o.laps));
+  params.set('ai', String(o.aiCount));
+  params.set('diff', o.difficulty);
+  const car = window.localStorage.getItem(CAR_STORAGE_KEY);
+  if (car !== null && CAR_IDS.includes(car)) params.set('car', car);
+  window.history.pushState(null, '', `${window.location.pathname}?${params}`);
+  return startGame(o.trackId);
 }
 
 function closeLiveryEditor(): void {
@@ -1177,6 +1217,7 @@ async function startGame(trackId: string): Promise<void> {
   let autoGearbox = true;
   let lastGear = sim.gear();
   let paused = false;
+  let resultsShown = false;
   let running = true;
   let last = -1;
   let rafId = 0;
@@ -1373,6 +1414,10 @@ async function startGame(trackId: string): Promise<void> {
         raceHudData.standings = raceGame.standings();
         raceHudData.laps = raceGame.config.laps;
         raceHud.update(raceHudData);
+        if (!resultsShown) {
+          const player = raceHudData.standings.find((s) => s.car === 0);
+          if (raceGame.raceFinished || player?.finished === true) showResults();
+        }
       }
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
       let latG = 0;
@@ -1536,6 +1581,31 @@ async function startGame(trackId: string): Promise<void> {
     showTrackSelect();
   };
 
+  // Race over (player classified or everyone in): freeze the sim and show the standings.
+  const showResults = (): void => {
+    if (resultsShown || raceGame === null) return;
+    resultsShown = true;
+    paused = true;
+    engineAudio?.setPaused(true);
+    mixer?.setPaused(true);
+    results?.show(resultRows(raceGame.standings()), {
+      onRestart: () => {
+        results?.hide();
+        resultsShown = false;
+        restart()
+          .then(() => {
+            if (running) resume();
+          })
+          .catch(onError);
+      },
+      onMenu: () => {
+        results?.hide();
+        resultsShown = false;
+        changeTrack();
+      },
+    });
+  };
+
   const showPauseMenu = (): void => {
     menu?.showPause({
       onResume: resume,
@@ -1577,6 +1647,7 @@ async function startGame(trackId: string): Promise<void> {
 
   const onKeydown = (event: KeyboardEvent): void => {
     if (event.code === 'Escape') {
+      if (resultsShown) return; // modal: only Restart/Menu leave the results
       if (setupPanel.visible) {
         setupPanel.close();
         return;
@@ -1628,6 +1699,7 @@ async function startGame(trackId: string): Promise<void> {
     setupHud.dispose();
     setupPanel.dispose();
     raceHud.dispose();
+    results?.hide();
     sim.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();
@@ -1714,6 +1786,7 @@ async function startGame(trackId: string): Promise<void> {
     raceStandings: () => (raceGame !== null ? raceGame.standings() : []),
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
+    finishRaceNow: raceGame !== null ? () => showResults() : undefined,
     qaCamera,
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
@@ -1734,6 +1807,7 @@ async function main(): Promise<void> {
   const menuRoot = document.getElementById('menu');
   if (!menuRoot) throw new Error('Missing #menu');
   menu = new Menu(menuRoot, window.localStorage, showLiveryEditor);
+  results = new Results(document.body);
 
   engineAudio = new EngineAudio();
   const mixNodes = engineAudio.mixerNodes();
@@ -1741,13 +1815,15 @@ async function main(): Promise<void> {
   window.addEventListener('keydown', resumeAudio, { once: true });
   document.addEventListener('click', resumeAudio, { once: true });
 
-  const requested = new URLSearchParams(window.location.search).get('track');
-  if (requested === null) {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get('track');
+  // ?race=1 starts a race even without ?track= (falls back to the default track).
+  if (requested === null && params.get('race') !== '1') {
     status.style.display = 'none';
     showTrackSelect();
     return;
   }
-  await startGame(TRACK_IDS.includes(requested) ? requested : DEFAULT_TRACK_ID);
+  await startGame(requested !== null && TRACK_IDS.includes(requested) ? requested : DEFAULT_TRACK_ID);
 }
 
 main().catch(onError);

@@ -1,0 +1,99 @@
+#results {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--ui-bg);
+  backdrop-filter: blur(6px);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-stretch: condensed;
+}
+
+#results .results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 320px;
+  max-width: min(680px, calc(100vw - 48px));
+  max-height: 86vh;
+  padding: 28px 32px;
+  box-sizing: border-box;
+  background: var(--ui-panel-solid);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+#results .results-title {
+  position: relative;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  font-size: 30px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#results .results-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 72px;
+  height: 3px;
+  background: var(--ui-accent);
+  transform: skewX(-20deg);
+}
+
+#results .results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#results .results-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+#results .results-table td:first-child {
+  width: 44px;
+  font-weight: 800;
+  color: var(--ui-accent);
+}
+
+#results .results-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+#results button {
+  box-sizing: border-box;
+  width: min(200px, 100%);
+  padding: 11px 18px;
+  font: 600 16px var(--ui-font);
+  font-stretch: condensed;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+}
+
+#results button.btn-primary {
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+#results button:hover {
+  border-color: var(--ui-accent);
+}
