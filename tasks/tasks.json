@@ -2683,7 +2683,7 @@
     {
       "num": "194",
       "title": "Daytona style file (data only)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
