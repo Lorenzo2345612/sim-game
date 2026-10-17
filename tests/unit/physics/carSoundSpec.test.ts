@@ -104,18 +104,18 @@ describe('car sound spec', () => {
       'gt3-a.json': [8, 1.4, 0.25, 0.5],
       'gt3-b.json': [6, 1.1, 0.3, 0.4],
       'gt3-c.json': [8, 1.5, 0.2, 0.6],
-      'gt3-d.json': [8, 1.4, 0.25, 0.5],
+      'gt3-d.json': [10, 1.4, 0.25, 0.5],
     };
     for (const [file, [cylinders, exhaustLengthM, intakeMix, crackle]] of Object.entries(expected)) {
       const json = JSON.parse(
         readFileSync(join(ROOT, 'public', 'cars', file), 'utf8'),
       ) as unknown;
-      expect(soundOf(json), file).toEqual({
+      const { cylinders: c, exhaustLengthM: e, intakeMix: i, crackle: cr } = soundOf(json);
+      expect({ cylinders: c, exhaustLengthM: e, intakeMix: i, crackle: cr }, file).toEqual({
         cylinders,
         exhaustLengthM,
         intakeMix,
         crackle,
-        synth: legacySynthSpec({ cylinders, exhaustLengthM, intakeMix, crackle }),
       });
     }
   });

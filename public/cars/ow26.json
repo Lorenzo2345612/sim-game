@@ -193,7 +193,20 @@
     "cylinders": 6,
     "exhaustLengthM": 1.0,
     "intakeMix": 0.35,
-    "crackle": 0.1
+    "crackle": 0.1,
+    "synth": {
+      "firingDeg": [0, 90, 240, 330, 480, 570],
+      "bank": [0, 1, 0, 1, 0, 1],
+      "pipeM": [0.5, 0.5],
+      "tailM": 0.6,
+      "pulseDeg": 140,
+      "intakeHz": 300,
+      "lowpassHz": 3000,
+      "limiterHz": 20,
+      "gainDb": 1.5,
+      "turbo": { "centerHz": 4250, "spanHz": 2500, "gain": 0.02, "lagS": 0.45 },
+      "whine": { "order": 18, "gain": 0.05, "source": "rpm", "minSpeedMs": 14 }
+    }
   },
   "gearbox": {
     "ratios": [

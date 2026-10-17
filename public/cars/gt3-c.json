@@ -201,7 +201,19 @@
     "cylinders": 8,
     "exhaustLengthM": 1.5,
     "intakeMix": 0.2,
-    "crackle": 0.6
+    "crackle": 0.6,
+    "synth": {
+      "firingDeg": [0, 90, 180, 270, 360, 450, 540, 630],
+      "bank": [0, 1, 0, 1, 0, 1, 0, 1],
+      "pipeM": [0.75, 0.75],
+      "tailM": 0.75,
+      "pulseDeg": 90,
+      "intakeHz": 250,
+      "lowpassHz": 8000,
+      "limiterHz": 14,
+      "gainDb": 1,
+      "jitterAmp": 0.08
+    }
   },
   "gearbox": {
     "ratios": [

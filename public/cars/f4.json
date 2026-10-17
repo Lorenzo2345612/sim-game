@@ -62,7 +62,24 @@
     "torqueCurve": [[1000, 100], [1500, 175], [2000, 235], [2500, 255], [3500, 255], [4500, 250], [5500, 220], [6000, 203], [6500, 182], [7000, 150]],
     "idleRpm": 1200, "limiterRpm": 6900, "launchRpm": 4000, "inertia": 0.15, "brakingTorque": 35
   },
-  "sound": { "cylinders": 4, "exhaustLengthM": 1.0, "intakeMix": 0.35, "crackle": 0.1 },
+  "sound": {
+    "cylinders": 4,
+    "exhaustLengthM": 1.0,
+    "intakeMix": 0.35,
+    "crackle": 0.1,
+    "synth": {
+      "firingDeg": [0, 180, 360, 540],
+      "bank": [0, 1, 0, 1],
+      "pipeM": [0.5, 0.5],
+      "tailM": 0.5,
+      "pulseDeg": 130,
+      "intakeHz": 350,
+      "lowpassHz": 5000,
+      "limiterHz": 15,
+      "gainDb": 0,
+      "turbo": { "centerHz": 3000, "spanHz": 3000, "gain": 0.04, "lagS": 0.3 }
+    }
+  },
   "gearbox": { "ratios": [2.3, 1.68, 1.33, 1.1, 0.93, 0.8], "final": 3.5, "reverse": 2.5, "upRpm": 6400, "downRpm": 3200, "shiftTime": 0.15, "efficiency": 0.92 },
   "diff": { "type": "lsd", "preload": 40, "lockPower": 0.35, "lockCoast": 0.2 },
   "brakes": { "maxTorque": 4000, "bias": 0.6 },

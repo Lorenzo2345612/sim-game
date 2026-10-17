@@ -56,7 +56,11 @@ describe('215 hybrid and active-aero contract acceptance', () => {
     const spec = parseCarSpec(f4Json()) as SpecWithHybrid;
     expect(spec.hybrid).toBeUndefined();
     expect(spec.activeAero).toBeUndefined();
-    expect(spec).toEqual(parseCarSpec(headF4Json()));
+    const { sound, ...current } = spec;
+    void sound;
+    const { sound: headSound, ...head } = parseCarSpec(headF4Json());
+    void headSound;
+    expect(current).toEqual(head);
   });
 
   it('AT2: hybrid block with the shared constants and activeAero {0.7, 0.6, 0.4} parse to deep-equal blocks', () => {
