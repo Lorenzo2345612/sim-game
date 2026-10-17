@@ -3,6 +3,7 @@ import { LIMITER_RPM } from '../physics/gearbox';
 import type { Surface } from '../core/types';
 import { crackleSchedule, kerbRumbleHz, shiftEnvelope, windGain } from './effects';
 import { firingHz } from './engineSynth';
+import { cockpitImpulse } from './mixer';
 // Bundled as its own worker-style asset; addModule needs the URL string, not a URL object.
 import engineWorkletUrl from './engineWorklet.ts?worker&url';
 
@@ -24,6 +25,7 @@ export interface AudioMixNodes {
   engine: GainNode;
   effects: GainNode;
   engineFilter: BiquadFilterNode;
+  cockpitWet?: GainNode;
 }
 
 const SMOOTHING = 0.05;
@@ -310,7 +312,30 @@ export class EngineAudio {
       engineFilter.connect(engine);
       engine.connect(master);
       effects.connect(master);
-      master.connect(this.ctx.destination);
+      const compA = this.ctx.createDynamicsCompressor();
+      compA.threshold.setValueAtTime(-18, now);
+      compA.ratio.setValueAtTime(4, now);
+      compA.attack.setValueAtTime(0.005, now);
+      compA.release.setValueAtTime(0.15, now);
+      const compB = this.ctx.createDynamicsCompressor();
+      compB.threshold.setValueAtTime(-2, now);
+      compB.ratio.setValueAtTime(20, now);
+      compB.attack.setValueAtTime(0.001, now);
+      compB.release.setValueAtTime(0.05, now);
+      master.connect(compA);
+      compA.connect(compB);
+      compB.connect(this.ctx.destination);
+      const convolver = this.ctx.createConvolver();
+      convolver.normalize = false;
+      const impulse = cockpitImpulse(this.ctx.sampleRate);
+      const ir = this.ctx.createBuffer(1, impulse.length, this.ctx.sampleRate);
+      ir.getChannelData(0).set(impulse);
+      convolver.buffer = ir;
+      const cockpitWet = this.ctx.createGain();
+      cockpitWet.gain.setValueAtTime(0, now);
+      engineFilter.connect(convolver);
+      convolver.connect(cockpitWet);
+      cockpitWet.connect(engine);
       this.lowpass.disconnect();
       this.lowpass.connect(engineFilter);
       this.squealGain.disconnect();
@@ -326,7 +351,7 @@ export class EngineAudio {
           node.connect(effects);
         }
       }
-      this.mix = { master, engine, effects, engineFilter };
+      this.mix = { master, engine, effects, engineFilter, cockpitWet };
     }
     return { ctx: this.ctx, ...this.mix };
   }
@@ -384,6 +409,11 @@ export class EngineAudio {
         } catch {
           /* already disconnected */
         }
+      }
+      try {
+        this.mix.cockpitWet?.disconnect();
+      } catch {
+        /* already disconnected */
       }
     }
     try {

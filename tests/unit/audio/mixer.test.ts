@@ -220,9 +220,18 @@ function node<T extends object>(extra: T): FakeNode<T> {
   };
 }
 
+type FakeCompressor = FakeNode<{
+  threshold: FakeParam;
+  knee: FakeParam;
+  ratio: FakeParam;
+  attack: FakeParam;
+  release: FakeParam;
+}>;
+
 class WireContext {
   gains: Array<FakeNode<{ gain: FakeParam }>> = [];
   filters: Array<FakeNode<{ type: string; frequency: FakeParam; Q: FakeParam }>> = [];
+  compressors: FakeCompressor[] = [];
   currentTime = 0;
   sampleRate = 44100;
   destination = node({});
@@ -248,6 +257,22 @@ class WireContext {
     const f = node({ type: 'lowpass', frequency: new FakeParam(350), Q: new FakeParam(1) });
     this.filters.push(f);
     return f;
+  }
+
+  createDynamicsCompressor() {
+    const c = node({
+      threshold: new FakeParam(0),
+      knee: new FakeParam(30),
+      ratio: new FakeParam(12),
+      attack: new FakeParam(0.003),
+      release: new FakeParam(0.25),
+    });
+    this.compressors.push(c);
+    return c;
+  }
+
+  createConvolver() {
+    return node({ buffer: null as unknown, normalize: true });
   }
 
   createBuffer(channels: number, length: number, rate: number) {
@@ -280,10 +305,10 @@ describe('EngineAudio mixer bus', () => {
     const audio = new EngineAudio(() => ctx as unknown as AudioContext);
     expect(ctx.gains.length).toBe(3); // engine, sub, squeal — the mixer bus waits for mixerNodes()
     const bus = audio.mixerNodes();
-    expect(ctx.gains.length).toBe(6); // + master, engine, effects
+    expect(ctx.gains.length).toBe(7); // + master, engine, effects, cockpitWet
     const again = audio.mixerNodes();
     expect(again.master).toBe(bus.master);
-    expect(ctx.gains.length).toBe(6);
+    expect(ctx.gains.length).toBe(7);
     const [engineGain, , squealGain, masterGain, engineBus, effectsBus] = ctx.gains;
     const [toneFilter, , cameraFilter] = ctx.filters;
     expect(bus.master).toBe(masterGain);
@@ -293,16 +318,19 @@ describe('EngineAudio mixer bus', () => {
     expect(cameraFilter.connections).toContain(engineBus);
     expect(engineBus.connections).toContain(masterGain);
     expect(effectsBus.connections).toContain(masterGain);
-    expect(masterGain.connections).toContain(ctx.destination);
+    expect(ctx.compressors).toHaveLength(2);
+    expect(masterGain.connections).toEqual([ctx.compressors[0]]);
+    expect(ctx.compressors[0].connections).toEqual([ctx.compressors[1]]);
+    expect(ctx.compressors[1].connections).toEqual([ctx.destination]);
     expect(toneFilter.connections).toEqual([cameraFilter]);
     expect(squealGain.connections).toEqual([effectsBus]);
     expect(engineGain.connections).toEqual([toneFilter]);
 
     audio.updateEffects({ speed: 30, surface: 'asphalt', shifting: false, slipRatios: [0, 0, 0, 0] });
-    const wind = ctx.gains[6];
-    const kerbAmp = ctx.gains[7];
-    const gravel = ctx.gains[9];
-    const crackleBus = ctx.gains[10];
+    const wind = ctx.gains[7];
+    const kerbAmp = ctx.gains[8];
+    const gravel = ctx.gains[10];
+    const crackleBus = ctx.gains[11];
     for (const g of [wind, kerbAmp, gravel, crackleBus]) {
       expect(g.connections).toEqual([effectsBus]);
     }

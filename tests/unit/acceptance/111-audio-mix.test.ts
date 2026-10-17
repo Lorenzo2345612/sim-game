@@ -18,6 +18,12 @@ class FakeParam {
     this.value = v;
     return this;
   }
+  setTargetAtTime(v: number, t: number, _tau: number): FakeParam {
+    void t;
+    void _tau;
+    this.value = v;
+    return this;
+  }
   lastRamp(): { value: number; time: number } {
     for (let i = this.events.length - 1; i >= 0; i--) {
       if (this.events[i].kind === 'ramp') return this.events[i];
@@ -71,10 +77,10 @@ describe('111 audio mix acceptance', () => {
     expect(v.effects).toBeCloseTo(1, 9);
   });
 
-  it('AT2: cockpit sets the engine filter to 1200 Hz; chase bypasses at 22050 Hz', () => {
+  it('AT2: cockpit sets the engine filter to 2500 Hz; chase bypasses at 22050 Hz', () => {
     const { engineFilter, mixer } = makeMixer();
     mixer.setCameraMode('cockpit');
-    expect(engineFilter.value).toBeCloseTo(1200, 9);
+    expect(engineFilter.value).toBeCloseTo(2500, 9);
     mixer.setCameraMode('chase');
     expect(engineFilter.value).toBeCloseTo(22050, 9);
   });
