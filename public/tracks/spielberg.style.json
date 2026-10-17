@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#424245", "grass": "#6FA23A", "gravel": "#D5C7A2" },
+  "kerbs": {
+    "colors": ["#C8312C", "#DADADA"],
+    "outerStrip": "#2F8F5B",
+    "ranges": [
+      { "start": 1960, "end": 2030, "side": "right", "colors": ["#C8312C", "#DADADA"], "outerStrip": "#2F8F5B" }
+    ]
+  },
+  "runoffPaint": {
+    "pattern": "none",
+    "colors": ["#C8312C", "#DADADA"],
+    "stripeMeters": 3,
+    "ranges": [
+      { "start": 160, "end": 245, "pattern": "stripes", "colors": ["#C8312C", "#DADADA"], "stripeMeters": 3 }
+    ]
+  },
+  "barriers": {
+    "concrete": { "color": "#B4B4B4" },
+    "armco": { "color": "#B8BCC0" },
+    "tyres": { "beltColor": "#DADADA" },
+    "fence": { "heightMeters": 3.5, "types": ["armco", "tyres", "wall"], "color": "#4F6B3A" }
+  },
+  "pitBuilding": {
+    "storeys": 3, "heightMeters": 11, "depthMeters": 15,
+    "facade": "#4B4E52", "roof": "#DADADA", "doors": "#DADADA", "accent": "#C8312C",
+    "roofStyle": "flat", "glazing": 0.5
+  },
+  "grandstands": { "structure": "#B0B4B8", "roof": "#8A8D90", "seats": ["#C8312C", "#DADADA"], "roofStyle": "flat" },
+  "extraGrandstands": [
+    { "start": 190, "end": 250, "side": "left", "offsetMeters": 25, "rows": 12, "roof": false },
+    { "start": 480, "end": 540, "side": "left", "offsetMeters": 25, "rows": 10, "roof": false },
+    { "start": 1100, "end": 1160, "side": "right", "offsetMeters": 20, "rows": 8, "roof": true }
+  ]
+}
