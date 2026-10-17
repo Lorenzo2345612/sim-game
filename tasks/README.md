@@ -228,13 +228,13 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
 | 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
-| 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | in progress | 226 |
+| 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | waiting decision | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | pending | 227 |
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
 | 231 | Per-car engine synth data | done | 226 |
 | 232 | Offline engine render tool | pending | 227 |
-| 233 | Shared ground-height sampler | pending | - |
+| 233 | Shared ground-height sampler | in progress | - |
 | 234 | Grandstands and props grounded on terrain with plinths | pending | 233 |
 | 235 | Barriers, colliders and boards follow the ground | pending | 233 |
 | 236 | Pit building split into grounded pieces along the pit lane | pending | 234 |
