@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { TrackDataV2 } from '../core/types';
 import { rightNormalAt } from '../track/barrierPath';
+import { groundedBase } from '../track/placement';
 import type { ResolvedTrackStyle, TrackProp } from '../track/trackStyle';
 
 export interface TrackPropsObject { group: THREE.Group; dispose(): void }
@@ -10,7 +11,7 @@ const DEFAULT_COLOR = '#9a9ea3';
 const SKIP_TOLERANCE = 1e-6;
 const UP = new THREE.Vector3(0, 1, 0);
 
-interface Footprint { length: number; depth: number }
+interface PropFootprint { length: number; depth: number }
 
 function box(w: number, h: number, d: number, x: number, y: number, z: number): THREE.BoxGeometry {
   const g = new THREE.BoxGeometry(w, h, d);
@@ -75,7 +76,7 @@ function polylineDistance2(cx: [number, number][], x: number, z: number): number
   return min;
 }
 
-function footprintOf(prop: TrackProp): Footprint {
+function footprintOf(prop: TrackProp): PropFootprint {
   switch (prop.type) {
     case 'marshalPost': return { length: 2.6, depth: 2.6 };
     case 'tent': return { length: prop.lengthMeters, depth: 6 };
@@ -150,16 +151,20 @@ export function createTrackProps(track: TrackDataV2, style: ResolvedTrackStyle):
     const isBridge = prop.type === 'footbridge';
     const sign = isBridge || prop.side === 'right' ? 1 : -1;
     const offset = isBridge ? 0 : halfWidth + prop.offsetMeters;
-    const matrix = new THREE.Matrix4().makeBasis(
-      new THREE.Vector3(tx * sign, 0, tz * sign),
-      UP,
-      new THREE.Vector3(rx * sign, 0, rz * sign),
-    ).setPosition(cx[i][0] + rx * sign * offset, track.elevation[i] ?? 0, cx[i][1] + rz * sign * offset);
+    const ox = cx[i][0] + rx * sign * offset;
+    const oz = cx[i][1] + rz * sign * offset;
+    let y = track.elevation[i] ?? 0;
+    let plinthHeight = 0;
+    let foot: PropFootprint | null = null;
 
     if (!isBridge) {
-      const foot = footprintOf(prop);
-      const ox = matrix.elements[12];
-      const oz = matrix.elements[14];
+      foot = footprintOf(prop);
+      const yaw = Math.atan2(-tz * sign, tx * sign);
+      const grounded = groundedBase(track, ox, oz, yaw, {
+        xMin: -foot.length / 2, xMax: foot.length / 2, zMin: 0, zMax: foot.depth,
+      });
+      y = grounded.baseY;
+      plinthHeight = grounded.baseY - grounded.plinthBottom;
       const axX = tx * sign;
       const axZ = tz * sign;
       const azX = rx * sign;
@@ -183,6 +188,12 @@ export function createTrackProps(track: TrackDataV2, style: ResolvedTrackStyle):
       }
     }
 
+    const matrix = new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(tx * sign, 0, tz * sign),
+      UP,
+      new THREE.Vector3(rx * sign, 0, rz * sign),
+    ).setPosition(ox, y, oz);
+
     const color = prop.color ?? DEFAULT_COLOR;
     const key = `${prop.type}|${color.toLowerCase()}`;
     let bucket = buckets.get(key);
@@ -190,7 +201,11 @@ export function createTrackProps(track: TrackDataV2, style: ResolvedTrackStyle):
       bucket = { type: prop.type, color, geoms: [] };
       buckets.set(key, bucket);
     }
-    for (const g of partsOf(prop, track)) {
+    const parts = partsOf(prop, track);
+    if (foot && plinthHeight > 0.1) {
+      parts.push(box(foot.length, plinthHeight, foot.depth, 0, -plinthHeight / 2, foot.depth / 2));
+    }
+    for (const g of parts) {
       g.applyMatrix4(matrix);
       bucket.geoms.push(g);
     }

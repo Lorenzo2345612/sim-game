@@ -71,6 +71,7 @@ export function createGrandstand(
   g: Grandstand,
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
   style?: ResolvedTrackStyle,
+  plinthHeight = 0,
 ): THREE.Group {
   const s = style?.grandstands;
   const group = new THREE.Group();
@@ -101,6 +102,13 @@ export function createGrandstand(
   materials.push(concrete);
   for (let row = 0; row < rows; row++) {
     add(`tier_${row}`, tierGeometry, concrete, new THREE.Vector3(0, (row + 0.5) * ROW_RISE, (row + 0.5) * ROW_DEPTH));
+  }
+
+  if (plinthHeight > 0.1) {
+    const plinthGeometry = new THREE.BoxGeometry(length, plinthHeight, depth);
+    geometries.push(plinthGeometry);
+    materials.push(concrete);
+    add('standPlinth', plinthGeometry, concrete, new THREE.Vector3(0, -plinthHeight / 2, depth / 2));
   }
 
   if (g.roof) {

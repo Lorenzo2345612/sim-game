@@ -53,7 +53,8 @@ import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
-import { groundHeightAt, terrainHeightAt } from './track/ground';
+import { terrainHeightAt } from './track/ground';
+import { grandstandFootprint, groundedBase } from './track/placement';
 import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
@@ -656,15 +657,17 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(trees.object);
 
     for (const g of track.grandstands) {
-      const stand = createGrandstand(g, undefined, trackStyle);
-      stand.position.y = groundHeightAt(track, g.x, g.z);
+      const { baseY, plinthBottom } = groundedBase(track, g.x, g.z, g.yaw, grandstandFootprint(g));
+      const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
+      stand.position.y = baseY;
       scene.add(stand);
     }
 
     const extras = extraGrandstands(track, trackStyle);
     for (const g of extras) {
-      const stand = createGrandstand(g, undefined, trackStyle);
-      stand.position.y = groundHeightAt(track, g.x, g.z);
+      const { baseY, plinthBottom } = groundedBase(track, g.x, g.z, g.yaw, grandstandFootprint(g));
+      const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
+      stand.position.y = baseY;
       scene.add(stand);
     }
     stats.style = { id: trackId, loaded: loadedStyle.loaded, warnings: loadedStyle.warnings.length, extraGrandstands: extras.length };
