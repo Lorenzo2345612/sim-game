@@ -2784,7 +2784,7 @@
     {
       "num": "201",
       "title": "Singapore style data (`singapore.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
