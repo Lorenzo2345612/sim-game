@@ -38,6 +38,47 @@ export interface LapInfo {
   valid: boolean;
 }
 
+/** Tune and track conditions applied to every car, Game and RaceGame alike (task 093). */
+export function configureVehicle(
+  vehicle: Vehicle,
+  trackId: string,
+  tune?: GameTune,
+): TrackConditions {
+  if (tune) {
+    vehicle.setCompound(tune.compound);
+    vehicle.setMultipliers(tune.wear, tune.fuel);
+  }
+  const conditions = conditionsFor(trackId);
+  vehicle.setTrackConditions(conditions);
+  return conditions;
+}
+
+/** Auto-mode reverse rule of Game.step (task 178), shared with RaceGame. */
+export class AutoReverse {
+  private holdT = 0;
+
+  update(vehicle: Vehicle, input: DriverInput, forwardSpeed: number): void {
+    if (vehicle.gearMode() !== 'auto' || input.reset) {
+      this.holdT = 0;
+      return;
+    }
+    const stopped = Math.abs(forwardSpeed) < STOP_SPEED_MS;
+    const hold =
+      stopped && input.brake >= 0.5 && input.throttle < 0.05 && vehicle.gear() >= 1;
+    if (!hold) this.holdT = 0;
+    else {
+      this.holdT += FIXED_DT;
+      if (this.holdT >= REVERSE_HOLD_S) {
+        vehicle.setReverse(true);
+        this.holdT = 0;
+      }
+    }
+    if (vehicle.gear() === -1 && stopped && input.throttle >= 0.5) {
+      vehicle.setReverse(false);
+    }
+  }
+}
+
 export function spawnFromTrack(track: TrackData | TrackDataV2): SpawnPose {
   const n = track.centerline.length;
   if (n < 5) throw new Error('Track too short');
@@ -69,10 +110,10 @@ export class Game {
   private fuelLapStartKg = 0;
   private fuelSumKg = 0;
   private fuelLaps = 0;
-  private reverseHoldT = 0;
   private conditions: TrackConditions = conditionsFor('');
   private readonly zones: AeroZone[];
   private lastDistance = 0;
+  private readonly autoReverse = new AutoReverse();
 
   private constructor(
     world: World,
@@ -109,12 +150,7 @@ export class Game {
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
     const vehicle = new Vehicle(world, spec, spawn);
-    if (tune) {
-      vehicle.setCompound(tune.compound);
-      vehicle.setMultipliers(tune.wear, tune.fuel);
-    }
-    const conditions = conditionsFor(track.id);
-    vehicle.setTrackConditions(conditions);
+    const conditions = configureVehicle(vehicle, track.id, tune);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
     const lapTimer = new LapTimer(progress.length, [
@@ -149,25 +185,7 @@ export class Game {
       this.lastDistance = 0;
     }
     // Auto-mode reverse UX (task 178): the rule lives here, not in VehicleModel.
-    if (this.vehicle.gearMode() !== 'auto' || input.reset) {
-      this.reverseHoldT = 0;
-    } else {
-      const speed = this.current.forwardSpeed;
-      const stopped = Math.abs(speed) < STOP_SPEED_MS;
-      const hold =
-        stopped && input.brake >= 0.5 && input.throttle < 0.05 && this.vehicle.gear() >= 1;
-      if (!hold) this.reverseHoldT = 0;
-      else {
-        this.reverseHoldT += FIXED_DT;
-        if (this.reverseHoldT >= REVERSE_HOLD_S) {
-          this.vehicle.setReverse(true);
-          this.reverseHoldT = 0;
-        }
-      }
-      if (this.vehicle.gear() === -1 && stopped && input.throttle >= 0.5) {
-        this.vehicle.setReverse(false);
-      }
-    }
+    this.autoReverse.update(this.vehicle, input, this.current.forwardSpeed);
     this.vehicle.setInput(input);
     this.vehicle.setAeroZone(inAeroZone(this.zones, this.lastDistance, this.progress.length));
     this.vehicle.prePhysicsStep(FIXED_DT);

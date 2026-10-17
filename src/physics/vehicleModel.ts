@@ -22,6 +22,12 @@ import { ActiveAero } from './activeAero';
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const ENGINE_BRAKE_RAMP_RPM = 1500;
 const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on a visible change
+// Collision groups (task 093): chassis colliders are members of group 1 only and
+// interact with everything; wheel rays filter that group out so no car drives on
+// another car's body, own included. The environment keeps the default (all groups).
+const CHASSIS_GROUP = 0x0002;
+const CHASSIS_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | 0xffff;
+const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~CHASSIS_GROUP);
 // m/s; below this the chassis is numerically at rest for the wheel solver, but only
 // without brakes: the locked-wheel hold needs the real vx. The solver's tick clamp caps
 // an opposing force at massShare·|vx|/dt, so a mm/s gravity creep on an uphill spawn
@@ -201,7 +207,12 @@ export class VehicleModel {
         .setCanSleep(false),
     );
     const he = spec.chassis.halfExtents;
-    world.createCollider(RAPIER.ColliderDesc.cuboid(he.x, he.y, he.z).setDensity(0), this.body);
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(he.x, he.y, he.z)
+        .setDensity(0)
+        .setCollisionGroups(CHASSIS_COLLISION_GROUPS),
+      this.body,
+    );
     this.gearbox = new Gearbox(spec.gearbox, spec.wheels.radius, spec.engine);
     this.tank = new FuelTank(spec.fuel);
     this.compoundSpec = spec.tyres.compounds[this.compound];
@@ -371,9 +382,7 @@ export class VehicleModel {
         axle.restLength + R,
         true,
         undefined,
-        undefined,
-        undefined,
-        body,
+        WHEEL_RAY_FILTER_GROUPS,
       );
       if (!hit) {
         w.hit = false;
@@ -650,9 +659,7 @@ export class VehicleModel {
         axle.restLength + R,
         true,
         undefined,
-        undefined,
-        undefined,
-        this.body,
+        WHEEL_RAY_FILTER_GROUPS,
       );
       tmpSurfaces[i] = hit ? (surfaceOf(hit.collider) ?? 'asphalt') : 'asphalt';
     }

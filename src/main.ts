@@ -7,13 +7,15 @@ import './ui/setupHud.css';
 import * as THREE from 'three';
 import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
 import { Mixer } from './audio/mixer';
+import type { Difficulty } from './ai/traffic';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { loadCockpitSettings, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
-import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3 } from './core/types';
-import { Game } from './game/game';
+import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
+import { Game, type LapInfo } from './game/game';
+import { RaceGame, type RaceConfig } from './game/raceGame';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { ghostTimeAt } from './game/ghostDelta';
 import { defaultLivery, loadLivery, type Livery } from './game/livery';
@@ -21,7 +23,9 @@ import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import { applySetup, loadSetup } from './physics/setup';
+import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
+import type { Standing } from './race/classification';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { HeadMotion } from './render/headMotion';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
@@ -138,6 +142,9 @@ declare global {
       audioStats(): EngineAudioStats;
       audioPaused(): boolean;
       setLivery(l: Partial<Livery>): void;
+      raceStandings(): readonly Standing[];
+      carCount(): number;
+      startLights(): number;
     };
   }
 }
@@ -169,6 +176,58 @@ const status = document.getElementById('status');
 interface Session {
   dispose(): void;
 }
+
+// Player-facing slice of the simulation: Game natively, RaceGame through car 0.
+interface PlayerSim {
+  step(input: DriverInput): void;
+  readonly simTime: number;
+  getPrevState(): VehicleState;
+  getCurrentState(): VehicleState;
+  getTelemetry(out?: Telemetry): Telemetry;
+  gear(): number;
+  rpm(): number;
+  heading(): number;
+  meanLapFuel(): number | null;
+  getLapInfo(): LapInfo;
+  drainEvents(): LapEvent[];
+  shiftUp(): void;
+  shiftDown(): void;
+  setGearMode(mode: GearboxMode): void;
+  surfaceUnderCar(): Surface;
+  trackHeightUnderCar(): number;
+  teleportToIndex(i: number): void;
+  dispose(): void;
+}
+
+const RACE_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
+const NO_EVENTS: LapEvent[] = [];
+
+function intFromQuery(params: URLSearchParams, name: string, fallback: number): number {
+  const raw = params.get(name);
+  if (raw === null || raw.trim() === '') return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.floor(n) : fallback;
+}
+
+function raceConfigFromQuery(params: URLSearchParams, trackId: string, carId: string): RaceConfig {
+  const diff = params.get('diff');
+  return {
+    trackId,
+    carId,
+    laps: Math.max(1, intFromQuery(params, 'laps', 3)),
+    aiCount: intFromQuery(params, 'ai', 5),
+    difficulty: RACE_DIFFICULTIES.includes(diff as Difficulty) ? (diff as Difficulty) : 'medium',
+    seed: intFromQuery(params, 'seed', 1),
+  };
+}
+
+const emptyLapInfo = (): LapInfo => ({
+  lap: 0,
+  currentLapTime: null,
+  lastLapTime: null,
+  bestLapTime: null,
+  valid: true,
+});
 
 let menu: Menu | null = null;
 let liveryEditor: LiveryEditor | null = null;
@@ -509,7 +568,73 @@ async function startGame(trackId: string): Promise<void> {
   };
   const freshSpec = (): CarSpec => applySetup(baseSpec, loadSetup(carId, track.id, baseSpec, window.localStorage));
   let gameSpec = freshSpec();
-  let game = await Game.create(track, gameSpec, tune);
+  const raceTrack: TrackDataV2 | null = 'version' in track ? track : null;
+  const raceCfg =
+    params.get('race') === '1' && raceTrack !== null
+      ? raceConfigFromQuery(params, track.id, carId)
+      : null;
+  if (params.get('race') === '1' && raceTrack === null) throw new Error('?race=1 requires a v2 track');
+  let game: Game | null = null;
+  let raceGame: RaceGame | null = null;
+  if (raceCfg !== null) {
+    // raceCfg is only built when raceTrack is non-null.
+    raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, tune);
+  } else {
+    game = await Game.create(track, gameSpec, tune);
+  }
+  const raceStates: VehicleState[] = [];
+  for (let i = 0; i < (raceGame?.carCount ?? 0); i++) raceStates.push(createVehicleState(4));
+  let raceTel: Telemetry | null = null;
+  const sim: PlayerSim = {
+    step: (input) => {
+      if (raceGame !== null) raceGame.step(input);
+      else game?.step(input);
+    },
+    get simTime() {
+      return raceGame !== null ? raceGame.simTime : game?.simTime ?? 0;
+    },
+    getPrevState: () => (raceGame !== null ? raceGame.getPrevStates()[0] : game!.getPrevState()),
+    getCurrentState: () =>
+      raceGame !== null ? raceGame.getStates(raceStates)[0] : game!.getCurrentState(),
+    getTelemetry: (out?) =>
+      raceGame !== null ? raceGame.getTelemetry(out) : game!.getTelemetry(out),
+    gear: () => {
+      if (raceGame === null) return game!.gear();
+      raceTel ??= raceGame.getTelemetry();
+      return raceGame.getTelemetry(raceTel).gear;
+    },
+    rpm: () => {
+      if (raceGame === null) return game!.rpm();
+      raceTel ??= raceGame.getTelemetry();
+      return raceGame.getTelemetry(raceTel).rpm;
+    },
+    heading: () => {
+      if (raceGame === null) return game!.heading();
+      const q = sim.getCurrentState().rotation;
+      return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
+    },
+    meanLapFuel: () => (raceGame !== null ? null : game!.meanLapFuel()),
+    getLapInfo: () => (raceGame !== null ? emptyLapInfo() : game!.getLapInfo()),
+    drainEvents: () => (raceGame !== null ? NO_EVENTS : game!.drainEvents()),
+    shiftUp: () => {
+      if (raceGame === null) game?.shiftUp();
+    },
+    shiftDown: () => {
+      if (raceGame === null) game?.shiftDown();
+    },
+    setGearMode: (mode) => {
+      if (raceGame === null) game?.setGearMode(mode);
+    },
+    surfaceUnderCar: () => (raceGame !== null ? 'asphalt' : game!.surfaceUnderCar()),
+    trackHeightUnderCar: () => (raceGame !== null ? NaN : game!.trackHeightUnderCar()),
+    teleportToIndex: (i) => {
+      if (raceGame === null) game?.teleportToIndex(i);
+    },
+    dispose: () => {
+      raceGame?.dispose();
+      game?.dispose();
+    },
+  };
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (!rendererHandle) rendererHandle = createRenderer(canvas);
@@ -789,7 +914,7 @@ async function startGame(trackId: string): Promise<void> {
   const cameraRig = new CameraRig(camera);
   cameraRig.setCockpitEye(baseSpec.cockpit.eye);
   cameraRig.setCockpitFov(cockpitSettings.cockpitFov);
-  cameraRig.update(game.getCurrentState(), 0);
+  cameraRig.update(sim.getCurrentState(), 0);
   const headMotion = new HeadMotion();
 
   const mirror = new VirtualMirror(document.body, camera.far);
@@ -923,21 +1048,21 @@ async function startGame(trackId: string): Promise<void> {
     (dt) => {
       gamepad.update(dt);
       simInput = mergeInputs(keyboard.update(dt), gamepad.getInput());
-      if (simInput.shiftUp) game.shiftUp();
-      if (simInput.shiftDown) game.shiftDown();
+      if (simInput.shiftUp) sim.shiftUp();
+      if (simInput.shiftDown) sim.shiftDown();
       if (gamepad.takeSetupHudToggle()) toggleSetupHud();
-      game.step(simInput);
+      sim.step(simInput);
       if (lapActive) {
-        const state = game.getCurrentState();
+        const state = sim.getCurrentState();
         ghostRecorder.record(FIXED_DT, state.position, state.rotation);
       }
-      handleLapEvents(game.drainEvents());
+      handleLapEvents(sim.drainEvents());
     },
     FIXED_DT,
     MAX_SIM_STEPS_PER_FRAME,
   );
   const interp = createVehicleState(4);
-  const telemetry: Telemetry = game.getTelemetry();
+  const telemetry: Telemetry = sim.getTelemetry();
   // fb stays in scope for the next consumers (165 rumble, 167 particles).
   const fb: Feedback = { shake: 0, low: 0, high: 0 };
 
@@ -974,7 +1099,7 @@ async function startGame(trackId: string): Promise<void> {
   };
 
   let autoGearbox = true;
-  let lastGear = game.gear();
+  let lastGear = sim.gear();
   let paused = false;
   let running = true;
   let last = -1;
@@ -1005,7 +1130,7 @@ async function startGame(trackId: string): Promise<void> {
     // Paused: only the render keeps going, the fixed-step simulation must not advance.
     if (!paused) {
       const { alpha } = loop.advance(frame);
-      interpolateVehicleState(game.getPrevState(), game.getCurrentState(), alpha, interp);
+      interpolateVehicleState(sim.getPrevState(), sim.getCurrentState(), alpha, interp);
       car.update(interp);
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
       let latG = 0;
@@ -1036,20 +1161,20 @@ async function startGame(trackId: string): Promise<void> {
       const head = headMotion.update(latG, longG, frame);
       cameraRig.setHeadOffset(cockpitSettings.headMotion ? head.x : 0, cockpitSettings.headMotion ? head.z : 0);
       cameraRig.update(interp, frame);
-      game.getTelemetry(telemetry);
+      sim.getTelemetry(telemetry);
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
       gamepad.rumble(fb.low, fb.high, performance.now());
-      cameraRig.applyShake(fb.shake, game.simTime);
+      cameraRig.applyShake(fb.shake, sim.simTime);
       emitParticles(frame);
       shadows?.update(interp.position);
       treeField?.update(camera.position);
-      city?.update(game.simTime);
+      city?.update(sim.simTime);
       minimap.update(interp.position.x, interp.position.z);
 
-      const info = game.getLapInfo();
+      const info = sim.getLapInfo();
       hudData.speedKmh = Math.abs(interp.forwardSpeed) * MS_TO_KMH;
-      hudData.gear = game.gear();
-      hudData.rpm = game.rpm();
+      hudData.gear = sim.gear();
+      hudData.rpm = sim.rpm();
       hudData.lap = info.lap;
       hudData.currentLapTime = info.currentLapTime;
       hudData.lastLapTime = info.lastLapTime;
@@ -1064,7 +1189,7 @@ async function startGame(trackId: string): Promise<void> {
         tyresData.dirt[i] = telemetry.wheels[i].dirt ?? 0;
       }
       tyresData.fuelL = telemetry.fuelKg / baseSpec.fuel.densityKgL;
-      const meanFuelKg = game.meanLapFuel();
+      const meanFuelKg = sim.meanLapFuel();
       tyresData.meanLapL = meanFuelKg === null ? null : meanFuelKg / baseSpec.fuel.densityKgL;
       hudTyres.update(tyresData);
       if (telemetry.ers) {
@@ -1076,10 +1201,10 @@ async function startGame(trackId: string): Promise<void> {
       }
 
       updateGhostCar(info.currentLapTime);
-      engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
-      const gearNow = game.gear();
+      engineAudio?.update(sim.rpm(), simInput.throttle, NO_SLIP);
+      const gearNow = sim.gear();
       effectState.speed = Math.abs(interp.forwardSpeed);
-      effectState.surface = game.surfaceUnderCar();
+      effectState.surface = sim.surfaceUnderCar();
       effectState.shifting = gearNow !== lastGear;
       lastGear = gearNow;
       for (let i = 0; i < 4; i++) {
@@ -1115,15 +1240,25 @@ async function startGame(trackId: string): Promise<void> {
 
   const restart = async (): Promise<void> => {
     const nextSpec = freshSpec();
-    const next = await Game.create(track, nextSpec, tune);
-    // The session may have been torn down while the new Game was being created.
-    if (!running) {
-      next.dispose();
-      return;
+    if (raceCfg !== null) {
+      const next = await RaceGame.create(raceTrack!, nextSpec, raceCfg, tune);
+      // The session may have been torn down while the new game was being created.
+      if (!running) {
+        next.dispose();
+        return;
+      }
+      raceGame?.dispose();
+      raceGame = next;
+    } else {
+      const next = await Game.create(track, nextSpec, tune);
+      if (!running) {
+        next.dispose();
+        return;
+      }
+      game?.dispose();
+      game = next;
     }
-    game.dispose();
-    game = next;
-    lastGear = game.gear();
+    lastGear = sim.gear();
     gameSpec = nextSpec;
     activeCompound = baseSpec.tyres.compounds[tune.compound];
     tyresData.compound = tune.compound;
@@ -1137,10 +1272,10 @@ async function startGame(trackId: string): Promise<void> {
     sectorTimes[1] = null;
     sectorTimes[2] = null;
     // dt = 1 s makes the chase camera close the gap in one call (near-snap) after the reset.
-    cameraRig.update(game.getCurrentState(), 1);
+    cameraRig.update(sim.getCurrentState(), 1);
     // The teleport would read as one frame of huge acceleration; re-prime the head-motion velocity.
     headVelPrimed = false;
-    headPrevPos.copy(game.getCurrentState().position);
+    headPrevPos.copy(sim.getCurrentState().position);
     loop.reset();
   };
 
@@ -1211,14 +1346,14 @@ async function startGame(trackId: string): Promise<void> {
         mixer?.setCameraMode(cameraRig.mode);
         break;
       case 'KeyQ':
-        game.shiftDown();
+        sim.shiftDown();
         break;
       case 'KeyE':
-        game.shiftUp();
+        sim.shiftUp();
         break;
       case 'KeyM':
         autoGearbox = !autoGearbox;
-        game.setGearMode(autoGearbox ? 'auto' : 'manual');
+        sim.setGearMode(autoGearbox ? 'auto' : 'manual');
         break;
       case 'KeyI':
         toggleSetupHud();
@@ -1240,7 +1375,7 @@ async function startGame(trackId: string): Promise<void> {
     mirror.dispose();
     setupHud.dispose();
     setupPanel.dispose();
-    game.dispose();
+    sim.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();
     post.dispose();
@@ -1258,20 +1393,20 @@ async function startGame(trackId: string): Promise<void> {
   if (status) status.style.display = 'none';
   window.__SIMGAME__ = {
     ready: true,
-    getSpeedKmh: () => Math.abs(game.getCurrentState().forwardSpeed) * MS_TO_KMH,
-    getLap: () => game.getLapInfo().lap,
-    getSimTime: () => game.simTime,
+    getSpeedKmh: () => Math.abs(sim.getCurrentState().forwardSpeed) * MS_TO_KMH,
+    getLap: () => sim.getLapInfo().lap,
+    getSimTime: () => sim.simTime,
     trackId: () => track.id,
     carId: () => carId,
     carPosition: () => {
-      const p = game.getCurrentState().position;
+      const p = sim.getCurrentState().position;
       return { x: p.x, y: p.y, z: p.z };
     },
     // Spec 043 keeps the 056 chassis-centre raycast ('asphalt' fallback lives in Game), not a game.getWheelSurfaces() majority.
-    surfaceUnderCar: () => game.surfaceUnderCar(),
-    trackHeightUnderCar: () => game.trackHeightUnderCar(),
-    getHeading: () => game.heading(),
-    telemetry: () => game.getTelemetry(),
+    surfaceUnderCar: () => sim.surfaceUnderCar(),
+    trackHeightUnderCar: () => sim.trackHeightUnderCar(),
+    getHeading: () => sim.heading(),
+    telemetry: () => sim.getTelemetry(),
     sceneStats: () => {
       const fog = scene.fog;
       return {
@@ -1302,13 +1437,16 @@ async function startGame(trackId: string): Promise<void> {
     }),
     drawCalls: () => handle.renderer.info.render.calls,
     cameraMode: () => cameraRig.mode,
-    gear: () => game.gear(),
+    gear: () => sim.gear(),
     preset: () => preset,
-    teleportToIndex: (i: number) => game.teleportToIndex(i),
-    rpm: () => game.rpm(),
+    teleportToIndex: (i: number) => sim.teleportToIndex(i),
+    rpm: () => sim.rpm(),
     audioStats: () =>
       engineAudio?.getStats() ?? { running: false, engine: 'oscillator', firingHz: 0 },
     audioPaused: () => engineAudio?.paused ?? false,
+    raceStandings: () => (raceGame !== null ? raceGame.standings() : []),
+    carCount: () => (raceGame !== null ? raceGame.carCount : 1),
+    startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
       playerLivery = { ...playerLivery, ...l };
