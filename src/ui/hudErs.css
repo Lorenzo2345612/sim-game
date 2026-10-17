@@ -1,0 +1,120 @@
+.ers {
+  position: fixed;
+  right: 12px;
+  bottom: 36px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  padding: 0.4em;
+  box-sizing: border-box;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  backdrop-filter: blur(6px);
+  font-family: var(--ui-font);
+  font-stretch: condensed;
+  font-size: clamp(12px, 1.3vmin + 3px, 17px);
+  color: var(--ui-text);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.ers.hidden {
+  display: none;
+}
+
+.ers-track {
+  width: 6px;
+  align-self: stretch;
+  background: rgba(150, 165, 185, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ers-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--ui-good);
+  transform-origin: bottom;
+}
+
+.ers-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ers-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+}
+
+.ers-soc {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ers-mode {
+  font-weight: 800;
+}
+
+.mode-charge {
+  color: var(--ui-good);
+}
+
+.mode-balance {
+  color: var(--ui-text);
+}
+
+.mode-attack {
+  color: var(--ui-bad);
+}
+
+.ers-aero {
+  min-width: 1em;
+  font-weight: 800;
+  color: var(--ui-accent);
+}
+
+.ers-ot,
+.ers-clip {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--ui-text-dim);
+  opacity: 0.4;
+}
+
+.ers-ot.active {
+  color: var(--ui-accent);
+  opacity: 1;
+}
+
+.ers-clip.active {
+  color: var(--ui-bad);
+  opacity: 1;
+}
+
+.ers-flow {
+  width: 0.7em;
+  height: 0.7em;
+  align-self: center;
+  border-radius: 50%;
+  background: rgba(150, 165, 185, 0.3);
+}
+
+.ers-flow.deploy {
+  background: var(--ui-accent);
+}
+
+.ers-flow.harvest {
+  background: var(--ui-good);
+}
+
+.ers-lap {
+  color: var(--ui-text-dim);
+  font-weight: 600;
+}

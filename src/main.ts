@@ -2,6 +2,7 @@ import './ui/theme.css';
 import './ui/hud.css';
 import './ui/hudV2.css';
 import './ui/hudTyres.css';
+import './ui/hudErs.css';
 import './ui/setupHud.css';
 import * as THREE from 'three';
 import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
@@ -55,6 +56,7 @@ import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
+import { HudErs, type HudErsData } from './ui/hudErs';
 import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES } from './ui/menu';
 import { LiveryEditor, type LiveryPreview } from './ui/liveryEditor';
 import { Minimap } from './ui/minimap';
@@ -807,6 +809,11 @@ async function startGame(trackId: string): Promise<void> {
   hud.setRpmRange(baseSpec.gearbox.upRpm, baseSpec.engine.limiterRpm);
   let activeCompound = baseSpec.tyres.compounds[compound];
   const hudTyres = new HudTyres(document.body);
+  const hudErs = new HudErs(document.body);
+  const ersData: HudErsData = {
+    socFrac: 0, powerW: 0, mode: 'balance', overtake: false, clipping: false,
+    lapDeployJ: 0, lapHarvestJ: 0, deployCapJ: 0, aeroStraight: null,
+  };
   const tyresData: HudTyresData = {
     tempC: [0, 0, 0, 0],
     wear: [0, 0, 0, 0],
@@ -1067,6 +1074,13 @@ async function startGame(trackId: string): Promise<void> {
       const meanFuelKg = game.meanLapFuel();
       tyresData.meanLapL = meanFuelKg === null ? null : meanFuelKg / baseSpec.fuel.densityKgL;
       hudTyres.update(tyresData);
+      if (telemetry.ers) {
+        Object.assign(ersData, telemetry.ers);
+        ersData.aeroStraight = telemetry.aero ? telemetry.aero.blend >= 0.5 : null;
+        hudErs.update(ersData);
+      } else {
+        hudErs.update(null);
+      }
 
       updateGhostCar(info.currentLapTime);
       engineAudio?.update(game.rpm(), simInput.throttle, NO_SLIP);
@@ -1227,6 +1241,7 @@ async function startGame(trackId: string): Promise<void> {
     keyboard.dispose();
     hud.dispose();
     hudTyres.dispose();
+    hudErs.dispose();
     minimap.dispose();
     fpsOverlay.dispose();
     mirror.dispose();
