@@ -79,3 +79,7 @@ npx playwright test 186-
 
 - Light sources, emissive materials, glow, shadows from lights, night mode (M2.2b).
 - Props (187), barrier or pit styling, any `public/tracks/*.style.json`.
+
+## Merge note (planner, 2026-10-17)
+
+Master gained task 233: `terrainY` was removed from `src/render/pitAndStart.ts` in favour of `terrainHeightAt(t, x, z)` in `src/track/ground.ts` (same signature and convention). The planner replayed the branch onto master in the worktree (backup: `backup/186-pre-rebase`); 186 changes are applied uncommitted and `src/render/pitAndStart.ts` has a conflict block. Do not run git commands. Resolve it by dropping 186's `terrainY` copy and using `terrainHeightAt` everywhere 186 used `terrainY`; remove all markers and re-run Verification, including the 233 tests.
