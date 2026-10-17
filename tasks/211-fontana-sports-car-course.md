@@ -47,7 +47,8 @@ First `git merge master` (brings 175: POST8 in `tests/unit/edge/174-bank-profile
 - `tests/unit/edge/211-fontana-roval-edge.test.ts` EDGE7: expected cleveland name `'Cleveland Burke Lakefront'` (the value in `index.json`).
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts`: skip ids whose `public/tracks/<id>.json` does not exist at `baseRev` (check with `git cat-file -e`); everything else unchanged.
 - `tests/e2e/acceptance/168-us-tracks-in-game.spec.ts`: only if it fails, `'Fontana'` → `'Fontana Interior'` in `NEW_NAMES`.
-Run the 211- e2e (AT8) after.
+- `tests/unit/edge/211-fontana-roval-edge.test.ts` (round 2): EDGE6 fontana.json sha256 = `116eddad0dcbe9ed6db4165cb8d79518a4ca81a981d07b0f67a4c2fcab5e6fce` (master); EDGE7 every expected name = the value `build:track-index` writes to `index.json` (e.g. 'Detroit Downtown', 'Cleveland Burke Lakefront'); EDGE8 expected fontana registry entry = master's `tracks.json` fontana entry (incl. `banking`) with only `name` changed to "Fontana Interior".
+Run the 211- e2e (AT8) and the 168 e2e after.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
