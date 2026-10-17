@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#3A3A3C", "grass": "#6E8B3D", "gravel": "#CFC4A8" },
+  "edgeLines": { "color": "#DADADA" },
+  "kerbs": { "colors": ["#C8201E", "#DADADA"], "outerStrip": "#1F9A6A" },
+  "runoffPaint": {
+    "pattern": "none",
+    "colors": ["#1F9A6A", "#C8452E", "#DADADA"],
+    "stripeMeters": 3,
+    "ranges": [
+      { "start": 260, "end": 360, "pattern": "bands", "colors": ["#1F9A6A", "#C8452E", "#DADADA"], "stripeMeters": 3 },
+      { "start": 1780, "end": 1900, "pattern": "stripes", "colors": ["#1F9A6A", "#C8452E", "#DADADA"], "stripeMeters": 3 },
+      { "start": 2420, "end": 2580, "pattern": "bands", "colors": ["#1F9A6A", "#DADADA"], "stripeMeters": 3 }
+    ]
+  },
+  "barriers": {
+    "concrete": { "color": "#B4B4B4", "bandColor": "#1F9A6A" },
+    "armco": { "color": "#B8BCC0" },
+    "tyres": { "beltColor": "#2A2A2C" },
+    "fence": { "heightMeters": 4.5, "types": ["armco", "tyres", "wall"], "color": "#8A8D90" },
+    "ranges": [{ "start": 1790, "end": 1900, "fenceHeightMeters": 5 }]
+  },
+  "pitBuilding": {
+    "storeys": 3, "heightMeters": 15, "depthMeters": 20,
+    "facade": "#9AA3AA", "roof": "#D6CDB0", "doors": "#6A6E72", "accent": "#4A6FA5",
+    "roofStyle": "canopy", "glazing": 0.5
+  },
+  "grandstands": { "structure": "#D8CFA8", "roof": "#B0B4B8", "seats": ["#8A8D90"], "roofStyle": "truss" },
+  "extraGrandstands": [
+    { "start": 0, "end": 60, "side": "left", "offsetMeters": 20, "rows": 16, "roof": true },
+    { "start": 280, "end": 340, "side": "right", "offsetMeters": 18, "rows": 10, "roof": false }
+  ],
+  "props": [
+    { "type": "footbridge", "index": 10, "offsetMeters": 12, "heightMeters": 7, "color": "#1F9A6A" },
+    { "type": "marshalPost", "index": 290, "side": "right", "offsetMeters": 8, "color": "#D9701C" },
+    { "type": "marshalPost", "index": 330, "side": "left", "offsetMeters": 8, "color": "#D9701C" },
+    { "type": "marshalPost", "index": 890, "side": "right", "offsetMeters": 8, "color": "#D9701C" },
+    { "type": "marshalPost", "index": 1810, "side": "left", "offsetMeters": 8, "color": "#D9701C" },
+    { "type": "marshalPost", "index": 1860, "side": "right", "offsetMeters": 8, "color": "#D9701C" }
+  ]
+}
