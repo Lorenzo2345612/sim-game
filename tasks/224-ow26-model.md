@@ -42,6 +42,7 @@ Config field names and value formats: copy the schema of an existing `assets/car
 - `tests/unit/edge/221-ow26-car.test.ts` EDGE8: expect `model.url` `'/models/ow26.glb'` (rename the test title accordingly).
 - `tests/unit/edge/221-ow26-car.post.test.ts` POST5: `wheels.radius` → `toBeCloseTo(<model json radius>, 3)`; wheelbase → `toBeCloseTo(3.4, 1)`. Nothing else in POST5.
 - `tests/unit/edge/112-scope-cut.post.test.ts`: add `'ow26'` to `EXPECTED_IDS` (sorted).
+- `tests/unit/edge/224-ow26-model.post.test.ts` POST1: `neutralMaterials` expected list = the 10 names in the config (old 5 + `chasis`, `chassis2`, `generics`, `cockpit_metal`, `gp21_cinture`). Nothing else.
 - `buildCar.ts` optional fields `dropNodes`, `neutralMaterials`, `wheelTriBudget` and KHRTextureTransform read support are accepted, provided existing outputs stay byte-identical (AT1).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
