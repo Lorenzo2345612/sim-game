@@ -33,7 +33,7 @@ describe('171 track select redesign', () => {
     expect(firstEqualsLast || menuClosesPath, 'outline repeats its first point or the menu closes the SVG path').toBe(true);
   });
 
-  it('AT2: index.json has 18 entries in TRACK_CHOICES order with country and lengthKm > 2', () => {
+  it('AT2: index.json has 19 entries in TRACK_CHOICES order with country and lengthKm > 2', () => {
     const entries = readJson<Array<{ id: string; country: string; lengthKm: number }>>(
       'public/tracks/index.json',
     );

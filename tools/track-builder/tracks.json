@@ -379,7 +379,7 @@
   },
   {
     "id": "fontana",
-    "name": "Fontana Inner",
+    "name": "Fontana Interior",
     "country": "United States",
     "geojson": "us-fontana",
     "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
@@ -401,6 +401,33 @@
     ],
     "pit": { "fromMeters": -300, "toMeters": 300, "side": "right" },
     "banking": [{ "fromMeters": 1830, "toMeters": 2210, "degrees": 11, "raisedSide": "right" }]
+  },
+  {
+    "id": "fontana-roval",
+    "name": "Fontana Sports Car Course",
+    "country": "United States",
+    "geojson": "us-fontana-roval",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/fontana.json",
+    "maxGrade": 0.03,
+    "widthMeters": 15,
+    "environment": "desert",
+    "reverse": false,
+    "biome": {
+      "species": [
+        { "name": "oak", "weight": 1.0 }
+      ],
+      "density": 0.02
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": -400, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 12, "roof": false }
+    ],
+    "pit": { "fromMeters": -300, "toMeters": 300, "side": "left" },
+    "banking": [
+      { "fromMeters": 3910, "toMeters": 650, "degrees": 11, "raisedSide": "right" },
+      { "fromMeters": 640, "toMeters": 1280, "degrees": 14, "raisedSide": "right" }
+    ]
   },
   {
     "id": "cleveland",

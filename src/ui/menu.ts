@@ -23,7 +23,8 @@ export const TRACK_CHOICES: TrackChoice[] = [
   { id: 'singapore', name: 'Singapore' },
   { id: 'lasvegas', name: 'Las Vegas' },
   { id: 'spielberg', name: 'Spielberg' },
-  { id: 'fontana', name: 'Fontana' },
+  { id: 'fontana', name: 'Fontana Interior' },
+  { id: 'fontana-roval', name: 'Fontana Sports Car Course' },
   { id: 'cleveland', name: 'Cleveland' },
   { id: 'detroit', name: 'Detroit' },
 ];

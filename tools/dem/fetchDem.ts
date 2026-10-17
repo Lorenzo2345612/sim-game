@@ -83,6 +83,7 @@ const TRACKS = [
   { id: 'lasvegas', source: 'us-lasvegas' },
   { id: 'spielberg', source: 'at-spielberg' },
   { id: 'fontana', source: 'us-fontana' },
+  { id: 'fontana-roval', source: 'us-fontana-roval' },
   { id: 'cleveland', source: 'us-cleveland' },
   { id: 'detroit', source: 'us-detroit' },
 ];
