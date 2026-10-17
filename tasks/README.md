@@ -233,7 +233,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
 | 231 | Per-car engine synth data | done | 226 |
-| 232 | Offline engine render tool | in progress | 227 |
+| 232 | Offline engine render tool | done | 227 |
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | waiting decision | 233 |
