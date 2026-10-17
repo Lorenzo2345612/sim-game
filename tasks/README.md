@@ -195,7 +195,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 191 | Budapest track style data | done | 181, 188 |
 | 192 | Spielberg track style data | done | 181, 188 |
 | 193 | Mexico City track style data | done | 181, 188 |
-| 194 | Daytona style file (data only) | in progress | 181, 188 |
+| 194 | Daytona style file (data only) | done | 181, 188 |
 | 195 | Fontana style file (data only) | done | 181, 188, 168 |
 | 196 | Elkhart Lake style file (data only) | in progress | 181, 188 |
 | 197 | Road Atlanta (Braselton) style file (data only) | in progress | 181, 188 |
