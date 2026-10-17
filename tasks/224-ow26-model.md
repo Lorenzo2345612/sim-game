@@ -33,6 +33,10 @@ Source glb: `assets/vendor/cars/ow26-src/ow26-source.glb` (textures in `ow26-src
 
 Conventions: metres; 1 cm tolerance on derived dimensions (071); missing source throws.
 
+## Planner clarification
+
+Config field names and value formats: copy the schema of an existing `assets/cars/*.pipeline.json` (same keys as the prototype configs from 112); only the values differ. `forward` = the value that maps the source nose (+z) to −Z, as accepted by `buildCar.ts` (see how 112 configs encode it). `ow26.json` `wheels.radius` = the model json wheel radius (copy, ± 1e-3), like x/z.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
