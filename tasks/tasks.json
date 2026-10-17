@@ -2524,7 +2524,7 @@
     {
       "num": "183",
       "title": "Kerb colours per segment and run-off paint",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "180"
       ],
@@ -2559,7 +2559,7 @@
     {
       "num": "185",
       "title": "Barrier colours, wall band and configurable catch fence from the track style",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "180"
       ],
@@ -2798,7 +2798,7 @@
     {
       "num": "202",
       "title": "Las Vegas style data (`lasvegas.style.json`)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2812,7 +2812,7 @@
     {
       "num": "203",
       "title": "Bahrain style data (`bahrain.style.json`)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2826,7 +2826,7 @@
     {
       "num": "204",
       "title": "Sepang style data (`sepang.style.json`)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"

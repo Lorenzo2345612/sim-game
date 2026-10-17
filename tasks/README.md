@@ -184,9 +184,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 180 | Style loader, wiring, extra grandstands, debug hook | done | 179, 156, 157, 158, 159, 160, 168, 174 |
 | 181 | Tools: `track:locate` and `check:styles` | done | 179 |
 | 182 | Pit building and grandstand styling | done | 180 |
-| 183 | Kerb colours per segment and run-off paint | in progress | 180 |
+| 183 | Kerb colours per segment and run-off paint | waiting decision | 180 |
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | pending | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |
-| 185 | Barrier colours, wall band and configurable catch fence from the track style | in progress | 180 |
+| 185 | Barrier colours, wall band and configurable catch fence from the track style | waiting decision | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | pending | 186 |
 | 188 | Monza track style data | done | 181 |
@@ -203,9 +203,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 199 | Detroit style file (data only) | done | 181, 188, 168 |
 | 200 | Baku style data (`baku.style.json`) | in progress | 181, 188 |
 | 201 | Singapore style data (`singapore.style.json`) | in progress | 181, 188 |
-| 202 | Las Vegas style data (`lasvegas.style.json`) | pending | 181, 188 |
-| 203 | Bahrain style data (`bahrain.style.json`) | pending | 181, 188 |
-| 204 | Sepang style data (`sepang.style.json`) | pending | 181, 188 |
+| 202 | Las Vegas style data (`lasvegas.style.json`) | in progress | 181, 188 |
+| 203 | Bahrain style data (`bahrain.style.json`) | in progress | 181, 188 |
+| 204 | Sepang style data (`sepang.style.json`) | in progress | 181, 188 |
 | 205 | Lusail style data (`lusail.style.json`) | pending | 181, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
