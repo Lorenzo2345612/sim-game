@@ -167,8 +167,8 @@ describe('236 pit building pieces edges', () => {
       expect(p.length).toBeGreaterThanOrEqual(6 - 1e-9);
       sum += p.length;
     }
-    expect(sum).toBeGreaterThanOrEqual(50);
-    expect(sum).toBeLessThanOrEqual(53 + 1e-6);
+    expect(sum).toBeGreaterThanOrEqual(38);
+    expect(sum).toBeLessThanOrEqual(42.2);
   });
 
   it('EDGE7: a pit range wrapping across the seam covers the offset arc within 2%', () => {

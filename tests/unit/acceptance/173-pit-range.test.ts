@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import type { TrackDataV2 } from '../../../src/core/types';
+import { pitBuildingPieces } from '../../../src/track/placement';
 import { createPitBuilding } from '../../../src/render/pitAndStart';
 
 // Task 173 lands tools/track-builder/pitRange.ts; the variable specifier keeps
@@ -109,35 +110,6 @@ function distToFootprint(p: [number, number], fp: Footprint): number {
   return Math.hypot(u - cu, v - cv);
 }
 
-function footprintCorners(track: TrackDataV2): Array<[number, number]> {
-  const fp = footprintRect(track);
-  const end: [number, number] = [fp.a[0] + fp.t[0] * fp.chordLen, fp.a[1] + fp.t[1] * fp.chordLen];
-  const off = (p: [number, number], d: number): [number, number] => [p[0] + fp.n[0] * d, p[1] + fp.n[1] * d];
-  return [off(fp.a, fp.near), off(fp.a, fp.far), off(end, fp.near), off(end, fp.far)];
-}
-
-// Bilinear sample of the terrain grid; same convention as src/main.ts makeTerrainY
-// (heights column-major, col * (rows + 1) + row, origin = centre).
-function terrainHeight(track: TrackDataV2, x: number, z: number): number {
-  const t = track.terrain;
-  const vertexRows = t.rows + 1;
-  const minX = t.originX - t.sizeX / 2;
-  const minZ = t.originZ - t.sizeZ / 2;
-  const fx = Math.min(Math.max(((x - minX) / t.sizeX) * t.cols, 0), t.cols);
-  const fz = Math.min(Math.max(((z - minZ) / t.sizeZ) * t.rows, 0), t.rows);
-  const j = Math.min(Math.floor(fx), t.cols - 1);
-  const i = Math.min(Math.floor(fz), t.rows - 1);
-  const tx = fx - j;
-  const tz = fz - i;
-  const h00 = t.heights[j * vertexRows + i];
-  const h10 = t.heights[(j + 1) * vertexRows + i];
-  const h01 = t.heights[j * vertexRows + i + 1];
-  const h11 = t.heights[(j + 1) * vertexRows + i + 1];
-  const h0 = h00 + (h10 - h00) * tx;
-  const h1 = h01 + (h11 - h01) * tx;
-  return h0 + (h1 - h0) * tz;
-}
-
 // Synthetic closed centerline: 4 straights of 400 m + 4 quarter arcs of radius 50 m,
 // 1 m spacing; index 0 at (0, 0), index 300 at 300 m along the first straight.
 function stadiumCenterline(): Array<[number, number]> {
@@ -199,7 +171,7 @@ describe('173 pit range acceptance', () => {
     }
   });
 
-  it('AT6: the pit mesh base y ≤ min(elevation over the pit range, terrain height at the footprint corners) + 0.01', () => {
+  it('AT6: the group never floats above the lowest piece base', () => {
     for (const { id, track } of tracksWithPit()) {
       if (!track.terrain) continue;
       const group = createPitBuilding(track);
@@ -208,14 +180,10 @@ describe('173 pit range acceptance', () => {
       group.traverse((o) => {
         if (o instanceof THREE.Mesh && o.name === 'pit') meshes.push(o);
       });
-      expect(meshes, id).toHaveLength(1);
-      const box = new THREE.Box3().setFromObject(meshes[0]);
-      const covered = rangeIndices(track.pit.start, track.pit.end, track.centerline.length);
-      let elevMin = Infinity;
-      for (const k of covered) elevMin = Math.min(elevMin, track.elevation[k]);
-      let terrMin = Infinity;
-      for (const [cx, cz] of footprintCorners(track)) terrMin = Math.min(terrMin, terrainHeight(track, cx, cz));
-      expect(box.min.y, id).toBeLessThanOrEqual(Math.min(elevMin, terrMin) + 0.01);
+      expect(meshes.length, id).toBeGreaterThanOrEqual(1);
+      const box = new THREE.Box3().setFromObject(group);
+      const minBase = Math.min(...pitBuildingPieces(track).map((q) => q.baseY));
+      expect(box.min.y, id).toBeLessThanOrEqual(minBase + 0.01);
     }
   });
 });

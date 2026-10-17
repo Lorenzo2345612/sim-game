@@ -101,7 +101,7 @@ describe('233 ground sampler acceptance', () => {
     expect(() => footprintGround(LINE, 0, 0, 0, 10, -10, 0, 10)).toThrow(RangeError);
   });
 
-  it('AT9: main.ts and pitAndStart.ts import the ground module and carry no local samplers; ground.ts imports no three', () => {
+  it('AT9: main.ts imports the ground module and neither main.ts nor pitAndStart.ts carry local samplers; ground.ts imports no three', () => {
     const mainSrc = readFileSync(join(ROOT, 'src', 'main.ts'), 'utf8');
     const pitSrc = readFileSync(join(ROOT, 'src', 'render', 'pitAndStart.ts'), 'utf8');
     const groundSrc = readFileSync(join(ROOT, 'src', 'track', 'ground.ts'), 'utf8');
@@ -109,7 +109,6 @@ describe('233 ground sampler acceptance', () => {
     expect(mainSrc).not.toMatch(/\bfunction\s+nearestElevation\b/);
     expect(pitSrc).not.toMatch(/\bfunction\s+terrainY\b/);
     expect(mainSrc).toMatch(/from\s+['"][^'"]*\/ground['"]/);
-    expect(pitSrc).toMatch(/from\s+['"][^'"]*\/ground['"]/);
     expect(groundSrc).not.toMatch(/from\s+['"]three['"]/);
   });
 });

@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import type { TrackDataV2 } from '../core/types';
-import { terrainHeightAt } from '../track/ground';
+import { pitBuildingPieces, type PitPiece } from '../track/placement';
 import { DEFAULT_TRACK_STYLE, type ResolvedTrackStyle } from '../track/trackStyle';
 import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
 export interface StartLights { object: THREE.Group; setLights(n: number): void }
 
-const EDGE_OFFSET = 10;
 const DOOR_PERIOD = 15;
 const MIN_DOORS = 10;
 const DOOR_HEIGHT = 3;
@@ -19,11 +18,6 @@ const BEAM_THICKNESS = 1;
 const LIGHT_COUNT = 5;
 const LIGHT_SPACING = 0.9;
 const LIGHT_RADIUS = 0.25;
-
-// Left = tangent rotated 90° counter-clockwise seen from +Y.
-function sideNormal(tx: number, tz: number, side: 'left' | 'right'): [number, number] {
-  return side === 'left' ? [tz, -tx] : [-tz, tx];
-}
 
 function tangentYaw(track: TrackDataV2): number {
   const [x0, z0] = track.centerline[0];
@@ -57,133 +51,149 @@ function profileRoof(chord: number, depth: number, top: (u: number) => number, f
   return geometry;
 }
 
-export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle): THREE.Group {
-  const p = (style ?? DEFAULT_TRACK_STYLE).pitBuilding;
-  const [sx, sz] = track.centerline[track.pit.start];
-  const [ex, ez] = track.centerline[track.pit.end];
-  const chordLength = Math.hypot(ex - sx, ez - sz) || 1;
-  const dx = (ex - sx) / chordLength;
-  const dz = (ez - sz) / chordLength;
-  const yaw = Math.atan2(-dz, dx);
-  const [nx, nz] = sideNormal(dx, dz, track.pit.side);
-
-  const samples: number[] = [];
-  const n = track.centerline.length;
-  const near = track.widthMeters / 2 + EDGE_OFFSET;
-  const far = near + p.depthMeters;
-  const sideSign = track.pit.side === 'right' ? 1 : -1;
-  for (let i = track.pit.start; ; i = (i + 1) % n) {
-    samples.push(track.elevation[i]);
-    // Cross-slope of the ground beside the track at the building's offsets.
-    const tanB = bankTanAt(track, i);
-    if (tanB !== 0) {
-      samples.push(track.elevation[i] + sideSign * near * tanB, track.elevation[i] + sideSign * far * tanB);
-    }
-    if (i === track.pit.end) break;
+function roofGeometryFor(
+  p: ResolvedTrackStyle['pitBuilding'], length: number,
+): THREE.BufferGeometry | null {
+  const depth = p.depthMeters;
+  const overhang = 4;
+  const slab = 0.3;
+  if (p.roofStyle === 'flat' && p.roof !== null) {
+    const g = new THREE.BoxGeometry(length, slab, depth);
+    g.translate(0, slab / 2, depth / 2);
+    return g;
   }
-  if (track.terrain) {
-    const corner = (u: number, v: number): number =>
-      terrainHeightAt(track.terrain, sx + dx * u + nx * v, sz + dz * u + nz * v);
-    const edges: Array<[number, number]> = [
-      [0, near], [0, far], [chordLength, near], [chordLength, far],
-      [chordLength / 2, near], [chordLength / 2, far],
-      [0, (near + far) / 2], [chordLength, (near + far) / 2],
-    ];
-    for (const [u, v] of edges) {
-      const h = corner(u, v);
-      if (Number.isFinite(h)) samples.push(h);
-    }
+  if (p.roofStyle === 'canopy') {
+    const g = new THREE.BoxGeometry(length, slab, depth + overhang);
+    g.translate(0, 0.5 + slab / 2, (depth - overhang) / 2);
+    return g;
   }
-  // Sink 0.3 m so it never floats, but keep the roof above every sample.
-  const y = Math.min(...samples) - 0.3;
-  const height = Math.max(p.heightMeters, Math.max(...samples) - y + 0.1);
+  if (p.roofStyle === 'folded') {
+    const folds = 4;
+    const amplitude = 1.5;
+    return profileRoof(length, depth, (t) => slab + (Math.floor(t * folds * 2) % 2 === 0 ? 0 : amplitude), folds, slab);
+  }
+  if (p.roofStyle === 'sail') {
+    const size = depth + overhang;
+    const angle = Math.min((8 * Math.PI) / 180, Math.asin(Math.min(1, 2 / size)));
+    const g = new THREE.BoxGeometry(length, slab, size);
+    g.rotateX(angle);
+    g.computeBoundingBox();
+    g.translate(0, -(g.boundingBox as THREE.Box3).min.y, (depth - overhang) / 2);
+    return g;
+  }
+  if (p.roofStyle === 'curved') {
+    const rise = 2;
+    return profileRoof(length, depth, (t) => slab + (rise - slab) * Math.sin(Math.PI * t), 4, slab);
+  }
+  return null;
+}
 
-  const buildingGeometry = new THREE.BoxGeometry(chordLength, height, p.depthMeters);
+function addPitPiece(
+  group: THREE.Group, p: ResolvedTrackStyle['pitBuilding'], piece: PitPiece,
+  doors: number, doorHeight: number, materials: { facade: THREE.MeshStandardMaterial; doors: THREE.MeshStandardMaterial; glass: THREE.MeshStandardMaterial | null; roof: THREE.MeshStandardMaterial | null; accent: THREE.MeshStandardMaterial | null },
+): number {
+  const { length, depth, baseY, yaw } = piece;
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  const toWorld = (lx: number, lz: number): [number, number] => [piece.x + lx * cos + lz * sin, piece.z - lx * sin + lz * cos];
+
+  const height = p.heightMeters;
+  const buildingGeometry = new THREE.BoxGeometry(length, height, depth);
   buildingGeometry.translate(0, height / 2, 0);
-  const buildingMaterial = new THREE.MeshStandardMaterial({ color: p.facade, roughness: 0.85 });
-  registerWhitePaint(buildingMaterial);
-  const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+  const building = new THREE.Mesh(buildingGeometry, materials.facade);
   building.name = 'pit';
-  const inset = near + p.depthMeters / 2;
-  building.position.set((sx + ex) / 2 + nx * inset, y, (sz + ez) / 2 + nz * inset);
+  building.position.set(piece.x, baseY, piece.z);
   building.rotation.y = yaw;
+  group.add(building);
 
-  const doorHeight = Math.min(DOOR_HEIGHT, p.heightMeters / p.storeys);
-  const garageCount = Math.max(MIN_DOORS, Math.floor(pitPathLength(track) / DOOR_PERIOD));
-  const spacing = chordLength / garageCount;
+  if (baseY - piece.plinthBottom > 0.1) {
+    const plinthHeight = baseY - piece.plinthBottom;
+    const plinthGeometry = new THREE.BoxGeometry(length, plinthHeight, depth);
+    plinthGeometry.translate(0, plinthHeight / 2, 0);
+    const plinth = new THREE.Mesh(plinthGeometry, materials.facade);
+    plinth.name = 'pitPlinth';
+    plinth.position.set(piece.x, piece.plinthBottom, piece.z);
+    plinth.rotation.y = yaw;
+    group.add(plinth);
+  }
+
+  const spacing = length / doors;
   const doorGeometry = new THREE.BoxGeometry(Math.min(5, spacing * 0.75), doorHeight, DOOR_THICKNESS);
-  const doorMaterial = new THREE.MeshStandardMaterial({ color: p.doors, roughness: 0.9 });
-
-  const group = new THREE.Group();
-  group.userData.garageCount = garageCount;
-  group.userData.storeys = p.storeys;
-  for (let i = 0; i < garageCount; i++) {
+  for (let i = 0; i < doors; i++) {
     const t = (i + 0.5) * spacing;
-    const door = new THREE.Mesh(doorGeometry, doorMaterial);
+    const [wx, wz] = toWorld(-length / 2 + t, -depth / 2);
+    const door = new THREE.Mesh(doorGeometry, materials.doors);
     door.name = 'garageDoor';
-    // Flush on the near face, protruding slightly so the dark panel stays visible.
-    door.position.set(sx + dx * t + nx * near, y + doorHeight / 2, sz + dz * t + nz * near);
+    door.position.set(wx, baseY + doorHeight / 2, wz);
     door.rotation.y = yaw;
     group.add(door);
   }
-  group.add(building);
 
-  // Local +z of the extras points away from the track.
-  const awayYaw = track.pit.side === 'right' ? yaw : yaw + Math.PI;
-  const place = (mesh: THREE.Mesh, name: string, localY: number, localZ: number): void => {
+  // lz is measured from the near face (local +z points away from the track).
+  const place = (mesh: THREE.Mesh, name: string, localY: number, lz: number): void => {
     mesh.name = name;
-    mesh.position.set((sx + ex) / 2 + nx * localZ, y + localY, (sz + ez) / 2 + nz * localZ);
-    mesh.rotation.y = awayYaw;
+    const [wx, wz] = toWorld(0, lz - depth / 2);
+    mesh.position.set(wx, baseY + localY, wz);
+    mesh.rotation.y = yaw;
     group.add(mesh);
   };
 
-  if (p.glazing > 0 && p.storeys > 1) {
+  if (p.glazing > 0 && p.storeys > 1 && materials.glass) {
     const band = p.heightMeters - p.heightMeters / p.storeys;
     const glass = new THREE.Mesh(
-      new THREE.BoxGeometry(chordLength, p.glazing * band, 0.2),
-      new THREE.MeshStandardMaterial({ color: '#5b7f95', transparent: true, opacity: 0.6, metalness: 0.8, roughness: 0.2 }),
+      new THREE.BoxGeometry(length, p.glazing * band, 0.2),
+      materials.glass,
     );
-    place(glass, 'pitGlass', p.heightMeters / p.storeys + band / 2, near - 0.1);
+    place(glass, 'pitGlass', p.heightMeters / p.storeys + band / 2, -0.1);
   }
 
-  const roofColor = p.roof ?? p.facade;
-  const overhang = 4;
-  const slab = 0.3;
-  let roofGeometry: THREE.BufferGeometry | null = null;
-  if (p.roofStyle === 'flat' && p.roof !== null) {
-    roofGeometry = new THREE.BoxGeometry(chordLength, slab, p.depthMeters);
-    roofGeometry.translate(0, slab / 2, p.depthMeters / 2);
-  } else if (p.roofStyle === 'canopy') {
-    roofGeometry = new THREE.BoxGeometry(chordLength, slab, p.depthMeters + overhang);
-    roofGeometry.translate(0, 0.5 + slab / 2, (p.depthMeters - overhang) / 2);
-  } else if (p.roofStyle === 'folded') {
-    const folds = 4;
-    const amplitude = 1.5;
-    roofGeometry = profileRoof(chordLength, p.depthMeters, (t) => slab + (Math.floor(t * folds * 2) % 2 === 0 ? 0 : amplitude), folds, slab);
-  } else if (p.roofStyle === 'sail') {
-    const length = p.depthMeters + overhang;
-    const angle = Math.min((8 * Math.PI) / 180, Math.asin(Math.min(1, 2 / length)));
-    roofGeometry = new THREE.BoxGeometry(chordLength, slab, length);
-    roofGeometry.rotateX(angle);
-    roofGeometry.computeBoundingBox();
-    roofGeometry.translate(0, -(roofGeometry.boundingBox as THREE.Box3).min.y, (p.depthMeters - overhang) / 2);
-  } else if (p.roofStyle === 'curved') {
-    const rise = 2;
-    roofGeometry = profileRoof(chordLength, p.depthMeters, (t) => slab + (rise - slab) * Math.sin(Math.PI * t), 4, slab);
-  }
-  if (roofGeometry) {
-    const roofMesh = new THREE.Mesh(roofGeometry, new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.7 }));
-    roofMesh.userData.roofStyle = p.roofStyle;
-    place(roofMesh, 'pitRoof', height, near);
+  if (materials.roof) {
+    const g = roofGeometryFor(p, length);
+    if (g) {
+      const roofMesh = new THREE.Mesh(g, materials.roof);
+      roofMesh.userData.roofStyle = p.roofStyle;
+      place(roofMesh, 'pitRoof', height, 0);
+    }
   }
 
-  if (p.accent) {
-    const accent = new THREE.Mesh(
-      new THREE.BoxGeometry(chordLength, 0.6, 0.15),
-      new THREE.MeshStandardMaterial({ color: p.accent, roughness: 0.6 }),
-    );
-    place(accent, 'pitAccent', height - 0.4, near - 0.075);
+  if (materials.accent) {
+    const accent = new THREE.Mesh(new THREE.BoxGeometry(length, 0.6, 0.15), materials.accent);
+    place(accent, 'pitAccent', height - 0.4, -0.075);
   }
+  return doors;
+}
+
+export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle): THREE.Group {
+  const p = (style ?? DEFAULT_TRACK_STYLE).pitBuilding;
+  const group = new THREE.Group();
+  const pieces = pitBuildingPieces(track, style);
+  if (pieces.length === 0) return group;
+
+  const doorHeight = Math.min(DOOR_HEIGHT, p.heightMeters / p.storeys);
+  const total = Math.max(MIN_DOORS, Math.floor(pitPathLength(track) / DOOR_PERIOD));
+  const sumLength = pieces.reduce((sum, q) => sum + q.length, 0);
+  const facadeMaterial = new THREE.MeshStandardMaterial({ color: p.facade, roughness: 0.85 });
+  registerWhitePaint(facadeMaterial);
+  const materials = {
+    facade: facadeMaterial,
+    doors: new THREE.MeshStandardMaterial({ color: p.doors, roughness: 0.9 }),
+    glass: p.glazing > 0 && p.storeys > 1
+      ? new THREE.MeshStandardMaterial({ color: '#5b7f95', transparent: true, opacity: 0.6, metalness: 0.8, roughness: 0.2 })
+      : null,
+    roof: p.roofStyle === 'flat' && p.roof === null
+      ? null
+      : new THREE.MeshStandardMaterial({ color: p.roof ?? p.facade, roughness: 0.7 }),
+    accent: p.accent ? new THREE.MeshStandardMaterial({ color: p.accent, roughness: 0.6 }) : null,
+  };
+
+  let garageCount = 0;
+  for (const piece of pieces) {
+    garageCount += addPitPiece(
+      group, p, piece, Math.max(1, Math.round((total * piece.length) / sumLength)), doorHeight, materials,
+    );
+  }
+  group.userData.garageCount = garageCount;
+  group.userData.storeys = p.storeys;
   return group;
 }
 

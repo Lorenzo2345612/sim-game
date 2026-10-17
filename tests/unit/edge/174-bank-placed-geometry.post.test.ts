@@ -177,16 +177,20 @@ describe('174 banked point objects and escape roads post-coder gaps', () => {
     }
   });
 
-  it('POST6: the pit building base follows the banked ground at its placement offsets', () => {
-    const half = 6;
-    const near = half + 10;
+  it('POST6: the pit building pieces sit on the banked ground of their footprint', () => {
+    const near = 16;
     const far = near + 8;
     const group = createPitBuilding(banked(slopedBank(), [], 2.5));
     const box = new THREE.Box3().setFromObject(meshesByName(group, 'pit')[0]);
-    expect(box.min.y).toBeCloseTo(2.5 - far * TAN - 0.3, 4);
+    expect(box.min.y).toBeCloseTo(2.5 - near * TAN, 4);
+    const plinths = meshesByName(group, 'pitPlinth');
+    expect(plinths.length).toBeGreaterThanOrEqual(1);
+    const plinthBox = new THREE.Box3().setFromObject(plinths[0]);
+    expect(plinthBox.min.y).toBeCloseTo(2.5 - far * TAN - 0.05, 4);
     const flatGroup = createPitBuilding(banked(flatBank(), [], 2.5));
     const flatBox = new THREE.Box3().setFromObject(meshesByName(flatGroup, 'pit')[0]);
-    expect(flatBox.min.y).toBeCloseTo(2.2, 6);
+    expect(flatBox.min.y).toBeCloseTo(2.5, 6);
+    expect(meshesByName(flatGroup, 'pitPlinth')).toHaveLength(0);
   });
 
   it('POST7: an all-zero bank keeps every strip vertex bit-identical to the no-bank build', () => {
