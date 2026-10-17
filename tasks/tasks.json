@@ -3212,7 +3212,7 @@
     {
       "num": "235",
       "title": "Barriers, colliders and boards follow the ground",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "233"
       ],
