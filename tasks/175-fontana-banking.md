@@ -60,3 +60,7 @@ npx playwright test 175-
 ## Out of scope
 
 - Banking code (174), other tracks, oval turns and back stretch (not on this course), Cleveland and Detroit.
+
+## Planner-authorised test edit (174 POST8)
+
+`tests/unit/edge/174-bank-profile.post.test.ts` POST8: replace the single `daytona.json` skip with an allowlist `['daytona.json', 'fontana.json', 'fontana-roval.json']` of tracks allowed a non-zero bank (daytona must still have one); update the test title accordingly. Nothing else in that file.
