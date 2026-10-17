@@ -3279,7 +3279,7 @@
     {
       "num": "240",
       "title": "Smooth bank transitions on ovals (auto ramp, smoothstep)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
