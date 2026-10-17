@@ -3199,7 +3199,7 @@
     {
       "num": "234",
       "title": "Grandstands and props grounded on terrain with plinths",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "233"
       ],
@@ -3212,7 +3212,7 @@
     {
       "num": "235",
       "title": "Barriers, colliders and boards follow the ground",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "233"
       ],
@@ -3252,7 +3252,7 @@
     {
       "num": "238",
       "title": "Track QA camera and screenshot tool",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "233"
       ],
