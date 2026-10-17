@@ -332,13 +332,17 @@
         "117",
         "118"
       ],
-      "status": "open",
+      "status": "approved",
       "prefetch": [
         "115",
         "116",
         "117",
         "118"
-      ]
+      ],
+      "builtAt": "2026-10-16T19:31:41",
+      "commit": "c072f06",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M1.2e",
