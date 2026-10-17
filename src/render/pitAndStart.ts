@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import type { Terrain, TrackDataV2 } from '../core/types';
-import type { ResolvedTrackStyle } from '../track/trackStyle';
+import { DEFAULT_TRACK_STYLE, type ResolvedTrackStyle } from '../track/trackStyle';
 import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
 export interface StartLights { object: THREE.Group; setLights(n: number): void }
 
-const BUILDING_DEPTH = 8;
-const BUILDING_HEIGHT = 4;
 const EDGE_OFFSET = 10;
 const DOOR_PERIOD = 15;
 const MIN_DOORS = 10;
@@ -66,8 +64,21 @@ function pitPathLength(track: TrackDataV2): number {
   return length;
 }
 
+// Extrudes a (depth, height) profile along the chord; local z = depth axis, x = chord.
+function profileRoof(chord: number, depth: number, top: (u: number) => number, folds: number, thickness: number): THREE.BufferGeometry {
+  const steps = folds * 8;
+  const shape = new THREE.Shape();
+  shape.moveTo(0, top(0) - thickness);
+  for (let k = 0; k <= steps; k++) shape.lineTo((depth * k) / steps, top(k / steps));
+  for (let k = steps; k >= 0; k--) shape.lineTo((depth * k) / steps, top(k / steps) - thickness);
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: chord, bevelEnabled: false });
+  geometry.rotateY(-Math.PI / 2);
+  geometry.translate(chord / 2, 0, 0);
+  return geometry;
+}
+
 export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle): THREE.Group {
-  void style;
+  const p = (style ?? DEFAULT_TRACK_STYLE).pitBuilding;
   const [sx, sz] = track.centerline[track.pit.start];
   const [ex, ez] = track.centerline[track.pit.end];
   const chordLength = Math.hypot(ex - sx, ez - sz) || 1;
@@ -79,7 +90,7 @@ export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle
   const samples: number[] = [];
   const n = track.centerline.length;
   const near = track.widthMeters / 2 + EDGE_OFFSET;
-  const far = near + BUILDING_DEPTH;
+  const far = near + p.depthMeters;
   const sideSign = track.pit.side === 'right' ? 1 : -1;
   for (let i = track.pit.start; ; i = (i + 1) % n) {
     samples.push(track.elevation[i]);
@@ -105,35 +116,94 @@ export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle
   }
   // Sink 0.3 m so it never floats, but keep the roof above every sample.
   const y = Math.min(...samples) - 0.3;
-  const height = Math.max(BUILDING_HEIGHT, Math.max(...samples) - y + 0.1);
+  const height = Math.max(p.heightMeters, Math.max(...samples) - y + 0.1);
 
-  const buildingGeometry = new THREE.BoxGeometry(chordLength, height, BUILDING_DEPTH);
+  const buildingGeometry = new THREE.BoxGeometry(chordLength, height, p.depthMeters);
   buildingGeometry.translate(0, height / 2, 0);
-  const buildingMaterial = new THREE.MeshStandardMaterial({ color: '#b8bcc0', roughness: 0.85 });
+  const buildingMaterial = new THREE.MeshStandardMaterial({ color: p.facade, roughness: 0.85 });
   registerWhitePaint(buildingMaterial);
   const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
   building.name = 'pit';
-  const inset = track.widthMeters / 2 + EDGE_OFFSET + BUILDING_DEPTH / 2;
+  const inset = near + p.depthMeters / 2;
   building.position.set((sx + ex) / 2 + nx * inset, y, (sz + ez) / 2 + nz * inset);
   building.rotation.y = yaw;
 
+  const doorHeight = Math.min(DOOR_HEIGHT, p.heightMeters / p.storeys);
   const garageCount = Math.max(MIN_DOORS, Math.floor(pitPathLength(track) / DOOR_PERIOD));
   const spacing = chordLength / garageCount;
-  const doorGeometry = new THREE.BoxGeometry(Math.min(5, spacing * 0.75), DOOR_HEIGHT, DOOR_THICKNESS);
-  const doorMaterial = new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.9 });
+  const doorGeometry = new THREE.BoxGeometry(Math.min(5, spacing * 0.75), doorHeight, DOOR_THICKNESS);
+  const doorMaterial = new THREE.MeshStandardMaterial({ color: p.doors, roughness: 0.9 });
 
   const group = new THREE.Group();
   group.userData.garageCount = garageCount;
+  group.userData.storeys = p.storeys;
   for (let i = 0; i < garageCount; i++) {
     const t = (i + 0.5) * spacing;
     const door = new THREE.Mesh(doorGeometry, doorMaterial);
     door.name = 'garageDoor';
     // Flush on the near face, protruding slightly so the dark panel stays visible.
-    door.position.set(sx + dx * t + nx * near, y + DOOR_HEIGHT / 2, sz + dz * t + nz * near);
+    door.position.set(sx + dx * t + nx * near, y + doorHeight / 2, sz + dz * t + nz * near);
     door.rotation.y = yaw;
     group.add(door);
   }
   group.add(building);
+
+  // Local +z of the extras points away from the track.
+  const awayYaw = track.pit.side === 'right' ? yaw : yaw + Math.PI;
+  const place = (mesh: THREE.Mesh, name: string, localY: number, localZ: number): void => {
+    mesh.name = name;
+    mesh.position.set((sx + ex) / 2 + nx * localZ, y + localY, (sz + ez) / 2 + nz * localZ);
+    mesh.rotation.y = awayYaw;
+    group.add(mesh);
+  };
+
+  if (p.glazing > 0 && p.storeys > 1) {
+    const band = p.heightMeters - p.heightMeters / p.storeys;
+    const glass = new THREE.Mesh(
+      new THREE.BoxGeometry(chordLength, p.glazing * band, 0.2),
+      new THREE.MeshStandardMaterial({ color: '#5b7f95', transparent: true, opacity: 0.6, metalness: 0.8, roughness: 0.2 }),
+    );
+    place(glass, 'pitGlass', p.heightMeters / p.storeys + band / 2, near - 0.1);
+  }
+
+  const roofColor = p.roof ?? p.facade;
+  const overhang = 4;
+  const slab = 0.3;
+  let roofGeometry: THREE.BufferGeometry | null = null;
+  if (p.roofStyle === 'flat' && p.roof !== null) {
+    roofGeometry = new THREE.BoxGeometry(chordLength, slab, p.depthMeters);
+    roofGeometry.translate(0, slab / 2, p.depthMeters / 2);
+  } else if (p.roofStyle === 'canopy') {
+    roofGeometry = new THREE.BoxGeometry(chordLength, slab, p.depthMeters + overhang);
+    roofGeometry.translate(0, 0.5 + slab / 2, (p.depthMeters - overhang) / 2);
+  } else if (p.roofStyle === 'folded') {
+    const folds = 4;
+    const amplitude = 1.5;
+    roofGeometry = profileRoof(chordLength, p.depthMeters, (t) => slab + (Math.floor(t * folds * 2) % 2 === 0 ? 0 : amplitude), folds, slab);
+  } else if (p.roofStyle === 'sail') {
+    const length = p.depthMeters + overhang;
+    const angle = Math.min((8 * Math.PI) / 180, Math.asin(Math.min(1, 2 / length)));
+    roofGeometry = new THREE.BoxGeometry(chordLength, slab, length);
+    roofGeometry.rotateX(angle);
+    roofGeometry.computeBoundingBox();
+    roofGeometry.translate(0, -(roofGeometry.boundingBox as THREE.Box3).min.y, (p.depthMeters - overhang) / 2);
+  } else if (p.roofStyle === 'curved') {
+    const rise = 2;
+    roofGeometry = profileRoof(chordLength, p.depthMeters, (t) => slab + (rise - slab) * Math.sin(Math.PI * t), 4, slab);
+  }
+  if (roofGeometry) {
+    const roofMesh = new THREE.Mesh(roofGeometry, new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.7 }));
+    roofMesh.userData.roofStyle = p.roofStyle;
+    place(roofMesh, 'pitRoof', height, near);
+  }
+
+  if (p.accent) {
+    const accent = new THREE.Mesh(
+      new THREE.BoxGeometry(chordLength, 0.6, 0.15),
+      new THREE.MeshStandardMaterial({ color: p.accent, roughness: 0.6 }),
+    );
+    place(accent, 'pitAccent', height - 0.4, near - 0.075);
+  }
   return group;
 }
 

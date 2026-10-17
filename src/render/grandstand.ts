@@ -72,7 +72,7 @@ export function createGrandstand(
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
   style?: ResolvedTrackStyle,
 ): THREE.Group {
-  void style;
+  const s = style?.grandstands;
   const group = new THREE.Group();
   group.name = 'grandstand';
   group.position.set(g.x, 0, g.z);
@@ -96,7 +96,7 @@ export function createGrandstand(
   }
 
   const tierGeometry = new THREE.BoxGeometry(length, ROW_RISE, ROW_DEPTH);
-  const concrete = new THREE.MeshStandardMaterial({ color: 0xb0b0b4, roughness: 0.9, metalness: 0 });
+  const concrete = new THREE.MeshStandardMaterial({ color: s?.structure ?? 0xb0b0b4, roughness: 0.9, metalness: 0 });
   geometries.push(tierGeometry);
   materials.push(concrete);
   for (let row = 0; row < rows; row++) {
@@ -104,18 +104,34 @@ export function createGrandstand(
   }
 
   if (g.roof) {
+    const roofStyle = s?.roofStyle ?? 'flat';
     const roofGeometry = new THREE.BoxGeometry(length, ROOF_THICKNESS, depth + 2 * POST_SIZE);
-    const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x70757a, roughness: 0.6, metalness: 0.3 });
+    const roofMaterial = new THREE.MeshStandardMaterial({ color: s?.roof ?? 0x70757a, roughness: 0.6, metalness: 0.3 });
     geometries.push(roofGeometry);
     materials.push(roofMaterial);
-    add('roof', roofGeometry, roofMaterial, new THREE.Vector3(0, height + ROOF_CLEARANCE + ROOF_THICKNESS / 2, depth / 2));
+    const roofY = height + ROOF_CLEARANCE + ROOF_THICKNESS / 2;
+    add('roof', roofGeometry, roofMaterial, new THREE.Vector3(0, roofY, depth / 2));
+    const roofMesh = group.children[group.children.length - 1];
+    roofMesh.userData.roofStyle = roofStyle;
+    if (roofStyle !== 'flat' || s?.roof) roofMesh.name = 'standRoof';
+    if (roofStyle === 'sail') roofMesh.rotation.x = -(8 * Math.PI) / 180;
 
     const postHeight = height + ROOF_CLEARANCE;
     const postGeometry = new THREE.BoxGeometry(POST_SIZE, postHeight, POST_SIZE);
+    const postMaterial = s?.structure ? new THREE.MeshStandardMaterial({ color: s.structure, roughness: 0.6, metalness: 0.3 }) : roofMaterial;
+    if (postMaterial !== roofMaterial) materials.push(postMaterial);
     geometries.push(postGeometry);
     for (const sideX of [-1, 1]) {
       for (const z of [-POST_SIZE / 2, depth + POST_SIZE / 2]) {
-        add('roofPost', postGeometry, roofMaterial, new THREE.Vector3(sideX * (length / 2 - POST_SIZE / 2), postHeight / 2, z));
+        add('roofPost', postGeometry, postMaterial, new THREE.Vector3(sideX * (length / 2 - POST_SIZE / 2), postHeight / 2, z));
+      }
+    }
+
+    if (roofStyle === 'truss') {
+      const trussGeometry = new THREE.BoxGeometry(length, ROOF_THICKNESS, POST_SIZE / 2);
+      geometries.push(trussGeometry);
+      for (let k = 0; k < 3; k++) {
+        add('standTruss', trussGeometry, postMaterial, new THREE.Vector3(0, roofY - ROOF_THICKNESS, ((k + 0.5) / 3) * depth));
       }
     }
   }
@@ -165,6 +181,7 @@ export function createGrandstand(
       matrix.makeTranslation(seat.x, seat.y, seat.z);
       crowd.setMatrixAt(i, matrix);
       color.setHSL(rng(), 0.3 + rng() * 0.3, 0.45 + rng() * 0.25);
+      if (s?.seats) color.set(s.seats[i % s.seats.length]);
       crowd.setColorAt(i, color);
       const cell = Math.floor(rng() * ATLAS_GRID * ATLAS_GRID);
       cells[i * 2] = cell % ATLAS_GRID;
