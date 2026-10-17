@@ -175,7 +175,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 171 | Track select menu redesign | done | 106 |
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
 | 173 | Pit building only along the straight | done | 106 |
-| 174 | Track banking (cross-slope) + Daytona | in progress | 106, 155 |
+| 174 | Track banking (cross-slope) + Daytona | done | 106, 155 |
 | 175 | Fontana banking data | pending | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
