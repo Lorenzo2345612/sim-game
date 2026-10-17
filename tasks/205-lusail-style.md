@@ -25,6 +25,18 @@ Use `npm run track:locate -- lusail <lat> <lon>` (task 181) for centerline indic
 5. `pitBuilding` (~400 m): storeys 2, heightMeters 10, depthMeters 18, facade `#dadada`, roof `#dadada`, doors `#2a2a2c`, accent `#7a1f2f`, roofStyle `folded`, glazing 0.3.
 6. `grandstands`: structure `#c0c4c8`, roof `#dadada`, seats `#7a1f2f`,`#dadada`, roofStyle `truss`; 1 `extraGrandstands` main stand on the straight.
 7. `props`: 3 `tent` props, color `#dadada`, paddock side. No `sky` key.
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|

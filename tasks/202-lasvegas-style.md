@@ -25,6 +25,18 @@ Use `npm run track:locate -- lasvegas <lat> <lon>` (task 181) for centerline ind
 5. `grandstands`: structure `#3a3c40`, roof `#2a2c30`, seats `#dadada`,`#8e9093`, roofStyle `flat`; 1 `extraGrandstands` main stand opposite the pits.
 6. `props`: 2 `footbridge` on the Strip straight, color `#9fd8da` (lit glass walls), heightMeters 7.
 7. `runoffPaint`: 1 `solid` range at the pit exit with `#3fae5a`. No `sky` key.
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|

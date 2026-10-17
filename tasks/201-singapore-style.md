@@ -25,6 +25,18 @@ Use `npm run track:locate -- singapore <lat> <lon>` (task 181) for centerline in
 5. `pitBuilding` (pits left, ~350 m): storeys 3, heightMeters 16, depthMeters 20, facade `#dadada`, roof `#5aa092`, doors `#3a3a3c`, accent `#dac000`, roofStyle `curved`, glazing 0.4.
 6. `grandstands`: structure `#8d9195`, roof `#d0d4d6`, seats `#2f6fc2`,`#dab800`, roofStyle `truss`; 2 `extraGrandstands` (Padang and Raffles Ave areas, found with track:locate).
 7. `props`: `[]`. No `sky` key (day HDRI).
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|

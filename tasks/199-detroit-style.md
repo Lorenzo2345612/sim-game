@@ -33,6 +33,18 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 6. Pit building: modest 2 storeys, light facade, glazing from the photos.
 7. START/FINISH: the doc has a location conflict (Atwater vs Jefferson). Ignore the doc; the start is `public/tracks/detroit.json` centerline index 0. Take every other index relative to that.
 
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |

@@ -34,6 +34,18 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 7. Light-mast rows: `floodlights` style `mast`, tall (25-30 m), several heads, wide spacing, along the front stretch/banking via ranges.
 8. Bright green grass `palette.grass`; hard-sun Florida look; kerb colours from the photos (Bus Stop).
 
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |

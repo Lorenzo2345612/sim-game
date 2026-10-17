@@ -25,6 +25,18 @@ Use `npm run track:locate -- bahrain <lat> <lon>` (task 181) for centerline indi
 5. `floodlights`: style `mast`, heightMeters 28, heads 8, spacingMeters 60, offsetMeters 12, side `both`, whole lap.
 6. `barriers`: concrete `#dadada`; armco `#9aa0a6`; fence heightMeters 4, types `armco`,`wall`, color `#7d8186`.
 7. `props`: 5 `tent` props, color `#dadada`, behind the pit building (paddock). No `sky` key.
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|

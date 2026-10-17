@@ -1,6 +1,6 @@
 # 188 — Monza track style data
 
-Status: pending
+Status: done
 Phase: 1
 Depends on: 181
 Complexity: simple
@@ -36,10 +36,6 @@ Encode, with every value picked from the research doc and photos:
 8. Sky: leave `hdri` unset.
 
 No `src/` or `tools/` changes. If the renderer cannot express something, stop and escalate; do not code around it. Keep the file small: at most the ranges and props listed above.
-
-## Reopened
-
-`public/tracks/monza.style.json` is already on master (first pass closed without tests). This pass: acceptance writes `tests/unit/acceptance/188-monza-style.test.ts` and `helpers/brands.ts`; coder only fixes the style file if a row fails.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 

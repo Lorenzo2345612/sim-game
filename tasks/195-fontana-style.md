@@ -32,6 +32,18 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 5. `palette.grass` bright green; `palette.asphalt` grey cracked tint; dry brown `palette.gravel`.
 6. Kerb colours from photos; hazy pale-blue sky only if an existing `sky.hdri` name fits (else omit).
 
+## Shared brand helper
+
+`tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
+
+```ts
+export const BRAND_DENY_LIST: readonly string[] = [
+  'Pirelli', 'Rolex', 'Heineken', 'DHL', 'Aramco', 'Emirates', 'Petronas', 'Shell', 'Red Bull', 'Ferrari',
+  'Mercedes', 'Gulf Air', 'Etihad', 'Qatar Airways', 'Crypto', 'Singtel', 'Marina Bay Sands', 'Sphere',
+  'Formula 1', 'Indy', 'NASCAR',
+];
+```
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |
