@@ -2414,7 +2414,7 @@
     {
       "num": "175",
       "title": "Fontana banking data",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "168",
         "174"

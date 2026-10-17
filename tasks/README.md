@@ -176,12 +176,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 172 | Lighting calibration: one sun, tamer whites and bloom | done | 106 |
 | 173 | Pit building only along the straight | done | 106 |
 | 174 | Track banking (cross-slope) + Daytona | done | 106, 155 |
-| 175 | Fontana banking data | in progress | 168, 174 |
+| 175 | Fontana banking data | done | 168, 174 |
 | 176 | Fix track surface/barrier overlaps (grey patches, grass on track, guardrails crossing) | done | 173 |
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
 | 179 | TrackStyle schema, defaults and parser | done | - |
-| 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174, 175 |
+| 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174 |
 | 181 | Tools: `track:locate` and `check:styles` | done | 179 |
 | 182 | Pit building and grandstand styling | pending | 180 |
 | 183 | Kerb colours per segment and run-off paint | pending | 180 |
@@ -189,24 +189,24 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 185 | Barrier colours, wall band and configurable catch fence from the track style | pending | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | pending | 186 |
-| 188 | Monza track style data | pending | 181, 182, 183, 184, 185, 186, 187 |
-| 189 | Spa track style data | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 190 | Silverstone track style data | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 191 | Budapest track style data | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 192 | Spielberg track style data | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 193 | Mexico City track style data | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 194 | Daytona style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 195 | Fontana style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188, 168 |
-| 196 | Elkhart Lake style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 197 | Road Atlanta (Braselton) style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 198 | Cleveland style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188, 168 |
-| 199 | Detroit style file (data only) | pending | 181, 182, 183, 184, 185, 186, 187, 188, 168 |
-| 200 | Baku style data (`baku.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 201 | Singapore style data (`singapore.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 202 | Las Vegas style data (`lasvegas.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 203 | Bahrain style data (`bahrain.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 204 | Sepang style data (`sepang.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
-| 205 | Lusail style data (`lusail.style.json`) | pending | 181, 182, 183, 184, 185, 186, 187, 188 |
+| 188 | Monza track style data | pending | 181 |
+| 189 | Spa track style data | pending | 181, 188 |
+| 190 | Silverstone track style data | pending | 181, 188 |
+| 191 | Budapest track style data | pending | 181, 188 |
+| 192 | Spielberg track style data | pending | 181, 188 |
+| 193 | Mexico City track style data | pending | 181, 188 |
+| 194 | Daytona style file (data only) | pending | 181, 188 |
+| 195 | Fontana style file (data only) | pending | 181, 188, 168 |
+| 196 | Elkhart Lake style file (data only) | pending | 181, 188 |
+| 197 | Road Atlanta (Braselton) style file (data only) | pending | 181, 188 |
+| 198 | Cleveland style file (data only) | pending | 181, 188, 168 |
+| 199 | Detroit style file (data only) | pending | 181, 188, 168 |
+| 200 | Baku style data (`baku.style.json`) | pending | 181, 188 |
+| 201 | Singapore style data (`singapore.style.json`) | pending | 181, 188 |
+| 202 | Las Vegas style data (`lasvegas.style.json`) | pending | 181, 188 |
+| 203 | Bahrain style data (`bahrain.style.json`) | pending | 181, 188 |
+| 204 | Sepang style data (`sepang.style.json`) | pending | 181, 188 |
+| 205 | Lusail style data (`lusail.style.json`) | pending | 181, 188 |
 | 206 | Painted strip outside the kerbs | pending | 187 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | done | - |
