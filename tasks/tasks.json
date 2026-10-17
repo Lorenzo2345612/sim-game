@@ -1269,7 +1269,7 @@
     {
       "num": "094",
       "title": "Race HUD and AI car rendering",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "057",
         "092",
@@ -3291,7 +3291,7 @@
     {
       "num": "241",
       "title": "Ermita de Guadalupe street circuit: 5 layouts",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3353,7 +3353,7 @@
     {
       "num": "246",
       "title": "Barriers never fold onto the inner kerb",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "235"
       ],
