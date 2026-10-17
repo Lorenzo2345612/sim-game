@@ -242,7 +242,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
-| 241 | Ermita de Guadalupe street circuit: 5 layouts | in progress | - |
+| 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
@@ -251,5 +251,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | pending | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
-| 250 | Bollard placement (builder, track JSON `bollards`) | pending | 248 |
+| 250 | Bollard placement | pending | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
