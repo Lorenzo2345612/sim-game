@@ -2478,7 +2478,7 @@
     {
       "num": "180",
       "title": "Style loader, wiring, extra grandstands, debug hook",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "179",
         "156",
