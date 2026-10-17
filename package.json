@@ -15,6 +15,7 @@
     "build:env": "tsx tools/env/bakeCity.ts",
     "build:track-index": "tsx tools/track-builder/buildTrackIndex.ts",
     "track:locate": "tsx tools/track-style/locate.ts",
+    "track:shots": "tsx tools/track-qa/shots.ts",
     "check:styles": "tsx tools/track-style/checkStyles.ts",
     "fetch:dem": "tsx tools/dem/fetchDem.ts",
     "fetch:textures": "tsx tools/assets/fetchTextures.ts",

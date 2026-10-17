@@ -76,6 +76,22 @@ import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
 
+export interface QaCameraInfo {
+  kind: 'chase' | 'top' | 'view';
+  orthographic: boolean;
+  /** World-space x of the left/right edges (0 unless the top view is active). */
+  left: number;
+  right: number;
+  /** World-space z of the top (north, −Z) and bottom (south, +Z) edges. */
+  top: number;
+  bottom: number;
+}
+
+export type QaCameraView =
+  | 'top'
+  | { eye: [number, number, number]; target: [number, number, number] }
+  | null;
+
 export interface SceneStats {
   barriers: number;
   sausages: number;
@@ -149,6 +165,7 @@ declare global {
       raceStandings(): readonly Standing[];
       carCount(): number;
       startLights(): number;
+      qaCamera(view: QaCameraView): QaCameraInfo;
     };
   }
 }
@@ -1146,9 +1163,145 @@ async function startGame(trackId: string): Promise<void> {
     preset === 'low' ? null : await loadGradeLut(),
   );
 
+  const qaHudSelector = '#hud, .tyres, .ers, .minimap, #fps-overlay, #setup-hud';
+  const qaHidden: { el: HTMLElement; prev: string }[] = [];
+  let qaTopCam: THREE.OrthographicCamera | null = null;
+  let qaViewCam: THREE.PerspectiveCamera | null = null;
+  let qaCam: THREE.Camera | null = null;
+  const qaInfo: QaCameraInfo = { kind: 'chase', orthographic: false, left: 0, right: 0, top: 0, bottom: 0 };
+  // Above the highest ground but within the fog start (300 m), or the whole top view hazes over.
+  const QA_TOP_ABOVE = 300;
+
+  const setQaHudHidden = (hidden: boolean): void => {
+    if (hidden) {
+      if (qaHidden.length > 0) return;
+      document.querySelectorAll<HTMLElement>(qaHudSelector).forEach((el) => {
+        qaHidden.push({ el, prev: el.style.display });
+        el.style.display = 'none';
+      });
+    } else {
+      for (const h of qaHidden) h.el.style.display = h.prev;
+      qaHidden.length = 0;
+    }
+  };
+
+  // Bounds the top view covers: the terrain rectangle, else the centerline bbox + 100 m per side.
+  const qaBounds = (): { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number } => {
+    const terrain = raceTrack?.terrain;
+    if (terrain) {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const h of terrain.heights) {
+        if (!Number.isFinite(h)) continue;
+        if (h < minY) minY = h;
+        if (h > maxY) maxY = h;
+      }
+      if (minY > maxY) {
+        minY = 0;
+        maxY = 0;
+      }
+      return {
+        minX: terrain.originX - terrain.sizeX / 2,
+        maxX: terrain.originX + terrain.sizeX / 2,
+        minZ: terrain.originZ - terrain.sizeZ / 2,
+        maxZ: terrain.originZ + terrain.sizeZ / 2,
+        minY,
+        maxY,
+      };
+    }
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    let maxY = 0;
+    for (const p of track.centerline) {
+      if (p[0] < minX) minX = p[0];
+      if (p[0] > maxX) maxX = p[0];
+      if (p[1] < minZ) minZ = p[1];
+      if (p[1] > maxZ) maxZ = p[1];
+    }
+    for (const e of raceTrack?.elevation ?? []) {
+      if (Number.isFinite(e) && e > maxY) maxY = e;
+    }
+    if (minX > maxX) return { minX: -100, maxX: 100, minZ: -100, maxZ: 100, minY: 0, maxY: 0 };
+    return { minX: minX - 100, maxX: maxX + 100, minZ: minZ - 100, maxZ: maxZ + 100, minY: 0, maxY };
+  };
+
+  // Smallest rectangle with the viewport aspect containing the bounds, centred on them.
+  const applyTopCamera = (): void => {
+    const b = qaBounds();
+    const aspect = window.innerWidth / window.innerHeight;
+    const w = b.maxX - b.minX;
+    const d = b.maxZ - b.minZ;
+    const cx = (b.minX + b.maxX) / 2;
+    const cz = (b.minZ + b.maxZ) / 2;
+    const widen = d > 0 && w / d < aspect;
+    const sw = widen ? d * aspect : w;
+    const sd = widen ? d : w / aspect;
+    const y = b.maxY + QA_TOP_ABOVE;
+    qaTopCam ??= new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 10000);
+    const cam = qaTopCam;
+    cam.left = -sw / 2;
+    cam.right = sw / 2;
+    cam.top = sd / 2;
+    cam.bottom = -sd / 2;
+    cam.near = 1;
+    cam.far = b.maxY - b.minY + QA_TOP_ABOVE + 1000;
+    cam.position.set(cx, y, cz);
+    cam.up.set(0, 0, -1); // screen up = north = −Z, screen right = east = +X
+    cam.lookAt(cx, y - 1, cz);
+    cam.updateProjectionMatrix();
+    qaCam = cam;
+    qaInfo.kind = 'top';
+    qaInfo.orthographic = true;
+    qaInfo.left = cx - sw / 2;
+    qaInfo.right = cx + sw / 2;
+    qaInfo.top = cz - sd / 2;
+    qaInfo.bottom = cz + sd / 2;
+  };
+
+  const qaCamera = (view: QaCameraView): QaCameraInfo => {
+    if (view === null) {
+      qaCam = null;
+      qaInfo.kind = 'chase';
+      qaInfo.orthographic = false;
+      qaInfo.left = 0;
+      qaInfo.right = 0;
+      qaInfo.top = 0;
+      qaInfo.bottom = 0;
+      setQaHudHidden(false);
+      return { ...qaInfo };
+    }
+    setQaHudHidden(true);
+    if (view === 'top') {
+      applyTopCamera();
+    } else {
+      qaViewCam ??= new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 5000);
+      const cam = qaViewCam;
+      cam.position.set(view.eye[0], view.eye[1], view.eye[2]);
+      cam.up.set(0, 1, 0);
+      cam.lookAt(view.target[0], view.target[1], view.target[2]);
+      cam.aspect = window.innerWidth / window.innerHeight;
+      cam.updateProjectionMatrix();
+      qaCam = cam;
+      qaInfo.kind = 'view';
+      qaInfo.orthographic = false;
+      qaInfo.left = 0;
+      qaInfo.right = 0;
+      qaInfo.top = 0;
+      qaInfo.bottom = 0;
+    }
+    return { ...qaInfo };
+  };
+
   const onResize = (): void => {
     handle.resize(window.innerWidth, window.innerHeight, camera);
     post.resize(window.innerWidth, window.innerHeight);
+    if (qaInfo.kind === 'top') applyTopCamera();
+    else if (qaInfo.kind === 'view' && qaViewCam !== null) {
+      qaViewCam.aspect = window.innerWidth / window.innerHeight;
+      qaViewCam.updateProjectionMatrix();
+    }
   };
   const frameFn = (now: number): void => {
     if (!running) return;
@@ -1189,14 +1342,16 @@ async function startGame(trackId: string): Promise<void> {
       headPrevPos.copy(interp.position);
       const head = headMotion.update(latG, longG, frame);
       cameraRig.setHeadOffset(cockpitSettings.headMotion ? head.x : 0, cockpitSettings.headMotion ? head.z : 0);
-      cameraRig.update(interp, frame);
+      // A QA view drives its own camera; the rig stays frozen until qaCamera(null).
+      if (qaCam === null) cameraRig.update(interp, frame);
       sim.getTelemetry(telemetry);
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
       gamepad.rumble(fb.low, fb.high, performance.now());
-      cameraRig.applyShake(fb.shake, sim.simTime);
+      if (qaCam === null) cameraRig.applyShake(fb.shake, sim.simTime);
       emitParticles(frame);
       shadows?.update(interp.position);
-      treeField?.update(camera.position);
+      if (qaCam !== null) treeField?.update(qaCam.position);
+      else treeField?.update(camera.position);
       city?.update(sim.simTime);
       minimap.update(interp.position.x, interp.position.z);
       drivingLine.update(
@@ -1250,8 +1405,8 @@ async function startGame(trackId: string): Promise<void> {
     } else {
       gamepad.rumble(0, 0, performance.now());
     }
-    cockpitWheel.visible = cameraRig.mode === 'cockpit';
-    const mirrorVisible = mirrorEnabled && cameraRig.mode !== 'chase';
+    cockpitWheel.visible = qaCam === null && cameraRig.mode === 'cockpit';
+    const mirrorVisible = qaCam === null && mirrorEnabled && cameraRig.mode !== 'chase';
     mirror.setVisible(mirrorVisible);
     if (mirrorVisible && mirrorTick++ % 2 === 0) {
       mirror.render(handle.renderer, scene, interp.position, interp.rotation);
@@ -1260,7 +1415,9 @@ async function startGame(trackId: string): Promise<void> {
     frameStats.fps = fpsAvg;
     frameStats.drawCalls = handle.renderer.info.render.calls;
     fpsOverlay.update(frameStats);
-    post.render(frame);
+    // QA views render flat: no post-processing chain, no mirror pass.
+    if (qaCam !== null) handle.renderer.render(scene, qaCam);
+    else post.render(frame);
     rafId = requestAnimationFrame(frameFn);
   };
 
@@ -1413,6 +1570,8 @@ async function startGame(trackId: string): Promise<void> {
     treeField?.dispose();
     post.dispose();
     disposeScene(scene);
+    qaCam = null;
+    setQaHudHidden(false);
     window.__SIMGAME__ = undefined;
   };
 
@@ -1480,6 +1639,7 @@ async function startGame(trackId: string): Promise<void> {
     raceStandings: () => (raceGame !== null ? raceGame.standings() : []),
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
+    qaCamera,
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
       playerLivery = { ...playerLivery, ...l };
