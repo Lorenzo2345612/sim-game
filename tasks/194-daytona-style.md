@@ -38,18 +38,18 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
-| C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
-| C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
-| C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
-| C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
-| C6 | `npm run -s check:styles` | run | exit 0 |
-| S1 | `daytona.style.json` parsed | check signature | fence heightMeters ≥ 6 and types include 'wall'. |
-| S2 | `daytona.style.json` parsed | check signature | runoffPaint colours include isBlue and isWhite. |
-| S3 | `daytona.style.json` parsed | check signature | barriers.concrete.bandColor isBlue or concrete.color isWhite. |
-| S4 | `daytona.style.json` parsed | check signature | a tower or scoreboard prop. |
-| S5 | `daytona.style.json` parsed | check signature | grandstands.seats ≥ 3 colours. |
-| S6 | `daytona.style.json` parsed | check signature | floodlights non-null, style 'mast' |
+| AT1 C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
+| AT2 C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
+| AT3 C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
+| AT4 C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
+| AT5 C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
+| AT6 C6 | `npm run -s check:styles` | run | exit 0 |
+| AT7 S1 | `daytona.style.json` parsed | check signature | fence heightMeters ≥ 6 and types include 'wall'. |
+| AT8 S2 | `daytona.style.json` parsed | check signature | runoffPaint colours include isBlue and isWhite. |
+| AT9 S3 | `daytona.style.json` parsed | check signature | barriers.concrete.bandColor isBlue or concrete.color isWhite. |
+| AT10 S4 | `daytona.style.json` parsed | check signature | a tower or scoreboard prop. |
+| AT11 S5 | `daytona.style.json` parsed | check signature | grandstands.seats ≥ 3 colours. |
+| AT12 S6 | `daytona.style.json` parsed | check signature | floodlights non-null, style 'mast' |
 
 ## Acceptance criteria
 

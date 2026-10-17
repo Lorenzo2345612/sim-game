@@ -36,17 +36,17 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
-| C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
-| C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
-| C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
-| C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
-| C6 | `npm run -s check:styles` | run | exit 0 |
-| S1 | `elkhart.style.json` parsed | check signature | a kerb range with colours isRed + isYellow. |
-| S2 | `elkhart.style.json` parsed | check signature | a kerb range with both colours isGrey (concrete rumble). |
-| S3 | `elkhart.style.json` parsed | check signature | ≥ 3 footbridge props. |
-| S4 | `elkhart.style.json` parsed | check signature | palette.gravel isLight or isCream. |
-| S5 | `elkhart.style.json` parsed | check signature | extraGrandstands `[]` and ≥ 3 tent props |
+| AT1 C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
+| AT2 C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
+| AT3 C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
+| AT4 C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
+| AT5 C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
+| AT6 C6 | `npm run -s check:styles` | run | exit 0 |
+| AT7 S1 | `elkhart.style.json` parsed | check signature | a kerb range with colours isRed + isYellow. |
+| AT8 S2 | `elkhart.style.json` parsed | check signature | a kerb range with both colours isGrey (concrete rumble). |
+| AT9 S3 | `elkhart.style.json` parsed | check signature | ≥ 3 footbridge props. |
+| AT10 S4 | `elkhart.style.json` parsed | check signature | palette.gravel isLight or isCream. |
+| AT11 S5 | `elkhart.style.json` parsed | check signature | extraGrandstands `[]` and ≥ 3 tent props |
 
 ## Acceptance criteria
 

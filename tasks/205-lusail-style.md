@@ -28,17 +28,17 @@ Use `npm run track:locate -- lusail <lat> <lon>` (task 181) for centerline indic
 ## Acceptance tests (defined by the planner with Opus, before coding)
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
-| C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
-| C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
-| C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
-| C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
-| C6 | `npm run -s check:styles` | run | exit 0 |
-| S1 | `lusail.style.json` | parsed | floodlights non-null, style 'mast', heightMeters 25-30, heads ≥ 4. |
-| S2 | `lusail.style.json` | parsed | fence color isTeal or isGreen. |
-| S3 | `lusail.style.json` | parsed | runoffPaint ranges with isOrange, isBlue and a maroon (isRed with l ≤ 0.35) colour. |
-| S4 | `lusail.style.json` | parsed | pitBuilding storeys 2. |
-| S5 | `lusail.style.json` | parsed | palette.grass isCream (sand) |
+| AT1 C1 | `public/tracks/<id>.style.json` and `<id>.json` | `parseTrackStyle(raw, centerline.length)` | errors `[]`; warnings `[]` |
+| AT2 C2 | parsed | sections | pitBuilding, kerbs.colors, barriers (fence set), grandstands and palette are all non-default |
+| AT3 C3 | every range (kerbs, runoffPaint, barriers, floodlights, extraGrandstands) | span length | each covers ≤ 40 % of the lap and ≥ 1 index; ranges for the same section and side do not repeat an identical start/end |
+| AT4 C4 | every prop | index | `0 ≤ index < centerline.length`; total props ≤ 30 |
+| AT5 C5 | file text | brand check | contains none of the strings in the shared deny list `tests/unit/acceptance/helpers/brands.ts` (created by 188: Pirelli, Rolex, Heineken, DHL, Aramco, Emirates, Petronas, Shell, Red Bull, Ferrari, Mercedes, Gulf Air, Etihad, Qatar Airways, Crypto, Singtel, Marina Bay Sands, Sphere, Formula 1, Indy, NASCAR) case-insensitive, checked on string values that are not hex colours |
+| AT6 C6 | `npm run -s check:styles` | run | exit 0 |
+| AT7 S1 | `lusail.style.json` | parsed | floodlights non-null, style 'mast', heightMeters 25-30, heads ≥ 4. |
+| AT8 S2 | `lusail.style.json` | parsed | fence color isTeal or isGreen. |
+| AT9 S3 | `lusail.style.json` | parsed | runoffPaint ranges with isOrange, isBlue and a maroon (isRed with l ≤ 0.35) colour. |
+| AT10 S4 | `lusail.style.json` | parsed | pitBuilding storeys 2. |
+| AT11 S5 | `lusail.style.json` | parsed | palette.grass isCream (sand) |
 ## Acceptance criteria
 - [ ] All table rows pass; `npm run -s check:styles` exits 0; only the files listed above changed.
 ## Verification
