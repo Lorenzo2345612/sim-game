@@ -181,7 +181,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 177 | Clamp HDRI values below half-float max (black lit surfaces on half-float GPUs) | done | 099 |
 | 178 | Auto-mode reverse (standstill brake engages reverse) | done | 065 |
 | 179 | TrackStyle schema, defaults and parser | done | - |
-| 180 | Style loader, wiring, extra grandstands, debug hook | pending | 179, 156, 157, 158, 159, 160, 168, 174 |
+| 180 | Style loader, wiring, extra grandstands, debug hook | in progress | 179, 156, 157, 158, 159, 160, 168, 174 |
 | 181 | Tools: `track:locate` and `check:styles` | done | 179 |
 | 182 | Pit building and grandstand styling | pending | 180 |
 | 183 | Kerb colours per segment and run-off paint | pending | 180 |
@@ -189,7 +189,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 185 | Barrier colours, wall band and configurable catch fence from the track style | pending | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | pending | 186 |
-| 188 | Monza track style data | pending | 181 |
+| 188 | Monza track style data | in progress | 181 |
 | 189 | Spa track style data | pending | 181, 188 |
 | 190 | Silverstone track style data | pending | 181, 188 |
 | 191 | Budapest track style data | pending | 181, 188 |

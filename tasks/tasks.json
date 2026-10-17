@@ -2478,7 +2478,7 @@
     {
       "num": "180",
       "title": "Style loader, wiring, extra grandstands, debug hook",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "179",
         "156",
@@ -2600,7 +2600,7 @@
     {
       "num": "188",
       "title": "Monza track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181"
       ],
