@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#4A4A4D", "grass": "#6FA13A", "gravel": "#C8CACC" },
+  "edgeLines": { "color": "#2B5FB5" },
+  "kerbs": { "colors": ["#D8404A", "#DADADA"] },
+  "runoffPaint": {
+    "pattern": "none",
+    "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"],
+    "stripeMeters": 3,
+    "ranges": [
+      { "start": 2380, "end": 2500, "pattern": "stripes", "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"], "stripeMeters": 3 },
+      { "start": 115, "end": 292, "pattern": "stripes", "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"], "stripeMeters": 3 }
+    ]
+  },
+  "barriers": {
+    "concrete": { "color": "#DADADA" },
+    "armco": { "color": "#9AA0A6" },
+    "fence": { "heightMeters": 4, "types": ["armco", "wall"], "color": "#0A8F86" }
+  },
+  "pitBuilding": {
+    "storeys": 2, "heightMeters": 10, "depthMeters": 16,
+    "facade": "#9A9EA2", "roof": "#6F7478", "doors": "#2A2A2C", "accent": "#0A8F86",
+    "roofStyle": "flat", "glazing": 0.4
+  },
+  "grandstands": { "structure": "#A8ABAE", "roof": "#DADADA", "seats": ["#D12B35", "#DAC21F", "#1E4F9F", "#DADADA"], "roofStyle": "sail" },
+  "extraGrandstands": [
+    { "start": 1449, "end": 1667, "side": "left", "offsetMeters": 15, "rows": 14, "roof": false }
+  ],
+  "sky": { "hdri": "kloofendal_overcast_puresky" }
+}
