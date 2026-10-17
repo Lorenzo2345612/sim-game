@@ -181,6 +181,36 @@
         "reviewer",
         "fixer"
       ]
+    },
+    "093": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "221": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "224": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
     }
   }
 }
