@@ -74,3 +74,12 @@ The coder's reported design choices (kernel shape, second DC blocker after the c
 ## Planner-authorised edits 2 (decision 227-coder, 2026-10-17)
 
 AT6 guards against clicks, which show as a 10× jump; a 2.35× transient while the firing rate sweeps through the tube resonances is acceptable. In `tests/unit/acceptance/227-engine-voice-core.test.ts` change `expect(stepMax).toBeLessThanOrEqual(2 * steadyMax);` to `expect(stepMax).toBeLessThanOrEqual(3 * steadyMax);`. Nothing else. Keep the current voice design. The unrelated glb/scene failure is not yours: note it in `pending`.
+
+## Planner-authorised edits 3 (decision 227-coder, 2026-10-17)
+
+Planner probe: the voice is correct (steady 9000 rpm autocorrelation peaks at 80 samples = 1/600 s, r 0.993), but the half-period lag 40 also reaches 0.970 ≥ 0.9·max, so "smallest lag ≥ 0.9·max" picks 0.83 ms. Fix only the AT6 period measurement in `tests/unit/acceptance/227-engine-voice-core.test.ts`:
+
+1. Add a helper `argmaxLag(x: Float32Array, minLagS: number, maxLagS: number): number` next to `periodicityLag`: same normalised autocorrelation, returns `lag / FS` of the largest `r[lag]` in the range (first one on ties).
+2. In AT6 replace `periodicityLag(stepped.subarray(n - Math.round(0.25 * FS)), 0.0005, 0.02)` with `argmaxLag(stepped.subarray(n - Math.round(0.25 * FS)), 0.0005, 0.0025)`.
+
+Nothing else; keep the voice as is.
