@@ -45,6 +45,10 @@ Config field names and value formats: copy the schema of an existing `assets/car
 - `tests/unit/edge/224-ow26-model.post.test.ts` POST1: `neutralMaterials` expected list = the 10 names in the config (old 5 + `chasis`, `chassis2`, `generics`, `cockpit_metal`, `gp21_cinture`). Nothing else.
 - `buildCar.ts` optional fields `dropNodes`, `neutralMaterials`, `wheelTriBudget` and KHRTextureTransform read support are accepted, provided existing outputs stay byte-identical (AT1).
 
+## Planner note: logos (user decision 2026-10-16)
+
+Dev-only model: logos or brand imagery left inside textures are acceptable and must not block review. Only AT4 (no brand text strings in the glb) is enforced. Do not neutralise further materials.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
