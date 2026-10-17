@@ -202,7 +202,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 198 | Cleveland style file (data only) | in progress | 181, 188, 168 |
 | 199 | Detroit style file (data only) | done | 181, 188, 168 |
 | 200 | Baku style data (`baku.style.json`) | in progress | 181, 188 |
-| 201 | Singapore style data (`singapore.style.json`) | pending | 181, 188 |
+| 201 | Singapore style data (`singapore.style.json`) | in progress | 181, 188 |
 | 202 | Las Vegas style data (`lasvegas.style.json`) | pending | 181, 188 |
 | 203 | Bahrain style data (`bahrain.style.json`) | pending | 181, 188 |
 | 204 | Sepang style data (`sepang.style.json`) | pending | 181, 188 |
