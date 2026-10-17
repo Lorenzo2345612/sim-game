@@ -192,7 +192,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 188 | Monza track style data | done | 181 |
 | 189 | Spa track style data | done | 181, 188 |
 | 190 | Silverstone track style data | in progress | 181, 188 |
-| 191 | Budapest track style data | in progress | 181, 188 |
+| 191 | Budapest track style data | done | 181, 188 |
 | 192 | Spielberg track style data | done | 181, 188 |
 | 193 | Mexico City track style data | in progress | 181, 188 |
 | 194 | Daytona style file (data only) | in progress | 181, 188 |
