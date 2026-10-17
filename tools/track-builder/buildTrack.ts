@@ -37,6 +37,8 @@ interface TrackConfig extends TrackSourceConfig {
   biome: Biome;
   grandstands: GrandstandConfig[];
   pit: { fromMeters: number; toMeters: number; side: Side };
+  /** Concrete walls all round, like the city tracks. */
+  walls?: boolean;
   sausages?: SausageOverride[];
   banking?: BankRange[];
   landmarks?: { kind: LandmarkKind; lon: number; lat: number; height: number; heading?: number }[];
@@ -136,7 +138,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   };
   const barriers = applyMedianWalls(
     applyFoamBarriers(
-      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment),
+      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment, config.walls),
       corners,
     ),
     parallel,

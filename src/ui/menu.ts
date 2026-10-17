@@ -28,6 +28,12 @@ export const TRACK_CHOICES: TrackChoice[] = [
   { id: 'fontana-roval', name: 'Fontana Sports Car Course' },
   { id: 'cleveland', name: 'Cleveland' },
   { id: 'detroit', name: 'Detroit' },
+  { id: 'ermita-centro', name: 'Ermita Centro' },
+  { id: 'ermita-federal', name: 'Ermita Federal' },
+  { id: 'ermita-norte', name: 'Ermita Norte' },
+  { id: 'ermita-mixto', name: 'Ermita Mixto' },
+  { id: 'ermita-poniente', name: 'Ermita Poniente' },
+  { id: 'ermita-veloz', name: 'Ermita Veloz' },
 ];
 
 export const LAST_TRACK_KEY = 'lastTrack';

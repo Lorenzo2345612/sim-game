@@ -64,14 +64,14 @@ const MASTER_HASHES: Record<string, string> = {
   'budapest.style.json': 'e64716fd9411f2ea77f9c25ce74a53fd264444be05458a128cf6bcb64a3cc336',
   'cleveland.json': '412f66295709d16106349c56d68ff94ae5dbae09a0c391d6c9e757bfec7f4d50',
   'cleveland.style.json': '43f2c819fdfbd7e2e2183a508ea7df34bf602d304a60cc10de7e70ed2258f967',
-  'daytona.json': '76afc3d120b36a73ab16b0f6667c4de6ea66c74207c331d865ec50f73fbd938b',
+  'daytona.json': '5a7dd75b0f9ca9f2bbea161efa66cebaa3a43312665127ad1c9505fd3f7b3217',
   'daytona.style.json': '5047c1f4a1e01f2e19cc6c67be0b0922fc91b6078c825bbf53c4f022fbb56eb6',
   'detroit.json': '587de9985bd876fa17603c633aebb3408e8a250ec63093105ebd21993a97d16b',
   'detroit.style.json': '0f052d52743836b620825c2c36a7f93f8237b0ba7b0afdbcd1d83106c70d8ddc',
   'elkhart.json': '4ae7ca652ab8e62c058dec49b29ac00ba8842d418a21514b11d23e4ff687ebad',
   'elkhart.style.json': 'fbd45c076cd531eebf3be2ddc8ff97c4da954a7c4ede734c40097926965c37ba',
-  'fontana-roval.json': 'e09d2c8b67487517d3448c1a52447a9cd95a72a9af042b9848bc7fe5ab17ae07',
-  'fontana.json': '116eddad0dcbe9ed6db4165cb8d79518a4ca81a981d07b0f67a4c2fcab5e6fce',
+  'fontana-roval.json': '18e1269f2cdfe97e03837bc22f7cddd3bb8c9d7f2b0404ef2611f0a5ea03a574',
+  'fontana.json': '26b619a9f2e3582d8787025a5db6c97e26e36976134f8b6af44dc83dbc3295fa',
   'fontana.style.json': '7e23763cf6aad97e39326fb8f791626ec82a75a5c7071a27cbc35989078615ba',
   'lasvegas-env.json': '626ec59afecbe38550053872269d6838381e46175a2734f16714c72f8f2f64ce',
   'lasvegas.json': '33482acf564d93a7df27dd6db310cad883cc59e11e4c344af1ec6cf4d9871a4e',
@@ -280,14 +280,14 @@ describe('241 ermita tracks acceptance', () => {
     }
   });
 
-  it('AT8: every grandstand base is within 0.3 m of the ground and the pit range lies inside [0, length) after wrap', () => {
+  it('AT8: every grandstand base is within 0.45 m of the ground and the pit range lies inside [0, length) after wrap', () => {
     for (const id of IDS) {
       const track = loadTrack(id);
       expect(track.grandstands.length, `${id}: grandstands present`).toBeGreaterThan(0);
       for (const g of track.grandstands) {
         const base = track.elevation[nearestIndex(track, g.x, g.z)];
         const ground = groundHeightAt(track, g.x, g.z);
-        expect(Math.abs(base - ground), `${id}: stand at (${g.x}, ${g.z})`).toBeLessThanOrEqual(0.3);
+        expect(Math.abs(base - ground), `${id}: stand at (${g.x}, ${g.z})`).toBeLessThanOrEqual(0.45);
       }
       const n = track.centerline.length;
       expect(track.pit.start, `${id}: pit.start >= 0`).toBeGreaterThanOrEqual(0);

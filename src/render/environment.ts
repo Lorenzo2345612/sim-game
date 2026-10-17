@@ -23,6 +23,12 @@ export const FOG_TABLE: Record<string, { density: number }> = {
   'fontana-roval': { density: 0.0004 },
   cleveland: { density: 0.0005 },
   detroit: { density: 0.0005 },
+  'ermita-centro': { density: 0.0004 },
+  'ermita-federal': { density: 0.0004 },
+  'ermita-norte': { density: 0.0004 },
+  'ermita-mixto': { density: 0.0004 },
+  'ermita-poniente': { density: 0.0004 },
+  'ermita-veloz': { density: 0.0004 },
 };
 
 export const ENV_TABLE: Record<string, string> = {
@@ -45,6 +51,12 @@ export const ENV_TABLE: Record<string, string> = {
   'fontana-roval': 'qwantani_noon_puresky',
   cleveland: 'kloofendal_48d_partly_cloudy_puresky',
   detroit: 'kloofendal_48d_partly_cloudy_puresky',
+  'ermita-centro': 'qwantani_noon_puresky',
+  'ermita-federal': 'qwantani_noon_puresky',
+  'ermita-norte': 'qwantani_noon_puresky',
+  'ermita-mixto': 'qwantani_noon_puresky',
+  'ermita-poniente': 'qwantani_noon_puresky',
+  'ermita-veloz': 'qwantani_noon_puresky',
 };
 
 export interface EnvironmentInfo {

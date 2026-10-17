@@ -476,5 +476,164 @@
       { "atMeters": 2100, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -150, "toMeters": 150, "side": "right" }
+  },
+  {
+    "id": "ermita-centro",
+    "name": "Ermita Centro",
+    "country": "Mexico",
+    "geojson": "mx-ermita-centro",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": -45, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": 0, "toMeters": 150, "side": "left" }
+  },
+  {
+    "id": "ermita-federal",
+    "name": "Ermita Federal",
+    "country": "Mexico",
+    "geojson": "mx-ermita-federal",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 540, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": -645, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -300, "toMeters": 250, "side": "right" }
+  },
+  {
+    "id": "ermita-norte",
+    "name": "Ermita Norte",
+    "country": "Mexico",
+    "geojson": "mx-ermita-norte",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": -150, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": -1455, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": -1950, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -200, "toMeters": 250, "side": "left" }
+  },
+  {
+    "id": "ermita-mixto",
+    "name": "Ermita Mixto",
+    "country": "Mexico",
+    "geojson": "mx-ermita-mixto",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 1215, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 675, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -130, "toMeters": 200, "side": "left" }
+  },
+  {
+    "id": "ermita-poniente",
+    "name": "Ermita Poniente",
+    "country": "Mexico",
+    "geojson": "mx-ermita-poniente",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": 1350, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 135, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -110, "toMeters": 150, "side": "right" }
+  },
+  {
+    "id": "ermita-veloz",
+    "name": "Ermita Veloz",
+    "country": "Mexico",
+    "geojson": "mx-ermita-veloz",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/ermita.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "desert",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "shrub-dry", "weight": 0.6 },
+        { "name": "palm-date", "weight": 0.3 },
+        { "name": "cactus", "weight": 0.1 }
+      ],
+      "density": 0.04
+    },
+    "grandstands": [
+      { "atMeters": 135, "side": "right", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 585, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false },
+      { "atMeters": 1035, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
   }
 ]

@@ -26,6 +26,12 @@ const EXPECTED: Record<string, string> = {
   budapest: 'parkland',
   spielberg: 'parkland',
   cleveland: 'parkland',
+  'ermita-centro': 'desert',
+  'ermita-federal': 'desert',
+  'ermita-norte': 'desert',
+  'ermita-mixto': 'desert',
+  'ermita-poniente': 'desert',
+  'ermita-veloz': 'desert',
 };
 
 describe('156 environment type ground vegetation', () => {

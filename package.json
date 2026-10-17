@@ -14,6 +14,7 @@
     "build:tracks": "tsx tools/track-builder/buildTrack.ts",
     "build:env": "tsx tools/env/bakeCity.ts",
     "build:track-index": "tsx tools/track-builder/buildTrackIndex.ts",
+    "build:ground": "tsx tools/ground/cropGround.ts",
     "track:locate": "tsx tools/track-style/locate.ts",
     "track:qa": "tsx tools/track-qa/report.ts",
     "track:shots": "tsx tools/track-qa/shots.ts",

@@ -29,11 +29,11 @@ test.describe('171 track select redesign', () => {
   test.describe('AT3 at 1366x768', () => {
     test.use({ viewport: { width: 1366, height: 768 } });
 
-    test('AT3: panel, title and credits fit the viewport; 19 cards show outline and length', async ({ page }) => {
+    test('AT3: panel, title and credits fit the viewport; 25 cards show outline and length', async ({ page }) => {
       test.setTimeout(120000);
       await showMenu(page);
       const cards = page.locator('button.track-card[data-track]');
-      await expect(cards).toHaveCount(19);
+      await expect(cards).toHaveCount(25);
       const viewport = page.viewportSize()!;
       expectInside(await boxOf(page, '#menu .menu-panel'), viewport);
       expectInside(await boxOf(page, '.menu-title'), viewport);

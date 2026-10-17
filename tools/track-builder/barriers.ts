@@ -19,7 +19,7 @@ function maxWidthAt(segments: RunoffSegment[], side: Side, i: number): number | 
 export function layoutBarriers(
   centerline: Point2[], widthMeters: number,
   kerbs: TrackSegment[], runoffs: RunoffSegment[], pit?: PitLane,
-  environment?: EnvironmentType,
+  environment?: EnvironmentType, walls?: boolean,
 ): BarrierSegment[] {
   const n = centerline.length;
   const hasKerb = (side: Side, i: number) =>
@@ -34,9 +34,9 @@ export function layoutBarriers(
         (widthMeters / 2 + (hasKerb(side, i) ? KERB_WIDTH : 0) +
           (runoffWidth ?? VERGE_WIDTH) + BARRIER_GAP) * 2,
       ) / 2;
-      // City circuits are walls all round; applyFoamBarriers runs afterwards and keeps its foam.
+      // City circuits and `walls` tracks are walls all round; applyFoamBarriers runs afterwards and keeps its foam.
       const type: BarrierSegment['type'] =
-        environment === 'city' || (pit && pit.side === side && covers(pit.start, pit.end, i))
+        environment === 'city' || walls === true || (pit && pit.side === side && covers(pit.start, pit.end, i))
           ? 'wall'
           : runoffs.some((r) => r.surface === 'gravel' && r.side === side && covers(r.start, r.end, i))
             ? 'tyres'
