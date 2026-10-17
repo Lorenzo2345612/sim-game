@@ -2812,7 +2812,7 @@
     {
       "num": "203",
       "title": "Bahrain style data (`bahrain.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
