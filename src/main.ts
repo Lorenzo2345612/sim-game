@@ -91,6 +91,7 @@ export interface SceneStats {
   ibl: boolean;
   horizonColor: [number, number, number];
   fogColor: [number, number, number];
+  fogDensity: number;
   groundTexture: string | null;
   carScreenRect: { x: number; y: number; w: number; h: number };
   liveryPrimary: string;
@@ -598,6 +599,7 @@ async function startGame(trackId: string): Promise<void> {
     ibl: false,
     horizonColor: [0, 0, 0],
     fogColor: [0, 0, 0],
+    fogDensity: 0,
     groundTexture: null,
     carScreenRect: { x: 0, y: 0, w: 0, h: 0 },
     liveryPrimary: '',
@@ -613,7 +615,7 @@ async function startGame(trackId: string): Promise<void> {
     ground.visible = false;
     const environmentType: EnvironmentType = track.environment ?? 'parkland';
     stats.environmentType = environmentType;
-    const env = await applyEnvironment(scene, track.id, handle.renderer);
+    const env = await applyEnvironment(scene, track.id, handle.renderer, trackStyle);
     stats.environment = env.name;
     stats.horizonColor = env.horizon;
     shadows = new ShadowRig(scene);
@@ -644,7 +646,7 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(surfaces.group);
     disposables.push(surfaces);
 
-    const markings = createTrackMarkingsObject(buildTrackMarkings(track));
+    const markings = createTrackMarkingsObject(buildTrackMarkings(track), trackStyle);
     scene.add(markings.group);
     disposables.push(markings);
 
@@ -1315,6 +1317,7 @@ async function startGame(trackId: string): Promise<void> {
         fogColor: fog
           ? ([fog.color.r, fog.color.g, fog.color.b] as [number, number, number])
           : ([0, 0, 0] as [number, number, number]),
+        fogDensity: fog instanceof THREE.FogExp2 ? fog.density : 0,
       };
     },
     renderStats: () => ({

@@ -9,7 +9,7 @@ interface Debug184 {
 
 async function loadGame(page: Page, path: string): Promise<void> {
   await page.goto(path);
-  await page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 60000 });
+  await page.waitForFunction(() => window.__SIMGAME__?.ready === true, undefined, { timeout: 120000 });
 }
 
 function fogDensity(page: Page): Promise<number> {
@@ -24,8 +24,12 @@ test.describe('184 palette edge sky style e2e', () => {
     const baseline = await fogDensity(page);
     expect(baseline).toBeGreaterThan(0);
 
+    // Sequential loads: a second unthrottled SwiftShader loop starves the next page.
+    const context = page.context();
+    await page.close();
+
     const errors: string[] = [];
-    const styled = await page.context().newPage();
+    const styled = await context.newPage();
     styled.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text());
     });

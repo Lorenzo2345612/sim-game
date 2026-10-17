@@ -130,12 +130,14 @@ export function createSurfaceMaterial(
   kind: SurfaceMaterialKind,
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
   macro?: THREE.Texture,
-  style?: ResolvedTrackStyle /* accepted, unused until 184 */,
+  style?: ResolvedTrackStyle,
   paint?: SurfacePaint,
 ): THREE.MeshStandardMaterial {
-  void style;
   const config = KINDS[kind];
   const material = new THREE.MeshStandardMaterial();
+  const paletteHex =
+    kind === 'asphalt' || kind === 'grass' || kind === 'gravel' ? style?.palette[kind] : null;
+  if (paletteHex) material.color.set(paletteHex);
   const map = loadTexture(`textures/${config.dir}/color.jpg`);
   const normalMap = loadTexture(`textures/${config.dir}/normal.jpg`);
   const roughnessMap = loadTexture(`textures/${config.dir}/roughness.jpg`);

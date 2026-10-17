@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import type { Vec3 } from '../core/types';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 
 export const FOG_TABLE: Record<string, { density: number }> = {
   monza: { density: 0.00055 },
@@ -49,6 +50,14 @@ export const ENV_TABLE: Record<string, string> = {
 export interface EnvironmentInfo {
   name: string;
   horizon: [number, number, number];
+}
+
+export function envNameFor(trackId: string, style?: ResolvedTrackStyle): string {
+  return style?.sky.hdri ?? ENV_TABLE[trackId] ?? ENV_TABLE.monza;
+}
+
+export function fogDensityFor(trackId: string, style?: ResolvedTrackStyle): number {
+  return (FOG_TABLE[trackId] ?? FOG_TABLE.monza).density * (style?.sky.fogDensityScale ?? 1);
 }
 
 // Below the half-float max 65504: suns exceeding it become Inf/NaN in half-float PMREM targets.
@@ -106,6 +115,7 @@ export async function applyEnvironment(
   scene: THREE.Scene,
   trackId: string,
   renderer: THREE.WebGLRenderer,
+  style?: ResolvedTrackStyle,
 ): Promise<EnvironmentInfo> {
   const oldSky = scene.getObjectByName('sky');
   if (oldSky) {
@@ -115,7 +125,7 @@ export async function applyEnvironment(
     (mesh.material as THREE.Material).dispose();
   }
 
-  const name = ENV_TABLE[trackId] ?? ENV_TABLE.monza;
+  const name = envNameFor(trackId, style);
   const loader = new RGBELoader();
   loader.setDataType(THREE.FloatType);
   const texture = await loader.loadAsync(`/hdri/${name}_2k.hdr`);
@@ -141,8 +151,10 @@ export async function applyEnvironment(
   environmentTarget = target;
   if (previousBackground instanceof THREE.Texture) previousBackground.dispose();
 
-  const fog = FOG_TABLE[trackId] ?? FOG_TABLE.monza;
-  scene.fog = new THREE.FogExp2(new THREE.Color(horizon[0], horizon[1], horizon[2]), fog.density);
+  scene.fog = new THREE.FogExp2(
+    new THREE.Color(horizon[0], horizon[1], horizon[2]),
+    fogDensityFor(trackId, style),
+  );
 
   return { name, horizon };
 }

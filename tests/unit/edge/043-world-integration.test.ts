@@ -35,7 +35,9 @@ describe('043 world integration edges', () => {
   });
 
   it('EDGE5: the environment is applied for the selected track id', () => {
-    expect(mainSrc()).toMatch(/applyEnvironment\(\s*scene\s*,\s*track\.id\s*,\s*handle\.renderer\s*\)/);
+    expect(mainSrc()).toMatch(
+      /applyEnvironment\(\s*scene\s*,\s*track\.id\s*,\s*handle\.renderer\s*(,\s*[\w.]+\s*)?\)/,
+    );
   });
 
   it('EDGE6: the car casts shadows and the terrain and surfaces receive them', () => {
