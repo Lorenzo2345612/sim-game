@@ -386,6 +386,24 @@
       ]
     },
     {
+      "id": "M1.10",
+      "title": "Engine audio v2: crank-angle synth, per-car engines, mix",
+      "tasks": [
+        "226",
+        "227",
+        "228",
+        "229",
+        "230",
+        "231",
+        "232"
+      ],
+      "status": "open",
+      "prefetch": [
+        "226",
+        "230"
+      ]
+    },
+    {
       "id": "M2.1",
       "title": "Race: AI opponents, quick race, grid and start lights, classification, race HUD and menu",
       "tasks": [
