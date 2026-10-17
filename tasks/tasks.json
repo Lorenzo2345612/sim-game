@@ -2587,7 +2587,7 @@
     {
       "num": "187",
       "title": "Generic trackside props from the track style",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "180"
       ],
