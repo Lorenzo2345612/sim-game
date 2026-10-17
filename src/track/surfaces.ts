@@ -509,7 +509,7 @@ function filterStripTriangles(
     out[m++] = ind[3 * t + 1];
     out[m++] = ind[3 * t + 2];
   }
-  return { surface: strip.surface, positions: strip.positions, indices: out.subarray(0, m), uvs: strip.uvs };
+  return { surface: strip.surface, positions: strip.positions, indices: out.subarray(0, m), uvs: strip.uvs, segment: strip.segment };
 }
 
 export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
@@ -537,7 +537,8 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   }
   strips.push(makeStrip('asphalt', asphaltRows, true));
 
-  for (const seg of track.kerbs) {
+  for (let ki = 0; ki < track.kerbs.length; ki++) {
+    const seg = track.kerbs[ki];
     const start = normIndex(seg.start, n);
     const end = normIndex(seg.end, n);
     const sign = seg.side === 'right' ? 1 : -1;
@@ -554,10 +555,11 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       (idx, lat) => elev(idx) + KERB_Y + lat * bankTanAt(track, idx),
       KERB_UV_V,
     );
-    if (rows.length > 0) strips.push(makeStrip('kerb', rows, false));
+    if (rows.length > 0) strips.push({ ...makeStrip('kerb', rows, false), segment: { kind: 'kerb', index: ki } });
   }
 
-  for (const seg of track.runoffs) {
+  for (let ri = 0; ri < track.runoffs.length; ri++) {
+    const seg = track.runoffs[ri];
     const start = normIndex(seg.start, n);
     const end = normIndex(seg.end, n);
     const sign = seg.side === 'right' ? 1 : -1;
@@ -587,7 +589,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       (idx, lat) => elev(idx) + RUNOFF_Y + lat * bankTanAt(track, idx),
       UV_SCALE,
     );
-    if (rows.length > 0) strips.push(makeStrip(seg.surface, rows, false));
+    if (rows.length > 0) strips.push({ ...makeStrip(seg.surface, rows, false), segment: { kind: 'runoff', index: ri } });
   }
 
   const escapeStrips = escapeRoadStrips(track);

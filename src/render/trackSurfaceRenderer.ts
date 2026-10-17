@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
-import type { ResolvedTrackStyle } from '../track/trackStyle';
-import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMaterials';
+import { segmentOverride, type ResolvedTrackStyle } from '../track/trackStyle';
+import {
+  createSurfaceMaterial,
+  type SurfaceMaterialKind,
+  type SurfaceMaterialUserData,
+  type SurfacePaint,
+} from './surfaceMaterials';
 
 export interface TrackSurfaceOptions {
   loadTexture?: (url: string) => THREE.Texture;
@@ -18,6 +23,25 @@ const MESH_NAME: Partial<Record<Surface, string>> = {
   runoff: 'runoff',
 };
 
+interface PaintUserData {
+  pattern: 'solid' | 'stripes' | 'bands';
+  colors: string[];
+  stripeMeters: number;
+}
+
+interface BucketPlan {
+  key: string;
+  prefix: string;
+  kind: SurfaceMaterialKind;
+  paint?: SurfacePaint;
+  meshPaint?: PaintUserData;
+}
+
+interface Bucket extends Omit<BucketPlan, 'key' | 'prefix'> {
+  name: string;
+  strips: SurfaceStrip[];
+}
+
 function defaultLoadTexture(url: string): THREE.Texture {
   const texture =
     typeof document !== 'undefined' ? new THREE.TextureLoader().load(url) : new THREE.Texture();
@@ -25,26 +49,99 @@ function defaultLoadTexture(url: string): THREE.Texture {
   return texture;
 }
 
+/** Kerb colour pair of a strip: range override, section colours, or null (renderer default). */
+function kerbColors(
+  style: ResolvedTrackStyle | undefined,
+  track: TrackDataV2 | undefined,
+  strip: SurfaceStrip,
+): [string, string] | null {
+  if (!style || !track || strip.segment?.kind !== 'kerb') return null;
+  const seg = track.kerbs[strip.segment.index];
+  if (!seg) return null;
+  return segmentOverride(style.kerbs.ranges, seg, track.centerline.length)?.colors ?? style.kerbs.colors ?? null;
+}
+
+/** Paint of a run-off strip; undefined when it stays on the plain runoff mesh. */
+function runoffPaintOf(
+  style: ResolvedTrackStyle | undefined,
+  track: TrackDataV2 | undefined,
+  strip: SurfaceStrip,
+): PaintUserData | undefined {
+  if (!style || !track || strip.segment?.kind !== 'runoff') return undefined;
+  const seg = track.runoffs[strip.segment.index];
+  if (!seg) return undefined;
+  const over = segmentOverride(style.runoffPaint.ranges, seg, track.centerline.length);
+  const pattern = over?.pattern ?? style.runoffPaint.pattern;
+  const colors = over?.colors ?? style.runoffPaint.colors;
+  if (pattern === 'none' || colors.length === 0) return undefined;
+  return { pattern, colors, stripeMeters: over?.stripeMeters ?? style.runoffPaint.stripeMeters };
+}
+
+function planBucket(
+  strip: SurfaceStrip,
+  style?: ResolvedTrackStyle,
+  track?: TrackDataV2,
+): BucketPlan {
+  if (strip.surface === 'kerb') {
+    const colors = kerbColors(style, track, strip);
+    return {
+      key: `kerb:${colors ? colors.join('|') : 'default'}`,
+      prefix: 'kerbs',
+      kind: 'kerb',
+      paint: colors ? { stripeColors: colors } : undefined,
+    };
+  }
+  if (strip.surface === 'runoff') {
+    const meshPaint = runoffPaintOf(style, track, strip);
+    if (meshPaint) {
+      return {
+        key: `paint:${meshPaint.pattern}:${meshPaint.colors.join('|')}:${meshPaint.stripeMeters}`,
+        prefix: 'runoffPaint',
+        kind: 'runoff',
+        paint: { pattern: meshPaint.pattern, colors: meshPaint.colors, stripeMeters: meshPaint.stripeMeters },
+        meshPaint,
+      };
+    }
+  }
+  return { key: strip.surface, prefix: MESH_NAME[strip.surface] ?? strip.surface, kind: strip.surface };
+}
+
 export function createTrackSurfaceObject(
   strips: SurfaceStrip[],
   options?: TrackSurfaceOptions,
 ): TrackSurfaceObject {
   const loadTexture = options?.loadTexture ?? defaultLoadTexture;
-  const bySurface = new Map<Surface, SurfaceStrip[]>();
+  const style = options?.style;
+  const track = options?.track;
+  const buckets = new Map<string, Bucket>();
+  const nameCount = new Map<string, number>();
   for (const strip of strips) {
     if (!MESH_NAME[strip.surface]) continue;
-    const same = bySurface.get(strip.surface) ?? [];
-    same.push(strip);
-    bySurface.set(strip.surface, same);
+    const plan = planBucket(strip, style, track);
+    const existing = buckets.get(plan.key);
+    if (existing) {
+      existing.strips.push(strip);
+      continue;
+    }
+    const count = nameCount.get(plan.prefix) ?? 0;
+    nameCount.set(plan.prefix, count + 1);
+    buckets.set(plan.key, {
+      name: count === 0 ? plan.prefix : `${plan.prefix}:${count}`,
+      kind: plan.kind,
+      paint: plan.paint,
+      meshPaint: plan.meshPaint,
+      strips: [strip],
+    });
   }
 
   const group = new THREE.Group();
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.MeshStandardMaterial[] = [];
   const textures = new Set<THREE.Texture>();
-  const macro = bySurface.size > 0 ? loadTexture('textures/macro-noise.png') : undefined;
+  const macro = buckets.size > 0 ? loadTexture('textures/macro-noise.png') : undefined;
 
-  for (const [surface, same] of bySurface) {
+  for (const bucket of buckets.values()) {
+    const same = bucket.strips;
     const vertexCount = same.reduce((n, s) => n + s.positions.length / 3, 0);
     const positions = new Float32Array(vertexCount * 3);
     const uvs = new Float32Array(vertexCount * 2);
@@ -66,14 +163,15 @@ export function createTrackSurfaceObject(
     geometry.computeVertexNormals();
     geometries.push(geometry);
 
-    const material = createSurfaceMaterial(surface, loadTexture, macro);
+    const material = createSurfaceMaterial(bucket.kind, loadTexture, macro, style, bucket.paint);
     materials.push(material);
     for (const texture of (material.userData as SurfaceMaterialUserData).textures) {
       textures.add(texture);
     }
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = MESH_NAME[surface]!;
+    mesh.name = bucket.name;
+    if (bucket.meshPaint) mesh.userData = bucket.meshPaint;
     mesh.receiveShadow = true;
     group.add(mesh);
   }

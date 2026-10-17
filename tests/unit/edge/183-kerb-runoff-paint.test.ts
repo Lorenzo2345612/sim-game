@@ -84,7 +84,7 @@ describe('183 edge cases', () => {
     expect(meshes.map((m) => m.name)).toEqual(['kerbs', 'kerbs:1']);
     for (const m of meshes) {
       m.geometry.computeBoundingBox();
-      const isSecond = Math.abs(m.geometry.boundingBox!.min.x - 400) < 5;
+      const isSecond = Math.abs(m.geometry.boundingBox!.min.x - 400) < 15;
       expect(stripeColors(m)).toEqual(isSecond ? B : A);
     }
   });

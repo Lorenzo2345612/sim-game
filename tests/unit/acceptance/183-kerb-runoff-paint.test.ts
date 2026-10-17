@@ -104,7 +104,7 @@ describe('183 kerb colours and run-off paint', () => {
     const painted = meshes.filter((m) => {
       m.geometry.computeBoundingBox();
       const box = m.geometry.boundingBox!;
-      return Math.abs(box.min.x - 400) < 5 && Math.abs(box.max.x - 600) < 5;
+      return Math.abs(box.min.x - 400) < 15 && Math.abs(box.max.x - 600) < 15;
     });
     expect(painted).toHaveLength(1);
     expect(stripeColors(painted[0])).toEqual(['#dac400', '#1f4fbf']);

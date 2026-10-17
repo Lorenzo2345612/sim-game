@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 import { registerWhitePaint } from './sceneSetup';
 
 export type SurfaceMaterialKind = 'asphalt' | 'runoff' | 'gravel' | 'grass' | 'kerb' | 'concrete';
@@ -8,6 +9,17 @@ export interface SurfaceMaterialUserData {
   saturation: number;
   tint: number;
   textures: THREE.Texture[];
+  stripeColors?: [string, string] | null;
+  pattern?: 'solid' | 'stripes' | 'bands';
+  colors?: string[];
+  stripeMeters?: number;
+}
+
+export interface SurfacePaint {
+  stripeColors?: [string, string];
+  pattern?: 'solid' | 'stripes' | 'bands';
+  colors?: string[];
+  stripeMeters?: number;
 }
 
 interface KindConfig {
@@ -86,11 +98,42 @@ function applyKerbStripes(shader: THREE.WebGLProgramParametersWithUniforms): voi
     );
 }
 
+/** Run-off paint: paint colour modulated by the albedo luminance; block index from uv (metres / stripeMeters). */
+function applyRunoffPaint(shader: THREE.WebGLProgramParametersWithUniforms): void {
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      '#include <common>',
+      '#include <common>\nuniform vec3 uPaintColors[4];\nuniform int uPaintCount;\nuniform float uPaintStripe;\nuniform int uPaintMode;',
+    )
+    .replace(
+      'diffuseColor *= sampledDiffuseColor;',
+      `float paintLum = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+	float paintShade = clamp( paintLum / 0.3, 0.6, 1.2 );
+	float paintBlock = 0.0;
+	if ( uPaintMode == 1 ) paintBlock = floor( vMapUv.y * 8.0 / uPaintStripe );
+	else if ( uPaintMode == 2 ) paintBlock = floor( abs( vMapUv.x ) * 8.0 / uPaintStripe );
+	int paintIndex = int( mod( paintBlock, float( max( uPaintCount, 1 ) ) ) );
+	vec3 paintCol = uPaintColors[0];
+	if ( paintIndex > 0 ) paintCol = uPaintColors[1];
+	if ( paintIndex > 1 ) paintCol = uPaintColors[2];
+	if ( paintIndex > 2 ) paintCol = uPaintColors[3];
+	if ( uPaintMode == 0 || uPaintCount != 1 || mod( paintBlock, 2.0 ) < 0.5 ) {
+		sampledDiffuseColor.rgb = paintCol * paintShade;
+	}
+	diffuseColor *= sampledDiffuseColor;`,
+    );
+}
+
+const PAINT_MODE: Record<'solid' | 'stripes' | 'bands', number> = { solid: 0, stripes: 1, bands: 2 };
+
 export function createSurfaceMaterial(
   kind: SurfaceMaterialKind,
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
   macro?: THREE.Texture,
+  style?: ResolvedTrackStyle /* accepted, unused until 184 */,
+  paint?: SurfacePaint,
 ): THREE.MeshStandardMaterial {
+  void style;
   const config = KINDS[kind];
   const material = new THREE.MeshStandardMaterial();
   const map = loadTexture(`textures/${config.dir}/color.jpg`);
@@ -113,6 +156,11 @@ export function createSurfaceMaterial(
   material.normalMap = normalMap;
   material.roughnessMap = roughnessMap;
 
+  const activePaint =
+    kind === 'runoff' && paint?.pattern
+      ? { pattern: paint.pattern, colors: paint.colors ?? [], stripeMeters: paint.stripeMeters ?? 2 }
+      : undefined;
+
   const uniforms: Record<string, THREE.IUniform> = {
     uMacro: { value: macroTexture },
     uSaturation: { value: config.saturation },
@@ -120,20 +168,42 @@ export function createSurfaceMaterial(
   };
   if (config.kerb) {
     const stripeWhite = new THREE.Color(0.7, 0.7, 0.7);
-    uniforms.uStripeA = { value: new THREE.Vector3(0.78, 0.1, 0.1) };
-    uniforms.uStripeB = { value: new THREE.Vector3(stripeWhite.r, stripeWhite.g, stripeWhite.b) };
+    const stripeA = paint?.stripeColors ? new THREE.Color(paint.stripeColors[0]) : new THREE.Color(0.78, 0.1, 0.1);
+    const stripeB = paint?.stripeColors ? new THREE.Color(paint.stripeColors[1]) : stripeWhite;
+    uniforms.uStripeA = { value: new THREE.Vector3(stripeA.r, stripeA.g, stripeA.b) };
+    uniforms.uStripeB = { value: new THREE.Vector3(stripeB.r, stripeB.g, stripeB.b) };
     registerWhitePaint({ color: stripeWhite });
+  }
+  if (activePaint) {
+    const cols = activePaint.colors;
+    const paintColors = Array.from(
+      { length: 4 },
+      (_, i) => {
+        const hex = i < cols.length ? cols[i] : cols[cols.length - 1];
+        const c = hex === undefined ? new THREE.Color(0, 0, 0) : new THREE.Color(hex);
+        return new THREE.Vector3(c.r, c.g, c.b);
+      },
+    );
+    uniforms.uPaintColors = { value: paintColors };
+    uniforms.uPaintCount = { value: Math.min(cols.length, 4) };
+    uniforms.uPaintStripe = { value: activePaint.stripeMeters };
+    uniforms.uPaintMode = { value: PAINT_MODE[activePaint.pattern] };
   }
   material.onBeforeCompile = (shader) => {
     applyAntiTiling(shader, uniforms);
     if (config.kerb) applyKerbStripes(shader);
+    if (activePaint) applyRunoffPaint(shader);
   };
-  material.customProgramCacheKey = () => `surface-${kind}`;
+  material.customProgramCacheKey = () => `surface-${kind}${activePaint ? `-paint-${activePaint.pattern}` : ''}`;
   material.userData = {
     tileMeters: config.tileMeters,
     saturation: config.saturation,
     tint: config.tint,
     textures: owned,
+    ...(config.kerb ? { stripeColors: paint?.stripeColors ?? null } : {}),
+    ...(activePaint
+      ? { pattern: activePaint.pattern, colors: activePaint.colors, stripeMeters: activePaint.stripeMeters }
+      : {}),
   } satisfies SurfaceMaterialUserData;
   return material;
 }
