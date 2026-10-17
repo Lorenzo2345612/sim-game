@@ -95,7 +95,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 090 | AI traffic decisions and difficulty | done | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
-| 093 | Multi-car race game | in progress | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
+| 093 | Multi-car race game | done | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119, 207 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094, 171 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |

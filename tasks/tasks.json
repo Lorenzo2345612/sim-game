@@ -1245,7 +1245,7 @@
     {
       "num": "093",
       "title": "Multi-car race game",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "008",
         "043",
