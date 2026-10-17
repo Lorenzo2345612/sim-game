@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#7A7B7E", "grass": "#5E8A3C", "gravel": "#B8A98A" },
+  "kerbs": { "colors": ["#B03A3A", "#DADADA"] },
+  "barriers": {
+    "concrete": { "color": "#B9B6AD", "bandColor": "#2A4D9B" },
+    "armco": { "color": "#A8ABAE" },
+    "fence": { "heightMeters": 4.5, "types": ["armco", "wall"], "color": "#A8ABAE" }
+  },
+  "pitBuilding": {
+    "storeys": 2, "heightMeters": 8, "depthMeters": 15,
+    "facade": "#8A5A44", "roof": "#9B2D2D", "doors": "#B03A3A"
+  },
+  "grandstands": { "structure": "#9B2D2D", "roof": "#8E9094", "seats": ["#B03A3A", "#D4A82A", "#8E9094"], "roofStyle": "flat" },
+  "props": [
+    { "type": "scoreboard", "index": 1104, "side": "right", "offsetMeters": 90, "heightMeters": 30, "color": "#B03A3A" }
+  ]
+}
