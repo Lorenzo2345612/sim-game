@@ -3075,7 +3075,7 @@
     {
       "num": "224",
       "title": "OW-26 3D model through the car pipeline",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "221"
       ],
