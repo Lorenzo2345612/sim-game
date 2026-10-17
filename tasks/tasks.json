@@ -2697,7 +2697,7 @@
     {
       "num": "195",
       "title": "Fontana style file (data only)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188",
@@ -2712,7 +2712,7 @@
     {
       "num": "196",
       "title": "Elkhart Lake style file (data only)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -3074,7 +3074,7 @@
     {
       "num": "224",
       "title": "OW-26 3D model through the car pipeline",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "221"
       ],

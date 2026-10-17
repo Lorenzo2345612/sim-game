@@ -196,8 +196,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 192 | Spielberg track style data | done | 181, 188 |
 | 193 | Mexico City track style data | in progress | 181, 188 |
 | 194 | Daytona style file (data only) | in progress | 181, 188 |
-| 195 | Fontana style file (data only) | pending | 181, 188, 168 |
-| 196 | Elkhart Lake style file (data only) | pending | 181, 188 |
+| 195 | Fontana style file (data only) | in progress | 181, 188, 168 |
+| 196 | Elkhart Lake style file (data only) | in progress | 181, 188 |
 | 197 | Road Atlanta (Braselton) style file (data only) | pending | 181, 188 |
 | 198 | Cleveland style file (data only) | pending | 181, 188, 168 |
 | 199 | Detroit style file (data only) | pending | 181, 188, 168 |
@@ -225,7 +225,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 221 | OW-26 car definition and calibration | done | 219 |
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
-| 224 | OW-26 3D model through the car pipeline | in progress | 221 |
+| 224 | OW-26 3D model through the car pipeline | waiting decision | 221 |
 | 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | pending | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | pending | 226 |
