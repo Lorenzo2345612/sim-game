@@ -201,7 +201,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 197 | Road Atlanta (Braselton) style file (data only) | done | 181, 188 |
 | 198 | Cleveland style file (data only) | done | 181, 188, 168 |
 | 199 | Detroit style file (data only) | done | 181, 188, 168 |
-| 200 | Baku style data (`baku.style.json`) | in progress | 181, 188 |
+| 200 | Baku style data (`baku.style.json`) | done | 181, 188 |
 | 201 | Singapore style data (`singapore.style.json`) | done | 181, 188 |
 | 202 | Las Vegas style data (`lasvegas.style.json`) | done | 181, 188 |
 | 203 | Bahrain style data (`bahrain.style.json`) | done | 181, 188 |

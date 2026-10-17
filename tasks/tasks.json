@@ -2770,7 +2770,7 @@
     {
       "num": "200",
       "title": "Baku style data (`baku.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
