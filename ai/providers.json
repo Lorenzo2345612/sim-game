@@ -28,42 +28,42 @@
       "model": "mimo-v2.6-flash",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/acceptance.md",
-      "timeoutMin": 20
+      "timeoutMin": 30
     },
     "tester-pre": {
       "provider": "mimo",
       "model": "mimo-v2.6-flash",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/tester-pre.md",
-      "timeoutMin": 20
+      "timeoutMin": 30
     },
     "coder": {
       "provider": "mimo",
       "model": "mimo-v2.6-flash",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/coder.md",
-      "timeoutMin": 25
+      "timeoutMin": 35
     },
     "tester": {
       "provider": "mimo",
       "model": "mimo-v2.6-flash",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/tester.md",
-      "timeoutMin": 25
+      "timeoutMin": 35
     },
     "reviewer": {
       "provider": "mimo",
       "model": "mimo-v2.6-flash",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/reviewer.md",
-      "timeoutMin": 20
+      "timeoutMin": 30
     },
     "fixer": {
       "provider": "mimo",
       "model": "mimo-v2.6-pro",
       "heavyModel": "mimo-v2.6-pro",
       "prompt": "ai/agents/coder.md",
-      "timeoutMin": 25
+      "timeoutMin": 35
     }
   },
   "fallback": {
