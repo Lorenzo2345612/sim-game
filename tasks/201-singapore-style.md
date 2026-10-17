@@ -25,6 +25,11 @@ Use `npm run track:locate -- singapore <lat> <lon>` (task 181) for centerline in
 5. `pitBuilding` (pits left, ~350 m): storeys 3, heightMeters 16, depthMeters 20, facade `#dadada`, roof `#5aa092`, doors `#3a3a3c`, accent `#dac000`, roofStyle `curved`, glazing 0.4.
 6. `grandstands`: structure `#8d9195`, roof `#d0d4d6`, seats `#2f6fc2`,`#dab800`, roofStyle `truss`; 2 `extraGrandstands` (Padang and Raffles Ave areas, found with track:locate).
 7. `props`: `[]`. No `sky` key (day HDRI).
+## Time budget (planner, after MiMo timeouts)
+
+- Sources are only the spec, `docs/design/track-style.md`, `docs/research/tracks/<id>-visual.md`, the track json, an existing `*.style.json` as template and `npm run track:locate`. No web search, no WebFetch, no Overpass/OSM queries, no EXIF or photo analysis.
+- Write the style json within your first 15 tool calls, then run the task tests and iterate. Where the research note is vague, choose plausible values that satisfy the acceptance table.
+
 ## Shared brand helper
 
 `tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):

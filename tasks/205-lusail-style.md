@@ -25,6 +25,11 @@ Use `npm run track:locate -- lusail <lat> <lon>` (task 181) for centerline indic
 5. `pitBuilding` (~400 m): storeys 2, heightMeters 10, depthMeters 18, facade `#dadada`, roof `#dadada`, doors `#2a2a2c`, accent `#7a1f2f`, roofStyle `folded`, glazing 0.3.
 6. `grandstands`: structure `#c0c4c8`, roof `#dadada`, seats `#7a1f2f`,`#dadada`, roofStyle `truss`; 1 `extraGrandstands` main stand on the straight.
 7. `props`: 3 `tent` props, color `#dadada`, paddock side. No `sky` key.
+## Time budget (planner, after MiMo timeouts)
+
+- Sources are only the spec, `docs/design/track-style.md`, `docs/research/tracks/<id>-visual.md`, the track json, an existing `*.style.json` as template and `npm run track:locate`. No web search, no WebFetch, no Overpass/OSM queries, no EXIF or photo analysis.
+- Write the style json within your first 15 tool calls, then run the task tests and iterate. Where the research note is vague, choose plausible values that satisfy the acceptance table.
+
 ## Shared brand helper
 
 `tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):

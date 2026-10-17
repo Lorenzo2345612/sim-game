@@ -32,6 +32,11 @@ Encode only these (schema-supported; skip the rest of the doc). Row C2 also requ
 5. Very bright green `palette.grass`; pea-gravel `palette.gravel` light or cream.
 6. Right-side pit building, low (1 storey), modest garages.
 
+## Time budget (planner, after MiMo timeouts)
+
+- Sources are only the spec, `docs/design/track-style.md`, `docs/research/tracks/<id>-visual.md`, the track json, an existing `*.style.json` as template and `npm run track:locate`. No web search, no WebFetch, no Overpass/OSM queries, no EXIF or photo analysis.
+- Write the style json within your first 15 tool calls, then run the task tests and iterate. Where the research note is vague, choose plausible values that satisfy the acceptance table.
+
 ## Shared brand helper
 
 `tests/unit/acceptance/helpers/brands.ts` is not on master (188 closed without it). If it is missing in your worktree, the acceptance worker creates it with exactly this content (byte-identical across style tasks so merges are clean; trailing newline, nothing else):
