@@ -1269,7 +1269,7 @@
     {
       "num": "094",
       "title": "Race HUD and AI car rendering",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "057",
         "092",
@@ -2003,7 +2003,7 @@
     {
       "num": "145",
       "title": "Contact impacts from Rapier into the damage model",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "070",
         "093",
@@ -2089,7 +2089,7 @@
     {
       "num": "151",
       "title": "Performance harness and budgets",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3125,7 +3125,7 @@
     {
       "num": "228",
       "title": "EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "227"
       ],
