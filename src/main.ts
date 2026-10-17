@@ -36,6 +36,7 @@ import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
 import { createSausages } from './render/sausageRenderer';
+import { createKerbOuterStrips } from './render/kerbOuterStrip';
 import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createLandmarks } from './render/landmarks';
 import { createDistanceBoards } from './render/distanceBoards';
@@ -72,6 +73,7 @@ export interface SceneStats {
   treeInstances: number;
   grandstands: number;
   style: { id: string; loaded: boolean; warnings: number; extraGrandstands: number };
+  kerbOuterStripMeters: number;
   pitBuildings: number;
   startGantries: number;
   distanceBoards: number;
@@ -577,6 +579,7 @@ async function startGame(trackId: string): Promise<void> {
     treeInstances: 0,
     grandstands: 0,
     style: { id: '', loaded: false, warnings: 0, extraGrandstands: 0 },
+    kerbOuterStripMeters: 0,
     pitBuildings: 0,
     startGantries: 0,
     distanceBoards: 0,
@@ -691,6 +694,13 @@ async function startGame(trackId: string): Promise<void> {
     const lights = createStartLights(track);
     lights.setLights(0);
     scene.add(lights.object);
+
+    const kerbOuter = createKerbOuterStrips(track, trackStyle);
+    if (kerbOuter !== null) {
+      scene.add(kerbOuter.group);
+      disposables.push(kerbOuter);
+      stats.kerbOuterStripMeters = kerbOuter.group.userData.meters as number;
+    }
 
     stats.barriers = barriers.group.children.length;
     stats.sausages = sausages.count;

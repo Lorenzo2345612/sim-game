@@ -2,7 +2,7 @@ import { KERB_WIDTH } from '../core/constants';
 import type { Side, Surface, SurfaceStrip, TrackDataV2, TrackSegment } from '../core/types';
 
 const ASPHALT_Y = 0.02;
-const KERB_Y = 0.04;
+export const KERB_Y = 0.04;
 const RUNOFF_Y = 0.01;
 const UV_SCALE = 10;
 const KERB_UV_V = 1.5;
