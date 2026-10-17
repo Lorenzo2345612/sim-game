@@ -2798,7 +2798,7 @@
     {
       "num": "202",
       "title": "Las Vegas style data (`lasvegas.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
