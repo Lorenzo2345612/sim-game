@@ -3328,7 +3328,7 @@
     {
       "num": "244",
       "title": "Engine voice timbre v2.1 (approved preview)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "228",
         "231"
@@ -3407,6 +3407,32 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/249-qa-clearance-checks.md"
+    },
+    {
+      "num": "250",
+      "title": "Bollard placement",
+      "status": "pending",
+      "deps": [
+        "248"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/250-bollard-placement.md"
+    },
+    {
+      "num": "251",
+      "title": "Knock-over bollards at runtime",
+      "status": "pending",
+      "deps": [
+        "250"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/251-bollard-knockover.md"
     }
   ]
 }
