@@ -152,7 +152,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
-| 151 | Performance harness and budgets | in progress | 093 |
+| 151 | Performance harness and budgets | waiting decision | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
@@ -237,12 +237,17 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | waiting decision | 233 |
-| 236 | Pit building split into grounded pieces along the pit lane | waiting decision | 234 |
+| 236 | Pit building split into grounded pieces along the pit lane | in progress | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
-| 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | waiting decision | - |
+| 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | in progress | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | in progress | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | pending | 228, 231 |
+| 245 | Kerbs never fold over the asphalt (radius cap, split strips) | pending | - |
+| 246 | Barriers never fold onto the inner kerb | pending | 235 |
+| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | pending | 240, 241 |
+| 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
+| 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |

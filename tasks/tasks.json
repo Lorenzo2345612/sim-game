@@ -2089,7 +2089,7 @@
     {
       "num": "151",
       "title": "Performance harness and budgets",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "093"
       ],
@@ -3225,7 +3225,7 @@
     {
       "num": "236",
       "title": "Pit building split into grounded pieces along the pit lane",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "234"
       ],
@@ -3280,7 +3280,7 @@
     {
       "num": "240",
       "title": "Smooth bank transitions on ovals (auto ramp, smoothstep)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3338,6 +3338,75 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/244-engine-voice-timbre.md"
+    },
+    {
+      "num": "245",
+      "title": "Kerbs never fold over the asphalt (radius cap, split strips)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/245-kerb-no-fold.md"
+    },
+    {
+      "num": "246",
+      "title": "Barriers never fold onto the inner kerb",
+      "status": "pending",
+      "deps": [
+        "235"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/246-barrier-no-fold.md"
+    },
+    {
+      "num": "247",
+      "title": "Sausage kerbs fit the corner (length, offset, curved render/colliders)",
+      "status": "pending",
+      "deps": [
+        "240",
+        "241"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/247-sausage-fit-corner.md"
+    },
+    {
+      "num": "248",
+      "title": "Pit building clears run-off and the pit wall",
+      "status": "pending",
+      "deps": [
+        "236",
+        "247"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/248-pit-clears-runoff.md"
+    },
+    {
+      "num": "249",
+      "title": "QA report: kerb, barrier-fold, sausage, pit-clear checks",
+      "status": "pending",
+      "deps": [
+        "237",
+        "245",
+        "246",
+        "247",
+        "248"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/249-qa-clearance-checks.md"
     }
   ]
 }
