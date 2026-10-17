@@ -39,6 +39,11 @@ Values per car (`E8` = `evenFiring(8)` values written out literally; `alt` = ban
 
 Key order inside `synth`: as in the columns. `turbo`/`whine` absent for cars without them (parser default null). No two `sound.synth` objects may be deep-equal.
 
+## Planner-authorised edit (decision 231-coder)
+
+- `tests/unit/acceptance/215-hybrid-contract.test.ts` AT1: compare both parsed specs with their `sound` field removed (destructure `sound` out of each, then `toEqual`); hybrid/activeAero assertions unchanged. Nothing else in that file.
+- Coder's listed choices (key order, literal evenFiring arrays, multi-line sound blocks) are accepted.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
