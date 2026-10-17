@@ -3238,7 +3238,7 @@
     {
       "num": "237",
       "title": "Track QA report CLI: clearance, relief, layout checks",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "235",
         "236"
