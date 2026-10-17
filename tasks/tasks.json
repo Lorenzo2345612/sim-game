@@ -2840,7 +2840,7 @@
     {
       "num": "205",
       "title": "Lusail style data (`lusail.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
