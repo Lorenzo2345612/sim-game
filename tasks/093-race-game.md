@@ -86,3 +86,7 @@ Frozen tests: none need editing (single-car physics, `Game` and `/?track=` flows
 ## Planner-authorised test edit (EDGE8)
 
 `tests/unit/edge/093-race-game-edge.test.ts`: delete the EDGE8 test case (difficulty pace). At speedScale 1.0 the expert AI spins at the first chicane, so it cannot pass with 093's wiring; the check moves to task 225 (AI grip margin). Nothing else in that file. Difficulty wiring stays `speedScale` only.
+
+## Merge note (planner)
+
+master gained 117 (virtual mirror), 118 (head motion, cockpit FOV) and 174 (banking) in `src/main.ts`, `src/game/game.ts`, `src/physics/vehicleModel.ts`. In the worktree: `git merge master`; in `src/main.ts` keep both sides (093's `sim`/`RaceGame` wiring plus master's `loadCockpitSettings`, `HeadMotion`, `VirtualMirror`, `loadMirrorSetting` — rename master's `game.` references in those hunks to `sim.` where 093 renamed it); commit the merge, then squash so the branch is linear: `git reset --soft master && git commit -m "feat: Race game (task 093)"`. Re-run Verification (incl. 117/118/174 tests).
