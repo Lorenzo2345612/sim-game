@@ -46,6 +46,7 @@ import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
+import { createFloodlights } from './render/floodlights';
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
 import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
@@ -74,6 +75,7 @@ export interface SceneStats {
   escapeRoads: number;
   treeInstances: number;
   grandstands: number;
+  floodlights: number;
   style: { id: string; loaded: boolean; warnings: number; extraGrandstands: number };
   kerbOuterStripMeters: number;
   pitBuildings: number;
@@ -537,6 +539,7 @@ async function startGame(trackId: string): Promise<void> {
     escapeRoads: 0,
     treeInstances: 0,
     grandstands: 0,
+    floodlights: 0,
     style: { id: '', loaded: false, warnings: 0, extraGrandstands: 0 },
     kerbOuterStripMeters: 0,
     pitBuildings: 0,
@@ -609,6 +612,13 @@ async function startGame(trackId: string): Promise<void> {
     const barriers = createBarrierObject(track, undefined, trackStyle);
     scene.add(barriers.group);
     disposables.push(barriers);
+
+    const floodlights = createFloodlights(track, trackStyle);
+    if (floodlights !== null) {
+      scene.add(floodlights.group);
+      disposables.push(floodlights);
+      stats.floodlights = floodlights.group.userData.poles as number;
+    }
 
     const sausages = createSausages(track);
     scene.add(sausages.group);
