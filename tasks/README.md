@@ -229,7 +229,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
-| 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | in progress | 227 |
+| 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | done | 227 |
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
 | 231 | Per-car engine synth data | done | 226 |
