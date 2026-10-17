@@ -61,8 +61,8 @@ Builder input: `water` features of `assets/source/osm/<id>-areas.json` (lines wi
 
 - Terrain: inside each corridor (line buffered by width/2, or polygon) the heightfield is lowered by `depth` = 2.0 m with a cosine bank of 3 m outside the corridor edge.
 - Crossings: where the centerline crosses a corridor, a bridge spans the corridor plus 5 m abutments each side. Track elevation over the span is linear between the abutment ends (their original elevations).
-- Output in track JSON: `bridges?: { from: number; to: number }[]` (centerline indices, inclusive) and `arroyos?: { line: [x,z][]; width: number }[]`; barriers: `wall` segments, offset = half width + 0.3, on both sides over every bridge span.
-- Render: bed with the existing gravel/sand runoff material; deck slab 0.6 m thick, width = track width + 2 m, under the track; parapets 1.0 m high, 0.3 m thick along the span (concrete); piers 1.2 m square every 15 m when the span > 20 m. Tree density on banks (within 15 m of the corridor edge) ×3 the biome density.
+- Output in track JSON: `bridges?: { from: number; to: number }[]` (centerline indices, inclusive) and `arroyos?: { line: [x,z][]; width: number }[]`; barriers: `wall` segments, offset = half width + 1.25, on both sides over every bridge span.
+- Render: bed with the existing gravel/sand runoff material; deck slab 0.6 m thick, width = track width + 2 m, under the track; concrete deck (the real crossings are concrete causeways with masonry sides, per the user); stone-masonry parapets 0.7 m high, 0.5 m thick, centred at half width + 1.25; stone-masonry side walls on both sides along the span from the bed up to the deck top; no piers. Tree density on banks (within 15 m of the corridor edge) ×3 the biome density.
 
 | ID | Given | When | Then |
 |---|---|---|---|
@@ -71,8 +71,8 @@ Builder input: `water` features of `assets/source/osm/<id>-areas.json` (lines wi
 | AT3 | unit: G | sample terrain heights at (500, 200) and (500 ± 21, 200) and (500 ± 30, 200) | (500,200) = −2.0 ± 0.1; ±21 between −2.0 and 0; ±30 = 0 ± 0.05 |
 | AT4 | unit: G | elevation per index outside the bridge span | equal to the same build without water ± 1e-9 |
 | AT5 | unit: G with `arroyo` absent | build | output deep-equal to the build of G without water; no `bridges`/`arroyos` keys |
-| AT6 | unit: G | barriers | `wall` segments on left and right covering the bridge index range, offset 6.3 ± 0.01 |
-| AT7 | unit: render bridge builder on G's bridge | inspect | two parapet meshes (or instances) of length 40 ± 0.5, height 1.0 above the deck top; deck top within 0.05 m below the track surface; piers count = floor-based rule (span 40 → 2) |
+| AT6 | unit: G | barriers | `wall` segments on left and right covering the bridge index range, offset 7.25 ± 0.01 |
+| AT7 | unit: render bridge builder on G's bridge | inspect | two stone parapets (meshes or instances) of length 40 ± 0.5, 0.7 ± 0.01 high above the deck top, 0.5 thick, centred at lateral offset half width + 1.25 ± 0.01; two stone side walls along the span whose bottom at mid-span is ≤ `terrainY` + 0.05 and top = deck top ± 0.01; parapet and side-wall materials use the stone texture set (`textures/stone/old-wall`); deck top within 0.05 m below the track surface; no piers |
 | AT8 | unit: `public/tracks/ermita-federal.json` and `ermita-poniente.json` | read `bridges` | federal has a bridge whose midpoint is within 30 m of the real OSM bridge crossing listed in `mx-ermita.md`; poniente likewise |
 | AT9 | unit: every non-ermita `public/tracks/*.json` | compare with master | byte-identical |
 | AT10 | unit: each ermita track | trees within 15 m of an arroyo corridor edge | density ≥ 2× the density 50–100 m away |

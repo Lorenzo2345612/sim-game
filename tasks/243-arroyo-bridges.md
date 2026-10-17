@@ -10,7 +10,7 @@ Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
 
-Where an Ermita track crosses the river or a stream (`water` features of `assets/source/osm/<id>-areas.json`), the builder carves a 2 m dry bed into the terrain, raises a bridge over it (linear track elevation, wall barriers) and the renderer draws bed, deck, parapets and piers; trees densify on the banks.
+Where an Ermita track crosses the river or a stream (`water` features of `assets/source/osm/<id>-areas.json`), the builder carves a 2 m dry bed into the terrain, raises a bridge over it (linear track elevation, wall barriers) and the renderer draws bed, concrete deck and stone-masonry parapets and side walls; trees densify on the banks.
 
 ## Context
 
@@ -47,10 +47,10 @@ Rules:
 - `applyBridgeElevation`: inside `[from, to]` elevation is linear in index between `elevation[from]` and `elevation[to]`; everything outside is copied unchanged.
 - `arroyoDepthAt`: `ARROYO_DEPTH` when distance d to the nearest corridor line ≤ `width/2`; for d in (`width/2`, `width/2 + ARROYO_BANK`) `ARROYO_DEPTH · 0.5 · (1 + cos(π (d − width/2) / ARROYO_BANK))`; else 0; max over arroyos.
 - `buildTerrain(..., bank?, arroyos?: Arroyo[], bridges?: Bridge[])`: after the existing per-node logic subtract `arroyoDepthAt` from the node, except nodes whose nearest-centerline distance ≤ `widthMeters / 2 + 5` and whose nearest centerline index lies outside every bridge span (they keep the road-corridor height). Round like the existing code (`Math.round(h * 100) / 100`). Without `arroyos` the output is unchanged.
-- `layoutBarriers` with bridges: for every index in a bridge span on both sides the barrier is `type: 'wall'`, `offsetMeters = widthMeters / 2 + 0.3`; neighbouring segments are split at the span boundaries (inclusive indices); outside spans the output is unchanged.
+- `layoutBarriers` with bridges: for every index in a bridge span on both sides the barrier is `type: 'wall'`, `offsetMeters = widthMeters / 2 + 1.25`; neighbouring segments are split at the span boundaries (inclusive indices); outside spans the output is unchanged.
 - `placeTrees`: density multiplier ×3 for candidate points within 15 m of a corridor edge (distance to the line ≤ `width/2 + 15`); keep the 6000 cap and the centerline exclusion.
 
-Render (`bridgeRenderer.ts`), per bridge span (deck follows the track elevation at the two end indices of the span): deck slab 0.6 m thick, width `widthMeters + 2`, top 0.05 m below the track surface, concrete material (`createSurfaceMaterial('concrete', ...)`); two parapets 1.0 m high above the deck top, 0.3 m thick, along both deck edges, length = span length; piers 1.2 m square from the deck underside to `terrainY` every 15 m along the span when the span length > 20 m (count = `floor(spanLength / 15)` centred, span 40 → 2); bed: for each `track.arroyos` line a strip of its `width` draped at `terrainY + 0.05` using `createSurfaceMaterial('gravel', ...)`. Dispose all geometries and materials.
+Render (`bridgeRenderer.ts`), per bridge span (deck follows the track elevation at the two end indices of the span): deck slab 0.6 m thick, width `widthMeters + 2`, top 0.05 m below the track surface, concrete material (`createSurfaceMaterial('concrete', ...)`); two stone-masonry parapets 0.7 m high above the deck top, 0.5 m thick, centred at lateral offset `widthMeters / 2 + 1.25`, length = span length; two stone-masonry side walls (one per side, under each parapet, same thickness) from `terrainY` (sampled along the span; bottom may follow the bed) up to the deck top; both use the stone texture set `textures/stone/old-wall` (load it like `cityRenderer.ts` `loadSet`); no piers (the real crossings are concrete causeways with masonry sides); bed: for each `track.arroyos` line a strip of its `width` draped at `terrainY + 0.05` using `createSurfaceMaterial('gravel', ...)`. Dispose all geometries and materials.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
@@ -61,8 +61,8 @@ Render (`bridgeRenderer.ts`), per bridge span (deck follows the track elevation 
 | AT3 | unit: G | sample terrain heights at (500, 200) and (500 ± 21, 200) and (500 ± 30, 200) | (500,200) = −2.0 ± 0.1; ±21 between −2.0 and 0; ±30 = 0 ± 0.05 |
 | AT4 | unit: G | elevation per index outside the bridge span | equal to the same build without water ± 1e-9 |
 | AT5 | unit: G with `arroyo` absent | build | output deep-equal to the build of G without water; no `bridges`/`arroyos` keys |
-| AT6 | unit: G | barriers | `wall` segments on left and right covering the bridge index range, offset 6.3 ± 0.01 |
-| AT7 | unit: render bridge builder on G's bridge | inspect | two parapet meshes (or instances) of length 40 ± 0.5, height 1.0 above the deck top; deck top within 0.05 m below the track surface; piers count = floor-based rule (span 40 → 2) |
+| AT6 | unit: G | barriers | `wall` segments on left and right covering the bridge index range, offset 7.25 ± 0.01 |
+| AT7 | unit: render bridge builder on G's bridge | inspect | two stone parapets (meshes or instances) of length 40 ± 0.5, 0.7 ± 0.01 high above the deck top, 0.5 thick, centred at lateral offset half width + 1.25 ± 0.01; two stone side walls along the span whose bottom at mid-span is ≤ `terrainY` + 0.05 and top = deck top ± 0.01; parapet and side-wall materials use the stone texture set (`textures/stone/old-wall`); deck top within 0.05 m below the track surface; no piers |
 | AT8 | unit: `public/tracks/ermita-federal.json` and `ermita-poniente.json` | read `bridges` | federal has a bridge whose midpoint is within 30 m of the real OSM bridge crossing listed in `mx-ermita.md`; poniente likewise |
 | AT9 | unit: every non-ermita `public/tracks/*.json` | compare with master | byte-identical |
 | AT10 | unit: each ermita track | trees within 15 m of an arroyo corridor edge | density ≥ 2× the density 50–100 m away |
