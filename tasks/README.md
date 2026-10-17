@@ -95,7 +95,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 090 | AI traffic decisions and difficulty | done | 089 |
 | 091 | Start sequence and grid | done | - |
 | 092 | Race classification | done | - |
-| 093 | Multi-car race game | in progress | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
+| 093 | Multi-car race game | waiting decision | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | pending | 057, 092, 093, 119, 207 |
 | 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094, 171 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
@@ -194,7 +194,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 190 | Silverstone track style data | in progress | 181, 188 |
 | 191 | Budapest track style data | in progress | 181, 188 |
 | 192 | Spielberg track style data | in progress | 181, 188 |
-| 193 | Mexico City track style data | pending | 181, 188 |
+| 193 | Mexico City track style data | in progress | 181, 188 |
 | 194 | Daytona style file (data only) | pending | 181, 188 |
 | 195 | Fontana style file (data only) | pending | 181, 188, 168 |
 | 196 | Elkhart Lake style file (data only) | pending | 181, 188 |
@@ -227,3 +227,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 223 | ERS and active-aero HUD widget | in progress | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | in progress | 221 |
 | 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |
+| 226 | Engine sound spec types, parser and CarSound.synth | pending | - |
+| 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | pending | 226 |
+| 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | pending | 227 |
+| 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
+| 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | pending | - |
+| 231 | Per-car engine synth data | pending | 226 |
+| 232 | Offline engine render tool | pending | 227 |

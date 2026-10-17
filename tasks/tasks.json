@@ -1245,7 +1245,7 @@
     {
       "num": "093",
       "title": "Multi-car race game",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "008",
         "043",
@@ -2669,7 +2669,7 @@
     {
       "num": "193",
       "title": "Mexico City track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -3096,6 +3096,93 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/225-ai-grip-margin.md"
+    },
+    {
+      "num": "226",
+      "title": "Engine sound spec types, parser and CarSound.synth",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/226-engine-sound-spec.md"
+    },
+    {
+      "num": "227",
+      "title": "EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew",
+      "status": "pending",
+      "deps": [
+        "226"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/227-engine-voice-core.md"
+    },
+    {
+      "num": "228",
+      "title": "EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle",
+      "status": "pending",
+      "deps": [
+        "227"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/228-engine-voice-layers.md"
+    },
+    {
+      "num": "229",
+      "title": "Wire EngineVoice into the worklet, EngineAudio and main",
+      "status": "pending",
+      "deps": [
+        "228"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/229-engine-audio-wiring.md"
+    },
+    {
+      "num": "230",
+      "title": "Mixer: cockpit bus, master dynamics, smooth camera switch",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/230-audio-mixer-dynamics.md"
+    },
+    {
+      "num": "231",
+      "title": "Per-car engine synth data",
+      "status": "pending",
+      "deps": [
+        "226"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/231-car-synth-data.md"
+    },
+    {
+      "num": "232",
+      "title": "Offline engine render tool",
+      "status": "pending",
+      "deps": [
+        "227"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/232-engine-render-tool.md"
     }
   ]
 }
