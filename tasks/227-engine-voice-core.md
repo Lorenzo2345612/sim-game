@@ -61,3 +61,12 @@ npm test
 ## Out of scope
 
 - Layers (task 228), worklet/EngineAudio wiring (229), per-car data (231), mixer, any change to `engineSynth.ts`.
+
+## Planner-authorised edits (decision 227-coder, 2026-10-17)
+
+Apply exactly these to `tests/unit/acceptance/227-engine-voice-core.test.ts`, nothing else:
+
+1. AT6: insert `voice.setControl(ctrl(9000, 1));` right after `const n = Math.round(0.5 * FS);` (the test never applied the step; the table says "then setControl rpm 9000").
+2. AT2: change `toBeLessThanOrEqual(2 / FS)` to `toBeLessThanOrEqual(2 / FS + 1e-9)` (float epsilon; the table tolerance is ±2 samples inclusive).
+
+The coder's reported design choices (kernel shape, second DC blocker after the clip, `0.9*tanh` output stage, jitter redrawn once per cycle) are accepted.
