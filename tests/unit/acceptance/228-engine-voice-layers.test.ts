@@ -254,7 +254,7 @@ describe('228 engine voice layers acceptance', () => {
     expect(10 * Math.log10(peak / med)).toBeGreaterThanOrEqual(20);
   }, 30000);
 
-  it('AT7: wheel whine order 14 minSpeedMs 33 is < 6 dB above median at 20 m/s and ≥ 20 dB at 60 m/s', () => {
+  it('AT7: wheel whine order 14 minSpeedMs 33 is silent at 20 m/s and ≥ 20 dB above median at 60 m/s', () => {
     function peakOverMedian(wheelSpeedMs: number): number {
       const voice = new EngineVoice(
         {
@@ -270,7 +270,18 @@ describe('228 engine voice layers acceptance', () => {
       const med = median(binsIn(pow, f - 500, f + 500));
       return 10 * Math.log10(peak / med);
     }
-    expect(peakOverMedian(20)).toBeLessThan(6);
+    const silent = new EngineVoice(
+      {
+        ...baseSpec(8),
+        whine: { order: 14, gain: 0.05, source: 'wheel', minSpeedMs: 33 },
+      },
+      FS,
+      SEED,
+    );
+    const ref = new EngineVoice({ ...baseSpec(8), whine: null }, FS, SEED);
+    expect(warmRender(silent, ctrl(7000, 1, { wheelSpeedMs: 20 }), 1)).toEqual(
+      warmRender(ref, ctrl(7000, 1, { wheelSpeedMs: 20 }), 1),
+    );
     expect(peakOverMedian(60)).toBeGreaterThanOrEqual(20);
   }, 60000);
 

@@ -23,6 +23,20 @@ const PRE_GAIN = 1.2;
 const PULSE_SCALE = 0.05;
 const NEG_CEIL = 0.75;
 const PEAK = 0.9;
+const TWO_PI = 2 * Math.PI;
+const BUTTER_Q = 0.707;
+const TURBO_Q = 4;
+const TURBO_AMP = 1.5;
+const INTAKE_Q = 5;
+const INTAKE_AMP = 2.5;
+const INTAKE_WINDOW_DEG = 180;
+const INTAKE_EDGE_DEG = 30;
+const CRACKLE_THR = 0.05;
+const CRACKLE_RPM = 4000;
+const CRACKLE_RATE = 20;
+const CRACKLE_S = 1;
+const LP_MAX_HZ = 20000;
+const MAX_FC_FRAC = 0.45;
 
 // Fast Hann rise then quadratic decay, u in [0,1], one guard entry for interpolation.
 const RISE = 0.35;
@@ -53,6 +67,50 @@ function pow2AtLeast(n: number): number {
   return p;
 }
 
+// RBJ biquads as [b0, b2, a1, a2] (b1 = 0); state [x1, x2, y1, y2].
+function bpCo(fc: number, q: number, fs: number, gain: number): Float64Array {
+  const w0 = (TWO_PI * fc) / fs;
+  const c = Math.cos(w0);
+  const alpha = Math.sin(w0) / (2 * q);
+  const a0 = 1 + alpha;
+  const b0 = (alpha / a0) * gain;
+  return Float64Array.of(b0, -b0, (-2 * c) / a0, (1 - alpha) / a0);
+}
+
+// RBJ low-pass as [b0, b1, b2, a1, a2]; state [x1, x2, y1, y2].
+function lpCo(fc: number, q: number, fs: number): Float64Array {
+  const w0 = (TWO_PI * fc) / fs;
+  const c = Math.cos(w0);
+  const alpha = Math.sin(w0) / (2 * q);
+  const a0 = 1 + alpha;
+  const b0 = (1 - c) / 2 / a0;
+  return Float64Array.of(b0, 2 * b0, b0, (-2 * c) / a0, (1 - alpha) / a0);
+}
+
+function lpStep(co: Float64Array, st: Float64Array, x: number): number {
+  const y = co[0] * x + co[1] * st[0] + co[2] * st[1] - co[3] * st[2] - co[4] * st[3];
+  st[1] = st[0];
+  st[0] = x;
+  st[3] = st[2];
+  st[2] = y;
+  return y;
+}
+
+function biquad(
+  co: Float64Array,
+  ci: number,
+  st: Float64Array,
+  si: number,
+  x: number,
+): number {
+  const y = co[ci] * x + co[ci + 1] * st[si + 1] - co[ci + 2] * st[si + 2] - co[ci + 3] * st[si + 3];
+  st[si + 1] = st[si];
+  st[si] = x;
+  st[si + 3] = st[si + 2];
+  st[si + 2] = y;
+  return y;
+}
+
 export class EngineVoice {
   private readonly fs: number;
   private readonly seed: number;
@@ -76,14 +134,45 @@ export class EngineVoice {
   private readonly jitterDeg: number;
   private readonly jitterAmp: number;
   private readonly drive: number;
+  private readonly intakeGain: number;
+  private readonly intakeCo: Float64Array;
+  private readonly intakeSt = new Float64Array(4);
+  private readonly blockN: number;
+  private readonly blockCo: Float64Array;
+  private readonly blockSt: Float64Array;
+  private readonly lpOn: boolean;
+  private readonly lpCo: Float64Array;
+  private readonly lpSt = new Float64Array(4);
+  private readonly turboGain: number;
+  private readonly turboCenter: number;
+  private readonly turboSpan: number;
+  private readonly aBoost: number;
+  private readonly turboLag0: boolean;
+  private readonly turboSt = new Float64Array(4);
+  private readonly whineGain: number;
+  private readonly whineOrder: number;
+  private readonly whineWheel: boolean;
+  private readonly whineMin: number;
+  private readonly limiterHz: number;
+  private readonly crackle: number;
+  private readonly maxFc: number;
 
   private rng: () => number = () => 0;
+  private layerRng: () => number = () => 0;
   private spare = 0;
   private hasSpare = false;
   private tRpm = 0;
   private tLoad = 0;
+  private tWheel = 0;
   private rpm = 0;
   private load = 0;
+  private wSpeed = 0;
+  private boost = 0;
+  private whinePhase = 0;
+  private limPhase = 0;
+  private crackleLeft = 0;
+  private crackleArmed = false;
+  private cutNow = false;
   private angle = 0;
   private head = 0;
   private prevTail = 0;
@@ -128,6 +217,35 @@ export class EngineVoice {
     this.jitterDeg = spec.jitterDeg;
     this.jitterAmp = spec.jitterAmp;
     this.drive = spec.drive;
+    const maxFc = MAX_FC_FRAC * sampleRate;
+    this.intakeGain = spec.intakeMix > 0 ? spec.intakeMix : 0;
+    this.intakeCo = bpCo(Math.min(spec.intakeHz, maxFc), INTAKE_Q, sampleRate, 1);
+    this.blockN = spec.block.length > 6 ? 6 : spec.block.length;
+    this.blockCo = new Float64Array(this.blockN * 4);
+    this.blockSt = new Float64Array(this.blockN * 4);
+    for (let m = 0; m < this.blockN; m++) {
+      const mode = spec.block[m];
+      this.blockCo.set(
+        bpCo(Math.min(mode.hz, maxFc), mode.q, sampleRate, Math.pow(10, mode.gainDb / 20)),
+        m * 4,
+      );
+    }
+    this.lpOn = spec.lowpassHz < LP_MAX_HZ;
+    this.lpCo = lpCo(Math.min(spec.lowpassHz, maxFc), BUTTER_Q, sampleRate);
+    const turbo = spec.turbo;
+    const lagS = turbo ? turbo.lagS : 0;
+    this.turboGain = turbo && turbo.gain > 0 ? turbo.gain : 0;
+    this.turboCenter = turbo ? turbo.centerHz : 0;
+    this.turboSpan = turbo ? turbo.spanHz : 0;
+    this.turboLag0 = lagS <= 0;
+    this.aBoost = lagS > 0 ? 1 - Math.exp(-1 / (lagS * sampleRate)) : 0;
+    this.whineGain = spec.whine && spec.whine.gain > 0 ? spec.whine.gain : 0;
+    this.whineOrder = spec.whine ? spec.whine.order : 0;
+    this.whineWheel = !!spec.whine && spec.whine.source === 'wheel';
+    this.whineMin = spec.whine ? spec.whine.minSpeedMs : 0;
+    this.limiterHz = spec.limiterHz;
+    this.crackle = spec.crackle > 0 ? spec.crackle : 0;
+    this.maxFc = MAX_FC_FRAC * sampleRate;
     this.reset();
   }
 
@@ -135,19 +253,31 @@ export class EngineVoice {
     this.tRpm = Number.isFinite(c.rpm) && c.rpm > 0 ? c.rpm : 0;
     const l = Number.isFinite(c.load) ? c.load : 0;
     this.tLoad = l < 0 ? 0 : l > 1 ? 1 : l;
-    this.throttle = c.throttle;
-    this.wheelSpeedMs = c.wheelSpeedMs;
+    const t = Number.isFinite(c.throttle) ? c.throttle : 0;
+    this.throttle = t < 0 ? 0 : t > 1 ? 1 : t;
+    const w = Number.isFinite(c.wheelSpeedMs) ? c.wheelSpeedMs : 0;
+    this.wheelSpeedMs = w < 0 ? 0 : w;
+    this.tWheel = this.wheelSpeedMs;
     this.limiter = c.limiter;
   }
 
   reset(): void {
     this.rng = mulberry32(this.seed);
+    this.layerRng = mulberry32(this.seed + 1);
     this.hasSpare = false;
     this.spare = 0;
     this.tRpm = 0;
     this.tLoad = 0;
+    this.tWheel = 0;
     this.rpm = 0;
     this.load = 0;
+    this.wSpeed = 0;
+    this.boost = 0;
+    this.whinePhase = 0;
+    this.limPhase = 0;
+    this.crackleLeft = 0;
+    this.crackleArmed = false;
+    this.cutNow = false;
     this.angle = 0;
     this.head = 0;
     this.prevTail = 0;
@@ -162,6 +292,10 @@ export class EngineVoice {
     this.wheelSpeedMs = 0;
     this.limiter = false;
     this.lpState.fill(0);
+    this.lpSt.fill(0);
+    this.intakeSt.fill(0);
+    this.blockSt.fill(0);
+    this.turboSt.fill(0);
     this.inj[0].fill(0);
     this.inj[1].fill(0);
     for (let i = 0; i < 3; i++) this.tube[i].fill(0);
@@ -190,13 +324,12 @@ export class EngineVoice {
     }
   }
 
-  private fire(i: number, frac: number): void {
-    const a = (0.25 + 0.75 * this.load) * (1 + (this.jitterAmp > 0 ? this.jitterAmp * this.gauss() : 0));
+  private inject(bank: number, frac: number, a: number): void {
     let widthS = this.pulseDeg / (6 * this.rpm);
     widthS = widthS < MIN_PULSE_S ? MIN_PULSE_S : widthS > MAX_PULSE_S ? MAX_PULSE_S : widthS;
     const w = widthS * this.fs;
     const amp = a * w * PULSE_SCALE;
-    const buf = this.inj[this.bankOf[i]];
+    const buf = this.inj[bank];
     const mask = this.injMask;
     const scale = KERNEL_N / w;
     let pos = (1 - frac) * scale;
@@ -206,6 +339,56 @@ export class EngineVoice {
       const v = KERNEL[k] + t * (KERNEL[k + 1] - KERNEL[k]);
       buf[(this.head + m) & mask] += amp * v;
     }
+  }
+
+  private fire(i: number, frac: number): void {
+    if (this.cutNow) return;
+    const a = (0.25 + 0.75 * this.load) * (1 + (this.jitterAmp > 0 ? this.jitterAmp * this.gauss() : 0));
+    this.inject(this.bankOf[i], frac, a);
+  }
+
+  private crackleStep(): void {
+    if (this.throttle >= CRACKLE_THR || this.rpm <= CRACKLE_RPM) {
+      this.crackleArmed = false;
+      this.crackleLeft = 0;
+      return;
+    }
+    if (!this.crackleArmed) {
+      this.crackleArmed = true;
+      this.crackleLeft = Math.round(CRACKLE_S * this.fs);
+    }
+    if (this.crackleLeft <= 0) return;
+    this.crackleLeft--;
+    if (this.rng() < (this.crackle * CRACKLE_RATE) / this.fs) {
+      const bank = this.rng() < 0.5 ? 0 : 1;
+      this.inject(bank, 0, 0.6 + 0.4 * this.rng());
+    }
+  }
+
+  private intakeStep(): number {
+    const angle = this.angle;
+    let gate = 0;
+    for (let i = 0; i < this.cyl; i++) {
+      let d = angle - this.firing[i] - 360;
+      d -= Math.floor(d / CYCLE_DEG) * CYCLE_DEG;
+      if (d >= INTAKE_WINDOW_DEG) continue;
+      if (d < INTAKE_EDGE_DEG) gate += 0.5 - 0.5 * Math.cos((Math.PI * d) / INTAKE_EDGE_DEG);
+      else if (d >= INTAKE_WINDOW_DEG - INTAKE_EDGE_DEG) {
+        gate += 0.5 + 0.5 * Math.cos((Math.PI * (d - INTAKE_WINDOW_DEG + INTAKE_EDGE_DEG)) / INTAKE_EDGE_DEG);
+      } else gate += 1;
+    }
+    if (gate <= 0) return 0;
+    const x = (this.layerRng() * 2 - 1) * gate;
+    const y = biquad(this.intakeCo, 0, this.intakeSt, 0, x);
+    return y * (this.intakeGain * this.throttle) * INTAKE_AMP;
+  }
+
+  private blockStep(x: number): number {
+    let acc = 0;
+    for (let m = 0; m < this.blockN; m++) {
+      acc += biquad(this.blockCo, m * 4, this.blockSt, m * 4, x);
+    }
+    return acc;
   }
 
   private clip(x: number): number {
@@ -220,9 +403,26 @@ export class EngineVoice {
     const injMask = this.injMask;
     const R = this.dcR;
     const cyl = this.cyl;
+    const maxFc = this.maxFc;
+    const hasTurbo = this.turboGain > 0;
+    const hasWhine = this.whineGain > 0;
+    const hasIntake = this.intakeGain > 0;
+    const hasBlock = this.blockN > 0;
+    const hasCrackle = this.crackle > 0;
     for (let s = 0; s < n; s++) {
       this.rpm += (this.tRpm - this.rpm) * this.aRpm;
       this.load += (this.tLoad - this.load) * this.aLoad;
+      this.wSpeed += (this.tWheel - this.wSpeed) * this.aRpm;
+      if (hasTurbo) {
+        if (this.turboLag0) this.boost = this.load;
+        else this.boost += (this.load - this.boost) * this.aBoost;
+      }
+      if (this.limiter) {
+        this.limPhase += this.limiterHz / fs;
+        if (this.limPhase >= 1) this.limPhase -= 1;
+        this.cutNow = this.limPhase >= 0.5;
+      } else this.cutNow = false;
+
       const d = (this.rpm * 6) / fs;
       if (d > 1e-9) {
         const a0 = this.angle;
@@ -246,6 +446,7 @@ export class EngineVoice {
           this.angle = a1;
         }
       }
+      if (hasCrackle) this.crackleStep();
 
       const h = this.head & injMask;
       const w = this.head & tubeMask;
@@ -265,18 +466,57 @@ export class EngineVoice {
       this.dcIn1 = rad;
       this.dcOut1 = dc;
 
+      let pre = this.lpOn ? lpStep(this.lpCo, this.lpSt, dc) : dc;
+      if (hasBlock) pre += this.blockStep(x0 + x1);
+      if (hasIntake) pre += this.intakeStep();
+
       // 2x oversampled clip; 3-tap half-band decimation with one sample of latency
-      const mid = this.clip(0.5 * (this.clipPrev + dc));
-      const cur = this.clip(dc);
-      this.clipPrev = dc;
+      const mid = this.clip(0.5 * (this.clipPrev + pre));
+      const cur = this.clip(pre);
+      this.clipPrev = pre;
       const y = 0.5 * this.clipCurPrev + 0.25 * (this.clipMidPrev + mid);
       this.clipMidPrev = mid;
       this.clipCurPrev = cur;
 
+      let extra = 0;
+      if (hasTurbo) {
+        let fc = this.turboCenter + this.turboSpan * this.boost;
+        if (fc > maxFc) fc = maxFc;
+        else if (fc < 10) fc = 10;
+        const w0 = (TWO_PI * fc) / fs;
+        const alpha = Math.sin(w0) / (2 * TURBO_Q);
+        const a0 = 1 + alpha;
+        const b0 = alpha / a0;
+        const a1 = (-2 * Math.cos(w0)) / a0;
+        const a2 = (1 - alpha) / a0;
+        const x = this.layerRng() * 2 - 1;
+        const st = this.turboSt;
+        const ty = b0 * (x - st[1]) - a1 * st[2] - a2 * st[3];
+        st[1] = st[0];
+        st[0] = x;
+        st[3] = st[2];
+        st[2] = ty;
+        extra += ty * this.turboGain * this.boost * TURBO_AMP;
+      }
+      if (hasWhine) {
+        let f = 0;
+        let on = true;
+        if (this.whineWheel) {
+          if (this.wheelSpeedMs < this.whineMin) on = false;
+          else f = (this.whineOrder * this.wSpeed) / (TWO_PI * WHEEL_RADIUS_M);
+        } else f = (this.whineOrder * this.rpm) / 60;
+        if (on && f >= 1) {
+          if (f > maxFc) f = maxFc;
+          this.whinePhase += (TWO_PI * f) / fs;
+          if (this.whinePhase >= TWO_PI) this.whinePhase -= TWO_PI;
+          extra += Math.sin(this.whinePhase) * this.whineGain;
+        }
+      }
+
       const o = y - this.dc2In1 + R * this.dc2Out1;
       this.dc2In1 = y;
       this.dc2Out1 = o;
-      out[s] = PEAK * Math.tanh((o * this.gain) / PEAK);
+      out[s] = PEAK * Math.tanh(((o + extra) * this.gain) / PEAK);
     }
   }
 

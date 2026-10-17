@@ -105,32 +105,6 @@ describe('227 engine voice core edge', () => {
     expect(renderSamples(reused, 7200, 128)).toEqual(ref);
   });
 
-  it('EDGE7: throttle, wheelSpeedMs and limiter are ignored in 227', () => {
-    const a = new EngineVoice(baseSpec(8), FS, SEED);
-    const b = new EngineVoice(baseSpec(8), FS, SEED);
-    a.setControl({ rpm: 6000, load: 1, throttle: 1, wheelSpeedMs: 50, limiter: false });
-    b.setControl({ rpm: 6000, load: 1, throttle: 0, wheelSpeedMs: 0, limiter: true });
-    expect(renderSamples(a, 7200, 128)).toEqual(renderSamples(b, 7200, 128));
-  });
-
-  it('EDGE8: layer spec fields (intakeMix, block, turbo, whine, crackle, lowpassHz, limiterHz) are ignored in 227', () => {
-    const layered: EngineSynthSpec = {
-      ...baseSpec(8),
-      intakeMix: 1,
-      block: [{ hz: 1000, q: 2, gainDb: 6 }],
-      turbo: { centerHz: 1000, spanHz: 500, gain: 0.2, lagS: 0.1 },
-      whine: { order: 4, gain: 0.2, source: 'rpm', minSpeedMs: 0 },
-      crackle: 1,
-      lowpassHz: 800,
-      limiterHz: 5,
-    };
-    const a = new EngineVoice(baseSpec(8), FS, SEED);
-    const b = new EngineVoice(layered, FS, SEED);
-    a.setControl(ctrl(6000, 1));
-    b.setControl(ctrl(6000, 1));
-    expect(renderSamples(a, 7200, 128)).toEqual(renderSamples(b, 7200, 128));
-  });
-
   it('EDGE9: peak stays ≤ 0.9 at maximum drive and gainDb', () => {
     const spec: EngineSynthSpec = { ...baseSpec(8), drive: 4, gainDb: 12 };
     const voice = new EngineVoice(spec, FS, SEED);
