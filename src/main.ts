@@ -12,6 +12,7 @@ import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
+import { FrameRing, type PerfStats } from './core/perfStats';
 import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
 import { Game, type LapInfo } from './game/game';
@@ -154,6 +155,7 @@ declare global {
         mirrorRenders: number;
       };
       drawCalls(): number;
+      perfStats(): PerfStats;
       cameraMode(): CameraMode;
       gear(): number;
       preset(): Preset;
@@ -1154,6 +1156,20 @@ async function startGame(trackId: string): Promise<void> {
   let mirrorTick = 0;
   let fpsAvg = 0;
   const frameStats = { fps: 0, drawCalls: 0 };
+  // Perf harness (151): rings and the single output object are reused, nothing allocates per frame.
+  const frameRing = new FrameRing();
+  const simRing = new FrameRing();
+  const renderRing = new FrameRing();
+  const perfOut: PerfStats = {
+    fps: 0,
+    frameMs: { p50: 0, p95: 0 },
+    simMs: { p50: 0, p95: 0 },
+    renderMs: { p50: 0, p95: 0 },
+    drawCalls: 0,
+    triangles: 0,
+    textures: 0,
+    geometries: 0,
+  };
 
   const post = createPostProcessing(
     handle.renderer,
@@ -1308,10 +1324,13 @@ async function startGame(trackId: string): Promise<void> {
     if (last < 0) last = now;
     const frame = Math.min((now - last) / 1000, 2);
     last = now;
+    if (frame > 0) frameRing.push(frame * 1000);
     if (!audioResumed && anyGamepadPressed()) resumeAudio();
     // Paused: only the render keeps going, the fixed-step simulation must not advance.
     if (!paused) {
+      const simStart = performance.now();
       const { alpha } = loop.advance(frame);
+      simRing.push(performance.now() - simStart);
       interpolateVehicleState(sim.getPrevState(), sim.getCurrentState(), alpha, interp);
       car.update(interp);
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
@@ -1405,6 +1424,7 @@ async function startGame(trackId: string): Promise<void> {
     } else {
       gamepad.rumble(0, 0, performance.now());
     }
+    const renderStart = performance.now();
     cockpitWheel.visible = qaCam === null && cameraRig.mode === 'cockpit';
     const mirrorVisible = qaCam === null && mirrorEnabled && cameraRig.mode !== 'chase';
     mirror.setVisible(mirrorVisible);
@@ -1418,6 +1438,7 @@ async function startGame(trackId: string): Promise<void> {
     // QA views render flat: no post-processing chain, no mirror pass.
     if (qaCam !== null) handle.renderer.render(scene, qaCam);
     else post.render(frame);
+    renderRing.push(performance.now() - renderStart);
     rafId = requestAnimationFrame(frameFn);
   };
 
@@ -1628,6 +1649,18 @@ async function startGame(trackId: string): Promise<void> {
       mirrorRenders: mirror.renders,
     }),
     drawCalls: () => handle.renderer.info.render.calls,
+    perfStats: () => {
+      perfOut.frameMs = frameRing.percentiles();
+      perfOut.simMs = simRing.percentiles();
+      perfOut.renderMs = renderRing.percentiles();
+      perfOut.fps = perfOut.frameMs.p50 > 0 ? 1000 / perfOut.frameMs.p50 : 0;
+      const info = handle.renderer.info;
+      perfOut.drawCalls = info.render.calls;
+      perfOut.triangles = info.render.triangles;
+      perfOut.textures = info.memory.textures;
+      perfOut.geometries = info.memory.geometries;
+      return perfOut;
+    },
     cameraMode: () => cameraRig.mode,
     gear: () => sim.gear(),
     preset: () => preset,
