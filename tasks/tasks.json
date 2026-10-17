@@ -3112,13 +3112,13 @@
     {
       "num": "227",
       "title": "EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "226"
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/227-engine-voice-core.md"
     },
@@ -3188,7 +3188,7 @@
     {
       "num": "233",
       "title": "Shared ground-height sampler",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
