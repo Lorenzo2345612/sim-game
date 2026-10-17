@@ -13,7 +13,7 @@
     "mimo": {
       "baseUrl": "https://token-plan-sgp.xiaomimimo.com/anthropic",
       "keyEnv": "MIMO_TOKEN_PLAN_KEY",
-      "maxConcurrent": 9
+      "maxConcurrent": 3
     },
     "claude": {
       "oauth": true,
@@ -24,44 +24,44 @@
   },
   "roles": {
     "acceptance": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/acceptance.md",
       "timeoutMin": 20
     },
     "tester-pre": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/tester-pre.md",
       "timeoutMin": 20
     },
     "coder": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/coder.md",
       "timeoutMin": 25
     },
     "tester": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/tester.md",
       "timeoutMin": 25
     },
     "reviewer": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-flash",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/reviewer.md",
       "timeoutMin": 20
     },
     "fixer": {
-      "provider": "mimo",
-      "model": "mimo-v2.6-pro",
-      "heavyModel": "mimo-v2.6-pro",
+      "provider": "claude",
+      "model": "claude-sonnet-5-5",
+      "heavyModel": "claude-sonnet-5-5",
       "prompt": "ai/agents/coder.md",
       "timeoutMin": 25
     }
@@ -74,7 +74,8 @@
       "coder",
       "acceptance",
       "tester-pre",
-      "tester"
+      "tester",
+      "reviewer"
     ]
   }
 }

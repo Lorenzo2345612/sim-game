@@ -310,14 +310,18 @@
         "110",
         "111"
       ],
-      "status": "open",
+      "status": "approved",
       "prefetch": [
         "107",
         "108",
         "109",
         "110",
         "111"
-      ]
+      ],
+      "builtAt": "2026-10-16T19:19:22",
+      "commit": "f1d71ff",
+      "buildOk": true,
+      "testsOk": true
     },
     {
       "id": "M1.2e",
