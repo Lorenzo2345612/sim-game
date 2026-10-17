@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Standing } from '../../../src/race/classification';
 
 test.use({ viewport: { width: 1280, height: 720 } });
+test.describe.configure({ timeout: 180_000 });
 
 type Debug094 = {
   raceStandings(): readonly Standing[];

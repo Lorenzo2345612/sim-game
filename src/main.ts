@@ -50,7 +50,7 @@ import { createTrackProps } from './render/trackProps';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
-import { createPitBuilding, createStartGantry, createStartLights } from './render/pitAndStart';
+import { createPitBuilding, createStartGantry, createStartLights, type StartLights } from './render/pitAndStart';
 import { createFloodlights } from './render/floodlights';
 import { applyEnvironment, ShadowRig } from './render/environment';
 import { CarRenderer } from './render/carRenderer';
@@ -76,6 +76,7 @@ import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
+import { RaceHud, type RaceHudData } from './ui/raceHud';
 
 export interface QaCameraInfo {
   kind: 'chase' | 'top' | 'view';
@@ -129,6 +130,8 @@ export interface SceneStats {
   decals: number;
   steeringWheel: { visible: boolean; angle: number };
   drivingLine: { visible: boolean; vertexCount: number };
+  cars: number;
+  startLightsOn: number;
 }
 
 declare global {
@@ -688,6 +691,7 @@ async function startGame(trackId: string): Promise<void> {
   let shadows: ShadowRig | null = null;
   let treeField: TreeField | null = null;
   let city: CityObject | null = null;
+  let startLightsCtl: StartLights | null = null;
   let playerLivery = loadLivery(window.localStorage, baseSpec.id);
   const stats: SceneStats = {
     barriers: 0,
@@ -725,6 +729,8 @@ async function startGame(trackId: string): Promise<void> {
     decals: 0,
     steeringWheel: { visible: false, angle: 0 },
     drivingLine: { visible: false, vertexCount: 0 },
+    cars: 1,
+    startLightsOn: 0,
   };
 
   // Driving-line overlay (123): same line/profile construction as RaceGame, so both
@@ -847,9 +853,9 @@ async function startGame(trackId: string): Promise<void> {
 
     scene.add(createPitBuilding(track, trackStyle));
     scene.add(createStartGantry(track));
-    const lights = createStartLights(track);
-    lights.setLights(0);
-    scene.add(lights.object);
+    startLightsCtl = createStartLights(track);
+    startLightsCtl.setLights(0);
+    scene.add(startLightsCtl.object);
 
     const kerbOuter = createKerbOuterStrips(track, trackStyle);
     if (kerbOuter !== null) {
@@ -926,6 +932,24 @@ async function startGame(trackId: string): Promise<void> {
   let decalMeshes = addNumberDecals(car.root, carBounds, playerLivery.number, 0.35, restWorld);
   stats.decals = decalMeshes.length;
 
+  const aiCars: CarRenderer[] = [];
+  const aiInterp: VehicleState[] = [];
+  if (raceGame !== null) {
+    for (let k = 1; k < raceGame.carCount; k++) {
+      const ai = await CarRenderer.load(baseSpec.model.url, bodyOffsetY);
+      ai.root.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) mesh.castShadow = true;
+      });
+      applyLivery(ai.root, paintMaterials, defaultLivery(k), liveryBounds);
+      scene.add(ai.root);
+      aiCars.push(ai);
+      aiInterp.push(createVehicleState(4));
+      disposables.push(ai);
+    }
+  }
+  stats.cars = 1 + aiCars.length;
+
   const carBox = new THREE.Box3();
   const carCorner = new THREE.Vector3();
   const carScreenRect = (): { x: number; y: number; w: number; h: number } => {
@@ -999,6 +1023,10 @@ async function startGame(trackId: string): Promise<void> {
     setupHud.show(loadSetup(carId, track.id, baseSpec, window.localStorage), tune.compound, baseSpec);
   };
   if (setupHud.visible) refreshSetupHud();
+
+  const raceHud = new RaceHud(document.body);
+  raceHud.setVisible(raceGame !== null);
+  const raceHudData: RaceHudData = { standings: [], playerCar: 0, laps: 0 };
 
   const ghostRecorder = new GhostRecorder(track.id);
   let ghost = loadGhost(window.localStorage, track.id);
@@ -1333,6 +1361,19 @@ async function startGame(trackId: string): Promise<void> {
       simRing.push(performance.now() - simStart);
       interpolateVehicleState(sim.getPrevState(), sim.getCurrentState(), alpha, interp);
       car.update(interp);
+      if (raceGame !== null) {
+        const prevs = raceGame.getPrevStates();
+        for (let k = 0; k < aiCars.length; k++) {
+          interpolateVehicleState(prevs[k + 1], raceStates[k + 1], alpha, aiInterp[k]);
+          aiCars[k].update(aiInterp[k]);
+        }
+        const lit = raceGame.startLights();
+        startLightsCtl?.setLights(lit);
+        stats.startLightsOn = Math.min(5, Math.max(0, lit));
+        raceHudData.standings = raceGame.standings();
+        raceHudData.laps = raceGame.config.laps;
+        raceHud.update(raceHudData);
+      }
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
       let latG = 0;
       let longG = 0;
@@ -1586,6 +1627,7 @@ async function startGame(trackId: string): Promise<void> {
     mirror.dispose();
     setupHud.dispose();
     setupPanel.dispose();
+    raceHud.dispose();
     sim.dispose();
     for (const disposable of disposables) disposable.dispose();
     treeField?.dispose();
