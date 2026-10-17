@@ -37,6 +37,13 @@ Conventions: metres; 1 cm tolerance on derived dimensions (071); missing source 
 
 Config field names and value formats: copy the schema of an existing `assets/cars/*.pipeline.json` (same keys as the prototype configs from 112); only the values differ. `forward` = the value that maps the source nose (+z) to −Z, as accepted by `buildCar.ts` (see how 112 configs encode it). `ow26.json` `wheels.radius` = the model json wheel radius (copy, ± 1e-3), like x/z.
 
+## Planner-authorised edge test edits (decision 224-coder)
+
+- `tests/unit/edge/221-ow26-car.test.ts` EDGE8: expect `model.url` `'/models/ow26.glb'` (rename the test title accordingly).
+- `tests/unit/edge/221-ow26-car.post.test.ts` POST5: `wheels.radius` → `toBeCloseTo(<model json radius>, 3)`; wheelbase → `toBeCloseTo(3.4, 1)`. Nothing else in POST5.
+- `tests/unit/edge/112-scope-cut.post.test.ts`: add `'ow26'` to `EXPECTED_IDS` (sorted).
+- `buildCar.ts` optional fields `dropNodes`, `neutralMaterials`, `wheelTriBudget` and KHRTextureTransform read support are accepted, provided existing outputs stay byte-identical (AT1).
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
