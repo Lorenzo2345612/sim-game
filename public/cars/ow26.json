@@ -1,0 +1,353 @@
+{
+  "id": "ow26",
+  "name": "OW-26 Hybrid",
+  "category": "open-wheel",
+  "model": {
+    "url": "/models/f4.glb"
+  },
+  "drive": "rwd",
+  "chassis": {
+    "massKg": 768,
+    "cgHeight": 0.28,
+    "inertia": {
+      "x": 1790,
+      "y": 1830,
+      "z": 300
+    },
+    "halfExtents": {
+      "x": 0.98,
+      "y": 0.05,
+      "z": 2.63
+    }
+  },
+  "wheels": {
+    "positions": [
+      [
+        -0.8,
+        0,
+        -1.84
+      ],
+      [
+        0.8,
+        0,
+        -1.84
+      ],
+      [
+        -0.78,
+        0,
+        1.56
+      ],
+      [
+        0.78,
+        0,
+        1.56
+      ]
+    ],
+    "radius": 0.36,
+    "width": 0.35,
+    "inertia": 1.8
+  },
+  "suspension": {
+    "front": {
+      "springRate": 70000,
+      "bumpDamping": 3000,
+      "reboundDamping": 5000,
+      "restLength": 0.13,
+      "travel": 0.1,
+      "bumpStopRate": 400000,
+      "arb": 22000
+    },
+    "rear": {
+      "springRate": 78000,
+      "bumpDamping": 3200,
+      "reboundDamping": 5200,
+      "restLength": 0.13,
+      "travel": 0.1,
+      "bumpStopRate": 400000,
+      "arb": 15000
+    }
+  },
+  "steering": {
+    "maxAngleLow": 0.38,
+    "maxAngleHigh": 0.09,
+    "fullSpeed": 60,
+    "rate": 1.5
+  },
+  "tyres": {
+    "optPressureKpa": 140,
+    "pressureKpa": 140,
+    "compounds": {
+      "soft": {
+        "mu0": 2.3,
+        "Fz0": 2000,
+        "loadSens": 0.1,
+        "Bx": 14,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 85,
+        "tempWindowC": 40,
+        "heatCoef": 0.00012,
+        "coolCoef": 0.002,
+        "wearRate": 1e-07,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      },
+      "medium": {
+        "mu0": 2.17,
+        "Fz0": 2000,
+        "loadSens": 0.1,
+        "Bx": 14,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 90,
+        "tempWindowC": 40,
+        "heatCoef": 0.00012,
+        "coolCoef": 0.002,
+        "wearRate": 5e-08,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      },
+      "hard": {
+        "mu0": 2.06,
+        "Fz0": 2000,
+        "loadSens": 0.1,
+        "Bx": 14,
+        "Cx": 1.55,
+        "Ex": 0,
+        "By": 9,
+        "Cy": 1.6,
+        "Ey": 0,
+        "optTempC": 95,
+        "tempWindowC": 40,
+        "heatCoef": 0.00012,
+        "coolCoef": 0.002,
+        "wearRate": 2.3e-08,
+        "wearGripLoss": 0.25,
+        "cliffWear": 0.8
+      }
+    }
+  },
+  "aero": {
+    "cda": 0.98,
+    "claFront": 1.8,
+    "claRear": 2.4,
+    "rideHeightSens": 2,
+    "wingStep": {
+      "claFront": 0.1,
+      "claRear": 0.12,
+      "cda": 0.02
+    }
+  },
+  "engine": {
+    "torqueCurve": [
+      [
+        3000,
+        150
+      ],
+      [
+        4000,
+        200
+      ],
+      [
+        6000,
+        255
+      ],
+      [
+        8000,
+        290
+      ],
+      [
+        10000,
+        315
+      ],
+      [
+        11500,
+        330
+      ],
+      [
+        13000,
+        300
+      ],
+      [
+        14500,
+        265
+      ],
+      [
+        15000,
+        245
+      ]
+    ],
+    "idleRpm": 4000,
+    "limiterRpm": 15000,
+    "launchRpm": 9000,
+    "inertia": 0.12,
+    "brakingTorque": 60
+  },
+  "sound": {
+    "cylinders": 6,
+    "exhaustLengthM": 1.0,
+    "intakeMix": 0.35,
+    "crackle": 0.1
+  },
+  "gearbox": {
+    "ratios": [
+      3.7,
+      2.7,
+      2.1,
+      1.74,
+      1.47,
+      1.27,
+      1.16,
+      1.08
+    ],
+    "final": 5.0,
+    "reverse": 3.0,
+    "upRpm": 14200,
+    "downRpm": 9500,
+    "shiftTime": 0.05,
+    "efficiency": 0.94
+  },
+  "diff": {
+    "type": "lsd",
+    "preload": 40,
+    "lockPower": 0.35,
+    "lockCoast": 0.2
+  },
+  "brakes": {
+    "maxTorque": 9000,
+    "bias": 0.58
+  },
+  "aids": {
+    "abs": {
+      "enabled": false,
+      "slip": 0.12
+    },
+    "tc": {
+      "enabled": false,
+      "slip": 0.2
+    }
+  },
+  "fuel": {
+    "capacityL": 100,
+    "densityKgL": 0.745,
+    "bsfc": 175,
+    "startL": 60
+  },
+  "cockpit": {
+    "eye": {
+      "x": 0,
+      "y": 0.75,
+      "z": -0.2
+    },
+    "wheelRadius": 0.13,
+    "lockDeg": 270
+  },
+  "setup": {
+    "frontWing": {
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    "rearWing": {
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    "brakeBias": {
+      "min": 0.5,
+      "max": 0.7,
+      "step": 0.01,
+      "default": 0.58
+    },
+    "finalDrive": {
+      "min": 4.6,
+      "max": 5.4,
+      "step": 0.05,
+      "default": 5.0
+    },
+    "arbFront": {
+      "min": 6000,
+      "max": 40000,
+      "step": 1000,
+      "default": 22000
+    },
+    "arbRear": {
+      "min": 6000,
+      "max": 40000,
+      "step": 1000,
+      "default": 15000
+    },
+    "rideHeight": {
+      "min": -0.02,
+      "max": 0.02,
+      "step": 0.002,
+      "default": 0
+    },
+    "tyrePressureKpa": {
+      "min": 120,
+      "max": 160,
+      "step": 1,
+      "default": 140
+    }
+  },
+  "presets": {
+    "stable": {
+      "frontWing": 6,
+      "rearWing": 7,
+      "brakeBias": 0.62,
+      "finalDrive": 5.0,
+      "arbFront": 16000,
+      "arbRear": 14000,
+      "rideHeight": 0.004,
+      "tyrePressureKpa": 140
+    },
+    "balanced": {
+      "frontWing": 5,
+      "rearWing": 5,
+      "brakeBias": 0.58,
+      "finalDrive": 5.0,
+      "arbFront": 22000,
+      "arbRear": 15000,
+      "rideHeight": 0,
+      "tyrePressureKpa": 140
+    },
+    "aggressive": {
+      "frontWing": 4,
+      "rearWing": 3,
+      "brakeBias": 0.58,
+      "finalDrive": 4.9,
+      "arbFront": 22000,
+      "arbRear": 10000,
+      "rideHeight": -0.006,
+      "tyrePressureKpa": 145
+    }
+  },
+  "hybrid": {
+    "mgukW": 350000,
+    "batteryJ": 4000000.0,
+    "deployJPerLap": 8500000.0,
+    "harvestJPerLap": 8500000.0,
+    "overtakeExtraJ": 500000.0,
+    "minSpeedMs": 13.88888888888889,
+    "taperStartMs": 80.55555555555556,
+    "taperEndMs": 95.83333333333333,
+    "overtakeTaperStartMs": 93.61111111111111,
+    "overtakeTaperEndMs": 98.61111111111111,
+    "regenW": 350000,
+    "superClipW": 350000,
+    "liftHarvestW": 100000
+  },
+  "activeAero": {
+    "dragScale": 0.7,
+    "downforceScale": 0.6,
+    "transitionS": 0.4
+  }
+}

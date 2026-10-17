@@ -48,13 +48,13 @@ test.describe('073 car selection', () => {
     await page.goto('/');
     const picker = page.locator('#car-picker');
     await expect(picker).toBeVisible();
-    await expect(picker.locator('option')).toHaveCount(6);
+    await expect(picker.locator('option')).toHaveCount(7);
     const values = await picker.locator('option').evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).value));
-    expect(values).toEqual(['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'lmp2-a', 'hyper-a']);
+    expect(values).toEqual(['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'lmp2-a', 'hyper-a', 'ow26']);
     const names = await picker
       .locator('option')
       .evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).textContent?.trim() ?? ''));
-    expect(names).toEqual(['F4', 'GT3 A', 'GT3 B', 'GT3 C', 'LMP2 A', 'Hypercar A']);
+    expect(names).toEqual(['F4', 'GT3 A', 'GT3 B', 'GT3 C', 'LMP2 A', 'Hypercar A', 'OW-26 Hybrid']);
     await expect(picker).toHaveValue('f4');
   });
 

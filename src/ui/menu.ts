@@ -33,7 +33,7 @@ export const LAST_TRACK_KEY = 'lastTrack';
 export const CAR_STORAGE_KEY = 'simgame.car';
 
 // Valid ids for the saved/?car= choice (main.ts validation); the picker lists /cars/index.json.
-export const CAR_IDS: readonly string[] = ['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'lmp2-a', 'hyper-a'];
+export const CAR_IDS: readonly string[] = ['f4', 'gt3-a', 'gt3-b', 'gt3-c', 'lmp2-a', 'hyper-a', 'ow26'];
 
 export interface CarIndexEntry {
   id: string;

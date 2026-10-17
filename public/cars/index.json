@@ -4,5 +4,6 @@
   { "id": "gt3-b", "name": "GT3 B", "category": "gt3" },
   { "id": "gt3-c", "name": "GT3 C", "category": "gt3" },
   { "id": "lmp2-a", "name": "LMP2 A", "category": "lmp2" },
-  { "id": "hyper-a", "name": "Hypercar A", "category": "hypercar" }
+  { "id": "hyper-a", "name": "Hypercar A", "category": "hypercar" },
+  { "id": "ow26", "name": "OW-26 Hybrid", "category": "open-wheel" }
 ]
