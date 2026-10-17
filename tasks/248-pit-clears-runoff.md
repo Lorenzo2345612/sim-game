@@ -79,3 +79,8 @@ npm test
 
 - The design says offset "over the piece's indices"; the spec applies it per vertex before splitting (uniform near face is impossible otherwise at piece joints). Confirm.
 - Tests that pin built runoffs/barriers of specific tracks (098, 140, 159, 173, style tests 190-205) may break; none verified. If one fails because of the new rule, report it here instead of editing.
+
+## Planner answers
+
+- Each piece is a straight box: its near-face offset = max of the per-vertex required offsets over the piece's vertices (steps at joints are fine).
+- Authorised: an existing test that pins a built track's `runoffs`/`barriers` values inside a pit window (±50 m) may update those expected values to the rebuilt data; list each edit in the report. Any other failure: stop and report.

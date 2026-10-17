@@ -76,3 +76,7 @@ None verified by running the suite; no known fixture combines kerbs with R < ~8 
 ## Questions for the planner
 
 - `src/render/kerbOuterStrip.ts` draws a 0.6 m strip beyond `half + KERB_WIDTH` with its own geometry and will still fold on tight inner corners. Add it to a follow-up?
+
+## Planner answers
+
+- In scope: apply the same rule to `src/render/kerbOuterStrip.ts` — no strip on dropped kerb rows; on inner rows its outer edge is clamped to `0.9·R(i)` and the row is dropped when the remaining width < 0.1 m. Extend AT4/AT5's centroid check to the outer-strip triangles in a unit test (not an acceptance edit).
