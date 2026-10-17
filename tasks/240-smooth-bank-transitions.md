@@ -81,3 +81,9 @@ npm test
 ## Out of scope
 
 - Physics, rendering, other tracks, `tracks.json` banking data, new banking ranges, changing how `bank` is consumed in `src/`.
+
+## Planner-authorised test edits
+
+- `tests/unit/edge/174-track-banking-edge.test.ts` EDGE10: invert to assert every surface vertex outside the banked ranges has bank exactly 0.
+- `tests/unit/edge/174-bank-per-index.post.test.ts` (~262-265): full-bank margin 100 m → 240 m.
+- `tests/unit/edge/211-fontana-roval-edge.test.ts` (~152): replace the hard-coded sha256 with that of the rebuilt `fontana.json` (report the new hash).

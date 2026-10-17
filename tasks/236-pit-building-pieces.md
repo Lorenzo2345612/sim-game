@@ -56,6 +56,8 @@ Fixtures: `STRAIGHT`: centerline `[i*10, 0]`, i = 0..99, widthMeters 12, elevati
 - same file "wrapping range": the 21-point fixture jumps 100 → 0 at the seam, so the walk yields several pieces. New expectation: `pit` mesh count equals `pitBuildingPieces(track).length` (≥ 1) and `garageDoor` count equals `userData.garageCount`; drop the x/z bbox asserts.
 - `tests/unit/edge/174-bank-placed-geometry.post.test.ts` POST6 (left side, 10° bank, elevation 2.5): first `pit` mesh min y = 2.5 − 16·TAN (±1e-4); `pitPlinth` min y = 2.5 − 24·TAN − 0.05 (±1e-4); flat bank: `pit` min y 2.5 (±1e-6) and no `pitPlinth`.
 - `tests/unit/acceptance/173-pit-range.test.ts` AT6: replace `toHaveLength(1)` by `length ≥ 1` and the bound by: group world bbox min y ≤ min of `pitBuildingPieces(track).map(p => p.baseY)` + 0.01 (every track with terrain).
+- `tests/unit/edge/236-pit-building-pieces-edge.test.ts` EDGE6: replace `sum >= 50` with `sum >= 38 && sum <= 42.2` (pieces are chords of the pit-side offset polyline, 42.13 m on ZIG).
+- `tests/unit/acceptance/233-ground-sampler.test.ts` AT9: drop `src/render/pitAndStart.ts` from the files required to import the ground module; keep every other file.
 
 ## Acceptance criteria
 

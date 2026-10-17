@@ -73,6 +73,7 @@ npm test
 
 - `tests/unit/edge/174-bank-game-and-limits.post.test.ts`, test `distance board bases lift by their own signed side offset`: its fixture has real flat-0 terrain, so the left banked board (y −1.59) now sits on ground 0. Build both tracks in that test without terrain (`terrain: undefined as unknown as TrackDataV2['terrain']`) so `ground === y`; every expectation stays unchanged.
 - Verified unchanged: `032-track-colliders-edge` EDGE5 (elevation 2 over flat-0 terrain: wall now spans −0.3..3.0, the cast at 1.85 and 3.5 still behave), `141-escape-foam-edge` EDGE9 (elevation 2 above ground 0), `143-distance-boards-edge` (no terrain), `174-bank-placed-geometry` POST4 (degenerate terrain, non-finite sample falls back to the plane).
+- `tests/unit/edge/103-trackside-realism.post.test.ts` POST5 (line ~153): expected fence min.y 5 → 0; POST6 (line ~172): expected post centre 5.375 → 2.875 (terrain ground 0 under path elevation 5). No other change.
 
 ## Out of scope
 

@@ -62,3 +62,8 @@ npm test
 ## Out of scope
 
 - Worklet/EngineAudio/main wiring (229), per-car synth data (231), mixer (230), offline render tool (232).
+
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/228-engine-voice-layers.test.ts` AT7 at 20 m/s: instead of `< 6 dB above median`, assert the 20 m/s render is bit-identical to the same render with `whine: null`.
+- `tests/unit/edge/227-engine-voice-core-edge.test.ts` EDGE7 (limiter ignored) and EDGE8 (layer fields ignored): delete both.

@@ -51,3 +51,7 @@ npm test
 ## Out of scope
 
 AI driver controller changes, mistakes per lap, overtaking logic, speedProfile/traffic changes, HUD.
+
+## Planner answers
+
+- Margin alone cannot satisfy AT1/AT2. Add a stability aid in the AI controller (AI throttle/steer code, plus `raceGame.ts` if needed): when rear slip angle > 6° or |yaw rate − v·steerCurvature| > 0.25 rad/s, scale throttle by `max(0, 1 − excess/threshold)` and limit the steering increase that tick; all difficulties. Keep `AI_GRIP_MARGIN` at the best value in [0.75, 1.0]. Acceptance tests unchanged; EDGE3/EDGE4 must pass; add a unit test for the throttle scaling.
