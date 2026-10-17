@@ -1286,7 +1286,7 @@
     {
       "num": "095",
       "title": "Quick race menu and results",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "044",
         "073",
