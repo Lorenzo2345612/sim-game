@@ -97,7 +97,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 092 | Race classification | done | - |
 | 093 | Multi-car race game | done | 008, 043, 065, 169, 070, 073, 087, 088, 089, 090, 091, 092 |
 | 094 | Race HUD and AI car rendering | done | 057, 092, 093, 119, 207 |
-| 095 | Quick race menu and results | pending | 044, 073, 092, 093, 094, 171 |
+| 095 | Quick race menu and results | in progress | 044, 073, 092, 093, 094, 171 |
 | 096 | Close the gaps at kerb and run-off segment ends | done | 077 |
 | 097 | Keep the terrain below every track surface strip | done | 096, 085 |
 | 098 | Gravel traps from OpenStreetMap, run-off rule only for real corners | done | 097 |
@@ -226,7 +226,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
-| 225 | Expert AI must not spin; difficulty orders pace | waiting decision | 093 |
+| 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | in progress | 227 |
@@ -242,7 +242,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
-| 241 | Ermita de Guadalupe street circuit: 5 layouts | in progress | - |
+| 241 | Ermita de Guadalupe street circuit: 5 layouts | waiting decision | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | pending | 228, 231 |

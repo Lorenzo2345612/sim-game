@@ -1286,7 +1286,7 @@
     {
       "num": "095",
       "title": "Quick race menu and results",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "044",
         "073",
@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3291,7 +3291,7 @@
     {
       "num": "241",
       "title": "Ermita de Guadalupe street circuit: 5 layouts",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
