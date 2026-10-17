@@ -6,29 +6,32 @@ Files: `assets/source/tracks/mx-ermita-<name>.geojson`, `assets/source/osm/ermit
 
 ## Layouts
 
-| id | geojson | length (option) | corners (>75 deg) | longest straight (from..to, m from start) | S/F heading | pit | grandstands |
-|---|---|---|---|---|---|---|---|
-| ermita-centro | mx-ermita-centro | 2622 m (2687, -2.4 %) | 21 (12) | ~200-290 m (-70..+135) | 200 deg (SSW) | right, -60..120 | 1800 left, 990 right |
-| ermita-federal | mx-ermita-federal | 4773 m (4848, -1.6 %) | 17 (12) | 1176 m (-408..+768) | 21 deg (NNE) | right, -300..250 | 0 left, 540 left, -678 left |
-| ermita-norte | mx-ermita-norte | 4443 m (4487, -1.0 %) | 18 (11) | 666 m (-228..+438) | 119 deg (ESE) | left, -200..250 | -123 right, -618 right, -1068 right |
-| ermita-mixto | mx-ermita-mixto | 3687 m (3745, -1.6 %) | 26 (16) | 450 m (-150..+300) | 185 deg (S) | left, -120..200 | 0 right, 1395 right, 1890 right |
-| ermita-poniente | mx-ermita-poniente | 2782 m (2835, -1.9 %) | 28 (12) | 423 m (-145..+278) | 124 deg (SE) | right, -130..150 | 1350 right, 810 right, 1800 left |
+| id | geojson | length (option) | corners (>75 deg) | min radius | longest straight (m from start) | S/F heading | pit | grandstands |
+|---|---|---|---|---|---|---|---|---|
+| ermita-centro | mx-ermita-centro | 2579 m (2687, -4.0 %) | 20 (10) | 12.9 m | 291 m (-98..+193) | 39 deg (NE) | left, -90..150 | 1890 right (135 left) |
+| ermita-federal | mx-ermita-federal | 4695 m (4848, -3.2 %) | 15 (11) | 13.2 m | 1173 m (-408..+765) | 21 deg (NNE) | right, -300..250 | 0 left, 540 left, -645 left |
+| ermita-norte | mx-ermita-norte | 4310 m (4487, -3.9 %) | 16 (11) | 12.8 m | 672 m (-233..+439) | 119 deg (ESE) | right, -200..250 | -125 left, -1070 right, -1970 right |
+| ermita-mixto | mx-ermita-mixto | 3596 m (3745, -4.0 %) | 23 (14) | 12.9 m | 477 m (-164..+313) | 185 deg (S) | left, -130..200 | 1800 right, 2610 left, 225 left |
+| ermita-poniente | mx-ermita-poniente | 2736 m (2835, -3.5 %) | 22 (13) | 12.9 m | 402 m (-138..+264) | 124 deg (SE) | right, -110..150 | 1350 right, 135 right |
 
-All five: closed, no self-intersection, length within 3 % (all shorter than the option because corner fillets cut the right angles). Corner count = heading change over 25 deg in 30 m (merged clusters); numbers in the plots follow the lap from the start. The corner count/straight detector is sensitive to alignment (centro straight reads 207-291 m).
+Second pass (min radius 12 m): the first version (R down to ~5 m) was re-done. Pipeline: OSM street loop -> corner fillets (R 14 / 22 m) -> iterative local smoothing of every stretch with 3-point circumradius < 12.7 m (3 m resample, points 9 m apart) until none is left, merging short blocks into S/wide curves; corners may cut across block corners and the hairpin tips of narrow jogs are rounded. Min radius re-checked on the stored points: 3-point circumradius at 3 m resample (k=3), at 10 m resample and at 5 m resample (k=2): all >= 12.8 m (values in the table are the 3 m / 9 m-spacing check). Because smoothing shortens the loop, norte (x1.025) and mixto (x1.07) were scaled about their centroid before smoothing so that length stays within 5 %: their geometry is up to ~30-40 m away from the real streets at the extremes (street names/ways no longer coincide exactly; the raw-ways files still list the OSM streets of the original route). centro is x1.005, federal and poniente unscaled. All five: closed, no self-intersection, length within 4.0 % of the option (all shorter), route and direction unchanged. The start was re-placed on the longest straight (35 % into it), which moved the start/finish of centro (to a different straight) and slightly the others.
 
-Pit/grandstand notes (offsets 30 m, grandstand length ~60-80 m as the other street circuits; `offsetMeters` 30 was checked on the Sentinel image and against OSM roads not used by the layout, no OSM buildings exist, see below):
-- federal: start straight in open farmland (built-up fraction < 7 %, other roads >160 m away); best site for pit and stands; the best pit candidate by far.
-- norte: straight is on the ring avenue north of the village; ~15 % built nearby; right-hand sites are free.
-- mixto: straight on the edge of the village next to MEX 23 (other carriageway ~0-5 m on one side); pit chosen on the side away from it.
-- centro and poniente: the start straight lies inside the dense town (>55 % built pixels around it); pit/grandstand at the start would overlap houses. The pit suggestion is a placeholder (needs fake/demolished facades or a pit lane drawn inside the road width); the grandstand sites listed are the only open spots (>30 m from other roads, <5 % built).
-- grandstand positions given as signed atMeters (negative = before the line, equal to length+value).
+Corner count = heading change over 25 deg in 30 m (merged clusters); numbers in the plots follow the lap from the start. The detector is sensitive to alignment (+-1-2 corners, straights +-10 %).
+
+Pit/grandstand notes (offsets 30 m, stands ~60-80 m long like the other street circuits; sites checked on the Sentinel image and against OSM roads not used by the layout; no OSM buildings exist, see below; buildings will be synthetic, generated from the final centerline):
+- federal: start straight in open farmland (built-up fraction < 7 %, other roads >140 m away); best site for pit and stands.
+- norte: straight on the ring avenue north of the village (~11-14 % built nearby).
+- mixto: straight on the village edge next to MEX 23 (the other carriageway is within ~0-5 m on the right), pit placed on the left.
+- centro: start straight is now at the south edge of the grid, left side ~11 % built; right side 25 %.
+- poniente: start straight inside dense town (>50 % built pixels); pit/stands are placeholders that need the synthetic buildings to leave room.
+- grandstand positions are signed atMeters (negative = before the line, equal to length + value).
 
 ## Street width, environment
 
 - OSM has no width/lanes here. Real village streets ~6-8 m (satellite), MEX 23 carriageway ~7-10 m (unknown, estimate only).
-- Existing street circuits in `tools/track-builder/tracks.json`: baku 12, singapore 12, detroit 12, lasvegas 14. Recommend `widthMeters` 12 for federal and norte (R mostly >= 14 m) and 10 for centro, mixto, poniente: the filleted centerline has minimum radius ~5-6 m (centro 6.1, federal 6.2, norte 4.8, mixto 5.3, poniente 6.3; stretches below R 10 m: 54/78/78/162/51 m), where a 12 m ribbon would fold on the inside edge. If 12 is wanted, the coder can widen the fillet radius (this source file keeps the street geometry).
-- OSM buildings: NONE in a 2.5 km box (Overpass `way[building]` returned 0). `environment: city` would bake no facades (`tools/env/osmBuildings.ts` has nothing to use); the satellite shows dense low houses. Facades need another source (not researched) or generated blocks. No OSM walls/fences either (areas files have no barriers); one park, one cemetery.
-- Suggested: `environment: "city"` (street furniture: lamps, sidewalks; check the baked-env step with no buildings) with the Sentinel ground texture; if `city` without buildings looks empty use `desert` (dry semi-arid palette, as bahrain/lusail/fontana). Biome: species `oak` only (the sole non-conifer broadleaf name in use besides ash/aspen; stands in for mesquite/pirul), density 0.03-0.05 (like fontana/detroit 0.02-0.05); the riparian corridor along the river (dark band in the image) can take higher local density if the builder supports it.
+- Existing street circuits in `tools/track-builder/tracks.json`: baku 12, singapore 12, detroit 12, lasvegas 14. With the 12 m minimum centreline radius, `widthMeters` 12 is fine on all five (inner edge radius >= 6.8 m); 10 would also work.
+- OSM buildings: NONE in a 2.5 km box (Overpass `way[building]` returned 0). Facades are to be synthetic from the final centerline. No OSM walls/fences either (areas files have no barriers); one park, one cemetery.
+- Suggested: `environment: "city"` (street furniture: lamps, sidewalks) with the Sentinel ground texture; if `city` without OSM buildings looks empty use `desert` (dry semi-arid palette, as bahrain/lusail/fontana). Biome: species `oak` only (stands in for mesquite/pirul), density 0.03-0.05 (like fontana/detroit 0.02-0.05).
 - Altitude ~1960 m (DEM 1945-1981 m window; layouts 1952-1972 m, flat, maxGrade 0.03 like detroit/lasvegas).
 
 ## Venue data
@@ -45,32 +48,35 @@ Bed depth guess from the 30 m DEM (centre sample vs bank, smoothed so real depth
 
 | layout | atMeters | water | OSM bridge | bridge length | river width | bed depth (DEM) | channel direction |
 |---|---|---|---|---|---|---|---|
-| centro | 1584 | river | no (street runs through the corridor) | ~30 (needed) | ~25 | 1.6 m | axis 141 deg |
-| centro | 2508 | river | no | ~30 (needed) | ~25 | 1.0 m | axis 111 deg |
-| federal | 1470 | river | no | ~30 (needed) | ~25 | 1.3 m | axis 93 deg |
-| federal | 2847 | river | yes, MEX 23 bridge way 1553277736 (layer 1) | 37 m | ~25 | 2.5 m | axis 135 deg |
-| norte | 1405 | stream, intermittent, culvert (way 1553277746) | culvert, not a bridge | ~6 | ~6 | 1.5 m | axis 145 deg |
-| mixto | none | | | | | | stream within 17-90 m at 3264-3498 |
-| poniente | 971 | river | no (OSM footbridge 1553277738 ~30 m to the side) | ~30 (needed) | ~25 | 1.4 m | axis 93 deg |
-| poniente | 2111 | river | yes, residential bridge way 911201276 (layer 1) | 77 m | ~25 | 5.4 m | axis 135 deg |
+| centro | 825 | river | no | ~30 (needed) | ~25 | 1.1 m | axis 111 deg |
+| centro | 2494 | river | no | ~30 (needed) | ~25 | 1.5 m | axis 141 deg |
+| federal | 1447 | river | no | ~30 (needed) | ~25 | 1.5 m | axis 93 deg |
+| federal | 2773 | river | yes, MEX 23 bridge way 1553277736 (layer 1) | 37 m | ~25 | 2.5 m | axis 135 deg |
+| norte | 1428 | stream, intermittent (culvert way 1553277746) | culvert, not a bridge | ~6 | ~6 | 1.0 m | axis 145 deg |
+| norte | 1579 | stream, intermittent (1553277745) | no | ~6 | ~6 | 1.6 m | axis 145 deg |
+| mixto | 3243 | stream, intermittent (1553277746) | no | ~6 | ~6 | 1.4 m | axis 145 deg |
+| poniente | 960 | river | no (OSM footbridge 1553277738 ~30 m to the side) | ~30 (needed) | ~25 | 1.4 m | axis 93 deg |
+| poniente | 2074 | river | yes, residential bridge way 911201276 (layer 1) | 77 m | ~25 | 5.4 m | axis 135 deg |
 
-Alongside the river (distance to the OSM river line at the stretch; side flips where the layout crosses it, so both sides are listed):
+Mixto now clips the NE stream (scaling/smoothing moved it ~25 m); norte's two stream crossings are near the MEX 23 side. Crossing atMeters are measured on the final centerlines.
+
+Alongside the river (distance to the OSM water line; side flips where the layout crosses it, so both sides appear):
 
 | layout | from..to (m) | side | distance | water |
 |---|---|---|---|---|
-| centro | 1456..1672 | left and right (crosses at 1584) | 2-88 m, mean 45 | river |
-| centro | 2313..2613 | left and right (crosses at 2508) | 2-87 m, mean 39 | river |
-| federal | 1284..1811 | left and right (crosses at 1470) | 1-90 m, mean 43 | river |
-| federal | 2757..2937 | left and right (crosses at 2847) | 0-88 m, mean 44 | river |
-| norte | 1308..1775 | right (mostly) | 1-89 m, mean ~47 | 3 intermittent streams (1553277744/45/46) |
-| mixto | 3264..3498 | left/right | 17-90 m, mean ~55 | intermittent streams |
-| poniente | 516..1061 | left and right (crosses at 971) | 0-86 m, mean 30 | river |
-| poniente | 1948..2200 | left and right (crosses at 2111) | 1-90 m, mean 46 | river |
+| centro | 630..930 | left and right (crosses at 825) | 1-88 m, mean 39 | river |
+| centro | 2370..2579 | left and right (crosses at 2494) | 2-86 m, mean 43 | river |
+| federal | 1278..1770 | left and right (crosses at 1447) | 1-86 m, mean 42 | river |
+| federal | 2682..2862 | left and right (crosses at 2773) | 1-89 m, mean 44 | river |
+| norte | 1326..1668 | left and right (crosses at 1428, 1579) | 0-86 m, mean ~41 | 3 intermittent streams |
+| mixto | 3143..3425 | left and right (crosses at 3243) | 1-89 m, mean ~46 | intermittent streams |
+| poniente | 510..1050 | left and right (crosses at 960) | 0-86 m, mean 30 | river |
+| poniente | 1914..2166 | left and right (crosses at 2074) | 2-90 m, mean 47 | river |
 
-Not found: any OSM water polygon or riverbank; `bridge`/`culvert` ways only for MEX 23 (2 ways), 1 residential, 1 unclassified, 1 footway. The crossings without OSM bridge (centro both, federal 1470, poniente 971) are where the streets cross the arroyo corridor: either fords/culverts not mapped or bridges missing in OSM; the game needs a bridge or ford there (check the satellite/Google). Federal and poniente share the street at the 1470/971 crossing area.
+Not found: any OSM water polygon or riverbank; `bridge`/`culvert` ways only for MEX 23 (2 ways), 1 residential, 1 unclassified, 1 footway. The crossings without OSM bridge (centro both, federal 1447, poniente 960) are where the streets cross the arroyo corridor: either fords/culverts not mapped or bridges missing in OSM; the game needs a bridge or ford there (check the satellite/Google). Federal and poniente share the street at the 1447/960 crossing area.
 
 ## Problems / caveats
 
 - No OSM buildings (see above). No OSM barriers/areas beyond one park and one cemetery.
-- Fillets limited by short blocks leave radii down to ~5 m in places (mixto worst).
+- Norte and mixto were scaled (1.025, 1.07) to keep the length within 5 %; their path is up to ~30-40 m off the real streets at the extremes.
 - Overpass kumi.systems returned 500 errors for the water queries; overpass-api.de worked.
