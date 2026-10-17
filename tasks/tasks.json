@@ -2600,7 +2600,7 @@
     {
       "num": "188",
       "title": "Monza track style data",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181"
       ],
