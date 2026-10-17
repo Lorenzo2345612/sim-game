@@ -15,6 +15,8 @@ User report 2026-10-16: every track looks wrong — floating grandstands, sunk p
 
 Wave 1 (this file, tasks 233–238): one ground sampler; every placed object grounded (top on the highest ground of its footprint, plinth/post down to the lowest); pit building follows the pit lane; a QA report and a QA screenshot tool.
 Wave 2 (after wave-1 QA output): OSM features v2 fetch for all tracks (grandstands, buildings, pit lane, paved run-off areas; planner-side data, Sonnet); builder places stands and pit from OSM with config fallback; run-off surface from OSM + Sentinel ground texture classification (planner probe first); style colours from a referenced research note per track (Sonnet research, worker applies).
+
+Wave 2 user requirements (2026-10-17): pit lane road missing on every track (build it from OSM `pit_lane`); barrier type and distance per track (concrete walls close to the track on street circuits, not guardrail + grass everywhere; from OSM `barrier` + satellite); grandstands must never overlap the track surface (hard rule: builder pushes or drops any stand with clearance < 2 m, 237 reports it); grandstand shape follows the OSM polygon (curved/arc stands and stadium sections such as the Mexico City stadium section, not only straight boxes; Mexico has 26 OSM grandstand polygons).
 Gate: a track is done only after `npm run track:qa` has no fail and the planner reviewed `track:shots` against the satellite image (skill `track-qa`, to write).
 
 ## Shared rules
