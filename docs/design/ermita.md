@@ -8,11 +8,11 @@ Data prerequisites (planner-side data agent, committed before 242): `assets/sour
 
 | id | name | widthMeters |
 |---|---|---|
-| ermita-centro | Ermita Centro | 10 |
+| ermita-centro | Ermita Centro | 12 |
 | ermita-federal | Ermita Federal | 12 |
 | ermita-norte | Ermita Norte | 12 |
-| ermita-mixto | Ermita Mixto | 10 |
-| ermita-poniente | Ermita Poniente | 10 |
+| ermita-mixto | Ermita Mixto | 12 |
+| ermita-poniente | Ermita Poniente | 12 |
 
 Country "Mexico"; environment `desert`; DEM shared; `pit`/`grandstands` from `mx-ermita.md`; no banking. Ground texture per id cropped from the shared Sentinel-2 scene to each built terrain bounds (skill `track-data` step 12 tone rules). Menu, index (`build:track-index`), per-id tables (env/fog, DEM tool) as in 168/211. Existing tracks are not rebuilt.
 
