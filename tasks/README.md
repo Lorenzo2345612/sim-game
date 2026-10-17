@@ -186,7 +186,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 182 | Pit building and grandstand styling | done | 180 |
 | 183 | Kerb colours per segment and run-off paint | in progress | 180 |
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | pending | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |
-| 185 | Barrier colours, wall band and configurable catch fence from the track style | waiting decision | 180 |
+| 185 | Barrier colours, wall band and configurable catch fence from the track style | in progress | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | pending | 186 |
 | 188 | Monza track style data | done | 181 |
