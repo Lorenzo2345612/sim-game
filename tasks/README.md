@@ -242,7 +242,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
-| 241 | Ermita de Guadalupe street circuit: 5 layouts | waiting decision | - |
+| 241 | Ermita de Guadalupe street circuit: 5 layouts | in progress | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | pending | 228, 231 |
