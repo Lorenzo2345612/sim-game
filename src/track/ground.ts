@@ -1,4 +1,4 @@
-import type { Terrain, TrackDataV2 } from '../core/types';
+import type { Terrain, TrackData, TrackDataV2 } from '../core/types';
 import { bankTanAt } from './surfaces';
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -55,6 +55,11 @@ export function groundHeightAt(track: TrackDataV2, x: number, z: number): number
     if (Number.isFinite(h)) return h;
   }
   return planeHeightAt(track, x, z);
+}
+
+/** Surface height sampler for any track version: v2 terrain-aware, v1 flat at 0. */
+export function surfaceHeightAt(track: TrackData | TrackDataV2, x: number, z: number): number {
+  return 'version' in track ? groundHeightAt(track, x, z) : 0;
 }
 
 /**

@@ -89,6 +89,14 @@ export function loadMirrorSetting(storage: KeyValueStorage): boolean {
   return typeof mirror === 'boolean' ? mirror : true;
 }
 
+export type DrivingLineMode = 'off' | 'braking' | 'full';
+
+/** Stored driving-line mode; missing or invalid values read as 'off'. */
+export function loadDrivingLineSetting(storage: KeyValueStorage): DrivingLineMode {
+  const mode = storedSettings(storage).drivingLine;
+  return mode === 'braking' || mode === 'full' ? mode : 'off';
+}
+
 export interface CockpitSettings {
   cockpitFov: number;
   headMotion: boolean;

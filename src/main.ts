@@ -12,7 +12,7 @@ import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
-import { loadCockpitSettings, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type Preset } from './core/settings';
+import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
 import { Game, type LapInfo } from './game/game';
 import { RaceGame, type RaceConfig } from './game/raceGame';
@@ -57,7 +57,10 @@ import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
-import { terrainHeightAt } from './track/ground';
+import { surfaceHeightAt, terrainHeightAt } from './track/ground';
+import { computeRacingLine } from './ai/racingLine';
+import { carLimitsFromSpec, speedProfile } from './ai/speedProfile';
+import { DrivingLine } from './render/drivingLine';
 import { grandstandFootprint, groundedBase } from './track/placement';
 import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
@@ -108,6 +111,7 @@ export interface SceneStats {
   maxWhiteAlbedo: number;
   decals: number;
   steeringWheel: { visible: boolean; angle: number };
+  drivingLine: { visible: boolean; vertexCount: number };
 }
 
 declare global {
@@ -498,6 +502,14 @@ function presetFromQuery(storage: Storage): Preset {
     : loadPreset(storage);
 }
 
+// ?line= (123) wins over the stored driving-line mode.
+function drivingLineFromQuery(params: URLSearchParams, storage: Storage): DrivingLineMode {
+  const requested = params.get('line');
+  return requested === 'off' || requested === 'braking' || requested === 'full'
+    ? requested
+    : loadDrivingLineSetting(storage);
+}
+
 /** Query multiplier: a finite value above 0 wins, an absent query keeps the stored option, anything else is 1. */
 function queryMultiplier(raw: string | null, stored: number): number {
   if (raw === null) return stored;
@@ -693,7 +705,24 @@ async function startGame(trackId: string): Promise<void> {
     maxWhiteAlbedo: 0,
     decals: 0,
     steeringWheel: { visible: false, angle: 0 },
+    drivingLine: { visible: false, vertexCount: 0 },
   };
+
+  // Driving-line overlay (123): same line/profile construction as RaceGame, so both
+  // session kinds share one geometry; hidden by default until the mode says otherwise.
+  const racingLine = computeRacingLine(track.centerline, track.widthMeters / 2);
+  const lineSpeeds = speedProfile(racingLine, carLimitsFromSpec(gameSpec, sim.getTelemetry().fuelKg));
+  const lineHeight = (x: number, z: number): number => surfaceHeightAt(track, x, z);
+  const drivingLine = new DrivingLine(racingLine, lineSpeeds, lineHeight);
+  drivingLine.setMode(drivingLineFromQuery(params, window.localStorage));
+  scene.add(drivingLine.object);
+  disposables.push(drivingLine);
+  const lineRings: [number, number][] = [];
+  for (let i = 0; i < racingLine.points.length; i += 2) {
+    lineRings.push([racingLine.points[i], racingLine.points[i + 1]]);
+  }
+  const lineProgress = new TrackProgress(lineRings);
+  stats.drivingLine = { visible: drivingLine.object.visible, vertexCount: drivingLine.vertexCount };
 
   if ('version' in track) {
     // v2: elevated terrain + textured surfaces + scenery replace the flat Phase 0 ground.
@@ -1170,6 +1199,10 @@ async function startGame(trackId: string): Promise<void> {
       treeField?.update(camera.position);
       city?.update(sim.simTime);
       minimap.update(interp.position.x, interp.position.z);
+      drivingLine.update(
+        lineProgress.update(interp.position.x, interp.position.z).distance,
+        Math.abs(interp.forwardSpeed),
+      );
 
       const info = sim.getLapInfo();
       hudData.speedKmh = Math.abs(interp.forwardSpeed) * MS_TO_KMH;
