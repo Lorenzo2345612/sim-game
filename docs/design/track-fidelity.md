@@ -118,3 +118,25 @@ Fixture `WALLED(h)`: `STRAIGHT` with barriers `[{start: 0, end: 99, side: 'right
 | AT4 | e2e `?track=monza&quality=low` | `qaCamera('top')` then render | active camera is orthographic; `left/right/top/bottom` cover the terrain sizeX × sizeZ (±1 m); HUD root `display: none` |
 | AT5 | e2e same page | `qaCamera(null)` | chase camera active again, HUD visible |
 | AT6 | sources | read `src/track/qaViews.ts` | no `from 'three'` |
+
+### 240 — Smooth bank transitions on ovals
+
+User (2026-10-17): the transition between banked and flat sections on ovals is far too abrupt. Cause: `bankProfile` (tools/track-builder/banking.ts) ramps linearly over a fixed 60 m centred on each range boundary, so Daytona goes 0 → 31° in 60 m (0.52°/m) with a slope kink at both ends.
+
+Rule (auto mode, used by the builder): when `bankProfile` is called without the 4th argument, each range gets its own ramp `R = max(60, 7.5·|degrees|)` m (peak rate 0.2°/m with smoothstep), placed **inside** the range (full bank from `from + R` to `to − R`; zero at `from` and `to`), eased with smoothstep `f = u²(3 − 2u)`. If `2R` exceeds the span, `R = span/2`. Overlaps: larger magnitude wins (unchanged). An explicit 4th argument keeps today's behaviour exactly (linear, centred), so the existing 174 unit tests that pass `60` are unchanged. The builder calls auto mode; rebuild daytona, fontana, fontana-roval JSONs.
+
+Fixtures: `cum = [0, 1, …, 4999]`, length 5000; range A = `{from 1000, to 2000, degrees 31, right}`; range B = `{from 3000, to 3100, degrees 31, right}`; range C = `{from 4000, to 4500, degrees 2, left}`.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | A, auto | bankProfile | bank[1500] = 31° ± 1e-9; bank[1000], bank[2000], bank[999], bank[2001], bank[500] = 0 ± 1e-12; bank[1000 + 232.5 rounded up = 1233] = 31° ± 1e-9 |
+| AT2 | A, auto | consecutive differences over all i | max \|bank[i+1] − bank[i]\| ≤ 0.2° · 1.01 |
+| AT3 | A, auto | second differences | at i = 1000 and i = 1233: \|bank[i+1] − 2·bank[i] + bank[i−1]\| ≤ 0.002° (no kink) |
+| AT4 | A, auto | value at the ramp midpoint i = 1116 | 15.5° ± 0.3° |
+| AT5 | B, auto (span 100 < 2R) | bankProfile | all finite; peak at i = 3050 equals 31° ± 1e-9 (R = 50); bank[3000] = bank[3100] = 0 |
+| AT6 | C, auto | bankProfile | sign negative inside; R = 60: bank[4060] = −2° ± 1e-9; max step ≤ 1.5·2°/60 · 1.01 |
+| AT7 | A with explicit `60` | bankProfile | identical to the pre-change linear centred result (bank[1000] = 15.5°, bank[970] = 0, bank[1030] = 31°) |
+| AT8 | rebuilt daytona, fontana, fontana-roval JSON | per-metre bank change along the centerline (Δbank / Δs between consecutive points) | ≤ 0.2°/m · 1.05 everywhere; max \|bank\| = 31° / 11° / 14° ± 0.1° respectively |
+| AT9 | — | 174 acceptance and edge tests | pass, with only the planner-authorised edit below |
+
+Planner-authorised edit for 240: in `tests/unit/acceptance/174-track-banking.test.ts` the full-bank check margin `wrapMargin(...) < 60` (and its message "at least 60 m") becomes `< 240` / "at least 240 m" (ramps now lie inside the ranges and reach 232.5 m for 31°).
