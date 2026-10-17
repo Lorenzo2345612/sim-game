@@ -237,7 +237,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | done | 233 |
-| 236 | Pit building split into grounded pieces along the pit lane | in progress | 234 |
+| 236 | Pit building split into grounded pieces along the pit lane | done | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |

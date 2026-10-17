@@ -3225,7 +3225,7 @@
     {
       "num": "236",
       "title": "Pit building split into grounded pieces along the pit lane",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "234"
       ],
