@@ -226,7 +226,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
-| 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
+| 225 | Expert AI must not spin; difficulty orders pace | waiting decision | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | done | 227 |
@@ -243,13 +243,14 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
-| 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
+| 242 | Synthetic village buildings (plaster row houses, tanks) | in progress | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | in progress | 235 |
-| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | pending | 240, 241 |
+| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | in progress | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | pending | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
+| 252 | Expert AI drives spin-free on monza and spa | pending | 225 |

@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "093"
       ],
@@ -3302,7 +3302,7 @@
     {
       "num": "242",
       "title": "Synthetic village buildings (plaster row houses, tanks)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "241"
       ],
@@ -3366,7 +3366,7 @@
     {
       "num": "247",
       "title": "Sausage kerbs fit the corner (length, offset, curved render/colliders)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "240",
         "241"
@@ -3433,6 +3433,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/251-bollard-knockover.md"
+    },
+    {
+      "num": "252",
+      "title": "Expert AI drives spin-free on monza and spa",
+      "status": "pending",
+      "deps": [
+        "225"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/252-expert-ai-spin-free.md"
     }
   ]
 }
