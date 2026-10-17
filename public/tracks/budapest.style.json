@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#4A4A4D", "grass": "#8A9A4A", "gravel": "#C2AE80" },
+  "kerbs": {
+    "colors": ["#C8312C", "#DADADA"],
+    "outerStrip": "#2E7D4F",
+    "ranges": [{ "start": 1140, "end": 1360, "colors": ["#DA7A2A", "#DADADA"] }]
+  },
+  "barriers": {
+    "armco": { "color": "#B8BCC0" },
+    "tyres": { "beltColor": "#3FA9A0" },
+    "fence": { "heightMeters": 4, "types": ["armco", "tyres", "wall"], "color": "#7C8A80" }
+  },
+  "pitBuilding": {
+    "storeys": 2, "heightMeters": 9, "depthMeters": 15,
+    "facade": "#D8DAD6", "roof": "#B8BCC0", "doors": "#2E7D4F", "accent": "#2E7D4F",
+    "roofStyle": "flat", "glazing": 0.4
+  },
+  "grandstands": { "structure": "#B0B4B8", "roof": "#8A8D90", "seats": ["#2F5FA8"], "roofStyle": "truss" },
+  "extraGrandstands": [
+    { "start": 270, "end": 310, "side": "left", "offsetMeters": 20, "rows": 10, "roof": false },
+    { "start": 860, "end": 1000, "side": "left", "offsetMeters": 25, "rows": 12, "roof": false }
+  ],
+  "props": [{ "type": "marshalPost", "index": 1730, "side": "right", "offsetMeters": 8, "color": "#DA7A2A" }]
+}
