@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Grandstand } from '../core/types';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 
 const ROW_RISE = 0.8;
 const ROW_DEPTH = 0.9;
@@ -69,8 +70,11 @@ const disposedGroups = new WeakSet<THREE.Group>();
 export function createGrandstand(
   g: Grandstand,
   loadTexture: (url: string) => THREE.Texture = defaultLoadTexture,
+  style?: ResolvedTrackStyle,
 ): THREE.Group {
+  void style;
   const group = new THREE.Group();
+  group.name = 'grandstand';
   group.position.set(g.x, 0, g.z);
   group.rotation.y = g.yaw;
 

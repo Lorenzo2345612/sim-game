@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Terrain, TrackDataV2 } from '../core/types';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
@@ -65,7 +66,8 @@ function pitPathLength(track: TrackDataV2): number {
   return length;
 }
 
-export function createPitBuilding(track: TrackDataV2): THREE.Group {
+export function createPitBuilding(track: TrackDataV2, style?: ResolvedTrackStyle): THREE.Group {
+  void style;
   const [sx, sz] = track.centerline[track.pit.start];
   const [ex, ez] = track.centerline[track.pit.end];
   const chordLength = Math.hypot(ex - sx, ez - sz) || 1;

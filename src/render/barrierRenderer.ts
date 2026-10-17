@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { BarrierSegment, TrackDataV2 } from '../core/types';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 import { barrierRuns, type BarrierVertex } from '../track/barrierPath';
 import {
   ARMCO_POST_SPACING,
@@ -282,7 +283,9 @@ interface InstanceSpot {
 export function createBarrierObject(
   track: TrackDataV2,
   loadTexture?: (url: string) => THREE.Texture,
+  style?: ResolvedTrackStyle,
 ): BarrierObject {
+  void style;
   const load = loadTexture ?? defaultLoadTexture;
   const group = new THREE.Group();
   const geometries: THREE.BufferGeometry[] = [];

@@ -1,8 +1,13 @@
 import * as THREE from 'three';
-import type { Surface, SurfaceStrip } from '../core/types';
+import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
+import type { ResolvedTrackStyle } from '../track/trackStyle';
 import { createSurfaceMaterial, type SurfaceMaterialUserData } from './surfaceMaterials';
 
-export interface TrackSurfaceOptions { loadTexture?: (url: string) => THREE.Texture }
+export interface TrackSurfaceOptions {
+  loadTexture?: (url: string) => THREE.Texture;
+  style?: ResolvedTrackStyle;
+  track?: TrackDataV2;
+}
 export interface TrackSurfaceObject { group: THREE.Group; dispose(): void }
 
 const MESH_NAME: Partial<Record<Surface, string>> = {

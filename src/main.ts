@@ -51,6 +51,7 @@ import { TrackProgress } from './track/trackProgress';
 import { buildRibbon } from './track/ribbon';
 import { bankTanAt, buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
+import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
 import { parseTrackData } from './track/parseTrackData';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
@@ -68,6 +69,7 @@ export interface SceneStats {
   escapeRoads: number;
   treeInstances: number;
   grandstands: number;
+  style: { id: string; loaded: boolean; warnings: number; extraGrandstands: number };
   pitBuildings: number;
   startGantries: number;
   distanceBoards: number;
@@ -518,6 +520,10 @@ async function startGame(trackId: string): Promise<void> {
   if (!res.ok) throw new Error(`Could not load ${trackId}.json`);
   const track: TrackData | TrackDataV2 = parseTrackData(await res.json());
 
+  const loadedStyle = await loadTrackStyle(trackId, track.centerline.length);
+  for (const m of [...loadedStyle.errors, ...loadedStyle.warnings]) console.warn(`[style ${trackId}] ${m}`);
+  const trackStyle = loadedStyle.style;
+
   const params = new URLSearchParams(window.location.search);
   const carId = resolveCarId(params, window.localStorage);
   const specRes = await fetch(`/cars/${carId}.json`);
@@ -568,6 +574,7 @@ async function startGame(trackId: string): Promise<void> {
     escapeRoads: 0,
     treeInstances: 0,
     grandstands: 0,
+    style: { id: '', loaded: false, warnings: 0, extraGrandstands: 0 },
     pitBuildings: 0,
     startGantries: 0,
     distanceBoards: 0,
@@ -621,7 +628,7 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(terrain);
     stats.groundTexture = groundUrl;
 
-    const surfaces = createTrackSurfaceObject(buildTrackSurfaces(track));
+    const surfaces = createTrackSurfaceObject(buildTrackSurfaces(track), { style: trackStyle, track });
     surfaces.group.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (mesh.isMesh) mesh.receiveShadow = true;
@@ -633,7 +640,7 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(markings.group);
     disposables.push(markings);
 
-    const barriers = createBarrierObject(track);
+    const barriers = createBarrierObject(track, undefined, trackStyle);
     scene.add(barriers.group);
     disposables.push(barriers);
 
@@ -664,12 +671,20 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(trees.object);
 
     for (const g of track.grandstands) {
-      const stand = createGrandstand(g);
+      const stand = createGrandstand(g, undefined, trackStyle);
       stand.position.y = nearestElevation(track, g.x, g.z);
       scene.add(stand);
     }
 
-    scene.add(createPitBuilding(track));
+    const extras = extraGrandstands(track, trackStyle);
+    for (const g of extras) {
+      const stand = createGrandstand(g, undefined, trackStyle);
+      stand.position.y = nearestElevation(track, g.x, g.z);
+      scene.add(stand);
+    }
+    stats.style = { id: trackId, loaded: loadedStyle.loaded, warnings: loadedStyle.warnings.length, extraGrandstands: extras.length };
+
+    scene.add(createPitBuilding(track, trackStyle));
     scene.add(createStartGantry(track));
     const lights = createStartLights(track);
     lights.setLights(0);
