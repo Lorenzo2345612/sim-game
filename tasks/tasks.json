@@ -3150,7 +3150,7 @@
     {
       "num": "230",
       "title": "Mixer: cockpit bus, master dynamics, smooth camera switch",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",

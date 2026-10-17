@@ -231,6 +231,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | pending | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | pending | 227 |
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
-| 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | pending | - |
+| 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | in progress | - |
 | 231 | Per-car engine synth data | pending | 226 |
 | 232 | Offline engine render tool | pending | 227 |
