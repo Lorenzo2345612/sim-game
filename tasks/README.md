@@ -237,8 +237,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | in progress | 233 |
-| 236 | Pit building split into grounded pieces along the pit lane | pending | 234 |
+| 236 | Pit building split into grounded pieces along the pit lane | in progress | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
 | 238 | Track QA camera and screenshot tool | in progress | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | pending | - |
+| 241 | Ermita de Guadalupe street circuit: 5 layouts | pending | - |
+| 242 | Synthetic village buildings (plaster row houses, tanks) | pending | 241 |
+| 243 | Dry arroyo channel and bridges | pending | 241 |

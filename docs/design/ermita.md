@@ -14,7 +14,7 @@ Data prerequisites (planner-side data agent, committed before 242): `assets/sour
 | ermita-mixto | Ermita Mixto | 12 |
 | ermita-poniente | Ermita Poniente | 12 |
 
-Country "Mexico"; environment `desert`; DEM shared; `pit`/`grandstands` from `mx-ermita.md`; no banking. Ground texture per id cropped from the shared Sentinel-2 scene to each built terrain bounds (skill `track-data` step 12 tone rules). Menu, index (`build:track-index`), per-id tables (env/fog, DEM tool) as in 168/211. Existing tracks are not rebuilt.
+Country "Mexico"; environment `desert`; DEM shared; `pit`/`grandstands` from `mx-ermita.md`; no banking; `"walls": true` (concrete walls all round, as city tracks). Ground texture per id cropped from the shared Sentinel-2 scene to each built terrain bounds (skill `track-data` step 12 tone rules). Menu, index (`build:track-index`), per-id tables (env/fog, DEM tool) as in 168/211. Existing tracks are not rebuilt.
 
 | ID | Given | When | Then |
 |---|---|---|---|
@@ -51,7 +51,7 @@ Render (`src/render/cityRenderer.ts`): plaster houses in one merged mesh with ve
 | AT7 | unit: F + exclusion square x∈[90,130], z∈[5,40] | every building | no overlap with the exclusion |
 | AT8 | unit: F | every building | distance from every ring vertex to the junction point (200, 0) ≥ 8 m |
 | AT9 | unit: F | walls | every wall height 2.2, thickness 0.3, at the front setback line; walls do not overlap buildings |
-| AT10 | unit: each `public/tracks/ermita-*-env.json` | parse | ≥ 150 buildings, all 'plaster' with color in palette; AT2 clearance holds against that track's centerline/half widths |
+| AT10 | unit: each `public/tracks/ermita-*-env.json` | parse | ≥ 150 buildings, all 'plaster' with color in palette; every building ring vertex and edge is ≥ (the `offsetMeters` of that track's barrier covering the nearest centerline index on that side) + 1.0 − 1e-6 m from the track centerline |
 | AT11 | unit: `createCityObject` with a mock `loadTexture` and 3 plaster buildings colours 0xC8963E, 0xD98C8C, 0x8FB8C8, 2 with `tank` | inspect group | one mesh whose material has `vertexColors` true and whose `color` attribute contains the three `THREE.Color().setHex` values; one `InstancedMesh` with count 2; `dispose()` disposes every geometry and material |
 | AT12 | unit: existing `public/tracks/{baku,lasvegas,singapore}-env.json` | read | byte-identical to master |
 

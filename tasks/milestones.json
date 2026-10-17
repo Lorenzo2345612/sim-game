@@ -377,13 +377,17 @@
         "205",
         "206"
       ],
-      "status": "open",
+      "status": "built",
       "prefetch": [
         "179",
         "181",
         "180",
         "188"
-      ]
+      ],
+      "builtAt": "2026-10-17T12:27:13",
+      "commit": "d7ede2f",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M1.11",
@@ -406,6 +410,21 @@
         "237",
         "238",
         "240"
+      ]
+    },
+    {
+      "id": "M1.12",
+      "title": "Ermita de Guadalupe street circuit (5 layouts, village, arroyo)",
+      "tasks": [
+        "241",
+        "242",
+        "243"
+      ],
+      "status": "open",
+      "prefetch": [
+        "241",
+        "242",
+        "243"
       ]
     },
     {
