@@ -3199,7 +3199,7 @@
     {
       "num": "234",
       "title": "Grandstands and props grounded on terrain with plinths",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "233"
       ],
