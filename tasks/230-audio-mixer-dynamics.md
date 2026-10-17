@@ -51,7 +51,8 @@ Conventions: sampleRate ≤ 0 or non-finite → throw `RangeError`; no mutation 
 
 ## Frozen-test edits (planner-authorised)
 
-- `tests/unit/acceptance/111-audio-mix.test.ts` AT2: title and expectation `1200` → `2500`; `22050` unchanged.
+- `tests/unit/acceptance/111-audio-mix.test.ts` AT2: title and expectation `1200` → `2500`; `22050` unchanged. Also add to its `FakeParam` a method `setTargetAtTime(v: number, t: number, _tau: number): FakeParam` that sets `this.value = v` and returns `this` (no event recorded).
+- `tests/unit/audio/mixer.test.ts`: the assertion `masterGain.connections` contains `ctx.destination` becomes: `masterGain` connects to the first compressor, the first compressor to the second, the second to `ctx.destination` (per AT2).
 - `tests/unit/audio/mixer.test.ts`: `WireContext` gains `createDynamicsCompressor()` (node with `threshold, knee, ratio, attack, release` FakeParams) and `createConvolver()` (node with `buffer`, `normalize`); `FakeParam.setTargetAtTime` already sets `.value`. Gain-count/index assertions shift because `cockpitWet` adds one gain after `effects`: 6 → 7 gains, and indices of wind/kerbAmp/gravel/crackleBus (6,7,9,10) → (7,8,10,11). Expectations using `COCKPIT_LOWPASS_HZ` need no change.
 
 ## Acceptance criteria
