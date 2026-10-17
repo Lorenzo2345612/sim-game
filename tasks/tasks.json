@@ -3112,7 +3112,7 @@
     {
       "num": "227",
       "title": "EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "226"
       ],
@@ -3261,6 +3261,20 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/238-track-qa-shots.md"
+    },
+    {
+      "num": "239",
+      "title": "Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down",
+      "status": "pending",
+      "deps": [
+        "228",
+        "231"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/239-turbo-transients.md"
     }
   ]
 }
