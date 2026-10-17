@@ -41,6 +41,7 @@ import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createLandmarks } from './render/landmarks';
 import { createDistanceBoards } from './render/distanceBoards';
 import { createStreetFurniture, loadLampModel } from './render/streetFurniture';
+import { createTrackProps } from './render/trackProps';
 import { createTreeField, type TreeField } from './render/treeField';
 import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
@@ -77,6 +78,7 @@ export interface SceneStats {
   pitBuildings: number;
   startGantries: number;
   distanceBoards: number;
+  props: number;
   buildings: number;
   lamps: number;
   sidewalks: number;
@@ -583,6 +585,7 @@ async function startGame(trackId: string): Promise<void> {
     pitBuildings: 0,
     startGantries: 0,
     distanceBoards: 0,
+    props: 0,
     buildings: 0,
     lamps: 0,
     sidewalks: 0,
@@ -661,6 +664,13 @@ async function startGame(trackId: string): Promise<void> {
     const furniture = createStreetFurniture(track);
     scene.add(furniture.group);
     disposables.push(furniture);
+
+    const props = createTrackProps(track, trackStyle);
+    if (props) {
+      scene.add(props.group);
+      disposables.push(props);
+      stats.props = props.group.userData.placed as number;
+    }
 
     // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed

@@ -11,7 +11,7 @@ export interface BarrierVertex {
 
 const NEAR_INDEX_SPAN = 5; // own indices exempt from the cross-track drop test
 
-function rightNormalAt(cx: [number, number][], i: number): [number, number] {
+export function rightNormalAt(cx: [number, number][], i: number): [number, number] {
   const n = cx.length;
   const prev = cx[(i - 1 + n) % n];
   const next = cx[(i + 1) % n];
