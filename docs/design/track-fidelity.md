@@ -210,3 +210,49 @@ Builder: run-offs on `pit.side` are clipped out of the pit window extended 50 m 
 | AT1 | `STADIUM(30)` + kerbs + a left sausage `{index: 0, offset 3, length 6}` (over the asphalt); `STRAIGHT` + right gravel runoff `{0..99, width 25}` (not clipped) | qaReport each | first: `sausage` check `fail`; second: `pit-clear` check `fail` |
 | AT2 | `STADIUM(30)` + kerbs, armco 12, no sausages | qaReport | `kerb`, `barrier-fold`, `sausage`, `pit-clear` all `ok` |
 | AT3 | CLI `npm run track:qa -- all` | run | no `fail` among these four checks on any track |
+
+## Wave 3 — breakable bollards (250–251)
+
+User request 2026-10-17: knock-over bollards on the inside of corners — after sausages, at corners with wide inner run-off, and at ~90° corners; they get destroyed (knocked away) when hit. Deps: 250 [248] (last JSON rebuild of wave 2, avoids JSON conflicts); 251 [250]. Both in M1.11.
+
+Shared definitions: as wave 2 (`half`, `clearance`, `halfNear`, `radii`, `detectCorners`, `KERB_WIDTH`, `STADIUM(R)`). Turn angle θ(run) = |sum of signed heading changes between consecutive centerline segments from run.start to run.end|. Apex = `apexIndex` of the run (as sausages). Arc position = cumulative centerline length; "downstream" = race direction (increasing index).
+
+Fixture `BOX(R)`: closed loop, width 12, flat, no terrain/runoffs/barriers/sausages unless the row adds them, left turns (inside = left). Start (0,0) heading +x: straight to (200,0) every 2 m (endpoint excluded); quarter circle centre (200,−R) to (200+R,−R), m = max(6, ceil(π·R/2)) points at angles π/2·j/m, j = 0..m−1; straight to (200+R, −R−200); quarter circle centre (200, −R−200) to (200, −2R−200); straight to (0, −2R−200); quarter circle centre (0, −R−200) to (−R, −R−200); straight to (−R, −R); quarter circle centre (0, −R) back to (0,0). Four corners with θ = 90°.
+
+### 250 Bollard placement (`tools/track-builder/bollards.ts`, track JSON `bollards`)
+`Bollard = { x: number; z: number; index: number; side: Side }` (XZ local metres; `TrackDataV2.bollards?: Bollard[]`, parser defaults to `[]`). `buildBollards(points, halfWidths, sausages, runoffs, barriers)`; groups of 3:
+- R1 after every sausage (auto and override): same side, lateral = sausage offset, arc positions sausage end + 2, + 4, + 6 m (end = apex arc position + length/2, downstream).
+- R2 corner run with 60° ≤ θ ≤ 120° and minRadius ≤ 40 m: inner side, lateral `half + KERB_WIDTH + 1.0`, arc positions apex − 4, apex, apex + 4.
+- R3 corner run (any θ) with an inner-side runoff segment covering the apex index and `widthMeters ≥ 10`: same group as R2.
+- At most one R2/R3 group per corner run; skip it when an R1 bollard of the same side lies within 15 m arc of the apex.
+- Drop a bollard if its lateral ≥ 0.8·radii[index] (inner side), or `clearance < halfNear + KERB_WIDTH + 0.5`, or its lateral > inner-side barrier offset at that index − 0.5.
+Rebuild every track (only `bollards` added).
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `BOX(20)` | buildBollards | 12 bollards, all `left`; per corner 3, the middle one at distance 20 − 8.2 = 11.8 ± 0.3 from the corner centre; outer two 4 ± 0.3 m arc (along the centerline) from it |
+| AT2 | `STADIUM(30)` | build | 0 bollards (θ = 180°, no runoff, no sausage) |
+| AT3 | `STADIUM(30)` + left runoff covering bend 1, width 12 | build | 3 bollards, all `left`, within 10 m arc of bend 1 apex; none near bend 2 |
+| AT4 | same with width 8 | build | 0 bollards |
+| AT5 | `STADIUM(30)` + left sausage `{index: apex of bend 1, offset 7.8, length 10}` | build | 3 bollards at lateral 7.8 ± 0.05 from the nearest centerline point, arc positions apex + 7, + 9, + 11 m (± 0.5) |
+| AT6 | `BOX(20)` + left sausage at corner 1 apex (offset 7.8, length 10) | build | 12 bollards: corner 1 has only the sausage group (3, lateral 7.8 ± 0.05), corners 2–4 the R2 groups |
+| AT7 | `BOX(7)` | build | 0 bollards (0.8·7 = 5.6 < 8.2) |
+| AT8 | every built track | read `bollards` | every bollard `clearance ≥ halfNear + KERB_WIDTH + 0.5 − 1e-6`; total over all tracks > 0; at least 10 tracks have ≥ 1 |
+| AT9 | rebuilt JSONs vs pre-task | deep compare | only `bollards` added |
+| AT10 | `parseTrackData` on a JSON without `bollards` | parse | `bollards` = `[]` |
+
+### 251 Knock-over bollards at runtime (`src/track/bollards.ts`, `src/render/bollardRenderer.ts`)
+`BOLLARD_RADIUS = 0.2`, `BOLLARD_HEIGHT = 0.8`, `BOLLARD_RESPAWN_S = 20`, `BOLLARD_CLEAR_M = 30`. `createBollardField(track)`: typed arrays (position, velocity, spin, state 0 standing / 1 flying / 2 resting, timer); y from `groundHeightAt`. `stepBollards(field, cars, dt)`, `cars: readonly { x, z, yaw, vx, vz, halfLength, halfWidth }[]` (yaw as three.js `rotation.y`, forward = −Z local). A standing bollard whose circle overlaps a car OBB becomes flying: horizontal velocity = 0.7·car velocity + 2 m/s along (bollard − car centre) normalised, vy = 3 m/s, spin 8 rad/s about the horizontal axis perpendicular to the velocity; gravity 9.81; when y ≤ ground → resting (lying on its side, velocity 0). Flying or resting for ≥ `BOLLARD_RESPAWN_S` with no car centre within `BOLLARD_CLEAR_M` → standing at its original spot. No effect on car dynamics; deterministic (no `Math.random`); no allocation inside `stepBollards`. Renderer: one `InstancedMesh` (cylinder, orange with a white band via vertex colours), matrices updated only for non-standing bollards, `dispose()`. Wired in the game loop (player + AI cars, fixed step) and render update.
+
+Fixture `POSTED`: `STRAIGHT` with `bollards: [{x: 100, z: 5, index: 10, side: 'right'}]`. Car A: x 90, z 5, yaw −π/2 (forward +x), vx 20, vz 0, halfLength 2.5, halfWidth 1, advanced by the test by v·dt each step.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `POSTED`, car A | step 2 s at `FIXED_DT` | bollard leaves state 0 at the first tick where the car front (x + 2.5) ≥ 100 − 0.2 (± 1 tick); at that tick its vx > 10; at 2 s state 2, y = ground ± 0.05, x > 100 |
+| AT2 | `POSTED`, car A with z 2 (lateral gap 3 − 1 − 0.2 > 0) | step 2 s | state 0 throughout |
+| AT3 | AT1, car then teleported to x 5000 after 2 s | step until 22 s + 1 tick | state 0 at the original x/z (± 1e-9) by then, not before 20 s after the hit |
+| AT4 | AT1, car parked at x 120 after the hit | step to 30 s | still state 2 |
+| AT5 | AT1 run twice | compare field arrays | identical |
+| AT6 | AT1 | car objects before/after each `stepBollards` | unchanged (deep equal) |
+| AT7 | `POSTED` field | `createBollardRenderer(field)` then a hit + `update()` | `InstancedMesh.count` = 1; instance 0 matrix differs from the initial one; `dispose()` disposes geometry and material |
+| AT8 | sources | read `src/track/bollards.ts`; game loop file | no `from 'three'` in bollards.ts; the loop calls `stepBollards(` |
