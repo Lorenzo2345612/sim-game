@@ -150,7 +150,7 @@ describe('103 trackside realism post-code gaps', () => {
     expect(rb.min.y).toBeCloseTo(5.445, 3);
     expect(rb.max.y).toBeCloseTo(5.755, 3);
     const fb = box(fence.geometry);
-    expect(fb.min.y).toBeCloseTo(5, 3);
+    expect(fb.min.y).toBeCloseTo(0, 3);
     expect(fb.max.y).toBeCloseTo(8, 3);
     dispose();
   });
@@ -169,7 +169,7 @@ describe('103 trackside realism post-code gaps', () => {
     const tyreYs = instanceYs(tyres);
     expect(tyreYs[0]).toBeCloseTo(5.125, 4);
     expect(tyreYs[50]).toBeCloseTo(5.875, 4);
-    expect(instanceYs(posts)[0]).toBeCloseTo(5.375, 4);
+    expect(instanceYs(posts)[0]).toBeCloseTo(2.875, 4);
     dispose();
   });
 });

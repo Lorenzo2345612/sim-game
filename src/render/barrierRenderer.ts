@@ -59,6 +59,7 @@ function repeatWrapping(texture: THREE.Texture): THREE.Texture {
 interface PathPoint {
   x: number;
   y: number;
+  ground: number;
   z: number;
   s: number;
 }
@@ -88,9 +89,19 @@ function spanPath(verts: BarrierVertex[]): PathPoint[] {
       const p = path[k - 1];
       s += Math.hypot(v.x - p.x, v.z - p.z);
     }
-    path.push({ x: v.x, y: v.y, z: v.z, s });
+    path.push({ x: v.x, y: v.y, ground: v.ground, z: v.z, s });
   }
   return path;
+}
+
+// lo/hi of the path vertex nearest to arc position s: instances take the
+// vertex's own bounds so posts and stacks sit exactly on the sampled ground.
+function boundsAt(path: PathPoint[], s: number): [lo: number, hi: number] {
+  const i = pathIndexAt(path, s);
+  const a = path[i];
+  const b = i + 1 < path.length ? path[i + 1] : a;
+  const p = s - a.s <= b.s - s ? a : b;
+  return [Math.min(p.y, p.ground), Math.max(p.y, p.ground)];
 }
 
 /**
@@ -168,21 +179,23 @@ function appendWall(
   const tLo = side === 'right' ? 0 : -WALL_THICKNESS;
   const tHi = side === 'right' ? WALL_THICKNESS : 0;
   const base = positions.length / 3;
-  const vTop = WALL_HEIGHT * WALL_UV_SCALE;
   for (let k = 0; k < path.length; k++) {
     const p = path[k];
+    const lo = Math.min(p.y, p.ground);
+    const hi = Math.max(p.y, p.ground);
     const [nx, nz] = pathNormal(path, k);
     const lx = nx * tLo;
     const lz = nz * tLo;
     const hx = nx * tHi;
     const hz = nz * tHi;
     positions.push(
-      p.x + lx, p.y, p.z + lz,
-      p.x + hx, p.y, p.z + hz,
-      p.x + lx, p.y + WALL_HEIGHT, p.z + lz,
-      p.x + hx, p.y + WALL_HEIGHT, p.z + hz,
+      p.x + lx, lo, p.z + lz,
+      p.x + hx, lo, p.z + hz,
+      p.x + lx, hi + WALL_HEIGHT, p.z + lz,
+      p.x + hx, hi + WALL_HEIGHT, p.z + hz,
     );
     const u = p.s * WALL_UV_SCALE;
+    const vTop = (hi + WALL_HEIGHT - lo) * WALL_UV_SCALE;
     uvs.push(u, 0, u, 0, u, vTop, u, vTop);
   }
   const edge = (i0: number, j0: number): void => {
@@ -210,7 +223,8 @@ function appendWallBand(
     const [nx, nz] = pathNormal(path, k);
     const x = p.x + nx * t;
     const z = p.z + nz * t;
-    positions.push(x, p.y + WALL_BAND_LOW, z, x, p.y + WALL_BAND_LOW + WALL_BAND_HEIGHT, z);
+    const hi = Math.max(p.y, p.ground);
+    positions.push(x, hi + WALL_BAND_LOW, z, x, hi + WALL_BAND_LOW + WALL_BAND_HEIGHT, z);
   }
   const edge = (i0: number, j0: number): void => {
     indices.push(i0, i0 + 1, j0, i0 + 1, j0 + 1, j0);
@@ -247,12 +261,13 @@ function appendRail(
   const base = positions.length / 3;
   for (let k = 0; k < path.length; k++) {
     const p = path[k];
+    const hi = Math.max(p.y, p.ground);
     const [nx, nz] = pathNormal(path, k);
     const ox = nx * sign;
     const oz = nz * sign;
     for (let m = 0; m < width; m++) {
       const [t, y] = profile[m];
-      positions.push(p.x + ox * t, p.y + y, p.z + oz * t);
+      positions.push(p.x + ox * t, hi + y, p.z + oz * t);
       uvs.push(p.s * RAIL_UV_SCALE, vAt[m]);
     }
   }
@@ -284,11 +299,17 @@ function appendFence(
     const az = a.z + anz * sign * FENCE_OFFSET;
     const bx = b.x + bnx * sign * FENCE_OFFSET;
     const bz = b.z + bnz * sign * FENCE_OFFSET;
-    positions.push(ax, a.y, az, ax, a.y + h, az, bx, b.y, bz, bx, b.y + h, bz);
+    const alo = Math.min(a.y, a.ground);
+    const ahi = Math.max(a.y, a.ground);
+    const blo = Math.min(b.y, b.ground);
+    const bhi = Math.max(b.y, b.ground);
+    positions.push(ax, alo, az, ax, ahi + h, az, bx, blo, bz, bx, bhi + h, bz);
     const ua = a.s * FENCE_UV_SCALE;
     const ub = b.s * FENCE_UV_SCALE;
-    const vTop = h * FENCE_UV_SCALE;
-    uvs.push(ua, 0, ua, vTop, ub, 0, ub, vTop);
+    uvs.push(
+      ua, 0, ua, (ahi + h - alo) * FENCE_UV_SCALE,
+      ub, 0, ub, (bhi + h - blo) * FENCE_UV_SCALE,
+    );
     indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
   };
   let meters = 0;
@@ -319,7 +340,22 @@ interface InstanceSpot {
   y: number;
   z: number;
   yaw: number;
+  scaleY?: number;
 }
+
+// Concrete footing under tyres/foam when the ground sits more than 0.1 m off the path.
+interface FootingSpot {
+  x: number;
+  z: number;
+  yaw: number;
+  lo: number;
+  hi: number;
+  width: number;
+  depth: number;
+}
+
+const FOOTING_GAP = 0.1;
+const FOOTING_COLOR = 0x8a8a8a;
 
 export function createBarrierObject(
   track: TrackDataV2,
@@ -355,6 +391,7 @@ export function createBarrierObject(
     : FOAM_COLORS.map((c) => new THREE.Color(c));
   const foamNames = foamColors ? ['foamA', 'foamB'] : FOAM_NAMES;
   const foamSpots: InstanceSpot[][] = Array.from({ length: foamNames.length }, () => []);
+  const footings: FootingSpot[] = [];
   const pointCount = track.centerline.length;
   // A matching range wins over the global fence settings for that vertex.
   const fenceHeightOf = (v: BarrierVertex, side: BarrierSegment['side']): number => {
@@ -386,15 +423,17 @@ export function createBarrierObject(
           for (let k = 0; k < count; k++) {
             const s = k * ARMCO_POST_SPACING;
             pointAt(path, s, at);
+            const [lo, hi] = boundsAt(path, s);
             const i = pathIndexAt(path, s);
             const [nx, nz] = centerlineNormal(track, span.verts[i].index);
             const ox = nx * sign;
             const oz = nz * sign;
             posts.push({
               x: at.x + ox * POST_BEHIND,
-              y: at.y,
+              y: (lo + hi + POST_HEIGHT) / 2,
               z: at.z + oz * POST_BEHIND,
               yaw: Math.atan2(ox, oz),
+              scaleY: (hi - lo + POST_HEIGHT) / POST_HEIGHT,
             });
           }
         } else if (span.type === 'tyres') {
@@ -406,12 +445,18 @@ export function createBarrierObject(
               const s = start + k * TYRE_PITCH;
               if (s + start > length + 1e-9) break;
               pointAt(path, s, at);
+              const [lo, hi] = boundsAt(path, s);
               const i = pathIndexAt(path, s);
               const [nx, nz] = centerlineNormal(track, span.verts[i].index);
+              const x = at.x + nx * sign * TYRE_OUTER_RADIUS;
+              const z = at.z + nz * sign * TYRE_OUTER_RADIUS;
+              if (r === 0 && hi - lo > FOOTING_GAP) {
+                footings.push({ x, z, yaw: 0, lo, hi, width: 2 * TYRE_OUTER_RADIUS, depth: 2 * TYRE_OUTER_RADIUS });
+              }
               tyres.push({
-                x: at.x + nx * sign * TYRE_OUTER_RADIUS,
-                y: at.y + r * TYRE_ROW_HEIGHT + TYRE_ROW_HEIGHT / 2,
-                z: at.z + nz * sign * TYRE_OUTER_RADIUS,
+                x,
+                y: hi + r * TYRE_ROW_HEIGHT + TYRE_ROW_HEIGHT / 2,
+                z,
                 yaw: 0,
               });
             }
@@ -422,14 +467,20 @@ export function createBarrierObject(
           for (let k = 0; k < count; k++) {
             const s = (k + 0.5) * FOAM_PITCH;
             pointAt(path, s, at);
+            const [lo, hi] = boundsAt(path, s);
             const i = pathIndexAt(path, s);
             const [nx, nz] = centerlineNormal(track, span.verts[i].index);
             const ox = nx * sign;
             const oz = nz * sign;
+            const x = at.x + ox * (FOAM_DEPTH / 2);
+            const z = at.z + oz * (FOAM_DEPTH / 2);
+            if (hi - lo > FOOTING_GAP) {
+              footings.push({ x, z, yaw: Math.atan2(ox, oz), lo, hi, width: FOAM_WIDTH, depth: FOAM_DEPTH });
+            }
             foamSpots[foamTotal % foamSpots.length].push({
-              x: at.x + ox * (FOAM_DEPTH / 2),
-              y: at.y,
-              z: at.z + oz * (FOAM_DEPTH / 2),
+              x,
+              y: hi,
+              z,
               yaw: Math.atan2(ox, oz),
             });
             foamTotal++;
@@ -473,10 +524,12 @@ export function createBarrierObject(
       const postsMesh = new THREE.InstancedMesh(postGeometry, material, posts.length);
       postsMesh.name = 'armcoPosts';
       const matrix = new THREE.Matrix4();
+      const scale = new THREE.Vector3();
       for (let i = 0; i < posts.length; i++) {
         const p = posts[i];
         matrix.makeRotationY(p.yaw);
-        matrix.setPosition(p.x, p.y + POST_HEIGHT / 2, p.z);
+        matrix.scale(scale.set(1, p.scaleY ?? 1, 1));
+        matrix.setPosition(p.x, p.y, p.z);
         postsMesh.setMatrixAt(i, matrix);
       }
       postsMesh.instanceMatrix.needsUpdate = true;
@@ -599,6 +652,29 @@ export function createBarrierObject(
       mesh.castShadow = true;
       group.add(mesh);
     }
+  }
+
+  if (footings.length > 0) {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshStandardMaterial({ color: FOOTING_COLOR, roughness: 0.9, metalness: 0 });
+    const mesh = new THREE.InstancedMesh(geometry, material, footings.length);
+    mesh.name = 'footing';
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const axis = new THREE.Vector3(0, 1, 0);
+    const scale = new THREE.Vector3();
+    for (let i = 0; i < footings.length; i++) {
+      const f = footings[i];
+      quaternion.setFromAxisAngle(axis, f.yaw);
+      scale.set(f.width, f.hi - f.lo, f.depth);
+      matrix.compose(position.set(f.x, (f.lo + f.hi) / 2, f.z), quaternion, scale);
+      mesh.setMatrixAt(i, matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+    geometries.push(geometry);
+    materials.push(material);
   }
 
   group.userData.fenceMeters = fenceMeters;

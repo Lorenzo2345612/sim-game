@@ -49,10 +49,10 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
         const b = run[(k + 1) % run.length];
         const base = positions.length / 3;
         positions.push(
-          a.x, a.y + WALL_BOTTOM, a.z,
-          a.x, a.y + WALL_TOP, a.z,
-          b.x, b.y + WALL_TOP, b.z,
-          b.x, b.y + WALL_BOTTOM, b.z,
+          a.x, Math.min(a.y, a.ground) + WALL_BOTTOM, a.z,
+          a.x, Math.max(a.y, a.ground) + WALL_TOP, a.z,
+          b.x, Math.max(b.y, b.ground) + WALL_TOP, b.z,
+          b.x, Math.min(b.y, b.ground) + WALL_BOTTOM, b.z,
         );
         if (sign > 0) {
           indices.push(base, base + 1, base + 2, base, base + 2, base + 3);

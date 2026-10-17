@@ -1,4 +1,5 @@
 import type { BarrierSegment, Side, TrackDataV2 } from '../core/types';
+import { groundHeightAt } from './ground';
 import { bankTanAt, halfWidthAt } from './surfaces';
 
 export interface BarrierVertex {
@@ -6,6 +7,7 @@ export interface BarrierVertex {
   x: number;
   z: number;
   y: number;
+  ground: number;
   type: BarrierSegment['type'];
 }
 
@@ -56,11 +58,15 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
   const sign = side === 'right' ? 1 : -1;
   const vertexAt = (i: number, seg: BarrierSegment): BarrierVertex => {
     const [rx, rz] = rightNormalAt(cx, i);
+    const x = cx[i][0] + sign * seg.offsetMeters * rx;
+    const z = cx[i][1] + sign * seg.offsetMeters * rz;
+    const y = (track.elevation[i] ?? 0) + sign * seg.offsetMeters * bankTanAt(track, i);
     return {
       index: i,
-      x: cx[i][0] + sign * seg.offsetMeters * rx,
-      z: cx[i][1] + sign * seg.offsetMeters * rz,
-      y: (track.elevation[i] ?? 0) + sign * seg.offsetMeters * bankTanAt(track, i),
+      x,
+      z,
+      y,
+      ground: track.terrain ? groundHeightAt(track, x, z) : y,
       type: seg.type,
     };
   };

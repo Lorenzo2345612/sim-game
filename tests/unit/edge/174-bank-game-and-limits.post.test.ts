@@ -303,8 +303,13 @@ describe('174 bank game spawn, registry wiring and numeric limits', () => {
       { index: 10, side: 'left', offset: 9, label: 150 },
     ];
     const atlas = (): THREE.Texture => new THREE.Texture();
-    const a = instPositions(createDistanceBoards(track(new Array(POINTS.length).fill(10 * DEG), boards), atlas).group);
-    const b = instPositions(createDistanceBoards(track(new Array(POINTS.length).fill(0), boards), atlas).group);
+    // No terrain: ground === y, so the boards keep their signed bank lift.
+    const flat = (bank: number[]): TrackDataV2 => ({
+      ...track(bank, boards),
+      terrain: undefined as unknown as TrackDataV2['terrain'],
+    });
+    const a = instPositions(createDistanceBoards(flat(new Array(POINTS.length).fill(10 * DEG)), atlas).group);
+    const b = instPositions(createDistanceBoards(flat(new Array(POINTS.length).fill(0)), atlas).group);
     expect(a.length).toBeGreaterThan(0);
     expect(a.length).toBe(b.length);
     const lifts = a.map((p, i) => p.y - b[i].y).sort((x, y) => x - y);

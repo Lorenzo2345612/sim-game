@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Board, TrackDataV2 } from '../core/types';
+import { groundHeightAt } from '../track/ground';
 import { bankTanAt } from '../track/surfaces';
 import { registerWhitePaint } from './sceneSetup';
 
@@ -100,13 +101,18 @@ export function createDistanceBoards(track: TrackDataV2, makeAtlas?: () => THREE
       const y = (track.elevation[i] ?? 0) + sign * b.offset * bankTanAt(track, i);
       const px = centerline[i][0] + nx * sign * b.offset;
       const pz = centerline[i][1] + nz * sign * b.offset;
+      const ground = track.terrain ? groundHeightAt(track, px, pz) : y;
+      const lo = Math.min(y, ground);
+      const hi = Math.max(y, ground);
 
-      matrix.copy(faceRotation(tx, tz)).setPosition(px, y + FACE_CENTRE_Y, pz);
+      matrix.copy(faceRotation(tx, tz)).setPosition(px, hi + FACE_CENTRE_Y, pz);
       const list = faces.get(b.label);
       if (list) list.push(matrix.clone());
       else faces.set(b.label, [matrix.clone()]);
 
-      matrix.makeTranslation(px, y + FACE_CENTRE_Y / 2, pz);
+      // Post spans lo to hi + FACE_CENTRE_Y: geometry height FACE_CENTRE_Y scaled in Y.
+      matrix.makeScale(1, (hi - lo + FACE_CENTRE_Y) / FACE_CENTRE_Y, 1);
+      matrix.setPosition(px, (lo + hi + FACE_CENTRE_Y) / 2, pz);
       postMesh.setMatrixAt(k, matrix);
     }
     postMesh.instanceMatrix.needsUpdate = true;
