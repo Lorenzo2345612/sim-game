@@ -2089,7 +2089,7 @@
     {
       "num": "151",
       "title": "Performance harness and budgets",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "093"
       ],
@@ -3225,7 +3225,7 @@
     {
       "num": "236",
       "title": "Pit building split into grounded pieces along the pit lane",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "234"
       ],

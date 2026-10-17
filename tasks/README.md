@@ -152,7 +152,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
-| 151 | Performance harness and budgets | in progress | 093 |
+| 151 | Performance harness and budgets | waiting decision | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
@@ -237,7 +237,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 233 | Shared ground-height sampler | done | - |
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | waiting decision | 233 |
-| 236 | Pit building split into grounded pieces along the pit lane | in progress | 234 |
+| 236 | Pit building split into grounded pieces along the pit lane | waiting decision | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
 | 238 | Track QA camera and screenshot tool | in progress | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231 |
