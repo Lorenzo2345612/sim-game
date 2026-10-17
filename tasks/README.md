@@ -184,7 +184,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 180 | Style loader, wiring, extra grandstands, debug hook | done | 179, 156, 157, 158, 159, 160, 168, 174 |
 | 181 | Tools: `track:locate` and `check:styles` | done | 179 |
 | 182 | Pit building and grandstand styling | done | 180 |
-| 183 | Kerb colours per segment and run-off paint | in progress | 180 |
+| 183 | Kerb colours per segment and run-off paint | done | 180 |
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | pending | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |
 | 185 | Barrier colours, wall band and configurable catch fence from the track style | done | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |

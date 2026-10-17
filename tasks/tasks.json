@@ -2524,7 +2524,7 @@
     {
       "num": "183",
       "title": "Kerb colours per segment and run-off paint",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "180"
       ],
