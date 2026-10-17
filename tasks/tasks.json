@@ -2826,7 +2826,7 @@
     {
       "num": "204",
       "title": "Sepang style data (`sepang.style.json`)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "181",
         "188"
