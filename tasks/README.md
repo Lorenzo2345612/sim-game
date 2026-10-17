@@ -190,7 +190,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
 | 187 | Generic trackside props from the track style | pending | 186 |
 | 188 | Monza track style data | done | 181 |
-| 189 | Spa track style data | in progress | 181, 188 |
+| 189 | Spa track style data | done | 181, 188 |
 | 190 | Silverstone track style data | in progress | 181, 188 |
 | 191 | Budapest track style data | in progress | 181, 188 |
 | 192 | Spielberg track style data | done | 181, 188 |
