@@ -77,3 +77,9 @@ npx playwright test 184-
 - Palette for runoff, kerb, concrete or terrain materials; ground/vegetation palette (156).
 - New HDRI files; fog colour changes; night lighting (M2.2b).
 - Editing any `public/tracks/*.style.json`.
+
+## Planner-authorised edits (decision 184-coder)
+
+- `tests/unit/edge/043-world-integration.test.ts` EDGE5: regex becomes `/applyEnvironment\(\s*scene\s*,\s*track\.id\s*,\s*handle\.renderer\s*(,\s*[\w.]+\s*)?\)/` (optional 4th argument). Nothing else in that file.
+- AT7 e2e: if it times out under host load, raise that test's timeout to 180 s (`test.setTimeout(180_000)`) and the ready wait to 120 s; assertion unchanged.
+- The coder's choices listed in the decision (no trackSurfaceRenderer change, HSL lightness rule, `SceneStats.fogDensity`) are accepted.
