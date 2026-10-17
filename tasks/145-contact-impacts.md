@@ -66,3 +66,25 @@ npm test
 
 - Applying damage to dynamics (146), debris (147), HUD, UI setting, repair, AI (148).
 - README, tasks.json, milestones.json.
+
+## Planner answers
+
+Verified Rapier API (`@dimforge/rapier3d-compat` `.d.ts`; do not read the minified bundle or wasm):
+
+```ts
+chassisDesc.setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS).setContactForceEventThreshold(1000);
+world.step(eventQueue);                                   // raceGame owns one EventQueue(true)
+eventQueue.drainContactForceEvents((e) => {               // e is only valid inside the closure
+  const c1 = world.getCollider(e.collider1());
+  const c2 = world.getCollider(e.collider2());
+  const jRaw = e.totalForceMagnitude() * dt;
+  world.contactPair(c1, c2, (m, _flipped) => {
+    if (m.numSolverContacts() > 0) m.solverContactPoint(0, tmpWorld); // world-space point, reuse tmpWorld
+  });
+});
+```
+Map collider handle → car with a `Map<number, DamageCar>` built once per `cars` array (cache it; no per-tick rebuild).
+
+Calibration (fixes AT2's 5 m/s case): per-tick `jRaw` of a rigid stop is ≈ m·v (f4 `massKg` 650 → ≈ 3250 N·s at 5 m/s, above `WING_J0` 1500). Pass `J = max(0, jRaw − mRed · V_SAFE)` to `applyImpact`, with `V_SAFE = 6` m/s exported from `contactEvents.ts`, `mRed` = the car's mass for a wall/static contact and `m1·m2/(m1+m2)` for car–car (body `mass()`). Both cars of a car–car event get the same J (AT3). Expected: 30 m/s wall → J ≈ 15600 → frontWing 1; 5 m/s → 0; AT3 20 m/s → J ≈ 4550 each. Do not change `damage.ts` constants.
+
+Budget: if AT2/AT3 still fail after this, run each AT at most twice more, then report BLOCKED with the per-tick `jRaw` series of the first contact (no wasm/bundle digging).
