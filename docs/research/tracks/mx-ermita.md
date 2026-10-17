@@ -1,8 +1,8 @@
-# Ermita de Guadalupe street circuit (fictional venue, 5 layouts)
+# Ermita de Guadalupe street circuit (fictional venue, 6 layouts)
 
 Location: Ermita de Guadalupe, Jerez, Zacatecas, Mexico. Fictional (opened/firstgp null). No official map: each route is a chain of OSM street ways (Overpass 2026-10-17, OSM snapshot 2026-06-01). Loops come from `assets/source/osm/hometown-options/option-N.geojson` (see `docs/research/hometown-circuit/options.md`), then densified to 3 m and street corners filleted (R 14 m for corners over ~55 deg, R 30 m for gentler ones, reduced where the block is shorter). No tracing step; no geometry invented. Start moved onto the longest straight at ~35 % of it (so ~35 % of the straight is before the line). All keep the option's driving direction.
 
-Files: `assets/source/tracks/mx-ermita-<name>.geojson`, `assets/source/osm/ermita-<name>{,-areas}.json`, plots `docs/research/tracks/mx-ermita-<name>.png`, shared `assets/source/dem/ermita.json`, shared `assets/source/ground/ermita-s2.{jpg,json}`.
+Files: `assets/source/tracks/mx-ermita-<name>.geojson` (name in centro, federal, norte, mixto, poniente, veloz), `assets/source/osm/ermita-<name>{,-areas}.json`, plots `docs/research/tracks/mx-ermita-<name>.png`, shared `assets/source/dem/ermita.json`, shared `assets/source/ground/ermita-s2.{jpg,json}`.
 
 ## Layouts
 
@@ -13,8 +13,11 @@ Files: `assets/source/tracks/mx-ermita-<name>.geojson`, `assets/source/osm/ermit
 | ermita-norte | mx-ermita-norte | 4200 m (4487, -6.4 %) | 16 (12) | 12.9 m | 657 m (-228..+429) | 119 deg (ESE) | left, -200..250 | -150 right, -1455 left, -1950 right |
 | ermita-mixto | mx-ermita-mixto | 3324 m (3745, -11.2 %) | 22 (12) | 13.2 m | 447 m (-156..+291) | 185 deg (S) | left, -130..200 | 0 right, 1215 right, 675 left |
 | ermita-poniente | mx-ermita-poniente | 2736 m (2835, -3.5 %) | 22 (13) | 12.9 m | 402 m (-138..+264) | 124 deg (SE) | right, -110..150 | 1350 right, 135 right |
+| ermita-veloz | mx-ermita-veloz | 4356 m (option 6c 4356, 0 %) | 12 (5) | 13.1 m | 636 m (-222..+414) | 281 deg (WNW) | left, -150..250 | 135 right, 585 left, 1035 left |
 
 Final pass (planner decision): centerlines stay ON the real OSM streets, no scaling; the +-5 % length rule was dropped. Pipeline: OSM street loop -> corner fillets (R 14 / 22 m) -> iterative local smoothing of every stretch with 3-point circumradius < 12.7 m (3 m resample, points 9 m apart) until none is left, merging short blocks into S/wide curves; corners may cut across block corners and the hairpin tips of narrow jogs are rounded. Min radius re-checked on the stored points: 3-point circumradius at 3 m (k=3), 10 m and 5 m (k=2) resamples: all >= 12.9 m (table = 3 m / 9 m spacing). Shorter than the options because of the cut corners (mixto most: narrow jogs of the zigzag are straightened). Closed, no self-intersection, route and direction unchanged; start moved onto the longest straight (35 % into it), so the start of centro is on a different straight than the option.
+
+Veloz: loop 6c from `option-6c.geojson` kept as drawn (large hand-drawn fillets R 70-300 m, two hand-drawn river bridges), densified to 3 m, no extra fillets: the 3-point circumradius was already >= 12.9 m, local smoothing only touched a few spots (0.05 % shorter, 4356 m). Driving direction as in 6c, start 35 % into the longest straight (7 deg drift rule: 636 m; 6c lists straights of 1284 and 1028 m with a looser tolerance). Only 11 OSM ways match the route because most of it runs on hand-drawn fillets and legs through fields; the ways file `ermita-veloz.json` holds those 11, the hand-drawn parts are not OSM.
 
 Corner count = heading change over 25 deg in 30 m (merged clusters); numbers in the plots follow the lap from the start. The detector is sensitive to alignment (+-1-2 corners, straights +-10 %).
 
@@ -24,25 +27,26 @@ Pit/grandstand notes (offsets 30 m, stands ~60-80 m long like the other street c
 - mixto: straight on the village edge next to MEX 23 (the other carriageway is within ~0-5 m on the right), pit placed on the left.
 - centro: start straight at the south edge of the grid, left side ~9 % built (other roads 21 m away), right side 28 %; pit left from 0 (the stand at -45 left sits just before it; both small).
 - poniente: start straight inside dense town (>50 % built pixels); pit/stands are placeholders that need the synthetic buildings to leave room.
+- veloz (option 6c, Ermita Veloz): the start straight is the long south-west avenue in open farmland west of the village (left side ~9 % built, right ~23 % built with another road at ~1 m on the right in places, so the pit is on the left; the closest other road on the left is ~20 m away at one point, check it when placing the pit). The three grandstands are in farmland (built fraction 0, other roads 150-310 m away). Its stand list is in the same order as the table.
 - grandstand positions are signed atMeters (negative = before the line, equal to length + value).
 
 ## Street width, environment
 
 - OSM has no width/lanes here. Real village streets ~6-8 m (satellite), MEX 23 carriageway ~7-10 m (unknown, estimate only).
-- Existing street circuits in `tools/track-builder/tracks.json`: baku 12, singapore 12, detroit 12, lasvegas 14. With the 12 m minimum centreline radius, `widthMeters` 12 is fine on all five (inner edge radius >= 6.8 m); 10 would also work.
+- Existing street circuits in `tools/track-builder/tracks.json`: baku 12, singapore 12, detroit 12, lasvegas 14. With the 12 m minimum centreline radius, `widthMeters` 12 is fine on all six (inner edge radius >= 6.8 m); 10 would also work.
 - OSM buildings: NONE in a 2.5 km box (Overpass `way[building]` returned 0). Facades are to be synthetic from the final centerline. No OSM walls/fences either (areas files have no barriers); one park, one cemetery.
 - Suggested: `environment: "city"` (street furniture: lamps, sidewalks) with the Sentinel ground texture; if `city` without OSM buildings looks empty use `desert` (dry semi-arid palette, as bahrain/lusail/fontana). Biome: species `oak` only (stands in for mesquite/pirul), density 0.03-0.05 (like fontana/detroit 0.02-0.05).
 - Altitude ~1960 m (DEM 1945-1981 m window; layouts 1952-1972 m, flat, maxGrade 0.03 like detroit/lasvegas).
 
 ## Extra data for task 242
 
-- `assets/source/osm/ermita-streets.json`: all OSM highway ways (no footway/path/steps/track/parking aisle) touching the venue bbox + 200 m (lon -103.0396..-103.0208, lat 22.5703..22.6010): 174 ways (138 residential, 24 service, 7 unclassified, 4 primary, 1 secondary), `{id, highway, coords}`, no names.
-- `assets/source/osm/ermita-village.json`: 14 built-up polygons (lon/lat) from the Sentinel-2 image (houses are bright low-saturation roofs: density threshold, closing, fill, small blobs under 4000 m2 dropped, 14 m around the river line, the cemetery and the park removed, hand exclusion boxes for NE greenhouses, a sand/road strip SE and an arroyo blob). Check image `docs/research/tracks/mx-ermita-village.png` (yellow over the satellite, centerlines overlaid). At 10 m Sentinel resolution it is a coarse mask (edges good to ~15-20 m). School yards were not separately removed (no school tag within the mask; the OSM school lies outside the dense core).
+- `assets/source/osm/ermita-streets.json`: all OSM highway ways (no footway/path/steps/track/parking aisle) touching the venue bbox + 200 m (lon -103.0455..-103.0208, lat 22.5703..22.6010; west edge extended for Ermita Veloz): 176 ways (140 residential, 24 service, 7 unclassified, 4 primary, 1 secondary), `{id, highway, coords}`, no names.
+- `assets/source/osm/ermita-village.json`: 14 built-up polygons (regenerated on the extended texture with the same method; the west extension is open farmland, only the village edge changed) (lon/lat) from the Sentinel-2 image (houses are bright low-saturation roofs: density threshold, closing, fill, small blobs under 4000 m2 dropped, 14 m around the river line, the cemetery and the park removed, hand exclusion boxes for NE greenhouses, a sand/road strip SE and an arroyo blob). Check image `docs/research/tracks/mx-ermita-village.png` (yellow over the satellite, six centerlines overlaid). At 10 m Sentinel resolution it is a coarse mask (edges good to ~15-20 m). School yards were not separately removed (no school tag within the mask; the OSM school lies outside the dense core).
 
 ## Venue data
 
-- DEM `ermita.json`: Copernicus GLO-30 tile N22_W104, 96 x 137 cells, 1 arcsec (0.000278 deg), lon0 -103.04347 lat0 22.60458 (cell centres, north-down), heights 1944.7-1980.9 m. Bbox = union of the five centerlines + 600 m margin (same as other tracks).
-- Ground `ermita-s2.jpg`: scene S2B_13QFF_20260220_0_L2A (2026-02-20, cloud 0.00006 %, dry season), 1191 x 2048 px on an equirectangular lon/lat grid, bounds lon -103.0404..-103.0200, lat 22.5693..22.6019 (union bbox + 300 m), top = north, bilinear. Tone-matched (gain 0.905, 0 % pixels >= 250). Overlaid view checked: the five centerlines align with the roads in the image.
+- DEM `ermita.json`: Copernicus GLO-30 tile N22_W104, 117 x 137 cells, 1 arcsec (0.000278 deg), lon0 -103.04931 lat0 22.60458 (cell centres, north-down), heights 1944.7-1980.9 m. Bbox = union of the six centerlines + 600 m margin (same as other tracks).
+- Ground `ermita-s2.jpg`: scene S2B_13QFF_20260220_0_L2A (2026-02-20, cloud 0.00006 %, dry season), 1542 x 2048 px on an equirectangular lon/lat grid, bounds lon -103.0464..-103.0200, lat 22.5693..22.6019 (union bbox of the six layouts + 300 m), top = north, bilinear. Tone-matched (gain 0.906, 0 % pixels >= 250; regenerated with the same scene and method when Ermita Veloz extended the bounds westwards from -103.0404). Overlaid view checked: the six centerlines align with the roads in the image.
 - Water in the areas files: `kind: water` (rivers/streams clipped to within ~300 m of each layout, `tags.est_width_m` 25 for river, 6 for stream, estimates) and `kind: bridge` (OSM bridge ways and the culvert, lines).
 
 ## River crossings
@@ -61,8 +65,10 @@ Bed depth guess from the 30 m DEM (centre sample vs bank, smoothed so real depth
 | mixto | none | | | | | | streams 18-88 m away at 2904-3132 |
 | poniente | 960 | river | no (OSM footbridge 1553277738 ~30 m to the side) | ~30 (needed) | ~25 | 1.4 m | axis 93 deg |
 | poniente | 2074 | river | yes, residential bridge way 911201276 (layer 1) | 77 m | ~25 | 5.4 m | axis 135 deg |
+| veloz | 2650 | river | no, hand-drawn bridge in 6c (areas feature `hand_bridge_2650`) | ~30 | ~25 | 0.9 m | axis 111 deg |
+| veloz | 3471 | river | no, hand-drawn bridge in 6c (areas feature `hand_bridge_3471`) | ~30 | ~25 | 0.9 m | axis 127 deg |
 
-Crossing atMeters are measured on the final centerlines.
+Crossing atMeters are measured on the final centerlines (veloz: 247 m earlier than in the option 6c list, 2897/3717, because the start moved).
 
 Alongside the river (distance to the OSM water line; side flips where the layout crosses it, so both sides appear):
 
@@ -76,11 +82,14 @@ Alongside the river (distance to the OSM water line; side flips where the layout
 | mixto | 2904..3132 | left (mostly) | 18-88 m, mean ~53 | intermittent streams |
 | poniente | 510..1050 | left and right (crosses at 960) | 0-86 m, mean 30 | river |
 | poniente | 1914..2166 | left and right (crosses at 2074) | 2-90 m, mean 47 | river |
+| veloz | 2550..2778 | left and right (crosses at 2650) | 2-86 m, mean 42 | river |
+| veloz | 3384..3582 | left and right (crosses at 3471) | 3-87 m, mean 47 | river |
 
 Not found: any OSM water polygon or riverbank; `bridge`/`culvert` ways only for MEX 23 (2 ways), 1 residential, 1 unclassified, 1 footway. The crossings without OSM bridge (centro both, federal 1447, poniente 960) are where the streets cross the arroyo corridor: either fords/culverts not mapped or bridges missing in OSM; the game needs a bridge or ford there (check the satellite/Google). Federal and poniente share the street at the 1447/960 crossing area.
 
 ## Problems / caveats
 
+- Veloz bridges are hand-drawn in 6c, no OSM bridge exists there; `kind: bridge` features `hand_bridge_*` in `ermita-veloz-areas.json` are 27 m centerline pieces (estimate ~30 m). The areas file has no building features because OSM has none (same as the other five).
 - No OSM buildings (see above). No OSM barriers/areas beyond one park and one cemetery.
 - Mixto is 11 % shorter than its option and norte 6 % (rounded corners, straightened jogs) by decision.
 - Overpass kumi.systems returned 500 errors for the water queries; overpass-api.de worked.
