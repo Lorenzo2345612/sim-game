@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "palette": { "asphalt": "#4A4A4C", "grass": "#6F8F3A", "gravel": "#C9B58A" },
+  "edgeLines": { "color": "#D0D0CC" },
+  "kerbs": { "colors": ["#2A4E9C", "#D8B62A"], "outerStrip": "#2E8B57" },
+  "barriers": {
+    "concrete": { "color": "#C8C8C4" },
+    "armco": { "color": "#9A9EA2" },
+    "tyres": { "beltColor": "#2A2A2C" },
+    "fence": { "heightMeters": 4, "types": ["armco", "wall", "tyres"], "color": "#8A8D90" }
+  },
+  "pitBuilding": {
+    "storeys": 1, "heightMeters": 4.5, "depthMeters": 12,
+    "facade": "#D6D6D2", "roof": "#B8BCC0", "doors": "#6E7276",
+    "roofStyle": "flat", "glazing": 0.2
+  },
+  "grandstands": { "structure": "#B0B4B8", "roof": "#C8CCD0", "seats": ["#9AA0A6"], "roofStyle": "truss" },
+  "extraGrandstands": [
+    { "start": 1960, "end": 2040, "side": "left", "offsetMeters": 18, "rows": 14, "roof": false },
+    { "start": 1690, "end": 1760, "side": "right", "offsetMeters": 20, "rows": 12, "roof": false }
+  ],
+  "floodlights": {
+    "style": "mast", "heightMeters": 28, "heads": 1, "spacingMeters": 80, "offsetMeters": 10,
+    "side": "both",
+    "ranges": [
+      { "start": 1930, "end": 150 },
+      { "start": 1050, "end": 1550 }
+    ]
+  },
+  "props": [
+    { "type": "footbridge", "index": 1795, "side": "left", "offsetMeters": 12, "lengthMeters": 25, "heightMeters": 6, "color": "#B8BCC0" },
+    { "type": "marshalPost", "index": 130, "side": "left", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "marshalPost", "index": 350, "side": "right", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "marshalPost", "index": 660, "side": "left", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "marshalPost", "index": 1030, "side": "right", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "marshalPost", "index": 1710, "side": "left", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "marshalPost", "index": 1880, "side": "left", "offsetMeters": 10, "color": "#3F7A3A" },
+    { "type": "tent", "index": 160, "side": "right", "offsetMeters": 35, "lengthMeters": 12, "heightMeters": 3, "color": "#D0D0CC" },
+    { "type": "tent", "index": 600, "side": "left", "offsetMeters": 30, "lengthMeters": 12, "heightMeters": 3, "color": "#D0D0CC" },
+    { "type": "tent", "index": 1725, "side": "right", "offsetMeters": 30, "lengthMeters": 12, "heightMeters": 3, "color": "#D0D0CC" },
+    { "type": "tent", "index": 2000, "side": "left", "offsetMeters": 30, "lengthMeters": 12, "heightMeters": 3, "color": "#D0D0CC" }
+  ],
+  "sky": { "hdri": "kloofendal_48d_partly_cloudy_puresky" }
+}
