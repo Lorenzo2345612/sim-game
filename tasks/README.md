@@ -199,7 +199,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 195 | Fontana style file (data only) | done | 181, 188, 168 |
 | 196 | Elkhart Lake style file (data only) | in progress | 181, 188 |
 | 197 | Road Atlanta (Braselton) style file (data only) | in progress | 181, 188 |
-| 198 | Cleveland style file (data only) | in progress | 181, 188, 168 |
+| 198 | Cleveland style file (data only) | done | 181, 188, 168 |
 | 199 | Detroit style file (data only) | done | 181, 188, 168 |
 | 200 | Baku style data (`baku.style.json`) | in progress | 181, 188 |
 | 201 | Singapore style data (`singapore.style.json`) | in progress | 181, 188 |
