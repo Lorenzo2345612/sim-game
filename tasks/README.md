@@ -225,7 +225,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 221 | OW-26 car definition and calibration | done | 219 |
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
-| 224 | OW-26 3D model through the car pipeline | waiting decision | 221 |
+| 224 | OW-26 3D model through the car pipeline | in progress | 221 |
 | 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | pending | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | pending | 226 |

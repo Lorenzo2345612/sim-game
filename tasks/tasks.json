@@ -3074,7 +3074,7 @@
     {
       "num": "224",
       "title": "OW-26 3D model through the car pipeline",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "221"
       ],
