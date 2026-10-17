@@ -1269,7 +1269,7 @@
     {
       "num": "094",
       "title": "Race HUD and AI car rendering",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "057",
         "092",
