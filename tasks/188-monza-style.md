@@ -37,6 +37,10 @@ Encode, with every value picked from the research doc and photos:
 
 No `src/` or `tools/` changes. If the renderer cannot express something, stop and escalate; do not code around it. Keep the file small: at most the ranges and props listed above.
 
+## Reopened
+
+`public/tracks/monza.style.json` is already on master (first pass closed without tests). This pass: acceptance writes `tests/unit/acceptance/188-monza-style.test.ts` and `helpers/brands.ts`; coder only fixes the style file if a row fails.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |

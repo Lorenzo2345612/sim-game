@@ -2600,7 +2600,7 @@
     {
       "num": "188",
       "title": "Monza track style data",
-      "status": "done",
+      "status": "pending",
       "deps": [
         "181"
       ],
@@ -2613,7 +2613,7 @@
     {
       "num": "189",
       "title": "Spa track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2627,7 +2627,7 @@
     {
       "num": "190",
       "title": "Silverstone track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2641,7 +2641,7 @@
     {
       "num": "191",
       "title": "Budapest track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2655,7 +2655,7 @@
     {
       "num": "192",
       "title": "Spielberg track style data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
