@@ -53,6 +53,10 @@ Types: `Difficulty` from `src/ai/traffic`, `Standing` from `src/race/classificat
 
 Conventions: deterministic (same config -> identical results); `step` after `dispose` throws; invalid `aiCount` is clamped, never throws; no per-tick allocation in the AI loop.
 
+## Planner-authorised test edit (AT5 flakiness)
+
+`tests/e2e/acceptance/093-race-game.spec.ts` AT5: do not wait for `startLights() === 5`; instead poll until `startLights() === 0` and sim time ≥ 28 s (go ≤ 8 s + 20 s), then check standings and console errors as before. No `src/` change.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
