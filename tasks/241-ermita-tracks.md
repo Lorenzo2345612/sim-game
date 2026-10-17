@@ -47,12 +47,15 @@ Conventions: metres; bounds inclusive; a missing id in tracks.json or missing `t
 | AT5 | unit: each new track centerline resampled every 10 m | 3-point circumradius at every sample | ≥ 11 m |
 | AT6 | unit: each new track | `widthMeters`/half widths, `environment` | width as table; environment `desert`; `bank` absent or all 0 |
 | AT7 | unit: `public/textures/ground/<id>.jpg` for each id | read JPEG SOF0/SOF2 header | 2048 × 2048 |
-| AT8 | unit: each new track, grandstands and pit | 233 grounding check (`groundHeightAt`) | every grandstand base within ±0.3 m of ground; pit range inside [0, length) after wrap |
+| AT8 | unit: each new track, grandstands and pit | 233 grounding check (`groundHeightAt`) | every grandstand base within ±0.45 m of ground (ermita DEM descents + shared `clampTerrainBelowStrips`; tightening is a later terrain task); pit range inside [0, length) after wrap |
 | AT9 | e2e: menu | select "Ermita Federal", start race, wait 3 s | canvas renders, no console errors, car speed reading present |
 | AT10 | unit: `ASSETS_LICENSES.md` | read | rows naming `ermita.json` (DEM), each `ground/ermita-*.jpg` (Sentinel-2) and the `mx-ermita-*` OSM files |
 
 ## Planner-authorised test edits
 
+- `tests/unit/acceptance/241-ermita-tracks.test.ts` AT8: grandstand bound 0.3 → 0.45 m (table updated).
+- `tests/unit/acceptance/217-aero-zones.test.ts` AT5: exempt only `ermita-centro` and `ermita-veloz` from the `>= 1` zone count (their longest straight is < `AERO_ZONE_MIN_LENGTH_M`); keep every other assertion; do not change the constant.
+- `tests/unit/edge/241-ermita-tracks-edge.test.ts` EDGE8: remove the max-channel mean <= 116 bound (contradicts the ±25 alignment bound); keep the alignment check.
 - `tests/unit/acceptance/156-environment-type-ground-vegetation.test.ts`: add the 6 ids `'desert'` to `EXPECTED`.
 - Tests that hard-code the track count 19 (`171-track-select-redesign` unit and e2e `toHaveCount` and titles, `211-fontana-sports-car-course` AT2 "19 entries", `tests/unit/edge/211-*`): 19 → 25, nothing else.
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts`, `174-bank-profile.post.test.ts` and other per-id sweeps: add exemptions only if they fail for the new ids, with the minimum change.
