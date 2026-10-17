@@ -3112,7 +3112,7 @@
     {
       "num": "227",
       "title": "EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "226"
       ],
