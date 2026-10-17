@@ -140,3 +140,73 @@ Fixtures: `cum = [0, 1, …, 4999]`, length 5000; range A = `{from 1000, to 2000
 | AT9 | — | 174 acceptance and edge tests | pass, with only the planner-authorised edit below |
 
 Planner-authorised edit for 240: in `tests/unit/acceptance/174-track-banking.test.ts` the full-bank check margin `wrapMargin(...) < 60` (and its message "at least 60 m") becomes `< 240` / "at least 240 m" (ramps now lie inside the ranges and reach 232.5 m for 31°).
+
+## Wave 2 — kerb, barrier, sausage and pit clearance (245–249)
+
+User report 2026-10-17: kerbs inside the asphalt, pit building over run-off, walls on inner kerbs, fixed-length sausages invading the track. Audit: `docs/research/track-audit-kerbs.md` (offenders and root causes). Rule of thumb: on the inside of a corner nothing lateral may pass a fraction of the corner radius (run-off already clamps at 0.9 R, `INNER_CURVE_CLAMP`).
+
+Order: 245 and 246 are render/runtime only (no JSON rebuild). 247 then 248 rebuild every track in `public/tracks/index.json` (serialised to avoid JSON conflicts). 249 adds the checks to the QA report. Deps: 245 —; 246 [235]; 247 [240, 241]; 248 [236, 247]; 249 [237, 245, 246, 247, 248].
+
+Shared definitions:
+- `R(i)` (render side) = `cornerCurvature(centerline, i).radius` from `src/track/surfaces.ts` (export it), `inner(i, side)` = that corner's side equals `side`. Builder side uses `radii()` from `tools/track-builder/corners.ts`.
+- `half(side, i)` = `halfWidthAt(track, side, i)`.
+- `clearance(p)` = distance from point p (XZ) to the nearest centerline sample point (any index); `halfNear(p)` = min of both half-widths at that nearest index.
+- Fixture `STADIUM(R)`: closed loop, width 12, flat elevation 0, no terrain, no runoffs/barriers/sausages unless the row adds them. Straight A from (0,0) to (200,0) sampled every 2 m (endpoint excluded); semicircle centred (200,−R) from (200,0) to (200,−2R), m = max(12, ceil(π·R)) points at angles π·j/m, j = 0..m−1; straight B from (200,−2R) to (0,−2R) every 2 m; semicircle centred (0,−R) back to (0,0), same m. Direction +x then turning toward −z: every bend is a left turn, inside = left. Kerbs (when the row says "kerbs") cover every index on both sides.
+
+### 245 Kerbs never fold over the asphalt (`src/track/surfaces.ts`)
+Kerb rows where `inner(i, side)`: `outer = min(half + KERB_WIDTH, 0.9·R(i))`; if `outer − half < 0.4` the row is dropped (the strip splits). Other rows unchanged. Physics surface lookup must see the same strips (verify which function it uses; if it is not `buildTrackSurfaces`, apply the same rule there).
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `STADIUM(30)` + kerbs | `buildTrackSurfaces` | kerb strip vertex positions identical to the pre-change build (record baseline by computing with lateral half..half+1.2) — every kerb vertex lateral offset from its row's centerline point is 6 or 7.2 (±1e-6) |
+| AT2 | `STADIUM(7.5)` + kerbs | build | kerb vertices within 10 m of a bend centre ((200,−7.5) or (0,−7.5)): all at distance ≥ 0.75 − 1e-6 from that centre; at least one such vertex exists |
+| AT3 | `STADIUM(7)` + kerbs | build | no kerb vertex within 6.5 m of a bend centre (inner kerb dropped in both bends); outer-side kerb rows in the bends still present (vertices at 13 and 14.2 m ± 1e-6 from the centre) |
+| AT4 | `STADIUM(30)`, `STADIUM(7.5)`, `STADIUM(7)` + kerbs | build | every kerb triangle centroid has `clearance ≥ 6 − 1e-6` |
+| AT5 | every track in `public/tracks/index.json` | build | every kerb triangle centroid has `clearance ≥ halfNear − 0.3` |
+| AT6 | source `src/track/surfaces.ts` | read | no `from 'three'` |
+
+### 246 Barriers never fold onto the inner kerb (`src/track/barrierPath.ts`)
+For non-median vertices with `inner(i, side)`: effective offset = `min(offsetMeters, 0.8·R(i))`; if `0.8·R(i) < half + KERB_WIDTH + 0.5` the vertex is dropped. Then drop any non-median vertex with `clearance < halfNear + KERB_WIDTH + 0.5` (all indices, no `NEAR_INDEX_SPAN` exemption for this test). Runs split at dropped vertices exactly as today. Median walls (155) untouched. Colliders follow `barrierRuns` (already).
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `STADIUM(30)` + armco both sides, offset 12 | `barrierRuns` both sides | identical to the pre-change output (vertex count and x/z/y ±1e-9) |
+| AT2 | `STADIUM(30)` + left armco offset 27 | barrierRuns('left') | vertices in the bends at distance 6 ± 1e-6 from the bend centre; straight vertices at offset 27 ± 1e-6 |
+| AT3 | `STADIUM(8)` + left armco offset 12 | barrierRuns('left') | no vertex with `clearance < 7.7 − 1e-6`; ≥ 2 runs; right side (offset 12 outside) unchanged vs pre-change |
+| AT4 | 155 median-wall fixture (existing test) | barrierRuns | unchanged vs pre-change |
+| AT5 | every track in `public/tracks/index.json` | barrierRuns both sides | every non-median vertex `clearance ≥ halfNear + KERB_WIDTH + 0.5 − 1e-6` |
+| AT6 | source `src/track/barrierPath.ts` | read | no `from 'three'` |
+
+### 247 Sausage kerbs fit the corner (`tools/track-builder/sausages.ts`, `src/track/sausages.ts`, sausage renderer/colliders)
+Builder (auto sausages only; overrides keep their explicit values): `length = clamp(0.5·arcLength(run.start, run.end), 6, 20)`; `offset = half(side, index) + KERB_WIDTH + 0.6` (per-index half-widths passed in from `buildTrack.ts`, fall back to widthMeters/2); drop the sausage if `offset ≥ 0.8·radii[index]`. Render and colliders: the sausage follows the offset line instead of a straight prism — sub-segments ≤ 1 m long at constant lateral `offset` from the centerline, centred on the apex index arc position, total arc length `length` measured along the centerline. Rebuild every track (only the `sausages` field may change).
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | every built track | read `sausages` | every auto sausage (not matching a config override) has `6 ≤ length ≤ 20`, `offset ≥ half(side,index) + 1.8 − 1e-6`, `offset < 0.8·radii(centerline)[index]` |
+| AT2 | all built tracks together | read lengths | at least 3 distinct `length` values |
+| AT3 | every built track | recompute with exported `detectCorners`/`radii` | every auto sausage `length = clamp(0.5·arcLength(run.start, run.end), 6, 20)` (±1e-6), run = the corner run whose apex is the sausage index |
+| AT4 | every built track | sausage footprint samples (5 along the arc × 3 across the 0.5 m width) from the new render pose function | every sample `clearance ≥ halfNear + KERB_WIDTH + 0.1` |
+| AT5 | `STADIUM(30)` + a right sausage `{index: apex of bend 1, offset 7.8, length 10}` | pose samples | every sample at lateral 7.8 ± 0.05 from the nearest centerline point; arc span 10 ± 0.5 |
+| AT6 | config overrides with `lengthMeters` | build | override length kept verbatim |
+| AT7 | rebuilt JSONs vs pre-task | deep compare | only `sausages` differs |
+
+### 248 Pit building clears run-off and the pit wall
+Builder: run-offs on `pit.side` are clipped out of the pit window extended 50 m (arc length) before `pit.start` and after `pit.end`, before barriers are laid (so the pit wall comes in to the verge). Pit pieces (236, `pitBuildingPieces`): near-face offset = `max(current, max pit-side barrier offset over the piece's indices + 1)`. Rebuild every track (only `runoffs`, `barriers` and derived pit data may change).
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `STRAIGHT` + right gravel runoff `{0..99, width 25}` | the builder clip function | right runoffs cover exactly indices 0..4 and 36..99 |
+| AT2 | AT1 output → `layoutBarriers` | right side over 10..30 | type `wall`, offset 11 |
+| AT3 | `STRAIGHT` + right barrier offset 18 over 0..99 | `pitBuildingPieces` | every piece near face at distance ≥ 19 − 1e-6 from the centerline |
+| AT4 | `STRAIGHT` + right barrier offset 8 | pitBuildingPieces | identical to the pre-change output |
+| AT5 | every built track | pit pieces | no footprint sample (≤ 2 m grid) inside a non-grass `buildTrackSurfaces` triangle; no `barrierRuns` vertex inside a footprint |
+| AT6 | rebuilt JSONs vs pre-task | deep compare | only `runoffs`, `barriers` (and fields derived from them) differ |
+
+### 249 QA report: clearance checks
+`qaReport` adds checks `kerb`, `barrier-fold`, `sausage`, `pit-clear` with the metrics of 245 AT5, 246 AT5, 247 AT4, 248 AT5 (worst value + location in metres along the lap). Violation → `fail`.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | `STADIUM(30)` + kerbs + a left sausage `{index: 0, offset 3, length 6}` (over the asphalt); `STRAIGHT` + right gravel runoff `{0..99, width 25}` (not clipped) | qaReport each | first: `sausage` check `fail`; second: `pit-clear` check `fail` |
+| AT2 | `STADIUM(30)` + kerbs, armco 12, no sausages | qaReport | `kerb`, `barrier-fold`, `sausage`, `pit-clear` all `ok` |
+| AT3 | CLI `npm run track:qa -- all` | run | no `fail` among these four checks on any track |
