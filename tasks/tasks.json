@@ -2089,7 +2089,7 @@
     {
       "num": "151",
       "title": "Performance harness and budgets",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "093"
       ],
@@ -3238,7 +3238,7 @@
     {
       "num": "237",
       "title": "Track QA report CLI: clearance, relief, layout checks",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "235",
         "236"

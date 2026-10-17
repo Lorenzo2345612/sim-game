@@ -152,7 +152,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
-| 151 | Performance harness and budgets | waiting decision | 093 |
+| 151 | Performance harness and budgets | in progress | 093 |
 | 152 | Render cost: draw calls, culling, shadows | pending | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
@@ -226,7 +226,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
-| 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
+| 225 | Expert AI must not spin; difficulty orders pace | waiting decision | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | in progress | 227 |
@@ -238,7 +238,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 234 | Grandstands and props grounded on terrain with plinths | done | 233 |
 | 235 | Barriers, colliders and boards follow the ground | done | 233 |
 | 236 | Pit building split into grounded pieces along the pit lane | done | 234 |
-| 237 | Track QA report CLI: clearance, relief, layout checks | pending | 235, 236 |
+| 237 | Track QA report CLI: clearance, relief, layout checks | in progress | 235, 236 |
 | 238 | Track QA camera and screenshot tool | done | 233 |
 | 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | pending | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
