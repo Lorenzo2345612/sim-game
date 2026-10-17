@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import type { BarrierSegment, TrackDataV2 } from '../core/types';
-import type { ResolvedTrackStyle } from '../track/trackStyle';
+import { DEFAULT_TRACK_STYLE, segmentOverride, type ResolvedTrackStyle } from '../track/trackStyle';
 import { barrierRuns, type BarrierVertex } from '../track/barrierPath';
 import {
   ARMCO_POST_SPACING,
-  FENCE_HEIGHT,
   FENCE_OFFSET,
   TYRE_OUTER_RADIUS,
   TYRE_PITCH,
@@ -31,6 +30,9 @@ const FENCE_UV_SCALE = 1 / 3;
 const WALL_UV_SCALE = 1 / 10;
 const WALL_THICKNESS = 0.3;
 const WALL_HEIGHT = 1;
+const WALL_BAND_LOW = 0.35;
+const WALL_BAND_HEIGHT = 0.3;
+const WALL_BAND_PUSH = 0.01;
 const POST_WIDTH = 0.08;
 const POST_HEIGHT = 0.75;
 const POST_DEPTH = 0.12;
@@ -193,6 +195,30 @@ function appendWall(
   if (closed && path.length > 1) edge(base + (path.length - 1) * 4, base);
 }
 
+// Painted strip on the wall face that looks at the track, pushed clear of it.
+function appendWallBand(
+  positions: number[],
+  indices: number[],
+  path: PathPoint[],
+  side: BarrierSegment['side'],
+  closed: boolean,
+): void {
+  const t = side === 'right' ? -WALL_BAND_PUSH : WALL_BAND_PUSH;
+  const base = positions.length / 3;
+  for (let k = 0; k < path.length; k++) {
+    const p = path[k];
+    const [nx, nz] = pathNormal(path, k);
+    const x = p.x + nx * t;
+    const z = p.z + nz * t;
+    positions.push(x, p.y + WALL_BAND_LOW, z, x, p.y + WALL_BAND_LOW + WALL_BAND_HEIGHT, z);
+  }
+  const edge = (i0: number, j0: number): void => {
+    indices.push(i0, i0 + 1, j0, i0 + 1, j0 + 1, j0);
+  };
+  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 2, base + (k + 1) * 2);
+  if (closed && path.length > 1) edge(base + (path.length - 1) * 2, base);
+}
+
 function profileVFractions(profile: Array<[number, number]>): number[] {
   const fractions = [0];
   let total = 0;
@@ -239,30 +265,45 @@ function appendRail(
   if (closed && path.length > 1) edge(base + (path.length - 1) * width, base);
 }
 
-// Catch fence: one 3 m vertical quad per path edge, 1 m behind the rail line.
+// Catch fence: one quad per path edge at the height of the edge's second
+// vertex, 1 m behind the rail line; returns the horizontal length added.
 function appendFence(
   positions: number[],
   uvs: number[],
   indices: number[],
   path: PathPoint[],
+  heights: number[],
   sign: number,
   closed: boolean,
-): void {
-  const base = positions.length / 3;
-  for (let k = 0; k < path.length; k++) {
-    const p = path[k];
-    const [nx, nz] = pathNormal(path, k);
-    const x = p.x + nx * sign * FENCE_OFFSET;
-    const z = p.z + nz * sign * FENCE_OFFSET;
-    positions.push(x, p.y, z, x, p.y + FENCE_HEIGHT, z);
-    const u = p.s * FENCE_UV_SCALE;
-    uvs.push(u, 0, u, FENCE_HEIGHT * FENCE_UV_SCALE);
-  }
-  const edge = (i: number, j: number): void => {
-    indices.push(i, i + 1, j, i + 1, j + 1, j);
+): number {
+  const quad = (a: PathPoint, b: PathPoint, ia: number, ib: number, h: number): void => {
+    const base = positions.length / 3;
+    const [anx, anz] = pathNormal(path, ia);
+    const [bnx, bnz] = pathNormal(path, ib);
+    const ax = a.x + anx * sign * FENCE_OFFSET;
+    const az = a.z + anz * sign * FENCE_OFFSET;
+    const bx = b.x + bnx * sign * FENCE_OFFSET;
+    const bz = b.z + bnz * sign * FENCE_OFFSET;
+    positions.push(ax, a.y, az, ax, a.y + h, az, bx, b.y, bz, bx, b.y + h, bz);
+    const ua = a.s * FENCE_UV_SCALE;
+    const ub = b.s * FENCE_UV_SCALE;
+    const vTop = h * FENCE_UV_SCALE;
+    uvs.push(ua, 0, ua, vTop, ub, 0, ub, vTop);
+    indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
   };
-  for (let k = 0; k + 1 < path.length; k++) edge(base + k * 2, base + (k + 1) * 2);
-  if (closed && path.length > 1) edge(base + (path.length - 1) * 2, base);
+  let meters = 0;
+  for (let k = 1; k < path.length; k++) {
+    const h = heights[k];
+    if (h <= 0) continue;
+    quad(path[k - 1], path[k], k - 1, k, h);
+    meters += path[k].s - path[k - 1].s;
+  }
+  const last = path.length - 1;
+  if (closed && last > 0 && heights[0] > 0) {
+    quad(path[last], path[0], last, 0, heights[0]);
+    meters += Math.hypot(path[0].x - path[last].x, path[0].z - path[last].z);
+  }
+  return meters;
 }
 
 // Flat torus: outer radius 0.31, height 0.25, 144 triangles.
@@ -285,7 +326,7 @@ export function createBarrierObject(
   loadTexture?: (url: string) => THREE.Texture,
   style?: ResolvedTrackStyle,
 ): BarrierObject {
-  void style;
+  const st = style ?? DEFAULT_TRACK_STYLE;
   const load = loadTexture ?? defaultLoadTexture;
   const group = new THREE.Group();
   const geometries: THREE.BufferGeometry[] = [];
@@ -301,9 +342,27 @@ export function createBarrierObject(
   const wallPositions: number[] = [];
   const wallUvs: number[] = [];
   const wallIndices: number[] = [];
+  const bandPositions: number[] = [];
+  const bandIndices: number[] = [];
   const posts: InstanceSpot[] = [];
   const tyres: InstanceSpot[] = [];
-  const foamSpots: InstanceSpot[][] = [[], [], []];
+  const bandColor = st.barriers.concrete.bandColor;
+  const beltColor = st.barriers.tyres.beltColor;
+  const tyreColorB = beltColor ? new THREE.Color(beltColor) : TYRE_COLOR_B;
+  const foamColors = st.barriers.foam.colors;
+  const foamPalette: THREE.Color[] = foamColors
+    ? foamColors.map((c) => new THREE.Color(c))
+    : FOAM_COLORS.map((c) => new THREE.Color(c));
+  const foamNames = foamColors ? ['foamA', 'foamB'] : FOAM_NAMES;
+  const foamSpots: InstanceSpot[][] = Array.from({ length: foamNames.length }, () => []);
+  const pointCount = track.centerline.length;
+  // A matching range wins over the global fence settings for that vertex.
+  const fenceHeightOf = (v: BarrierVertex, side: BarrierSegment['side']): number => {
+    const over = segmentOverride(st.barriers.ranges, { start: v.index, end: v.index, side }, pointCount);
+    if (over) return over.fenceHeightMeters;
+    return st.barriers.fence.types.includes(v.type) ? st.barriers.fence.heightMeters : 0;
+  };
+  let fenceMeters = 0;
   let foamTotal = 0;
   let hasArmco = false;
   let hasTyres = false;
@@ -318,10 +377,11 @@ export function createBarrierObject(
         const path = spanPath(span.verts);
         const length = path[path.length - 1].s;
         if (length <= 1e-9) continue;
+        const heights = span.verts.map((v) => fenceHeightOf(v, side));
+        fenceMeters += appendFence(fencePositions, fenceUvs, fenceIndices, path, heights, sign, span.closed);
         if (span.type === 'armco') {
           hasArmco = true;
           appendRail(railPositions, railUvs, railIndices, path, sign, span.closed);
-          appendFence(fencePositions, fenceUvs, fenceIndices, path, sign, span.closed);
           const count = Math.floor(length / ARMCO_POST_SPACING) + 1;
           for (let k = 0; k < count; k++) {
             const s = k * ARMCO_POST_SPACING;
@@ -366,7 +426,7 @@ export function createBarrierObject(
             const [nx, nz] = centerlineNormal(track, span.verts[i].index);
             const ox = nx * sign;
             const oz = nz * sign;
-            foamSpots[foamTotal % 3].push({
+            foamSpots[foamTotal % foamSpots.length].push({
               x: at.x + ox * (FOAM_DEPTH / 2),
               y: at.y,
               z: at.z + oz * (FOAM_DEPTH / 2),
@@ -377,6 +437,7 @@ export function createBarrierObject(
         } else {
           hasWall = true;
           appendWall(wallPositions, wallUvs, wallIndices, path, side, span.closed);
+          if (bandColor) appendWallBand(bandPositions, bandIndices, path, side, span.closed);
         }
       }
     }
@@ -393,7 +454,7 @@ export function createBarrierObject(
     const normalMap = load('textures/metal/normal.jpg');
     const roughnessMap = load('textures/metal/roughness.jpg');
     const material = new THREE.MeshStandardMaterial({
-      color: 0xb0b4b8,
+      color: st.barriers.armco.color ?? 0xb0b4b8,
       side: THREE.DoubleSide,
       map: repeatWrapping(map),
       normalMap: repeatWrapping(normalMap),
@@ -423,7 +484,9 @@ export function createBarrierObject(
       group.add(postsMesh);
       geometries.push(postGeometry);
     }
+  }
 
+  if (fenceIndices.length > 0) {
     const fenceGeometry = new THREE.BufferGeometry();
     fenceGeometry.setAttribute('position', new THREE.Float32BufferAttribute(fencePositions, 3));
     fenceGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(fenceUvs, 2));
@@ -438,6 +501,8 @@ export function createBarrierObject(
       alphaTest: 0.5,
       side: THREE.DoubleSide,
     });
+    const fenceColor = st.barriers.fence.color;
+    if (fenceColor) fenceMaterial.color.set(fenceColor);
     const fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
     fence.name = 'fence';
     group.add(fence);
@@ -467,7 +532,7 @@ export function createBarrierObject(
       const p = tyres[i];
       matrix.makeTranslation(p.x, p.y, p.z);
       mesh.setMatrixAt(i, matrix);
-      mesh.setColorAt(i, i % 2 === 0 ? TYRE_COLOR_A : TYRE_COLOR_B);
+      mesh.setColorAt(i, i % 2 === 0 ? TYRE_COLOR_A : tyreColorB);
     }
     mesh.instanceMatrix.needsUpdate = true;
     mesh.castShadow = true;
@@ -484,6 +549,8 @@ export function createBarrierObject(
     geometry.setIndex(wallIndices);
     geometry.computeVertexNormals();
     const material = createSurfaceMaterial('concrete', load);
+    const concreteColor = st.barriers.concrete.color;
+    if (concreteColor) material.color.set(concreteColor);
     textures.push(...(material.userData as SurfaceMaterialUserData).textures);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'wall';
@@ -493,21 +560,34 @@ export function createBarrierObject(
     materials.push(material);
   }
 
+  if (bandColor && bandPositions.length > 0) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(bandPositions, 3));
+    geometry.setIndex(bandIndices);
+    geometry.computeVertexNormals();
+    const material = new THREE.MeshStandardMaterial({ color: bandColor, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = 'wallBand';
+    group.add(mesh);
+    geometries.push(geometry);
+    materials.push(material);
+  }
+
   if (foamTotal > 0) {
     const geometry = new THREE.BoxGeometry(FOAM_WIDTH, FOAM_HEIGHT, FOAM_DEPTH);
     geometries.push(geometry);
     const matrix = new THREE.Matrix4();
-    for (let c = 0; c < FOAM_COLORS.length; c++) {
+    for (let c = 0; c < foamNames.length; c++) {
       const spots = foamSpots[c];
       if (spots.length === 0) continue;
       const material = new THREE.MeshStandardMaterial({
-        color: FOAM_COLORS[c],
+        color: foamPalette[c],
         roughness: 0.6,
         metalness: 0,
       });
       materials.push(material);
       const mesh = new THREE.InstancedMesh(geometry, material, spots.length);
-      mesh.name = FOAM_NAMES[c];
+      mesh.name = foamNames[c];
       for (let i = 0; i < spots.length; i++) {
         const p = spots[i];
         // Base on the path: the box centre sits half a height above it.
@@ -521,6 +601,7 @@ export function createBarrierObject(
     }
   }
 
+  group.userData.fenceMeters = fenceMeters;
   let disposed = false;
   return {
     group,
