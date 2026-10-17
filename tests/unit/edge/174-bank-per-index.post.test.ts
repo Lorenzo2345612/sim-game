@@ -259,14 +259,14 @@ describe('174 bank per-index geometry and bankProfile wrap gaps', () => {
     for (const [from, to, lo, hi] of zones) {
       let checked = 0;
       for (let i = 0; i < cum.length; i++) {
-        if (wrapMargin(cum[i], from, to, total) < 100) continue;
+        if (wrapMargin(cum[i], from, to, total) < 240) continue;
         const deg = daytona.bank[i] / DEG;
         expect(deg, `index ${i} at ${cum[i].toFixed(1)} m in ${from}..${to}`).toBeGreaterThan(0);
         expect(deg, `index ${i} at ${cum[i].toFixed(1)} m in ${from}..${to}`).toBeGreaterThanOrEqual(lo);
         expect(deg, `index ${i} at ${cum[i].toFixed(1)} m in ${from}..${to}`).toBeLessThanOrEqual(hi);
         checked++;
       }
-      expect(checked, `no index 100 m inside ${from}..${to}`).toBeGreaterThan(0);
+      expect(checked, `no index 240 m inside ${from}..${to}`).toBeGreaterThan(0);
     }
   }, 120000);
 

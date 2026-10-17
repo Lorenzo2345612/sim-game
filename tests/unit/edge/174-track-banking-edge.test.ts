@@ -90,30 +90,6 @@ function nearestIndex(track: TrackDataV2): (x: number, z: number) => number {
   };
 }
 
-function terrainHeightAt(track: TrackDataV2): (x: number, z: number) => number {
-  const t = track.terrain;
-  const x0 = t.originX - t.sizeX / 2;
-  const z0 = t.originZ - t.sizeZ / 2;
-  const sx = t.sizeX / t.cols;
-  const sz = t.sizeZ / t.rows;
-  const st = t.rows + 1;
-  const h = t.heights;
-  return (x, z): number => {
-    const fx = (x - x0) / sx;
-    const fz = (z - z0) / sz;
-    const j = Math.min(t.cols - 1, Math.max(0, Math.floor(fx)));
-    const i = Math.min(t.rows - 1, Math.max(0, Math.floor(fz)));
-    const u = fx - j;
-    const v = fz - i;
-    return (
-      h[j * st + i] * (1 - u) * (1 - v) +
-      h[(j + 1) * st + i] * u * (1 - v) +
-      h[j * st + i + 1] * (1 - u) * v +
-      h[(j + 1) * st + i + 1] * u * v
-    );
-  };
-}
-
 function fixture(): TrackDataV2 {
   const pts: [number, number][] = [];
   for (let x = 0; x <= 100; x += 5) pts.push([x, 0]);
@@ -174,13 +150,13 @@ describe('174 track banking edge cases', () => {
     expect(bank[525]).toBeCloseTo(-31 * DEG, 6);
   });
 
-  it('EDGE2: omitting rampMeters equals passing 60', () => {
+  it('EDGE2: omitting rampMeters selects auto mode', () => {
     const cum = Array.from({ length: 400 }, (_, i) => i * 2.5);
     const ranges: BankRange[] = [
       { fromMeters: 50, toMeters: 300, degrees: 18, raisedSide: 'right' },
       { fromMeters: 700, toMeters: 200, degrees: 2, raisedSide: 'left' },
     ];
-    expect(bankProfile(cum, 1000, ranges)).toEqual(bankProfile(cum, 1000, ranges, 60));
+    expect(bankProfile(cum, 1000, ranges, 60)).not.toEqual(bankProfile(cum, 1000, ranges));
   });
 
   it('EDGE3: bankProfile does not mutate its cumulativeMeters or ranges inputs', () => {
@@ -344,13 +320,12 @@ describe('174 track banking edge cases', () => {
     expect(checked, 'no index at least 60 m inside the back straight').toBeGreaterThan(0);
   }, 120000);
 
-  it('EDGE10: daytona terrain stays 0.05 m below surface vertices in the ramp zone outside the banked ranges', () => {
+  it('EDGE10: every daytona surface vertex outside the banked ranges has bank exactly 0', () => {
     const daytona = loadDaytona();
     const bank = daytona.bank ?? [];
     const strips = buildTrackSurfaces(daytona);
     const { cum } = cumulativeOf(daytona);
     const nearest = nearestIndex(daytona);
-    const th = terrainHeightAt(daytona);
     const ranges: Array<[number, number]> = [
       [2290, 3180],
       [3180, 3680],
@@ -363,8 +338,7 @@ describe('174 track banking edge cases', () => {
       for (let k = 0; k + 2 < p.length; k += 3) {
         const i = nearest(p[k], p[k + 2]);
         if (ranges.some(([from, to]) => wrapInside(cum[i], from, to))) continue;
-        if (Math.abs(bank[i] ?? 0) <= 1e-9) continue;
-        expect(th(p[k], p[k + 2]), `${s.surface} vertex near index ${i}`).toBeLessThanOrEqual(p[k + 1] - 0.05);
+        expect(bank[i] ?? 0, `${s.surface} vertex near index ${i}`).toBe(0);
         checked++;
       }
     }

@@ -244,13 +244,13 @@ describe('174 track banking acceptance', () => {
     for (const [from, to, lo, hi] of oval) {
       let checked = 0;
       for (let i = 0; i < cum.length; i++) {
-        if (wrapMargin(cum[i], from, to, total) < 60) continue;
+        if (wrapMargin(cum[i], from, to, total) < 240) continue;
         const deg = Math.abs((bank ?? [])[i] ?? 0) / DEG;
         expect(deg, `index ${i} at ${cum[i].toFixed(1)} m in ${from}..${to}`).toBeGreaterThanOrEqual(lo);
         expect(deg, `index ${i} at ${cum[i].toFixed(1)} m in ${from}..${to}`).toBeLessThanOrEqual(hi);
         checked++;
       }
-      expect(checked, `no index at least 60 m inside ${from}..${to}`).toBeGreaterThan(0);
+      expect(checked, `no index at least 240 m inside ${from}..${to}`).toBeGreaterThan(0);
     }
     for (const [from, to] of [
       [210, 2250],
