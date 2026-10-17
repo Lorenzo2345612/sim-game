@@ -207,7 +207,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 203 | Bahrain style data (`bahrain.style.json`) | done | 181, 188 |
 | 204 | Sepang style data (`sepang.style.json`) | done | 181, 188 |
 | 205 | Lusail style data (`lusail.style.json`) | done | 181, 188 |
-| 206 | Painted strip outside the kerbs | in progress | 180, 183 |
+| 206 | Painted strip outside the kerbs | done | 180, 183 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | done | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |

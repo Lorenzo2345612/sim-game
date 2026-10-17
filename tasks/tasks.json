@@ -2854,7 +2854,7 @@
     {
       "num": "206",
       "title": "Painted strip outside the kerbs",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "180",
         "183"
