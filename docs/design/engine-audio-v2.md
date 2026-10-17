@@ -145,3 +145,32 @@ Proposed types (na-engines.md §8, turbo-hybrid.md table): f4 inline-4 turbo; gt
 | AT5 | `--car nope` | run | exit ≠ 0; stderr contains `nope` |
 
 Scenarios: idle (idleRpm, load 0.1, throttle 0.1), mid (0.6·limiterRpm, load 1), redline (limiterRpm − 200, load 1), sweep (idle → limiterRpm linearly in 4 s at load 1, then 1 s at limiterRpm with limiter true), lift (limiterRpm − 500 at load 1 for 0.5 s, then throttle 0, load 0). f0 from the 227 AT2 autocorrelation method. Default `--out .ai/audio`.
+
+### 239 — Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down
+
+Research: `docs/research/engine-audio/turbo-transients.md` (§2 table, §4 recipe). Deps 228 (and 231 data).
+
+Schema (226 types, all optional, absent = old behaviour): `TurboLayer` gains `valve?: 'none'|'bpv'|'bov'`, `flutter?: number` [0,1], `wastegate?: number` [0,1], `wastegateKind?: 'internal'|'external'`, `downLagS?: number` [0,5]. Effective defaults in the voice: valve 'none', flutter 0, wastegate 0, wastegateKind 'internal', downLagS = lagS. The parser keeps absent fields absent (existing deep-equal tests unchanged) and reports bad values under `synth.turbo`.
+
+Voice: boost = load slewed up with lagS, down with downLagS. Trigger per control update: throttle fell at > 3 /s (i.e. Δthrottle/Δt over the last update) while boost > 0.25; 0.3 s refractory; strength s = boost at the trigger. Transients use their own noise generator seeded `seed + 7`, so with every transient off the output is sample-identical to 228. They are summed before the final soft clip and bypass the exhaust low-pass. Recipes per research §4: bov = band noise 3500 + 2000·s Hz, duration 0.25 + 0.5·s s, gain ∝ s^1.5; bpv = 1.8 kHz Q 6 hiss τ 60 ms plus 600 Hz damped sine, ≈ 15 dB below bov; flutter = n = round((4 + 4·s)·flutter) pulses, rate 14 → 7 Hz, each pulse 2 kHz band noise + 250 Hz damped thump, amplitude ×0.8 per pulse; wastegate (external only; internal = nothing) = 3 kHz Q 1 noise, held at −10 dB re engine while load > 0.7 and boost > 0.7, AM by the exhaust pulse envelope, plus a lift chuff (attack 3 ms, τ 80 ms). Gains scaled by `wastegate`.
+
+Car data (231 files): f4 `valve 'bpv', flutter 0.4`; hyper-a `valve 'bpv', flutter 0, wastegate 0.3, wastegateKind 'internal'`; ow26 `valve 'bpv', flutter 0, wastegate 0.5, wastegateKind 'external'`; each `downLagS = 1.5 × lagS`.
+
+Test base: 228 base with `turbo {centerHz 3000, spanHz 3000, gain 0.05, lagS 0.4}` plus the named fields; 8 cyl; rpm 7000; "lift from L" = setControl rpm 7000, load L, throttle L for 2 s, then one setControl rpm 7000, load 0, throttle 0, rendering on in 128-sample blocks; t = 0 at the lift sample. `d` = output minus the output of the same seed with valve 'none', flutter 0, wastegate 0 (same other fields). Baseline RMS `B` = RMS of the baseline output over the 0.5 s before the lift. Envelope = RMS in 5 ms windows. Centroid = power-weighted mean frequency of a Hann-windowed FFT.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | valve 'bov', lift from 1 | d over t 0.02-0.35 s | RMS between B·10^(−12/20) and B·10^(−1/20); centroid in [3000, 7000] Hz |
+| AT2 | valve 'bov', lift from 1 | d over t 1.2-1.5 s | RMS < 0.01·B |
+| AT3 | valve 'bov'; lift from 1 vs lift from 0.4 vs lift from 0.2 | d energy over t 0-0.5 s | from 1 ≥ 6 dB above from 0.4; from 0.2: max \|d\| < 1e-6 |
+| AT4 | valve 'bpv' vs 'bov', lift from 1 | d over t 0.02-0.35 s | bpv centroid in [800, 3000] Hz; bpv energy ≥ 10 dB below bov |
+| AT5 | flutter 1, valve 'none', lift from 1 | envelope of d over t 0-1 s; peaks = local maxima ≥ 6 dB above the minima on both sides | 6 to 8 peaks; mean interval between consecutive peaks in [1/14, 1/7] s |
+| AT6 | flutter 0.4, lift from 1 | same | 2 to 4 peaks |
+| AT7 | wastegate 1, wastegateKind 'internal' vs 'external', lift from 1 | d | internal: max \|d\| < 1e-6 everywhere; external: RMS over the last 1 s before the lift between B·10^(−20/20) and B·10^(−6/20), and RMS over t 0-0.15 s ≥ 2 × that |
+| AT8 | downLagS 1.2 vs 0.3 (valve 'none'), lift from 1 | 3-6 kHz band energy of the output over t 0.6-0.8 s | ≥ 3 dB higher with 1.2 |
+| AT9 | turbo without the new fields vs explicit `valve 'none', flutter 0, wastegate 0, wastegateKind 'internal', downLagS 0.4`; lift from 1 | 3 s output | arrays identical |
+| AT10 | valve 'bov', flutter 0.4, wastegate 0.5 external, lift from 1, but throttle and load ramp 1 → 0 in steps of 0.05 every 50 ms | d over the whole run after the ramp start | max \|d\| < 1e-6 except the held external wastegate before boost drops below 0.7 (check only t ≥ 0.3 s after the ramp start: max \|d\| < 1e-6) |
+| AT11 | 6 cyl, rpm 15000, valve 'bov', flutter 1, wastegate 1 external, lift from 1 | 3 s | no NaN/Inf; max \|x\| ≤ 0.9 |
+| AT12 | parse raws: valve 'x'; flutter 2; wastegate −1; wastegateKind 'y'; downLagS 9; and a valid turbo with all five fields | parse | each invalid has ≥ 1 error containing `synth.turbo`; valid round-trips the five values; a turbo without them keeps them absent |
+| AT13 | car JSONs | parse `sound.synth.turbo` | f4 valve 'bpv', flutter 0.4; hyper-a valve 'bpv', flutter 0, wastegate 0.3, 'internal'; ow26 valve 'bpv', flutter 0, wastegate 0.5, 'external'; each downLagS = 1.5 × its lagS (± 1e-9) |
+| AT14 | — | all 226, 227, 228 and 231 acceptance tests | pass |
