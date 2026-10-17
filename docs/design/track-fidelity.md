@@ -131,7 +131,7 @@ Fixtures: `cum = [0, 1, …, 4999]`, length 5000; range A = `{from 1000, to 2000
 |---|---|---|---|
 | AT1 | A, auto | bankProfile | bank[1500] = 31° ± 1e-9; bank[1000], bank[2000], bank[999], bank[2001], bank[500] = 0 ± 1e-12; bank[1000 + 232.5 rounded up = 1233] = 31° ± 1e-9 |
 | AT2 | A, auto | consecutive differences over all i | max \|bank[i+1] − bank[i]\| ≤ 0.2° · 1.01 |
-| AT3 | A, auto | second differences | at i = 1000 and i = 1233: \|bank[i+1] − 2·bank[i] + bank[i−1]\| ≤ 0.002° (no kink) |
+| AT3 | A, auto | second differences | at i = 1000 and i = 1233: \|bank[i+1] − 2·bank[i] + bank[i−1]\| ≤ 0.003° (no kink; a linear ramp gives 0.13°) |
 | AT4 | A, auto | value at the ramp midpoint i = 1116 | 15.5° ± 0.3° |
 | AT5 | B, auto (span 100 < 2R) | bankProfile | all finite; peak at i = 3050 equals 31° ± 1e-9 (R = 50); bank[3000] = bank[3100] = 0 |
 | AT6 | C, auto | bankProfile | sign negative inside; R = 60: bank[4060] = −2° ± 1e-9; max step ≤ 1.5·2°/60 · 1.01 |
