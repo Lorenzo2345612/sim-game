@@ -40,6 +40,15 @@ Oval runs counter-clockwise; heading east on the front stretch the infield is on
 - `pit`: `{"fromMeters": -300, "toMeters": 300, "side": "left"}`
 - `grandstands`: `[{"atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true}, {"atMeters": -400, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 12, "roof": false}]`
 
+## Planner-authorised test edits (decision coder round)
+
+First `git merge master` (brings 175: POST8 in `tests/unit/edge/174-bank-profile.post.test.ts` already exempts `fontana-roval.json`), then squash with `git reset --soft master && git commit`. Then only these edits:
+- `tests/unit/acceptance/156-environment-type-ground-vegetation.test.ts`: add `'fontana-roval': 'desert'` to `EXPECTED`.
+- `tests/unit/edge/211-fontana-roval-edge.test.ts` EDGE7: expected cleveland name `'Cleveland Burke Lakefront'` (the value in `index.json`).
+- `tests/unit/edge/142-kerbs-every-corner.post.test.ts`: skip ids whose `public/tracks/<id>.json` does not exist at `baseRev` (check with `git cat-file -e`); everything else unchanged.
+- `tests/e2e/acceptance/168-us-tracks-in-game.spec.ts`: only if it fails, `'Fontana'` → `'Fontana Interior'` in `NEW_NAMES`.
+Run the 211- e2e (AT8) after.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
