@@ -152,6 +152,11 @@ describe('142 kerbs post-coder gaps', () => {
       .map((f) => f.slice(0, -5));
     expect(ids.length).toBeGreaterThanOrEqual(10);
     for (const id of ids) {
+      try {
+        execFileSync('git', ['cat-file', '-e', `${baseRev}:public/tracks/${id}.json`], { cwd: ROOT, stdio: 'ignore' });
+      } catch {
+        continue;
+      }
       const track = JSON.parse(readFileSync(join(ROOT, 'public', 'tracks', `${id}.json`), 'utf8')) as TrackDataV2;
       const prev = JSON.parse(
         execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], {

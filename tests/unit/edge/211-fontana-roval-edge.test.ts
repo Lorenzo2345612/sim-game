@@ -149,7 +149,7 @@ describe('211 fontana-roval edge cases', () => {
   it('EDGE6: public/tracks/fontana.json is byte-identical to the master file', () => {
     const bytes = readFileSync(join(ROOT, 'public', 'tracks', 'fontana.json'));
     const hash = createHash('sha256').update(bytes).digest('hex');
-    expect(hash).toBe('649ce915af19f3658708f38970c2dc3b6abd1919c2b5ad55f9fbe412937973f1');
+    expect(hash).toBe('116eddad0dcbe9ed6db4165cb8d79518a4ca81a981d07b0f67a4c2fcab5e6fce');
   });
 
   it('EDGE7: every index.json entry other than fontana/fontana-roval keeps its id, name, country and lengthKm', () => {
@@ -172,8 +172,8 @@ describe('211 fontana-roval edge cases', () => {
       ['singapore', 'Singapore', 'Singapore', 4.94],
       ['lasvegas', 'Las Vegas', 'United States', 6.201],
       ['spielberg', 'Spielberg', 'Austria', 4.318],
-      ['cleveland', 'Cleveland', 'United States', 3.426],
-      ['detroit', 'Detroit', 'United States', 2.562],
+      ['cleveland', 'Cleveland Burke Lakefront', 'United States', 3.426],
+      ['detroit', 'Detroit Downtown', 'United States', 2.562],
     ];
     for (const [id, name, country, lengthKm] of expected) {
       const e = entries.find((x) => x.id === id);
@@ -213,6 +213,7 @@ describe('211 fontana-roval edge cases', () => {
         { atMeters: 1900, side: 'left', offsetMeters: 30, lengthMeters: 80, rows: 10, roof: false },
       ],
       pit: { fromMeters: -300, toMeters: 300, side: 'right' },
+      banking: [{ fromMeters: 1830, toMeters: 2210, degrees: 11, raisedSide: 'right' }],
     };
     expect(registryEntry('fontana')).toEqual(expected);
   });

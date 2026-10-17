@@ -14,6 +14,7 @@ const EXPECTED: Record<string, string> = {
   bahrain: 'desert',
   lusail: 'desert',
   fontana: 'desert',
+  'fontana-roval': 'desert',
   sepang: 'tropical',
   daytona: 'tropical',
   spa: 'forest',
