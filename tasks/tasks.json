@@ -2511,7 +2511,7 @@
     {
       "num": "182",
       "title": "Pit building and grandstand styling",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "180"
       ],
