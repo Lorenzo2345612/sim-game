@@ -2587,7 +2587,7 @@
     {
       "num": "187",
       "title": "Generic trackside props from the track style",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "180"
       ],
@@ -2854,7 +2854,7 @@
     {
       "num": "206",
       "title": "Painted strip outside the kerbs",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "180",
         "183"
@@ -3112,7 +3112,7 @@
     {
       "num": "227",
       "title": "EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "226"
       ],
@@ -3162,7 +3162,7 @@
     {
       "num": "231",
       "title": "Per-car engine synth data",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "226"
       ],

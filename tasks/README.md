@@ -188,7 +188,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 184 | Palette tints, edge-line colour and sky overrides from the track style | in progress | 180, 183, 156, 157, 158, 159, 160, 168, 174, 175 |
 | 185 | Barrier colours, wall band and configurable catch fence from the track style | done | 180 |
 | 186 | Floodlight poles along the track from the track style | pending | 180, 182, 184 |
-| 187 | Generic trackside props from the track style | pending | 186 |
+| 187 | Generic trackside props from the track style | in progress | 180 |
 | 188 | Monza track style data | done | 181 |
 | 189 | Spa track style data | done | 181, 188 |
 | 190 | Silverstone track style data | done | 181, 188 |
@@ -207,7 +207,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 203 | Bahrain style data (`bahrain.style.json`) | done | 181, 188 |
 | 204 | Sepang style data (`sepang.style.json`) | done | 181, 188 |
 | 205 | Lusail style data (`lusail.style.json`) | done | 181, 188 |
-| 206 | Painted strip outside the kerbs | pending | 187 |
+| 206 | Painted strip outside the kerbs | in progress | 180, 183 |
 | 207 | UI polish: shared theme, HUD and menus | done | - |
 | 208 | Tyre HUD details and dirt tuning | done | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
@@ -228,9 +228,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 224 | OW-26 3D model through the car pipeline | in progress | 221 |
 | 225 | Expert AI must not spin; difficulty orders pace | pending | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
-| 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | pending | 226 |
+| 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | in progress | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | pending | 227 |
 | 229 | Wire EngineVoice into the worklet, EngineAudio and main | pending | 228 |
 | 230 | Mixer: cockpit bus, master dynamics, smooth camera switch | done | - |
-| 231 | Per-car engine synth data | pending | 226 |
+| 231 | Per-car engine synth data | in progress | 226 |
 | 232 | Offline engine render tool | pending | 227 |
