@@ -125,7 +125,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 120 | Paint materials in the car pipeline and livery shader | done | 075, 112, 119 |
 | 121 | Race number decals | done | 120 |
 | 122 | Livery editor screen | done | 044, 073, 074, 106, 114, 120, 121 |
-| 123 | Driving line overlay coloured by action | in progress | 088, 093, 118 |
+| 123 | Driving line overlay coloured by action | done | 088, 093, 118 |
 | 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
