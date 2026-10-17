@@ -2726,7 +2726,7 @@
     {
       "num": "197",
       "title": "Road Atlanta (Braselton) style file (data only)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "181",
         "188"
@@ -2913,7 +2913,7 @@
     {
       "num": "211",
       "title": "Fontana Sports Car Course (oval + infield layout)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "174"
       ],

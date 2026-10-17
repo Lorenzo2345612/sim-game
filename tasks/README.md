@@ -198,7 +198,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 194 | Daytona style file (data only) | in progress | 181, 188 |
 | 195 | Fontana style file (data only) | in progress | 181, 188, 168 |
 | 196 | Elkhart Lake style file (data only) | in progress | 181, 188 |
-| 197 | Road Atlanta (Braselton) style file (data only) | pending | 181, 188 |
+| 197 | Road Atlanta (Braselton) style file (data only) | in progress | 181, 188 |
 | 198 | Cleveland style file (data only) | pending | 181, 188, 168 |
 | 199 | Detroit style file (data only) | pending | 181, 188, 168 |
 | 200 | Baku style data (`baku.style.json`) | pending | 181, 188 |
@@ -212,7 +212,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 208 | Tyre HUD details and dirt tuning | done | - |
 | 209 | Setup panel v2, tyre compound choice and setup overlay | done | 208 |
 | 210 | Reverse speed cap and gamepad trigger deadzone | done | - |
-| 211 | Fontana Sports Car Course (oval + infield layout) | in progress | 174 |
+| 211 | Fontana Sports Car Course (oval + infield layout) | done | 174 |
 | 212 | Ghost delta goes wild from the second lap | done | - |
 | 213 | Consistent tyre compounds for GT3, LMP2 and Hypercar | done | - |
 | 214 | Track conditions: asphalt abrasion and track temperature | done | - |
