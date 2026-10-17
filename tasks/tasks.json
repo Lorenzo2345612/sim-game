@@ -3060,7 +3060,7 @@
     {
       "num": "223",
       "title": "ERS and active-aero HUD widget",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "219",
         "221"
