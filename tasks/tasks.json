@@ -3060,7 +3060,7 @@
     {
       "num": "223",
       "title": "ERS and active-aero HUD widget",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "219",
         "221"
@@ -3074,7 +3074,7 @@
     {
       "num": "224",
       "title": "OW-26 3D model through the car pipeline",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "221"
       ],
