@@ -69,3 +69,7 @@ npx playwright test 094-   # this task's e2e files only; never the full e2e suit
 Menu and results screen (095), race markers on the minimap, car labels in 3D, per-car setups or models, damage visuals, changes to `RaceGame` logic.
 
 Frozen tests: none need editing (`sceneStats` only gains fields; single-car HUD/render unchanged).
+
+## Planner-authorised test edits
+
+- `tests/e2e/acceptance/094-race-hud.spec.ts`: add `test.describe.configure({ timeout: 180_000 })` at file level (the per-test `test.setTimeout` runs after fixture setup, so setup times out under load). Timeout only; no assertion, step or selector changes.
