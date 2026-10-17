@@ -108,12 +108,13 @@ describe('174 bankProfile and parser post-coder gaps', () => {
     }
   });
 
-  it('POST8: every shipped track except daytona has no bank or an all-zero bank', () => {
+  const BANKED = ['daytona.json', 'fontana.json', 'fontana-roval.json'];
+  it('POST8: every shipped track except daytona and fontana has no bank or an all-zero bank', () => {
     const dir = join(ROOT, 'public', 'tracks');
     const daytona = JSON.parse(readFileSync(join(dir, 'daytona.json'), 'utf8')) as { bank?: number[] };
     expect((daytona.bank ?? []).some((b) => Math.abs(b) > 1e-12)).toBe(true);
     for (const f of readdirSync(dir).filter((n) => n.endsWith('.json'))) {
-      if (f === 'daytona.json') continue;
+      if (BANKED.includes(f)) continue;
       const data = JSON.parse(readFileSync(join(dir, f), 'utf8')) as { bank?: number[] };
       if (data.bank === undefined) continue;
       for (const b of data.bank) expect(Math.abs(b), f).toBeLessThanOrEqual(1e-12);

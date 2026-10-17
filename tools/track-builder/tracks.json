@@ -399,7 +399,8 @@
       { "atMeters": 400, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
       { "atMeters": 1900, "side": "left", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
-    "pit": { "fromMeters": -300, "toMeters": 300, "side": "right" }
+    "pit": { "fromMeters": -300, "toMeters": 300, "side": "right" },
+    "banking": [{ "fromMeters": 1830, "toMeters": 2210, "degrees": 11, "raisedSide": "right" }]
   },
   {
     "id": "cleveland",
