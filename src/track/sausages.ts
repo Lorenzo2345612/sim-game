@@ -1,4 +1,5 @@
 import type { Sausage, TrackDataV2, Vec3 } from '../core/types';
+import { bankTanAt } from './surfaces';
 
 export const SAUSAGE_BASE_WIDTH = 0.5;
 export const SAUSAGE_TOP_WIDTH = 0.25;
@@ -17,7 +18,7 @@ export function sausageHullPoints(length: number): Float32Array {
   ]);
 }
 
-/** Base centre on the ground at elevation[index], offset along the central-difference right normal; yaw aims local +Z at the tangent. */
+/** Base centre on the banked surface at elevation[index] + signed offset * tan(bank), along the central-difference right normal; yaw aims local +Z at the tangent. */
 export function sausagePose(track: TrackDataV2, s: Sausage): { position: Vec3; yaw: number } {
   const cx = track.centerline;
   const n = cx.length;
@@ -35,12 +36,13 @@ export function sausagePose(track: TrackDataV2, s: Sausage): { position: Vec3; y
     dz /= len;
   }
   const sign = s.side === 'right' ? 1 : -1;
+  const lateral = s.offset * sign;
   const p = cx[i];
   return {
     position: {
-      x: p[0] + -dz * s.offset * sign,
-      y: track.elevation[i] ?? 0,
-      z: p[1] + dx * s.offset * sign,
+      x: p[0] + -dz * lateral,
+      y: (track.elevation[i] ?? 0) + lateral * bankTanAt(track, i),
+      z: p[1] + dx * lateral,
     },
     yaw: Math.atan2(dx, dz),
   };
