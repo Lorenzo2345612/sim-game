@@ -34,6 +34,12 @@ Layout route: `docs/research/tracks/fontana-layouts.md` section 2 (authority; re
 
 Conventions: distances in meters, bank in radians in the JSON (degrees only in the registry); bounds inclusive (`<=`); invalid/missing OSM way id -> the geojson build script (if any) throws; no existing file other than those listed is mutated.
 
+## Planner clarification (pit and grandstands)
+
+Oval runs counter-clockwise; heading east on the front stretch the infield is on the left. Use exactly:
+- `pit`: `{"fromMeters": -300, "toMeters": 300, "side": "left"}`
+- `grandstands`: `[{"atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true}, {"atMeters": -400, "side": "right", "offsetMeters": 30, "lengthMeters": 100, "rows": 12, "roof": false}]`
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |

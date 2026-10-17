@@ -19,7 +19,7 @@
       "oauth": true,
       "model": "claude-sonnet-5-5",
       "heavyModel": "claude-sonnet-5-5",
-      "maxConcurrent": 2
+      "maxConcurrent": 6
     }
   },
   "roles": {
