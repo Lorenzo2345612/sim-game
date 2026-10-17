@@ -10,7 +10,7 @@ Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
 
-Rows of coloured flat-roof plaster houses (with rooftop water tanks and adobe walls on vacant lots) line the five Ermita tracks and the village streets, baked offline into `public/tracks/ermita-*-env.json` and rendered by the existing city path.
+Rows of coloured flat-roof plaster houses (with rooftop water tanks and adobe walls on vacant lots) line the six Ermita tracks and the village streets, baked offline into `public/tracks/ermita-*-env.json` and rendered by the existing city path.
 
 ## Context
 
@@ -73,7 +73,7 @@ Render (`createCityObject`): plaster buildings (all, regardless of cell) go into
 ## Acceptance criteria
 
 - [ ] AT1–AT12 pass; all other tests pass.
-- [ ] The 5 `-env.json` files exist and load in the game (e2e not required).
+- [ ] The 6 `-env.json` files exist and load in the game (e2e not required).
 
 ## Verification
 

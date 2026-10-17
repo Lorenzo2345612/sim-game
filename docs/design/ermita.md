@@ -1,10 +1,10 @@
 # Ermita de Guadalupe street circuit (tasks 241–243)
 
-Fictional street circuit in the user's home village (Ermita de Guadalupe, Jerez, Zacatecas). Five layouts share one venue: DEM `assets/source/dem/ermita.json`, ground scene `assets/source/ground/ermita-s2.jpg` (+ `.json` bounds), sources and per-layout numbers in `docs/research/tracks/mx-ermita.md`, look in `docs/research/hometown-circuit/town-look.md`. OSM has no buildings here, so the village is synthetic. The arroyo is dry in the dry season (tree band 30–50 m, sandy bed).
+Fictional street circuit in the user's home village (Ermita de Guadalupe, Jerez, Zacatecas). Six layouts share one venue: DEM `assets/source/dem/ermita.json`, ground scene `assets/source/ground/ermita-s2.jpg` (+ `.json` bounds), sources and per-layout numbers in `docs/research/tracks/mx-ermita.md`, look in `docs/research/hometown-circuit/town-look.md`. OSM has no buildings here, so the village is synthetic. The arroyo is dry in the dry season (tree band 30–50 m, sandy bed).
 
 Data prerequisites (planner-side data agent, committed before 242): `assets/source/osm/ermita-streets.json` (all highway ways in the venue bbox, `{source, license, ways:[{id, highway, coords}]}`, no names) and `assets/source/osm/ermita-village.json` (built-up mask polygons hand-drawn from imagery, `{polygons:[[[lon,lat]...]]}`).
 
-## 241 — Register the five layouts
+## 241 — Register the six layouts
 
 | id | name | widthMeters |
 |---|---|---|
@@ -13,14 +13,15 @@ Data prerequisites (planner-side data agent, committed before 242): `assets/sour
 | ermita-norte | Ermita Norte | 12 |
 | ermita-mixto | Ermita Mixto | 12 |
 | ermita-poniente | Ermita Poniente | 12 |
+| ermita-veloz | Ermita Veloz | 12 |
 
 Country "Mexico"; environment `desert`; DEM shared; `pit`/`grandstands` from `mx-ermita.md`; no banking; `"walls": true` (concrete walls all round, as city tracks). Ground texture per id cropped from the shared Sentinel-2 scene to each built terrain bounds (skill `track-data` step 12 tone rules). Menu, index (`build:track-index`), per-id tables (env/fog, DEM tool) as in 168/211. Existing tracks are not rebuilt.
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | unit: each of the 5 `public/tracks/<id>.json` | `parseTrackData`, closed centerline length | within ±1 % of the polyline length of `assets/source/tracks/mx-<id>.geojson` projected with `src/track/geo.ts`, and in [2400, 5100] m |
-| AT2 | unit: `public/tracks/index.json` | read | the 5 ids present, consecutive in the table order above, names as above, country "Mexico"; every pre-existing entry unchanged and in the same relative order |
-| AT3 | unit: `src/ui/menu.ts` `TRACK_CHOICES` | read | contains the 5 ids with the names above, consecutive, same order |
+| AT1 | unit: each of the 6 `public/tracks/<id>.json` | `parseTrackData`, closed centerline length | within ±1 % of the polyline length of `assets/source/tracks/mx-<id>.geojson` projected with `src/track/geo.ts`, and in [2400, 5100] m |
+| AT2 | unit: `public/tracks/index.json` | read | the 6 ids present, consecutive in the table order above, names as above, country "Mexico"; every pre-existing entry unchanged and in the same relative order |
+| AT3 | unit: `src/ui/menu.ts` `TRACK_CHOICES` | read | contains the 6 ids with the names above, consecutive, same order |
 | AT4 | unit: `public/tracks/*.json` not starting with `ermita-` | compare with `git show master:<path>` at test-writing time (hash hard-coded) | byte-identical |
 | AT5 | unit: each new track centerline resampled every 10 m | 3-point circumradius at every sample | ≥ 11 m |
 | AT6 | unit: each new track | `widthMeters`/half widths, `environment` | width as table; environment `desert`; `bank` absent or all 0 |
@@ -32,7 +33,7 @@ Country "Mexico"; environment `desert`; DEM shared; `pit`/`grandstands` from `mx
 ## 242 — Synthetic village buildings
 
 New pure generator `tools/env/villageBuildings.ts`:
-`buildVillageEnv({ centerline: [x,z][], halfWidthLeft: number[], halfWidthRight: number[], streets: [x,z][][], mask: [x,z][][], exclusions: [x,z][][], seed: number }): CityEnv` (all local metres, track frame). Bake script `tools/env/bakeVillage.ts <id>` writes `public/tracks/<id>-env.json` (loaded by `src/main.ts` like the OSM cities) for the 5 ermita ids; exclusions = pit lane box, grandstand footprints (+3 m), arroyo corridors (`water` features of `<id>-areas.json`, width + 6 m).
+`buildVillageEnv({ centerline: [x,z][], halfWidthLeft: number[], halfWidthRight: number[], streets: [x,z][][], mask: [x,z][][], exclusions: [x,z][][], seed: number }): CityEnv` (all local metres, track frame). Bake script `tools/env/bakeVillage.ts <id>` writes `public/tracks/<id>-env.json` (loaded by `src/main.ts` like the OSM cities) for the 6 ermita ids; exclusions = pit lane box, grandstand footprints (+3 m), arroyo corridors (`water` features of `<id>-areas.json`, width + 6 m).
 
 Rules: row houses along both sides of the track and of every street (assumed width 7 m) inside the mask. Front face parallel to the road, setback: track → `halfWidth + 2.5` m from the centerline (sidewalk); street → 5.0 m from its centreline. Frontage uniform in [6, 14] m, depth [9, 16] m, gap between houses 0–0.5 m, height 3.2 m (70 %) or 6.4 m (30 %). No house within 8 m of a junction (track–street or street–street). 10 % of lots stay vacant and get an adobe wall (`Wall`, height 2.2, thickness 0.3) along the front. Seeded RNG (mulberry32 of seed); seed per id = FNV-1a of the id.
 
@@ -57,7 +58,7 @@ Render (`src/render/cityRenderer.ts`): plaster houses in one merged mesh with ve
 
 ## 243 — Dry arroyo and bridges
 
-Builder input: `water` features of `assets/source/osm/<id>-areas.json` (lines with `widthMeters`, polygons). Only tracks whose config has `"arroyo": true` (the 5 ermita ids) use it; every other track output unchanged.
+Builder input: `water` features of `assets/source/osm/<id>-areas.json` (lines with `widthMeters`, polygons). Only tracks whose config has `"arroyo": true` (the 6 ermita ids) use it; every other track output unchanged.
 
 - Terrain: inside each corridor (line buffered by width/2, or polygon) the heightfield is lowered by `depth` = 2.0 m with a cosine bank of 3 m outside the corridor edge.
 - Crossings: where the centerline crosses a corridor, a bridge spans the corridor plus 5 m abutments each side. Track elevation over the span is linear between the abutment ends (their original elevations).

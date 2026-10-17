@@ -25,7 +25,7 @@ Design: `docs/design/ermita.md` section 243. Areas file water feature: `{id, kin
 - `tools/track-builder/trees.ts` — modify — `placeTrees(..., biome, arroyos?: Arroyo[])`.
 - `src/core/types.ts` — modify — `TrackDataV2.bridges?: { from: number; to: number }[]`, `arroyos?: { line: [number, number][]; width: number }[]`.
 - `src/render/bridgeRenderer.ts` — create — `createBridgeObject(track: TrackDataV2, terrainY: (x: number, z: number) => number): { group: THREE.Group; dispose(): void }`; `src/main.ts` — modify — add it to the scene next to `createBarrierObject` (~line 613) and push to `disposables`.
-- `tools/track-builder/tracks.json` — modify — `"arroyo": true` on the 5 ermita entries only. Rebuild only those: `npm run build:tracks -- ermita-centro ermita-federal ermita-norte ermita-mixto ermita-poniente`.
+- `tools/track-builder/tracks.json` — modify — `"arroyo": true` on the 6 ermita entries only. Rebuild only those: `npm run build:tracks -- ermita-centro ermita-federal ermita-norte ermita-mixto ermita-poniente ermita-veloz`.
 - Tests: `tests/unit/acceptance/243-arroyo-bridges.test.ts`.
 
 ## Contract (`arroyo.ts`)
@@ -76,7 +76,7 @@ All terrain/barrier/tree/builder tests (131, 142, 176 and edge suites).
 ## Acceptance criteria
 
 - [ ] AT1–AT10 pass; all other tests pass.
-- [ ] The 5 ermita JSONs rebuilt with `bridges` and `arroyos`; no other `public/tracks/*.json` changes.
+- [ ] The 6 ermita JSONs rebuilt with `bridges` and `arroyos`; no other `public/tracks/*.json` changes.
 
 ## Verification
 
