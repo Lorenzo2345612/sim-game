@@ -62,6 +62,8 @@ While a milestone is open, do not change `scripts/ai/*` or `ai/*` (each restart 
 - Worker silent for minutes after reading context → stalled (watchdog kills at 8 min, `STALLED`). Large single-file tasks: split them or mark `Type: bugfix` (heavy models).
 - Contradictory spec criteria → coder/reviewer ask for a planner decision; fix the spec, never let the coder weaken tests.
 - Visual bugs pass unit tests: render tasks need a Playwright acceptance row with pixel checks.
+- `merge` decision: `git merge-tree --write-tree --name-only master task/NNN`. Clean but branch has merge commits → in the worktree `git merge master && git reset --soft master && git commit` (rebase drops merge commits and replays conflicts). Conflicts only in generated files → take master's copy, squash, send to coder to regenerate. Code conflicts → `git merge --abort`, add a "Merge note" to the spec (merge, keep both sides, squash with `reset --soft master`), stage=coder.
+- GLM/any provider at quota 0 with a worker already launched: the worker hangs without tokens; kill that worker PID and its `claude` child, it re-routes to MiMo.
 - Orchestrator commit failures are logged as `commit-failed` events; files not listed in a spec's `## Files` stay uncommitted — check `git status` after each batch.
 
 ## Game and previews
