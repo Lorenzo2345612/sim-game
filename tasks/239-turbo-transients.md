@@ -58,7 +58,7 @@ Conventions: throttle fall rate uses the last control update's Δthrottle/Δt (�
 | AT5 | flutter 1, valve 'none', lift from 1 | envelope of d over t 0-1 s; peaks = local maxima ≥ 6 dB above the minima on both sides | 6 to 8 peaks; mean interval between consecutive peaks in [1/14, 1/7] s |
 | AT6 | flutter 0.4, lift from 1 | same | 2 to 4 peaks |
 | AT7 | wastegate 1, wastegateKind 'internal' vs 'external', lift from 1 | d | internal: max \|d\| < 1e-6 everywhere; external: RMS over the last 1 s before the lift between B·10^(−20/20) and B·10^(−6/20), and RMS over t 0-0.15 s ≥ 2 × that |
-| AT8 | downLagS 1.2 vs 0.3 (valve 'none'), lift from 1 | 3-6 kHz band energy of the output over t 0.6-0.8 s | ≥ 3 dB higher with 1.2 |
+| AT8 | downLagS 1.2 vs 0.3 (valve 'none'), lift from 1 | read public `boost` at t 0.7 s; 3-6 kHz band energy of the output over t 0.6-0.8 s | boost(1.2) ≥ 3 × boost(0.3); band energy ≥ 0.5 dB higher with 1.2 |
 | AT9 | turbo without the new fields vs explicit `valve 'none', flutter 0, wastegate 0, wastegateKind 'internal', downLagS 0.4`; lift from 1 | 3 s output | arrays identical |
 | AT10 | valve 'bov', flutter 0.4, wastegate 0.5 external, lift from 1, but throttle and load ramp 1 → 0 in steps of 0.05 every 50 ms | d over the whole run after the ramp start | max \|d\| < 1e-6 except the held external wastegate before boost drops below 0.7 (check only t ≥ 0.3 s after the ramp start: max \|d\| < 1e-6) |
 | AT11 | 6 cyl, rpm 15000, valve 'bov', flutter 1, wastegate 1 external, lift from 1 | 3 s | no NaN/Inf; max \|x\| ≤ 0.9 |
@@ -83,3 +83,8 @@ npm test
 ## Out of scope
 
 - Worklet/EngineAudio wiring (229), mixer (230), offline render tool (232), new cars, brand names, crackle/limiter changes, tuning beyond the design recipes.
+
+## Planner answers (round 1)
+
+- AT8 changed (planner): at 7000 rpm / load 0 the exhaust masks the unchanged turbo layer, so the row now checks the spool-down state. Add a public read-only `boost: number` to `EngineVoice` (current slewed boost, 0 after `reset()`). Authorised: rewrite only the AT8 test to the new row (boost ratio ≥ 3 at t 0.7 s, band energy ≥ +0.5 dB). Turbo gain and TURBO_AMP stay unchanged.
+- Accepted: wastegate hold gate, transient level reference, flutter/chuff rules, setControl trigger rule. Run the full `npm test` before reporting.
