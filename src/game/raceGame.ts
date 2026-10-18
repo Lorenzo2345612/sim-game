@@ -9,9 +9,10 @@ import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence } from '../race/startSequence';
-import { initPhysics, createPhysicsWorld } from '../physics/physicsWorld';
+import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
 import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
+import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
 import { TrackProgress } from '../track/trackProgress';
 
 export interface RaceConfig {
@@ -81,6 +82,9 @@ export class RaceGame {
   private readonly aheadIdx: number;
   private readonly halfWidth: number;
   private readonly lapLength: number;
+  private readonly events: RAPIER.EventQueue;
+  private readonly damageCars: DamageCar[];
+  private readonly damageRng: () => number;
   private time = 0;
   private disposed = false;
 
@@ -126,6 +130,22 @@ export class RaceGame {
     this.lapLength = progresses[0].length;
     this.penalised = new Array<boolean>(this.count).fill(false);
     this.indices = new Int32Array(this.count);
+    this.events = new RAPIER.EventQueue(true);
+    this.damageCars = vehicles.map((v) => ({
+      chassis: v.chassisCollider,
+      body: v.body,
+      zones: v.zones,
+      damage: v.damage,
+      damageMode: v.damageMode,
+    }));
+    this.damageRng = mulberry32(config.seed);
+  }
+
+  setDamageMode(mode: DamageMode): void {
+    for (let i = 0; i < this.count; i++) {
+      this.vehicles[i].damageMode = mode;
+      this.damageCars[i].damageMode = mode;
+    }
   }
 
   static async create(
@@ -283,7 +303,8 @@ export class RaceGame {
       }
     }
 
-    this.world.step();
+    this.world.step(this.events);
+    processContactEvents(this.events, this.world, this.damageCars, FIXED_DT, this.damageRng);
     this.time += FIXED_DT;
     for (let i = 0; i < this.count; i++) this.vehicles[i].getState(this.current[i]);
     this.refreshProgress();
@@ -355,6 +376,7 @@ export class RaceGame {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.events.free();
     this.world.free();
   }
 

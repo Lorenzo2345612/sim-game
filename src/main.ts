@@ -23,6 +23,7 @@ import { defaultLivery, loadLivery, type Livery } from './game/livery';
 import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
+import type { DamageMode } from './physics/contactEvents';
 import { applySetup, loadSetup } from './physics/setup';
 import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
@@ -572,6 +573,13 @@ function drivingLineFromQuery(params: URLSearchParams, storage: Storage): Drivin
     : loadDrivingLineSetting(storage);
 }
 
+function damageModeFromQuery(params: URLSearchParams): DamageMode {
+  const requested = params.get('damage');
+  return requested === 'off' || requested === 'visual' || requested === 'full'
+    ? requested
+    : 'full';
+}
+
 /** Query multiplier: a finite value above 0 wins, an absent query keeps the stored option, anything else is 1. */
 function queryMultiplier(raw: string | null, stored: number): number {
   if (raw === null) return stored;
@@ -653,6 +661,7 @@ async function startGame(trackId: string): Promise<void> {
   if (raceCfg !== null) {
     // raceCfg is only built when raceTrack is non-null.
     raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, tune);
+    raceGame.setDamageMode(damageModeFromQuery(params));
   } else {
     game = await Game.create(track, gameSpec, tune);
   }

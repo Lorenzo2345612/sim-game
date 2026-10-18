@@ -18,6 +18,8 @@ import { solveWheel, WheelSolveInput, WheelSolveOutput } from './wheelSolver';
 import { aeroForces, AeroForces } from './aero';
 import { Ers, type ErsInput } from './ers';
 import { ActiveAero } from './activeAero';
+import { createDamageState, type CarZones, type DamageState } from './damage';
+import type { DamageMode } from './contactEvents';
 
 const RPM_PER_RPS = 60 / (2 * Math.PI);
 const ENGINE_BRAKE_RAMP_RPM = 1500;
@@ -155,6 +157,10 @@ function spawnRotation(spawn: SpawnPose): RAPIER.Rotation {
 // Per tick: rays + suspension, gravity-predicted slip, powertrain/aids, solveWheel, aero, impulses.
 export class VehicleModel {
   readonly body: RAPIER.RigidBody;
+  readonly chassisCollider: RAPIER.Collider;
+  readonly zones: CarZones;
+  readonly damage: DamageState = createDamageState();
+  damageMode: DamageMode = 'full';
   private readonly world: RAPIER.World;
   private readonly spec: CarSpec;
   private readonly input: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
@@ -207,12 +213,25 @@ export class VehicleModel {
         .setCanSleep(false),
     );
     const he = spec.chassis.halfExtents;
-    world.createCollider(
+    this.chassisCollider = world.createCollider(
       RAPIER.ColliderDesc.cuboid(he.x, he.y, he.z)
         .setDensity(0)
-        .setCollisionGroups(CHASSIS_COLLISION_GROUPS),
+        .setCollisionGroups(CHASSIS_COLLISION_GROUPS)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(1000),
       this.body,
     );
+    const wp = spec.wheels.positions;
+    this.zones = {
+      halfLength: he.z,
+      halfWidth: he.x,
+      hubs: [
+        { x: wp[0][0], y: wp[0][1], z: wp[0][2] },
+        { x: wp[1][0], y: wp[1][1], z: wp[1][2] },
+        { x: wp[2][0], y: wp[2][1], z: wp[2][2] },
+        { x: wp[3][0], y: wp[3][1], z: wp[3][2] },
+      ],
+    };
     this.gearbox = new Gearbox(spec.gearbox, spec.wheels.radius, spec.engine);
     this.tank = new FuelTank(spec.fuel);
     this.compoundSpec = spec.tyres.compounds[this.compound];
