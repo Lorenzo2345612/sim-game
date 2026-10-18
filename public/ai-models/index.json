@@ -1,0 +1,38 @@
+{
+ "baku-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ],
+ "budapest-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ],
+ "cleveland-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ],
+ "mexico-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ],
+ "monza-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ],
+ "spa-f4": [
+  "easy",
+  "medium",
+  "hard",
+  "expert"
+ ]
+}

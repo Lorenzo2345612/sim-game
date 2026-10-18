@@ -1,0 +1,67 @@
+{
+ "track": "mexico",
+ "car": "f4",
+ "difficulties": {
+  "expert": "race-139s-gen247.json",
+  "hard": "race-146s-gen240.json",
+  "medium": "race-149s-gen239.json",
+  "easy": "race-159s-gen238.json"
+ },
+ "models": {
+  "139": {
+   "file": "race-139s-gen247.json",
+   "avgLap": 139.9675,
+   "gen": 247
+  },
+  "141": {
+   "file": "race-141s-gen241.json",
+   "avgLap": 141.115,
+   "gen": 241
+  },
+  "146": {
+   "file": "race-146s-gen240.json",
+   "avgLap": 146.08083333333335,
+   "gen": 240
+  },
+  "147": {
+   "file": "race-147s-gen248.json",
+   "avgLap": 147.51666666666668,
+   "gen": 248
+  },
+  "148": {
+   "file": "race-148s-gen245.json",
+   "avgLap": 148.10416666666669,
+   "gen": 245
+  },
+  "149": {
+   "file": "race-149s-gen239.json",
+   "avgLap": 149.79749999999999,
+   "gen": 239
+  },
+  "159": {
+   "file": "race-159s-gen238.json",
+   "avgLap": 159.06083333333333,
+   "gen": 238
+  },
+  "162": {
+   "file": "race-162s-gen242.json",
+   "avgLap": 162.46166666666664,
+   "gen": 242
+  },
+  "163": {
+   "file": "race-163s-gen237.json",
+   "avgLap": 163.49166666666667,
+   "gen": 237
+  },
+  "164": {
+   "file": "race-164s-gen246.json",
+   "avgLap": 164.2,
+   "gen": 246
+  },
+  "183": {
+   "file": "race-183s-gen243.json",
+   "avgLap": 183.33916666666667,
+   "gen": 243
+  }
+ }
+}

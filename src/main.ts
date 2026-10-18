@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
 import { Mixer } from './audio/mixer';
 import type { Difficulty } from './ai/traffic';
+import { parseNeuralModel } from './ai/neuralPolicy';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
@@ -16,7 +17,7 @@ import { FrameRing, type PerfStats } from './core/perfStats';
 import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
 import { Game, type LapInfo } from './game/game';
-import { RaceGame, type RaceConfig } from './game/raceGame';
+import { RaceGame, type RaceConfig, type RaceGameOptions } from './game/raceGame';
 import { GhostRecorder, ghostAt, loadGhost, saveGhostIfFaster, type GhostLap } from './game/ghost';
 import { ghostTimeAt } from './game/ghostDelta';
 import { defaultLivery, loadLivery, type Livery } from './game/livery';
@@ -262,6 +263,30 @@ function raceConfigFromQuery(params: URLSearchParams, trackId: string, carId: st
   };
 }
 
+// Fetches the exported model for the race difficulty; empty (AI stays classic) when absent.
+async function loadNeuralModels(
+  trackId: string,
+  carId: string,
+  difficulty: Difficulty,
+): Promise<Pick<RaceGameOptions, 'neuralModels' | 'neuralLine'>> {
+  try {
+    const base = `/ai-models/${trackId}-${carId}`;
+    const res = await fetch(`${base}/${difficulty}.json`);
+    if (!res.ok) return { neuralModels: {} };
+    const json = await res.json();
+    const neuralModels = { [difficulty]: parseNeuralModel(json) };
+    const line = (json as { line?: string }).line;
+    if (line === 'racing') return { neuralModels, neuralLine: { kind: 'racing' } };
+    if (line === 'mintime') {
+      const mt = await (await fetch(`${base}/line-mintime.json`)).json();
+      return { neuralModels, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
+    }
+    return { neuralModels };
+  } catch {
+    return { neuralModels: {} };
+  }
+}
+
 function resultRows(standings: readonly Standing[]): ResultsRow[] {
   return standings.map((s) => ({
     position: s.position,
@@ -356,6 +381,7 @@ function startQuickRace(o: QuickRaceOptions): Promise<void> {
   params.set('laps', String(o.laps));
   params.set('ai', String(o.aiCount));
   params.set('diff', o.difficulty);
+  if (o.aiDriver === 'neural') params.set('aidriver', 'neural');
   const car = window.localStorage.getItem(CAR_STORAGE_KEY);
   if (car !== null && CAR_IDS.includes(car)) params.set('car', car);
   window.history.pushState(null, '', `${window.location.pathname}?${params}`);
@@ -662,12 +688,17 @@ async function startGame(trackId: string): Promise<void> {
   if (params.get('race') === '1' && raceTrack === null) throw new Error('?race=1 requires a v2 track');
   let game: Game | null = null;
   let raceGame: RaceGame | null = null;
+  // Neural AI is opt-in via ?aidriver=neural (task 269); missing model falls back to classic.
+  let raceAiOptions: RaceGameOptions = tune;
+  if (raceCfg !== null && params.get('aidriver') === 'neural') {
+    raceAiOptions = { ...tune, aiDriver: 'neural', ...(await loadNeuralModels(track.id, carId, raceCfg.difficulty)) };
+  }
   let bollardField: BollardField | null = null;
   let bollardRenderer: BollardRenderer | null = null;
   const bollardCars: BollardCar[] = [];
   if (raceCfg !== null) {
     // raceCfg is only built when raceTrack is non-null.
-    raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, tune);
+    raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, raceAiOptions);
     raceGame.setDamageMode(damageModeFromQuery(params));
   } else {
     game = await Game.create(track, gameSpec, tune);
@@ -1583,7 +1614,7 @@ async function startGame(trackId: string): Promise<void> {
   const restart = async (): Promise<void> => {
     const nextSpec = freshSpec();
     if (raceCfg !== null) {
-      const next = await RaceGame.create(raceTrack!, nextSpec, raceCfg, tune);
+      const next = await RaceGame.create(raceTrack!, nextSpec, raceCfg, raceAiOptions);
       // The session may have been torn down while the new game was being created.
       if (!running) {
         next.dispose();

@@ -1,0 +1,58 @@
+{
+ "track": "cleveland",
+ "car": "f4",
+ "line": "racing",
+ "difficulties": {
+  "expert": "race-100s-gen250.json",
+  "hard": "race-103s-gen249.json",
+  "medium": "race-108s-gen245.json",
+  "easy": "race-111s-gen242.json"
+ },
+ "models": {
+  "100": {
+   "file": "race-100s-gen250.json",
+   "avgLap": 100.90416666666667,
+   "gen": 250
+  },
+  "101": {
+   "file": "race-101s-gen256.json",
+   "avgLap": 101.36999999999999,
+   "gen": 256
+  },
+  "102": {
+   "file": "race-102s-gen258.json",
+   "avgLap": 102.50666666666666,
+   "gen": 258
+  },
+  "103": {
+   "file": "race-103s-gen249.json",
+   "avgLap": 103.82833333333333,
+   "gen": 249
+  },
+  "104": {
+   "file": "race-104s-gen246.json",
+   "avgLap": 104.76583333333333,
+   "gen": 246
+  },
+  "105": {
+   "file": "race-105s-gen243.json",
+   "avgLap": 105.11833333333334,
+   "gen": 243
+  },
+  "106": {
+   "file": "race-106s-gen244.json",
+   "avgLap": 106.74916666666665,
+   "gen": 244
+  },
+  "108": {
+   "file": "race-108s-gen245.json",
+   "avgLap": 108.18083333333334,
+   "gen": 245
+  },
+  "111": {
+   "file": "race-111s-gen242.json",
+   "avgLap": 111.87333333333333,
+   "gen": 242
+  }
+ }
+}

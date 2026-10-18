@@ -28,7 +28,8 @@
     "build:crowd": "tsx tools/assets/buildCrowd.ts",
     "build:credits": "tsx tools/assets/buildCredits.ts",
     "build:lut": "tsx tools/assets/buildLut.ts",
-    "audio:render": "tsx tools/audio/renderEngine.ts"
+    "audio:render": "tsx tools/audio/renderEngine.ts",
+    "export-ai-models": "tsx scripts/evolve/export-models.mts"
   },
   "dependencies": {
     "@dgreenheck/ez-tree": "1.1.0",

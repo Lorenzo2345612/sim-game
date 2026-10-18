@@ -12,8 +12,8 @@ import { gridSlots } from '../../src/race/grid';
 import { TrackProgress } from '../../src/track/trackProgress';
 import { cumulativeLengths } from '../../src/track/centerline';
 import { halfWidthAt } from '../../src/track/surfaces';
-import { computeRacingLine } from '../../src/ai/racingLine';
-import { LOOK, PROD, N_IN, N_NEAR, forward } from './policy.mts';
+import { N_IN, forward } from './policy.mts';
+import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../src/ai/neuralFeatures';
 import { minTimeFor } from './mintime.mts';
 
 const { root, trackId, carId, slots, line = 'center' } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string };
@@ -27,26 +27,13 @@ const cl: [number, number][] = track.centerline;
 const n = cl.length;
 const cum = cumulativeLengths(cl, true);
 const L = cum[n];
-// Look-ahead targets and speed profile follow `tgt` (centerline, or the classic AI's racing line, same indexing); progress, edges and lateral stay on the centerline.
-let tgt: [number, number][] = cl;
+const hwL: number[] = [], hwR: number[] = [];
+for (let i = 0; i < n; i++) { hwL.push(halfWidthAt(track, 'left', i)); hwR.push(halfWidthAt(track, 'right', i)); }
+// Speed profile (brake cue) and lookups: same extraction the in-game neural AI uses (task 269).
 const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : null;
-if (mt) tgt = mt.pts;
-if (line === 'racing') {
-  const rl = computeRacingLine(cl, track.widthMeters / 2);
-  tgt = cl.map((c, i) => { // clamp inside the edges with a 1 m car half-width margin
-    const a = cl[(i - 1 + n) % n], b = cl[(i + 1) % n], tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1;
-    const rx = -tz / l, rz = tx / l;
-    const lat = (rl.points[2 * i] - c[0]) * rx + (rl.points[2 * i + 1] - c[1]) * rz;
-    const q = Math.max(-(halfWidthAt(track, 'left', i) - 1), Math.min(halfWidthAt(track, 'right', i) - 1, lat));
-    return [c[0] + rx * q, c[1] + rz * q] as [number, number];
-  });
-}
-
-const hwL = new Float64Array(n), hwR = new Float64Array(n);
-for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
-// Centerline speed profile (brake cue): corner speed sqrt(MU_G/kappa), backward pass with constant decel.
-const MU_G = 1.5 * 9.81, DECEL = 11; // overspeed fitness weight comes with each eval (race.overW)
-const vProf = new Float64Array(n);
+const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
+  : line === 'racing' ? { points: racingTargetPoints(cl, track.widthMeters, hwL, hwR) } : undefined;
+const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
 
 // Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
 // Cars collide with each other (traffic). Fuel load, compound and wear rate are randomised per car and episode.
@@ -92,21 +79,6 @@ function pointAt(s: number, idxHint: number, pts: [number, number][] = cl): [num
   return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), i];
 }
 
-for (let i = 0; i < n; i++) {
-  const a = pointAt(cum[i] - 10, i, tgt), b = tgt[i], c = pointAt(cum[i] + 10, i, tgt);
-  const ab = Math.hypot(b[0] - a[0], b[1] - a[1]), bc = Math.hypot(c[0] - b[0], c[1] - b[1]), ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
-  const cross = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
-  const kappa = (2 * cross) / Math.max(ab * bc * ca, 1e-6);
-  vProf[i] = Math.min(90, Math.sqrt(MU_G / Math.max(kappa, 1e-5)));
-}
-for (let pass = 0; pass < 2; pass++) for (let i = n - 1; i >= 0; i--) {
-  const j = (i + 1) % n, ds = tgt === cl ? cum[i + 1] - cum[i] : Math.hypot(tgt[j][0] - tgt[i][0], tgt[j][1] - tgt[i][1]);
-  vProf[i] = Math.min(vProf[i], Math.sqrt(vProf[j] * vProf[j] + 2 * DECEL * ds));
-}
-
-if (mt) for (let i = 0; i < n; i++) vProf[i] = Math.min(90, mt.v[i] * 0.97); // QSS profile (aero + power + braking) replaces the 1.5 g cue
-if (process.env.EVO_DEBUG) { const o: string[] = []; for (let i = 0; i < n; i++) if (cum[i] < 1500 && i % 10 === 0) o.push(`${cum[i].toFixed(0)}:${vProf[i].toFixed(0)}`); console.log('vProf', o.join(' ')); }
-
 function poseAt(s: number, lat = 0) {
   const a = pointAt(s, 0), b = pointAt(s + 2, a[2]);
   const i = a[2] as number;
@@ -122,36 +94,24 @@ function startPoses(start: number): any[] {
   return order.map((r) => (start === 0 ? grid[r] : poseAt(start - (r >> 1) * 9, r & 1 ? 2.5 : -2.5)));
 }
 
-// Traffic sensor: N_NEAR closest alive cars within 60 m → forward gap/50, lateral gap/10, closing speed/20 (zeros if none).
-const nd = new Float64Array(64), ni = new Int32Array(64);
-let aliveRef: boolean[] = [];
-function nearest(k: number, px: number, pz: number, fx: number, fz: number, vf: number, o: number): void {
-  let c = 0;
-  for (let j = 0; j < aliveRef.length; j++) {
-    if (j === k || !aliveRef[j]) continue;
-    const sj = state[j].position, dx = sj.x - px, dz = sj.z - pz, d2 = dx * dx + dz * dz;
-    if (d2 > 3600) continue;
-    nd[c] = d2; ni[c++] = j;
-  }
-  for (let a = 0; a < N_NEAR; a++) {
-    let bi = -1;
-    for (let b = 0; b < c; b++) if (ni[b] >= 0 && (bi < 0 || nd[b] < nd[bi])) bi = b;
-    const base = o + 3 * a;
-    if (bi < 0) { x[base] = 0; x[base + 1] = 0; x[base + 2] = 0; continue; }
-    const j = ni[bi]; ni[bi] = -1;
-    const sj = state[j].position, dx = sj.x - px, dz = sj.z - pz;
-    const lvj = (cars[j].body as any).linvel();
-    x[base] = (dx * fx + dz * fz) / 50;
-    x[base + 1] = (dx * -fz + dz * fx) / 10;
-    x[base + 2] = (vf - (lvj.x * fx + lvj.z * fz)) / 20;
-  }
-}
+// Reused per-decision state: the others list holds the nearest alive cars, self excluded.
+const others = Array.from({ length: slots }, () => ({ position: { x: 0, y: 0, z: 0 }, linvel: { x: 0, y: 0, z: 0 } }));
+const carState: NeuralCarState = {
+  position: { x: 0, y: 0, z: 0 },
+  rotation: { x: 0, y: 0, z: 0, w: 1 },
+  forwardSpeed: 0,
+  linvel: { x: 0, y: 0, z: 0 },
+  angvel: { x: 0, y: 0, z: 0 },
+  progress: { index: 0, distance: 0, lateral: 0 },
+  fuelMassKg: 0,
+  compoundGrip: 0,
+  others,
+};
 
 function episode(genomes: Float64Array[], start: number, secs: number, epi: number, raceLaps: number, lapW: number) {
   const poses = startPoses(start);
   const m = genomes.length;
   const alive = new Array(m).fill(true);
-  aliveRef = alive;
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
   const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), offT = new Float64Array(m), over = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
@@ -173,37 +133,28 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       if (k >= m || !alive[k]) continue;
       anyAlive = true;
       if (step % 4 === 0) {
-        const st = state[k], q = st.rotation;
-        const fx = -2 * (q.w * q.y + q.x * q.z), fz = -1 + 2 * (q.x * q.x + q.y * q.y);
-        const rx = -fz, rz = fx;
+        const st = state[k];
         const p = progress[k].update(st.position.x, st.position.z);
-        const i = p.index;
         const body: any = v.body;
         const lv = body.linvel(), av = body.angvel();
-        const vf = lv.x * fx + lv.z * fz, vr = lv.x * rx + lv.z * rz;
-        x[0] = st.forwardSpeed / 60;
-        let hint = i;
-        for (let j = 0; j < LOOK.length; j++) {
-          const pt = pointAt(p.distance + LOOK[j], hint, tgt);
-          hint = pt[2];
-          const dx = pt[0] - st.position.x, dz = pt[1] - st.position.z;
-          x[1 + j] = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz) / Math.PI;
+        carState.position = st.position;
+        carState.rotation = st.rotation;
+        carState.forwardSpeed = st.forwardSpeed;
+        carState.linvel = lv;
+        carState.angvel = av;
+        carState.progress = p;
+        carState.fuelMassKg = (cars[k] as any).tank?.massKg ?? 0;
+        carState.compoundGrip = carMu[k];
+        let oc = 0;
+        for (let j = 0; j < slots; j++) {
+          if (j === k || !alive[j]) continue;
+          const sj = state[j].position, oj = others[oc++];
+          oj.position.x = sj.x; oj.position.y = sj.y; oj.position.z = sj.z;
+          const lvj = (cars[j].body as any).linvel();
+          oj.linvel.x = lvj.x; oj.linvel.y = lvj.y; oj.linvel.z = lvj.z;
         }
-        let o = 1 + LOOK.length;
-        for (const j of PROD) x[o++] = x[0] * Math.abs(x[1 + j]) * 4;
-        const v30 = vProf[pointAt(p.distance + 30, i)[2]];
-        x[o++] = Math.max(-3, Math.min(3, (st.forwardSpeed - vProf[i]) / 10));
-        x[o++] = Math.max(-3, Math.min(3, (st.forwardSpeed - v30) / 10));
-        x[o++] = vProf[i] / 60;
-        x[o] = (hwR[i] - p.lateral) / 10;
-        x[o + 1] = (hwL[i] + p.lateral) / 10;
-        x[o + 2] = av.y / 2;
-        x[o + 3] = Math.abs(vf) > 2 ? Math.atan2(vr, Math.abs(vf)) : 0;
-        x[o + 4] = 1;
-        o += 5;
-        x[o++] = ((cars[k] as any).tank?.massKg ?? 0) / 25;
-        x[o++] = carMu[k] * 10;
-        nearest(k, st.position.x, st.position.z, fx, fz, vf, o);
+        others.length = oc;
+        features.fill(x, carState);
         forward(genomes[k], x, out);
         const inp = inputs[k];
         inp.steer = out[0];
@@ -224,7 +175,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       if (ds < -L / 2) ds += L; else if (ds > L / 2) ds -= L;
       lastS[k] = p.distance;
       dist[k] += ds;
-      over[k] += Math.max(0, st.forwardSpeed - vProf[p.index] - 3) * FIXED_DT;
+      over[k] += Math.max(0, st.forwardSpeed - features.speedAt(p.index) - 3) * FIXED_DT;
       if (dist[k] >= (laps[k] + 1) * L) { // lap completed: fastest single lap and a bonus per lap (faster = more)
         const lt = t - lapStart[k];
         lapStart[k] = t; laps[k]++;

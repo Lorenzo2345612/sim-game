@@ -1,0 +1,97 @@
+{
+ "track": "monza",
+ "car": "f4",
+ "difficulties": {
+  "expert": "race-144s-gen192.json",
+  "hard": "race-148s-gen184.json",
+  "medium": "race-154s-gen202.json",
+  "easy": "race-161s-gen187.json"
+ },
+ "models": {
+  "144": {
+   "file": "race-144s-gen192.json",
+   "avgLap": 144.24833333333333,
+   "gen": 192
+  },
+  "145": {
+   "file": "race-145s-gen190.json",
+   "avgLap": 145.82583333333332,
+   "gen": 190
+  },
+  "146": {
+   "file": "race-146s-gen198.json",
+   "avgLap": 146.715,
+   "gen": 198
+  },
+  "147": {
+   "file": "race-147s-gen173.json",
+   "avgLap": 147.53916666666666,
+   "gen": 173
+  },
+  "148": {
+   "file": "race-148s-gen184.json",
+   "avgLap": 148.06666666666666,
+   "gen": 184
+  },
+  "149": {
+   "file": "race-149s-gen176.json",
+   "avgLap": 149.34416666666667,
+   "gen": 176
+  },
+  "150": {
+   "file": "race-150s-gen175.json",
+   "avgLap": 150.95666666666665,
+   "gen": 175
+  },
+  "151": {
+   "file": "race-151s-gen182.json",
+   "avgLap": 151.67249999999999,
+   "gen": 182
+  },
+  "152": {
+   "file": "race-152s-gen177.json",
+   "avgLap": 152.32583333333332,
+   "gen": 177
+  },
+  "153": {
+   "file": "race-153s-gen189.json",
+   "avgLap": 153.00083333333333,
+   "gen": 189
+  },
+  "154": {
+   "file": "race-154s-gen202.json",
+   "avgLap": 154.62083333333334,
+   "gen": 202
+  },
+  "155": {
+   "file": "race-155s-gen180.json",
+   "avgLap": 155.32,
+   "gen": 180
+  },
+  "158": {
+   "file": "race-158s-gen169.json",
+   "avgLap": 158.535,
+   "gen": 169
+  },
+  "159": {
+   "file": "race-159s-gen170.json",
+   "avgLap": 159.94666666666666,
+   "gen": 170
+  },
+  "161": {
+   "file": "race-161s-gen187.json",
+   "avgLap": 161.02166666666668,
+   "gen": 187
+  },
+  "163": {
+   "file": "race-163s-gen172.json",
+   "avgLap": 163.02916666666667,
+   "gen": 172
+  },
+  "165": {
+   "file": "race-165s-gen171.json",
+   "avgLap": 165.385,
+   "gen": 171
+  }
+ }
+}

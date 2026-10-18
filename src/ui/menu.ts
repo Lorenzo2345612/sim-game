@@ -48,6 +48,7 @@ export interface QuickRaceOptions {
   laps: number;
   aiCount: number;
   difficulty: Difficulty;
+  aiDriver: 'classic' | 'neural';
 }
 
 const QUICK_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
@@ -163,10 +164,12 @@ export class Menu {
 
   showTrackSelect(onSelect: (id: string) => void, onQuickRace?: (o: QuickRaceOptions) => void): void {
     const token = ++this.trackRender;
-    void Promise.all([this.loadTrackIndex(), this.loadCarIndex()]).then(([entries, cars]) => {
-      if (token !== this.trackRender) return;
-      this.renderTrackSelect(entries, cars, onSelect, onQuickRace);
-    });
+    void Promise.all([this.loadTrackIndex(), this.loadCarIndex(), this.loadAiModelIndex()]).then(
+      ([entries, cars, aiModels]) => {
+        if (token !== this.trackRender) return;
+        this.renderTrackSelect(entries, cars, aiModels, onSelect, onQuickRace);
+      },
+    );
   }
 
   showPause(handlers: {
@@ -239,9 +242,27 @@ export class Menu {
     }
   }
 
+  // "<track>-<car>": difficulties with an exported neural model (task 269).
+  private async loadAiModelIndex(): Promise<Record<string, string[]> | null> {
+    try {
+      const res = await fetch('/ai-models/index.json');
+      if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
+      const data: unknown = await res.json();
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+      const out: Record<string, string[]> = {};
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+        if (Array.isArray(value) && value.every((d) => typeof d === 'string')) out[key] = value as string[];
+      }
+      return out;
+    } catch {
+      return null;
+    }
+  }
+
   private renderTrackSelect(
     entries: TrackIndexEntry[] | null,
     cars: CarIndexEntry[] | null,
+    aiModels: Record<string, string[]> | null,
     onSelect: (id: string) => void,
     onQuickRace?: (o: QuickRaceOptions) => void,
   ): void {
@@ -274,7 +295,7 @@ export class Menu {
     panel.appendChild(body);
     if (this.onLivery) panel.appendChild(this.action('Livery', this.onLivery));
     if (onQuickRace) {
-      const qr = this.action('Quick race', () => this.showQuickRace(onSelect, onQuickRace, cars));
+      const qr = this.action('Quick race', () => this.showQuickRace(onSelect, onQuickRace, cars, aiModels));
       qr.id = 'quick-race';
       panel.appendChild(qr);
     }
@@ -288,6 +309,7 @@ export class Menu {
     onSelect: (id: string) => void,
     onQuickRace: (o: QuickRaceOptions) => void,
     cars: CarIndexEntry[] | null,
+    aiModels: Record<string, string[]> | null,
   ): void {
     const panel = this.doc.createElement('div');
     panel.className = 'menu-panel';
@@ -320,6 +342,25 @@ export class Menu {
       diff.appendChild(option);
     }
     panel.appendChild(this.fieldRow('Difficulty', diff));
+    // Neural AI toggle: only for track+car pairs with an exported model (task 269).
+    const aiDriver = this.doc.createElement('select');
+    aiDriver.id = 'qr-ai-driver';
+    for (const mode of ['classic', 'neural'] as const) {
+      const option = this.doc.createElement('option');
+      option.value = mode;
+      option.textContent = mode;
+      aiDriver.appendChild(option);
+    }
+    const aiRow = this.fieldRow('AI: classic / neural (experimental)', aiDriver);
+    const carSelect = picker?.querySelector<HTMLSelectElement>('#car-picker') ?? null;
+    const updateAiDriver = (): void => {
+      const car = carSelect?.value ?? this.storage.getItem(CAR_STORAGE_KEY) ?? 'f4';
+      aiRow.style.display = aiModels?.[`${track.value}-${car}`] ? '' : 'none';
+    };
+    track.addEventListener('change', updateAiDriver);
+    carSelect?.addEventListener('change', updateAiDriver);
+    updateAiDriver();
+    panel.appendChild(aiRow);
     const start = this.action(
       'Start',
       () => {
@@ -329,6 +370,7 @@ export class Menu {
           laps: clampInt(laps.value, 1, 50, 5),
           aiCount: clampInt(ai.value, 0, 15, 11),
           difficulty: QUICK_DIFFICULTIES.includes(diff.value as Difficulty) ? (diff.value as Difficulty) : DEFAULT_DIFFICULTY,
+          aiDriver: aiRow.style.display !== 'none' && aiDriver.value === 'neural' ? 'neural' : 'classic',
         });
       },
       true,

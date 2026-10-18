@@ -1,0 +1,92 @@
+{
+ "track": "spa",
+ "car": "f4",
+ "difficulties": {
+  "expert": "race-205s-gen40.json",
+  "hard": "race-212s-gen32.json",
+  "medium": "race-219s-gen36.json",
+  "easy": "race-227s-gen45.json"
+ },
+ "models": {
+  "205": {
+   "file": "race-205s-gen40.json",
+   "avgLap": 205.70250000000001,
+   "gen": 40
+  },
+  "206": {
+   "file": "race-206s-gen50.json",
+   "avgLap": 206.9475,
+   "gen": 50
+  },
+  "208": {
+   "file": "race-208s-gen38.json",
+   "avgLap": 208.06750000000002,
+   "gen": 38
+  },
+  "211": {
+   "file": "race-211s-gen43.json",
+   "avgLap": 211.01333333333332,
+   "gen": 43
+  },
+  "212": {
+   "file": "race-212s-gen32.json",
+   "avgLap": 212.12166666666667,
+   "gen": 32
+  },
+  "214": {
+   "file": "race-214s-gen34.json",
+   "avgLap": 214.70749999999998,
+   "gen": 34
+  },
+  "215": {
+   "file": "race-215s-gen41.json",
+   "avgLap": 215.71666666666664,
+   "gen": 41
+  },
+  "216": {
+   "file": "race-216s-gen37.json",
+   "avgLap": 216.225,
+   "gen": 37
+  },
+  "218": {
+   "file": "race-218s-gen31.json",
+   "avgLap": 218.205,
+   "gen": 31
+  },
+  "219": {
+   "file": "race-219s-gen36.json",
+   "avgLap": 219.83916666666664,
+   "gen": 36
+  },
+  "220": {
+   "file": "race-220s-gen46.json",
+   "avgLap": 220.84,
+   "gen": 46
+  },
+  "221": {
+   "file": "race-221s-gen42.json",
+   "avgLap": 221.0175,
+   "gen": 42
+  },
+  "224": {
+   "file": "race-224s-gen48.json",
+   "avgLap": 224.96916666666667,
+   "gen": 48
+  },
+  "227": {
+   "file": "race-227s-gen45.json",
+   "avgLap": 227.95999999999998,
+   "gen": 45
+  },
+  "233": {
+   "file": "race-233s-gen47.json",
+   "avgLap": 233.38166666666666,
+   "gen": 47
+  },
+  "258": {
+   "file": "race-258s-gen44.json",
+   "avgLap": 258.13666666666666,
+   "gen": 44
+  }
+ }
+}

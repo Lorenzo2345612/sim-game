@@ -1,0 +1,52 @@
+{
+ "track": "budapest",
+ "car": "f4",
+ "difficulties": {
+  "expert": "race-139s-gen246.json",
+  "hard": "race-143s-gen238.json",
+  "medium": "race-148s-gen241.json",
+  "easy": "race-156s-gen245.json"
+ },
+ "models": {
+  "139": {
+   "file": "race-139s-gen246.json",
+   "avgLap": 139.69333333333333,
+   "gen": 246
+  },
+  "141": {
+   "file": "race-141s-gen239.json",
+   "avgLap": 141.74666666666667,
+   "gen": 239
+  },
+  "142": {
+   "file": "race-142s-gen240.json",
+   "avgLap": 142.46166666666664,
+   "gen": 240
+  },
+  "143": {
+   "file": "race-143s-gen238.json",
+   "avgLap": 143.9625,
+   "gen": 238
+  },
+  "144": {
+   "file": "race-144s-gen242.json",
+   "avgLap": 144.33166666666665,
+   "gen": 242
+  },
+  "147": {
+   "file": "race-147s-gen244.json",
+   "avgLap": 147.14166666666668,
+   "gen": 244
+  },
+  "148": {
+   "file": "race-148s-gen241.json",
+   "avgLap": 148.32916666666668,
+   "gen": 241
+  },
+  "156": {
+   "file": "race-156s-gen245.json",
+   "avgLap": 156.29416666666665,
+   "gen": 245
+  }
+ }
+}

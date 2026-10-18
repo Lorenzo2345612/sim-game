@@ -5,6 +5,9 @@ import { AiDriver, type AiObservation } from '../ai/aiDriver';
 import { computeRacingLine, mengerCurvature, type RacingLine } from '../ai/racingLine';
 import { carLimitsFromSpec, speedProfile } from '../ai/speedProfile';
 import { difficultyParams, trafficDecision, type CarTrafficState, type Difficulty } from '../ai/traffic';
+import { NeuralFeatures, racingTargetPoints, type NeuralCarState, type NeuralLine } from '../ai/neuralFeatures';
+import { NeuralDriver } from '../ai/neuralDriver';
+import { halfWidthAt } from '../track/surfaces';
 import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
@@ -23,6 +26,14 @@ export interface RaceConfig {
   aiCount: number;
   difficulty: Difficulty;
   seed: number;
+}
+
+// Tune fields stay optional so the neural driver can be selected without a tune.
+export interface RaceGameOptions extends Partial<GameTune> {
+  aiDriver?: 'classic' | 'neural';
+  neuralModels?: Partial<Record<Difficulty, Float64Array>>;
+  /** Target line the models were trained on (default: centerline). */
+  neuralLine?: { kind: 'racing' } | { kind: 'mintime'; pts: [number, number][]; v: number[] };
 }
 
 type World = ReturnType<typeof createPhysicsWorld>;
@@ -51,6 +62,8 @@ function mulberry32(seed: number): () => number {
 interface AiCar {
   vehicle: VehicleModel;
   driver: AiDriver;
+  /** Present when the AI runs the evolved neural policy instead of the classic driver. */
+  neural?: { driver: NeuralDriver; state: NeuralCarState; tel: Telemetry };
   progress: TrackProgress;
   stuckS: number;
 }
@@ -90,6 +103,7 @@ export class RaceGame {
   private readonly damageRng: () => number;
   private readonly rearAxleM: number;
   private time = 0;
+  private stepIndex = 0;
   private disposed = false;
 
   private constructor(
@@ -158,10 +172,14 @@ export class RaceGame {
     track: TrackDataV2,
     spec: CarSpec,
     config: RaceConfig,
-    tune?: GameTune,
+    options?: RaceGameOptions,
   ): Promise<RaceGame> {
     await initPhysics();
     const world = createPhysicsWorld(track);
+    const tune: GameTune | undefined =
+      options?.compound !== undefined && options?.wear !== undefined && options?.fuel !== undefined
+        ? { compound: options.compound, wear: options.wear, fuel: options.fuel }
+        : undefined;
     const aiCount = Number.isFinite(config.aiCount)
       ? Math.min(MAX_AI, Math.max(0, Math.floor(config.aiCount)))
       : 0;
@@ -187,18 +205,67 @@ export class RaceGame {
       muLat: limits.muLat * AI_GRIP_MARGIN,
       muLong: limits.muLong * AI_GRIP_MARGIN,
     });
+    // Neural AI (opt-in): one feature extractor per track, one driver per car; missing model falls back to classic.
+    const neuralWeights =
+      options?.aiDriver === 'neural' ? options.neuralModels?.[config.difficulty] : undefined;
+    let neuralFeatures: NeuralFeatures | null = null;
+    let compoundGrip = 0;
+    if (neuralWeights) {
+      const n = track.centerline.length;
+      const halfLeft: number[] = [], halfRight: number[] = [];
+      for (let i = 0; i < n; i++) {
+        halfLeft.push(halfWidthAt(track, 'left', i));
+        halfRight.push(halfWidthAt(track, 'right', i));
+      }
+      const nl = options?.neuralLine;
+      let lineArg: NeuralLine | undefined;
+      if (nl?.kind === 'mintime') lineArg = { points: nl.pts, mintimeSpeed: nl.v };
+      else if (nl?.kind === 'racing') {
+        lineArg = { points: racingTargetPoints(track.centerline, track.widthMeters, halfLeft, halfRight) };
+      }
+      neuralFeatures = new NeuralFeatures(track.centerline, halfLeft, halfRight, lineArg);
+      const muMedium = spec.tyres.compounds.medium.mu0;
+      compoundGrip = spec.tyres.compounds[tune?.compound ?? 'medium'].mu0 / muMedium - 1;
+    }
     const ais: AiCar[] = [];
     const observations: AiObservation[] = [];
     for (let k = 0; k < aiCount; k++) {
       const progress = new TrackProgress(track.centerline);
       progresses.push(progress);
       const jitter = (rng() * 2 - 1) * 0.01;
-      ais.push({
-        vehicle: vehicles[k + 1],
+      const vehicle = vehicles[k + 1];
+      const car: AiCar = {
+        vehicle,
         driver: new AiDriver(line, speeds, { speedScale: speedScale + jitter }),
         progress,
         stuckS: 0,
-      });
+      };
+      if (neuralFeatures && neuralWeights) {
+        const others: NeuralCarState['others'][number][] = [];
+        for (let j = 0; j < count; j++) {
+          if (j === k + 1) continue;
+          others.push({
+            position: { x: 0, y: 0, z: 0 },
+            linvel: { x: 0, y: 0, z: 0 },
+          });
+        }
+        car.neural = {
+          driver: new NeuralDriver(neuralWeights, neuralFeatures),
+          state: {
+            position: { x: 0, y: 0, z: 0 },
+            rotation: { x: 0, y: 0, z: 0, w: 1 },
+            forwardSpeed: 0,
+            linvel: { x: 0, y: 0, z: 0 },
+            angvel: { x: 0, y: 0, z: 0 },
+            progress: { index: 0, distance: 0, lateral: 0 },
+            fuelMassKg: 0,
+            compoundGrip,
+            others,
+          },
+          tel: vehicle.getTelemetry(),
+        };
+      }
+      ais.push(car);
       observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
     }
     const traffic: CarTrafficState[] = [];
@@ -284,34 +351,42 @@ export class RaceGame {
       for (let k = 0; k < this.ais.length; k++) {
         const i = k + 1;
         const ai = this.ais[k];
-        const s = this.current[i];
-        const q = s.rotation;
-        const obs = this.observations[k];
-        const fx = -2 * (q.w * q.y + q.x * q.z);
-        const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
-        obs.x = s.position.x;
-        obs.z = s.position.z;
-        obs.yaw = Math.atan2(-fx, -fz);
-        obs.speed = s.forwardSpeed;
-        const n = this.linePoints;
-        const ahead = (this.indices[i] + this.aheadIdx) % n;
-        const behind = (ahead + n - 1) % n;
-        const curvatureAhead = mengerCurvature(
-          pts[2 * behind], pts[2 * behind + 1],
-          pts[2 * ahead], pts[2 * ahead + 1],
-          pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
-        );
-        const decision = trafficDecision(
-          this.traffic[i],
-          this.othersByCar[i],
-          this.lapLength,
-          this.halfWidth,
-          offsets[ahead],
-          curvatureAhead,
-        );
-        ai.driver.setLateralOffset(decision.offset);
-        ai.driver.setSpeedCap(decision.speedCap);
-        ai.driver.update(obs, FIXED_DT, this.aiCmd);
+        if (ai.neural) {
+          this.fillNeuralState(k, ai.neural.state, ai.neural.tel);
+          const d = ai.neural.driver.decide(this.stepIndex, ai.neural.state);
+          this.aiCmd.steer = d.steer;
+          this.aiCmd.throttle = d.throttle;
+          this.aiCmd.brake = d.brake;
+        } else {
+          const s = this.current[i];
+          const q = s.rotation;
+          const obs = this.observations[k];
+          const fx = -2 * (q.w * q.y + q.x * q.z);
+          const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
+          obs.x = s.position.x;
+          obs.z = s.position.z;
+          obs.yaw = Math.atan2(-fx, -fz);
+          obs.speed = s.forwardSpeed;
+          const n = this.linePoints;
+          const ahead = (this.indices[i] + this.aheadIdx) % n;
+          const behind = (ahead + n - 1) % n;
+          const curvatureAhead = mengerCurvature(
+            pts[2 * behind], pts[2 * behind + 1],
+            pts[2 * ahead], pts[2 * ahead + 1],
+            pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
+          );
+          const decision = trafficDecision(
+            this.traffic[i],
+            this.othersByCar[i],
+            this.lapLength,
+            this.halfWidth,
+            offsets[ahead],
+            curvatureAhead,
+          );
+          ai.driver.setLateralOffset(decision.offset);
+          ai.driver.setSpeedCap(decision.speedCap);
+          ai.driver.update(obs, FIXED_DT, this.aiCmd);
+        }
         ai.vehicle.setInput(this.aiCmd);
         ai.vehicle.prePhysicsStep(FIXED_DT);
       }
@@ -352,6 +427,7 @@ export class RaceGame {
         }
       }
     }
+    this.stepIndex++;
   }
 
   getStates(out: VehicleState[]): VehicleState[] {
@@ -435,6 +511,30 @@ export class RaceGame {
       obs.yawRate = yawRate;
       obs.rearSlip = Math.atan2(vLat, Math.max(Math.abs(vLong), V_LOW));
       obs.steerAngle = c.wheels[0].steering;
+    }
+  }
+
+  // Fills the reused neural state of AI k from the current vehicle states (no allocation).
+  private fillNeuralState(k: number, s: NeuralCarState, tel: Telemetry): void {
+    const i = k + 1;
+    const car = this.current[i];
+    s.position = car.position;
+    s.rotation = car.rotation;
+    s.forwardSpeed = car.forwardSpeed;
+    const lv = this.ais[k].vehicle.body.linvel();
+    const av = this.ais[k].vehicle.body.angvel();
+    s.linvel.x = lv.x; s.linvel.y = lv.y; s.linvel.z = lv.z;
+    s.angvel.x = av.x; s.angvel.y = av.y; s.angvel.z = av.z;
+    s.progress = this.progresses[i].update(car.position.x, car.position.z);
+    s.fuelMassKg = this.ais[k].vehicle.getTelemetry(tel).fuelKg;
+    let oc = 0;
+    for (let j = 0; j < this.count; j++) {
+      if (j === i) continue;
+      const other = s.others[oc++];
+      const cj = this.current[j];
+      other.position.x = cj.position.x; other.position.y = cj.position.y; other.position.z = cj.position.z;
+      const lvj = this.vehicles[j].body.linvel();
+      other.linvel.x = lvj.x; other.linvel.y = lvj.y; other.linvel.z = lvj.z;
     }
   }
 
