@@ -244,7 +244,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | in progress | 241 |
-| 243 | Dry arroyo channel and bridges | waiting decision | 241 |
+| 243 | Dry arroyo channel and bridges | in progress | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | waiting decision | 235 |
@@ -256,3 +256,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | in progress | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | pending | 146, 239 |
+| 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
