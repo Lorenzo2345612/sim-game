@@ -215,7 +215,7 @@ describe('147 debris edge cases', () => {
           .getBodies()
           .find((bd: RAPIER.RigidBody) => Math.abs(bd.translation().x - x) < 1e-6);
         if (!b) throw new Error(`debris at x=${x} missing`);
-        return b.collider();
+        return b.collider(0);
       };
       const wheel = byX(0);
       const front = byX(4);

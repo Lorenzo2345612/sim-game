@@ -100,7 +100,7 @@ describe('147 debris acceptance', () => {
         const spawn: SpawnPose = { position: { x: 0, y: 0.35, z: 20 }, yaw: 0 };
         const car = new Vehicle(world, spec, spawn);
         field.spawn('wheel', 0, 1, { x: 0, y: spec.wheels.radius, z: 5 }, ZERO);
-        const debrisCol = field.getBodies()[0].collider();
+        const debrisCol = field.getBodies()[0].collider(0);
         car.body.setLinvel({ x: 0, y: 0, z: -30 }, true);
         const queue = new RAPIER.EventQueue(true);
         let contact = false;

@@ -59,7 +59,9 @@ import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights, type StartLights } from './render/pitAndStart';
 import { createFloodlights } from './render/floodlights';
 import { applyEnvironment, ShadowRig } from './render/environment';
-import { CarRenderer } from './render/carRenderer';
+import { CarRenderer, WHEEL_NODE_NAMES } from './render/carRenderer';
+import { DebrisRenderer, type DebrisRenderEntry } from './render/debrisRenderer';
+import { MAX_DEBRIS } from './physics/debris';
 import { applyLivery, liveryPrimaryOf } from './render/liveryMaterial';
 import { addNumberDecals, disposeNumberDecals } from './render/numberDecal';
 import { TrackProgress } from './track/trackProgress';
@@ -1070,6 +1072,36 @@ async function startGame(trackId: string): Promise<void> {
   }
   stats.cars = 1 + aiCars.length;
 
+  let debrisRenderer: DebrisRenderer | null = null;
+  const debrisEntries: DebrisRenderEntry[] = [];
+  const wheelNodesOf = (r: CarRenderer): THREE.Object3D[] | null => {
+    const nodes: THREE.Object3D[] = [];
+    for (const name of WHEEL_NODE_NAMES) {
+      const node = r.root.getObjectByName(name);
+      if (node === undefined) return null;
+      nodes.push(node);
+    }
+    return nodes;
+  };
+  if (raceGame !== null) {
+    const primary = liveryPrimaryOf(car.root);
+    debrisRenderer = new DebrisRenderer(scene, {
+      wheelSource: wheelNodesOf(car)?.[1] ?? null,
+      carWheels: [car, ...aiCars].map(wheelNodesOf),
+      wingColor: primary !== null ? new THREE.Color(primary).getHex() : undefined,
+    });
+    for (let i = 0; i < MAX_DEBRIS; i++) {
+      debrisEntries.push({
+        kind: 'wheel',
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0, w: 1 },
+      });
+    }
+    disposables.push(debrisRenderer);
+  }
+  const debrisHidden = (c: number, w: number): boolean =>
+    raceGame !== null && raceGame.debrisField.wheelHidden(c, w);
+
   const carBox = new THREE.Box3();
   const carCorner = new THREE.Vector3();
   const carScreenRect = (): { x: number; y: number; w: number; h: number } => {
@@ -1489,6 +1521,26 @@ async function startGame(trackId: string): Promise<void> {
         for (let k = 0; k < aiCars.length; k++) {
           interpolateVehicleState(prevs[k + 1], raceStates[k + 1], alpha, aiInterp[k]);
           aiCars[k].update(aiInterp[k]);
+        }
+        if (debrisRenderer !== null) {
+          const field = raceGame.debrisField;
+          const bodies = field.getBodies();
+          const kinds = field.getKinds();
+          const n = Math.min(bodies.length, debrisEntries.length);
+          for (let i = 0; i < n; i++) {
+            const entry = debrisEntries[i];
+            const t = bodies[i].translation();
+            const r = bodies[i].rotation();
+            entry.kind = kinds[i];
+            entry.position.x = t.x;
+            entry.position.y = t.y;
+            entry.position.z = t.z;
+            entry.rotation.x = r.x;
+            entry.rotation.y = r.y;
+            entry.rotation.z = r.z;
+            entry.rotation.w = r.w;
+          }
+          debrisRenderer.sync(debrisEntries, n, debrisHidden);
         }
         const lit = raceGame.startLights();
         startLightsCtl?.setLights(lit);

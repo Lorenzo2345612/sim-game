@@ -1,6 +1,6 @@
 import { FIXED_DT } from '../core/constants';
 import { copyVehicleState, createVehicleState } from '../core/interpolation';
-import type { DriverInput, SpawnPose, TrackDataV2, VehicleState } from '../core/types';
+import type { DriverInput, SpawnPose, TrackDataV2, Vec3, VehicleState } from '../core/types';
 import { AiDriver, type AiObservation } from '../ai/aiDriver';
 import { computeRacingLine, mengerCurvature, type RacingLine } from '../ai/racingLine';
 import { carLimitsFromSpec, speedProfile } from '../ai/speedProfile';
@@ -19,6 +19,7 @@ import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
 import { damageSpeedScale, type DamageState } from '../physics/damage';
 import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
+import { DebrisField, type DebrisKind } from '../physics/debris';
 import { V_LOW } from '../physics/tyre';
 import { TrackProgress } from '../track/trackProgress';
 
@@ -108,6 +109,11 @@ export class RaceGame {
   private readonly damageCars: DamageCar[];
   private readonly damageRng: () => number;
   private readonly rearAxleM: number;
+  private readonly debris: DebrisField;
+  private readonly wingSpawned: boolean[];
+  private readonly carPos: Vec3[];
+  private readonly spawnPos: Vec3 = { x: 0, y: 0, z: 0 };
+  private readonly spawnVel: Vec3 = { x: 0, y: 0, z: 0 };
   private time = 0;
   private stepIndex = 0;
   private disposed = false;
@@ -131,6 +137,7 @@ export class RaceGame {
     observations: AiObservation[],
     aheadIdx: number,
     rearAxleM: number,
+    wheelRadiusM: number,
   ) {
     this.track = track;
     this.config = config;
@@ -165,6 +172,10 @@ export class RaceGame {
       damageMode: v.damageMode,
     }));
     this.damageRng = mulberry32(config.seed);
+    this.debris = new DebrisField(world, config.seed, wheelRadiusM);
+    this.wingSpawned = new Array<boolean>(this.count * 2).fill(false);
+    this.carPos = new Array<Vec3>(this.count);
+    for (let i = 0; i < this.count; i++) this.carPos[i] = { x: 0, y: 0, z: 0 };
   }
 
   setDamageMode(mode: DamageMode): void {
@@ -328,6 +339,7 @@ export class RaceGame {
       observations,
       aheadIdx,
       rearAxleM,
+      spec.wheels.radius,
     );
     game.refreshProgress();
     return game;
@@ -418,6 +430,14 @@ export class RaceGame {
     processContactEvents(this.events, this.world, this.damageCars, FIXED_DT, this.damageRng);
     this.time += FIXED_DT;
     for (let i = 0; i < this.count; i++) this.vehicles[i].getState(this.current[i]);
+    this.updateDebrisSpawns();
+    for (let i = 0; i < this.count; i++) {
+      const p = this.current[i].position;
+      this.carPos[i].x = p.x;
+      this.carPos[i].y = p.y;
+      this.carPos[i].z = p.z;
+    }
+    this.debris.step(FIXED_DT, this.carPos);
     this.refreshProgress();
     this.updateAiDynamics();
     for (let i = 0; i < this.count; i++) {
@@ -482,6 +502,10 @@ export class RaceGame {
     return this.count;
   }
 
+  get debrisField(): DebrisField {
+    return this.debris;
+  }
+
   getTelemetry(out?: Telemetry): Telemetry {
     return this.vehicles[0].getTelemetry(out);
   }
@@ -493,6 +517,7 @@ export class RaceGame {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.debris.dispose();
     this.events.free();
     this.world.free();
   }
@@ -570,6 +595,56 @@ export class RaceGame {
       const lvj = this.vehicles[j].body.linvel();
       other.linvel.x = lvj.x; other.linvel.y = lvj.y; other.linvel.z = lvj.z;
     }
+  }
+
+  // Wing crossing > 0.95 or a wheel detaching: one debris spawn per event (task 147).
+  private updateDebrisSpawns(): void {
+    for (let i = 0; i < this.count; i++) {
+      const dmg = this.vehicles[i].damage;
+      if (!this.wingSpawned[i * 2] && dmg.frontWing > 0.95) {
+        this.wingSpawned[i * 2] = true;
+        this.spawnWingDebris('frontWing', i);
+      }
+      if (!this.wingSpawned[i * 2 + 1] && dmg.rearWing > 0.95) {
+        this.wingSpawned[i * 2 + 1] = true;
+        this.spawnWingDebris('rearWing', i);
+      }
+      for (let w = 0; w < 4; w++) {
+        if (dmg.detached[w] && !this.debris.wheelHidden(i, w)) {
+          const wp = this.current[i].wheels[w].position;
+          this.pointVelocity(this.vehicles[i], wp, this.spawnVel);
+          this.debris.spawn('wheel', i, w, wp, this.spawnVel);
+        }
+      }
+    }
+  }
+
+  private spawnWingDebris(kind: DebrisKind, car: number): void {
+    const state = this.current[car];
+    const q = state.rotation;
+    const fx = -2 * (q.w * q.y + q.x * q.z);
+    const fy = -2 * (q.y * q.z - q.w * q.x);
+    const fz = -(1 - 2 * (q.x * q.x + q.y * q.y));
+    const half = this.vehicles[car].zones.halfLength;
+    const sign = kind === 'frontWing' ? 1 : -1;
+    this.spawnPos.x = state.position.x + fx * half * sign;
+    this.spawnPos.y = state.position.y + fy * half * sign;
+    this.spawnPos.z = state.position.z + fz * half * sign;
+    this.pointVelocity(this.vehicles[car], this.spawnPos, this.spawnVel);
+    this.debris.spawn(kind, car, -1, this.spawnPos, this.spawnVel);
+  }
+
+  // Velocity of a world point rigidly attached to the chassis (CoM ≈ body origin).
+  private pointVelocity(vehicle: VehicleModel, point: Vec3, out: Vec3): void {
+    const t = vehicle.body.translation();
+    const lv = vehicle.body.linvel();
+    const av = vehicle.body.angvel();
+    const rx = point.x - t.x;
+    const ry = point.y - t.y;
+    const rz = point.z - t.z;
+    out.x = lv.x + av.y * rz - av.z * ry;
+    out.y = lv.y + av.z * rx - av.x * rz;
+    out.z = lv.z + av.x * ry - av.y * rx;
   }
 
   private respawnOnLine(k: number): void {
