@@ -247,7 +247,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 243 | Dry arroyo channel and bridges | done | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | done | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
-| 246 | Barriers never fold onto the inner kerb | in progress | 235 |
+| 246 | Barriers never fold onto the inner kerb | done | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | done | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
