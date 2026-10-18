@@ -41,6 +41,10 @@ Conventions: metres, no rounding; `< −1e-6` strict; empty items ⇒ `ok`; inpu
 - `STRAIGHT`: centerline `[i*10, 0]`, i = 0..99, widthMeters 12, elevation 0, no kerbs/runoffs/barriers/terrain, pit `{start: 10, end: 30, side: 'right'}`.
 - AT2/AT1 `STADIUM` fixtures have `pit: {start: 0, end: 0, side: 'right'}`. "armco 12" = armco both sides offset 12 over every index.
 
+## Planner answers (round 2)
+
+EDGE6 typo confirmed (worst = offset − 0.25 − SAUSAGE_LIMIT, per its own first half). Planner-authorised edit, the only one: in `tests/unit/edge/249-qa-clearance-edge.test.ts` EDGE6 second fixture change `offset: SAUSAGE_LIMIT - 0.25` to `offset: SAUSAGE_LIMIT + 0.25`. Nothing else in that file. AT3 shipped-track violations (baku, ermita-*, sepang, cleveland) are reported only; the track-data fixes are a follow-up task, not here. POST4 timeout in 224 is pre-existing, ignore.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
