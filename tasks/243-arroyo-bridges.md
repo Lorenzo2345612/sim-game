@@ -88,12 +88,17 @@ npm test
 
 ## Planner-authorised test edits
 
+- `tests/unit/edge/241-ermita-tracks-edge.test.ts:273` (every ermita barrier wall/foam): also allow `armco` on indices inside a bridge span (`bridges[].from ≤ i ≤ to`); outside spans unchanged.
+
 - `tests/unit/acceptance/243-arroyo-bridges.test.ts` AT6/AT7: rewrite to the updated table rows (AT6 `armco` instead of `wall`; AT7 no parapets above the deck, side walls only).
 
 - `tests/unit/edge/243-arroyo-bridges-edge.test.ts` EDGE9: inside a bridge span both sides are `armco` at `widthMeters/2 + 1.25` (7.25 m), matching AT6 and "on both sides"; outside spans the baseline type/offset is kept.
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts:167`: for `ermita-*` tracks, the elevation deep-equal skips indices strictly inside bridge spans (`bridges[].start < i < end`); all other tracks and indices unchanged.
 
 ## Planner answers
+
+- `157-city-bake` AT5 (baku-env byte-determinism): passes on master in isolation, unrelated to 243; ignore.
+- Foam conversion at heavy corners inside spans by `applyFoamBarriers`: acceptable.
 
 - User change (2026-10-17): bridge barriers are armco guardrails, not walls; no stone parapets. AT6/AT7 updated. If walls/parapets are already coded, switch them.
 
