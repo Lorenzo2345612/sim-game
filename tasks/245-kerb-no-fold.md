@@ -102,3 +102,13 @@ Planner error: in `circle(7.5)` the outer strip spans radial 14.7..15.3, so `>= 
 2. AT2: `0.75 - 1e-4`.
 3. EDGE2 and EDGE3: expected vertex count 182 (comment: "Reff drops 5 more rows each side").
 4. Run the three 245 test files, then `npm test`, then write the report. Budget: 10 minutes; no exploration beyond these files.
+
+## Planner answers (round 9)
+
+All authorised, nothing else; no `src` change beyond what is already done:
+- `tests/unit/edge/245-kerb-no-fold.test.ts:191`: expected `left[0].uvs[1]` = v of the first kept row (6.667 for s = 10), tolerance 1e-3.
+- `tests/unit/edge/245-kerb-no-fold.test.ts:304`: lower bound 14.7 − 1e-2 (same tolerance as `outerSide`).
+- `tests/unit/edge/174-track-banking-edge.test.ts` EDGE8: expected kerb row count = the count after the 10 m Reff drop on the R = 3.2 fixture (measure, list old/new in the report). 240 AT9 follows.
+- `tests/unit/acceptance/176-track-geometry-overlaps.test.ts` AT3: exclude centerline indices where kerb rows were dropped by the Reff rule (lasvegas ~1084); list excluded indices in the report.
+- `tests/unit/acceptance/096-surface-transitions.test.ts` (~255): exclude rows where the kerb was clamped to 0.9·Reff from the exposed count; the 3-exposed tolerance stays for all other rows.
+- 253 AT6: not yours (task 256).
