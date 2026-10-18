@@ -240,7 +240,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 236 | Pit building split into grounded pieces along the pit lane | done | 234 |
 | 237 | Track QA report CLI: clearance, relief, layout checks | done | 235, 236 |
 | 238 | Track QA camera and screenshot tool | done | 233 |
-| 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | in progress | 228, 231, 244 |
+| 239 | Turbo transients: blow-off/bypass valve, surge flutter, wastegate, spool-down | done | 228, 231, 244 |
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | done | 241 |
