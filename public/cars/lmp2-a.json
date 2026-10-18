@@ -70,13 +70,15 @@
     "synth": {
       "firingDeg": [0, 90, 180, 270, 360, 450, 540, 630],
       "bank": [0, 1, 0, 1, 0, 1, 0, 1],
-      "pipeM": [0.55, 0.55],
-      "tailM": 0.6,
+      "pipeM": [0.825, 0.825],
+      "tailM": 0.9,
       "pulseDeg": 70,
       "intakeHz": 600,
       "lowpassHz": 12000,
       "limiterHz": 22,
       "gainDb": 3,
+      "drive": 2,
+      "crackle": 0.8,
       "block": [{ "hz": 2800, "q": 3, "gainDb": 4 }]
     }
   },

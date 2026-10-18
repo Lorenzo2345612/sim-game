@@ -31,6 +31,9 @@ const FULL_RAW = {
   crackle: 0.7,
   limiterHz: 30,
   gainDb: -6,
+  cylVar: 0.2,
+  bassDb: 4,
+  exhaustGain: 0.8,
 };
 
 const BLOCK7 = [

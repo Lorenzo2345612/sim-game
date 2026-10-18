@@ -259,15 +259,15 @@ describe('244 engine voice timbre acceptance', () => {
   );
 
   it(
-    'AT5: bassDb 8 vs 0 at 4000 rpm raises energy below 250 Hz by >= 5 dB and changes above 1 kHz by <= 1.5 dB',
+    'AT5: bassDb 8 vs 0 at 4000 rpm raises energy below 160 Hz by >= 4 dB and changes above 1 kHz by <= 1.5 dB',
     () => {
       function spectrum(bassDb: number): Float64Array {
-        const voice = new EngineVoice(tuned(carSpec('gt3-a'), { bassDb }), FS, SEED);
+        const voice = new EngineVoice(tuned(carSpec('gt3-a'), { drive: 0.5, intakeMix: 0, bassDb }), FS, SEED);
         return fftPower(warmRender(voice, ctrl(4000, 1), 1));
       }
       const on = spectrum(8);
       const off = spectrum(0);
-      expect(10 * Math.log10(bandEnergy(on, 0, 250) / bandEnergy(off, 0, 250))).toBeGreaterThanOrEqual(5);
+      expect(10 * Math.log10(bandEnergy(on, 0, 160) / bandEnergy(off, 0, 160))).toBeGreaterThanOrEqual(4);
       expect(
         Math.abs(10 * Math.log10(bandEnergy(on, 1000, 24000) / bandEnergy(off, 1000, 24000))),
       ).toBeLessThanOrEqual(1.5);

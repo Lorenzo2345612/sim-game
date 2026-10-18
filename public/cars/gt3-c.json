@@ -205,13 +205,15 @@
     "synth": {
       "firingDeg": [0, 90, 180, 270, 360, 450, 540, 630],
       "bank": [0, 1, 0, 1, 0, 1, 0, 1],
-      "pipeM": [0.75, 0.75],
-      "tailM": 0.75,
+      "pipeM": [1.125, 1.125],
+      "tailM": 1.125,
       "pulseDeg": 90,
       "intakeHz": 250,
       "lowpassHz": 8000,
       "limiterHz": 14,
       "gainDb": 1,
+      "drive": 2,
+      "crackle": 0.8,
       "jitterAmp": 0.08
     }
   },

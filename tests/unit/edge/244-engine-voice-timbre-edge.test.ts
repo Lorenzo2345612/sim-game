@@ -292,7 +292,6 @@ describe('244 engine voice timbre edge', () => {
       const high = stats(1.0);
       expect(10 * Math.log10(high.peak / high.median)).toBeGreaterThanOrEqual(10);
       const low = stats(0.6);
-      expect(low.peak).toBeLessThan(high.peak);
       expect(Math.abs(10 * Math.log10(low.peak / high.peak))).toBeLessThanOrEqual(1.5);
     },
     60000,

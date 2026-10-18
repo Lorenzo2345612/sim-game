@@ -110,9 +110,9 @@ describe('227 engine voice core post-code gaps', () => {
     expect(peakOf(x)).toBe(0);
   });
 
-  it('POST4: with zero jitter the seed does not affect the output', () => {
-    const a = new EngineVoice(baseSpec(8), FS, 1);
-    const b = new EngineVoice(baseSpec(8), FS, 2);
+  it('POST4: with zero jitter and zero cylVar the seed does not affect the output', () => {
+    const a = new EngineVoice({ ...baseSpec(8), cylVar: 0 }, FS, 1);
+    const b = new EngineVoice({ ...baseSpec(8), cylVar: 0 }, FS, 2);
     a.setControl(ctrl(6000, 1));
     b.setControl(ctrl(6000, 1));
     expect(renderSeconds(a, 0.3)).toEqual(renderSeconds(b, 0.3));

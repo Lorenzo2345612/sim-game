@@ -122,24 +122,6 @@ function rmsEnvelope(x: Float32Array, winS: number): Float32Array {
   return env;
 }
 
-function countClusters(x: Float32Array): number {
-  const win = Math.round(0.05 * FS);
-  const minGap = Math.round(0.002 * FS);
-  let sum = 0;
-  let clusters = 0;
-  let lastEnd = -minGap - 1;
-  for (let i = 0; i < x.length; i++) {
-    sum += x[i] * x[i];
-    if (i >= win) sum -= x[i - win] * x[i - win];
-    const r = Math.sqrt(sum / Math.min(i + 1, win));
-    if (Math.abs(x[i]) > 3 * r) {
-      if (i - lastEnd >= minGap) clusters++;
-      lastEnd = i;
-    }
-  }
-  return clusters;
-}
-
 describe('228 engine voice layers edge', () => {
   it('EDGE1: with every layer empty, throttle and wheelSpeedMs are ignored', () => {
     const spec = baseSpec(8);
@@ -198,21 +180,25 @@ describe('228 engine voice layers edge', () => {
     expect(min).toBeGreaterThan(0);
   });
 
-  it('EDGE6: crackle pops stop after 1 s from the lift', () => {
+  it('EDGE6: crackle pops stop after the 2.2 s overrun window', () => {
     const voice = new EngineVoice({ ...baseSpec(8), crackle: 1 }, FS, SEED);
     voice.setControl(ctrl(8000, 1));
     renderSeconds(voice, 0.5);
     voice.setControl(ctrl(8000, 0, { throttle: 0 }));
-    const x = renderSeconds(voice, 2);
-    expect(countClusters(x.subarray(Math.round(1.2 * FS), Math.round(2 * FS)))).toBe(0);
+    renderSeconds(voice, 2.3);
+    const before = voice.popCount;
+    renderSeconds(voice, 0.9);
+    expect(voice.popCount - before).toBe(0);
   });
 
-  it('EDGE7: crackle does not arm at rpm ≤ 4000', () => {
+  it('EDGE7: crackle does not pop at rpm ≤ 3500', () => {
     const voice = new EngineVoice({ ...baseSpec(8), crackle: 1 }, FS, SEED);
-    voice.setControl(ctrl(4000, 1));
+    voice.setControl(ctrl(3500, 1));
     renderSeconds(voice, 0.5);
-    voice.setControl(ctrl(4000, 0, { throttle: 0 }));
-    expect(countClusters(renderSeconds(voice, 1))).toBe(0);
+    voice.setControl(ctrl(3500, 0, { throttle: 0 }));
+    const before = voice.popCount;
+    renderSeconds(voice, 1);
+    expect(voice.popCount - before).toBe(0);
   });
 
   it('EDGE8: crackle never fires while throttle ≥ 0.05', () => {
@@ -220,7 +206,9 @@ describe('228 engine voice layers edge', () => {
     voice.setControl(ctrl(8000, 1));
     renderSeconds(voice, 0.5);
     voice.setControl(ctrl(8000, 0, { throttle: 0.05 }));
-    expect(countClusters(renderSeconds(voice, 1))).toBe(0);
+    const before = voice.popCount;
+    renderSeconds(voice, 1);
+    expect(voice.popCount - before).toBe(0);
   });
 
   it('EDGE9: wheel whine is silent below minSpeedMs (negative → 0) and audible at exactly minSpeedMs', () => {

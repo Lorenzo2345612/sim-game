@@ -37,6 +37,9 @@ export interface EngineSynthSpec {
   crackle: number;
   limiterHz: number;
   gainDb: number;
+  cylVar: number;
+  bassDb: number;
+  exhaustGain: number;
 }
 
 export const SYNTH_DEFAULTS: Omit<
@@ -55,6 +58,9 @@ export const SYNTH_DEFAULTS: Omit<
   whine: null,
   limiterHz: 15,
   gainDb: 0,
+  cylVar: 0.28,
+  bassDb: 8,
+  exhaustGain: 1,
 };
 
 export function evenFiring(cylinders: number): number[] {
@@ -90,6 +96,9 @@ export function legacySynthSpec(s: {
     crackle: s.crackle,
     limiterHz: SYNTH_DEFAULTS.limiterHz,
     gainDb: SYNTH_DEFAULTS.gainDb,
+    cylVar: SYNTH_DEFAULTS.cylVar,
+    bassDb: SYNTH_DEFAULTS.bassDb,
+    exhaustGain: SYNTH_DEFAULTS.exhaustGain,
   };
 }
 
@@ -282,6 +291,9 @@ export function parseEngineSynth(
   const crackle = numField(r, 'crackle', 0, 1, legacy.crackle, errors);
   const limiterHz = numField(r, 'limiterHz', 5, 40, SYNTH_DEFAULTS.limiterHz, errors);
   const gainDb = numField(r, 'gainDb', -12, 12, SYNTH_DEFAULTS.gainDb, errors);
+  const cylVar = numField(r, 'cylVar', 0, 0.5, SYNTH_DEFAULTS.cylVar, errors);
+  const bassDb = numField(r, 'bassDb', 0, 12, SYNTH_DEFAULTS.bassDb, errors);
+  const exhaustGain = numField(r, 'exhaustGain', 0, 2, SYNTH_DEFAULTS.exhaustGain, errors, false);
   return {
     spec: {
       firingDeg,
@@ -302,6 +314,9 @@ export function parseEngineSynth(
       crackle,
       limiterHz,
       gainDb,
+      cylVar,
+      bassDb,
+      exhaustGain,
     },
     errors,
   };

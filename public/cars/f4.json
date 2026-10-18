@@ -70,13 +70,16 @@
     "synth": {
       "firingDeg": [0, 180, 360, 540],
       "bank": [0, 1, 0, 1],
-      "pipeM": [0.5, 0.5],
-      "tailM": 0.5,
+      "pipeM": [0.75, 0.75],
+      "tailM": 0.75,
       "pulseDeg": 130,
       "intakeHz": 350,
       "lowpassHz": 5000,
       "limiterHz": 15,
       "gainDb": 0,
+      "drive": 1.4,
+      "exhaustGain": 0.8,
+      "crackle": 0.8,
       "turbo": { "centerHz": 3000, "spanHz": 3000, "gain": 0.04, "lagS": 0.3 }
     }
   },

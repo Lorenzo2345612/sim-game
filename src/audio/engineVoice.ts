@@ -15,9 +15,10 @@ export const WHEEL_RADIUS_M = 0.33;
 const CYCLE_DEG = 720;
 const MIN_PULSE_S = 0.0003;
 const MAX_PULSE_S = 0.008;
+const MAX_RUNNER_S = 0.0025;
 const KERNEL_N = 2048;
-const REFLECTION = -0.85;
-const LOOP_LP_HZ = 3500;
+export const REFLECTION = -0.25;
+export const LOOP_LP_HZ = 1800;
 const DC_CORNER_HZ = 10;
 const PRE_GAIN = 1.2;
 const PULSE_SCALE = 0.05;
@@ -26,27 +27,33 @@ const PEAK = 0.9;
 const TWO_PI = 2 * Math.PI;
 const BUTTER_Q = 0.707;
 const TURBO_Q = 4;
-const TURBO_AMP = 1.5;
+const TURBO_AMP = 4.2;
 const INTAKE_Q = 5;
 const INTAKE_AMP = 2.5;
 const INTAKE_WINDOW_DEG = 180;
 const INTAKE_EDGE_DEG = 30;
 const CRACKLE_THR = 0.05;
-const CRACKLE_RPM = 4000;
+const ARM_THR = 0.5;
+const POP_RPM = 3500;
 const CRACKLE_RATE = 20;
-const CRACKLE_S = 1;
+const POP_MIN_S = 0.08;
+const POP_MAX_S = 2.2;
+const POP_GAP_S = 0.025;
+const POP_AMP = 2.2;
+const RUNNER_GAIN = -0.35;
+const BASS_HZ = 160;
 const LP_MAX_HZ = 20000;
 const MAX_FC_FRAC = 0.45;
 
-// Fast Hann rise then quadratic decay, u in [0,1], one guard entry for interpolation.
-const RISE = 0.35;
-const KERNEL = new Float64Array(KERNEL_N + 2);
+// 4 % Hann rise then exp(-5d)(1-d) decay, u in [0,1], one guard entry for interpolation.
+const RISE = 0.04;
+export const PULSE_KERNEL = new Float64Array(KERNEL_N + 2);
 for (let i = 0; i <= KERNEL_N; i++) {
   const u = i / KERNEL_N;
-  if (u < RISE) KERNEL[i] = 0.5 * (1 - Math.cos((Math.PI * u) / RISE));
+  if (u < RISE) PULSE_KERNEL[i] = 0.5 * (1 - Math.cos((Math.PI * u) / RISE));
   else {
-    const d = (1 - u) / (1 - RISE);
-    KERNEL[i] = d * d;
+    const d = (u - RISE) / (1 - RISE);
+    PULSE_KERNEL[i] = Math.exp(-5 * d) * (1 - d);
   }
 }
 
@@ -87,7 +94,24 @@ function lpCo(fc: number, q: number, fs: number): Float64Array {
   return Float64Array.of(b0, 2 * b0, b0, (-2 * c) / a0, (1 - alpha) / a0);
 }
 
-function lpStep(co: Float64Array, st: Float64Array, x: number): number {
+// RBJ low-shelf (S = 1) as [b0, b1, b2, a1, a2]; state [x1, x2, y1, y2].
+function lsCo(fc: number, db: number, fs: number): Float64Array {
+  const A = Math.pow(10, db / 40);
+  const w0 = (TWO_PI * fc) / fs;
+  const c = Math.cos(w0);
+  const s = (Math.sin(w0) / 2) * Math.SQRT2;
+  const sa = 2 * Math.sqrt(A) * s;
+  const a0 = A + 1 + (A - 1) * c + sa;
+  return Float64Array.of(
+    (A * (A + 1 - (A - 1) * c + sa)) / a0,
+    (2 * A * (A - 1 - (A + 1) * c)) / a0,
+    (A * (A + 1 - (A - 1) * c - sa)) / a0,
+    (-2 * (A - 1 + (A + 1) * c)) / a0,
+    (A + 1 + (A - 1) * c - sa) / a0,
+  );
+}
+
+function bqStep(co: Float64Array, st: Float64Array, x: number): number {
   const y = co[0] * x + co[1] * st[0] + co[2] * st[1] - co[3] * st[2] - co[4] * st[3];
   st[1] = st[0];
   st[0] = x;
@@ -134,6 +158,11 @@ export class EngineVoice {
   private readonly jitterDeg: number;
   private readonly jitterAmp: number;
   private readonly drive: number;
+  private readonly cylVar: number;
+  private readonly exhaustGain: number;
+  private readonly cylAmp: Float64Array;
+  private readonly cylOff: Float64Array;
+  private readonly cylRunner: Float64Array;
   private readonly intakeGain: number;
   private readonly intakeCo: Float64Array;
   private readonly intakeSt = new Float64Array(4);
@@ -143,6 +172,11 @@ export class EngineVoice {
   private readonly lpOn: boolean;
   private readonly lpCo: Float64Array;
   private readonly lpSt = new Float64Array(4);
+  private readonly lp2St = new Float64Array(4);
+  private readonly turboStage: boolean;
+  private readonly shelfOn: boolean;
+  private readonly shelfCo: Float64Array;
+  private readonly shelfSt = new Float64Array(4);
   private readonly turboGain: number;
   private readonly turboCenter: number;
   private readonly turboSpan: number;
@@ -170,8 +204,6 @@ export class EngineVoice {
   private boost = 0;
   private whinePhase = 0;
   private limPhase = 0;
-  private crackleLeft = 0;
-  private crackleArmed = false;
   private cutNow = false;
   private angle = 0;
   private head = 0;
@@ -183,6 +215,11 @@ export class EngineVoice {
   private clipPrev = 0;
   private clipMidPrev = 0;
   private clipCurPrev = 0;
+  private ticks = 0;
+  private liftTick = -1;
+  private armedHigh = false;
+  private lastPopTick = -1e15;
+  private pops = 0;
   throttle = 0;
   wheelSpeedMs = 0;
   limiter = false;
@@ -195,7 +232,8 @@ export class EngineVoice {
     this.firing = Float64Array.from(spec.firingDeg);
     this.eff = new Float64Array(this.cyl);
     this.bankOf = Uint8Array.from(spec.bank.map((b) => (b ? 1 : 0)));
-    this.injMask = pow2AtLeast(Math.ceil(MAX_PULSE_S * sampleRate) + 4) - 1;
+    this.injMask =
+      pow2AtLeast(Math.ceil((MAX_PULSE_S + MAX_RUNNER_S) * sampleRate) + 64) - 1;
     this.inj = [new Float64Array(this.injMask + 1), new Float64Array(this.injMask + 1)];
     const gas = spec.gasSpeedMs;
     const delays = [
@@ -217,6 +255,11 @@ export class EngineVoice {
     this.jitterDeg = spec.jitterDeg;
     this.jitterAmp = spec.jitterAmp;
     this.drive = spec.drive;
+    this.cylVar = spec.cylVar;
+    this.exhaustGain = spec.exhaustGain;
+    this.cylAmp = new Float64Array(this.cyl);
+    this.cylOff = new Float64Array(this.cyl);
+    this.cylRunner = new Float64Array(this.cyl);
     const maxFc = MAX_FC_FRAC * sampleRate;
     this.intakeGain = spec.intakeMix > 0 ? spec.intakeMix : 0;
     this.intakeCo = bpCo(Math.min(spec.intakeHz, maxFc), INTAKE_Q, sampleRate, 1);
@@ -232,6 +275,9 @@ export class EngineVoice {
     }
     this.lpOn = spec.lowpassHz < LP_MAX_HZ;
     this.lpCo = lpCo(Math.min(spec.lowpassHz, maxFc), BUTTER_Q, sampleRate);
+    this.turboStage = spec.turbo !== null;
+    this.shelfOn = spec.bassDb !== 0;
+    this.shelfCo = lsCo(BASS_HZ, spec.bassDb, sampleRate);
     const turbo = spec.turbo;
     const lagS = turbo ? turbo.lagS : 0;
     this.turboGain = turbo && turbo.gain > 0 ? turbo.gain : 0;
@@ -247,6 +293,10 @@ export class EngineVoice {
     this.crackle = spec.crackle > 0 ? spec.crackle : 0;
     this.maxFc = MAX_FC_FRAC * sampleRate;
     this.reset();
+  }
+
+  get popCount(): number {
+    return this.pops;
   }
 
   setControl(c: VoiceControl): void {
@@ -275,8 +325,6 @@ export class EngineVoice {
     this.boost = 0;
     this.whinePhase = 0;
     this.limPhase = 0;
-    this.crackleLeft = 0;
-    this.crackleArmed = false;
     this.cutNow = false;
     this.angle = 0;
     this.head = 0;
@@ -291,14 +339,22 @@ export class EngineVoice {
     this.throttle = 0;
     this.wheelSpeedMs = 0;
     this.limiter = false;
+    this.ticks = 0;
+    this.liftTick = -1;
+    this.armedHigh = false;
+    this.lastPopTick = -1e15;
+    this.pops = 0;
     this.lpState.fill(0);
     this.lpSt.fill(0);
+    this.lp2St.fill(0);
+    this.shelfSt.fill(0);
     this.intakeSt.fill(0);
     this.blockSt.fill(0);
     this.turboSt.fill(0);
     this.inj[0].fill(0);
     this.inj[1].fill(0);
     for (let i = 0; i < 3; i++) this.tube[i].fill(0);
+    this.drawTraits();
     this.redrawJitter();
   }
 
@@ -316,52 +372,83 @@ export class EngineVoice {
     return r * Math.cos(2 * Math.PI * v);
   }
 
+  private drawTraits(): void {
+    const r = mulberry32(this.seed * 7919 + 13);
+    const cv = this.cylVar;
+    for (let i = 0; i < this.cyl; i++) {
+      this.cylAmp[i] = 1 + cv * (2 * r() - 1);
+      this.cylOff[i] = 7 * cv * (2 * r() - 1);
+      const rr = r();
+      // cylVar 0 means identical cylinders: the runner keeps its neutral mid draw.
+      this.cylRunner[i] = ((2 * (0.35 + 0.25 * (cv > 0 ? rr : 0.5))) / 480) * this.fs;
+    }
+  }
+
   private redrawJitter(): void {
     for (let i = 0; i < this.cyl; i++) {
-      let f = this.firing[i];
+      let f = this.firing[i] + this.cylOff[i];
       if (this.jitterDeg > 0) f += this.jitterDeg * this.gauss();
       this.eff[i] = f < 0 ? 0 : f > 719.999 ? 719.999 : f;
     }
   }
 
-  private inject(bank: number, frac: number, a: number): void {
+  private fire(i: number, frac: number): void {
+    if (this.cutNow) return;
+    const a =
+      this.cylAmp[i] *
+      (0.25 + 0.75 * this.load) *
+      (1 + (this.jitterAmp > 0 ? this.jitterAmp * this.gauss() : 0));
     let widthS = this.pulseDeg / (6 * this.rpm);
     widthS = widthS < MIN_PULSE_S ? MIN_PULSE_S : widthS > MAX_PULSE_S ? MAX_PULSE_S : widthS;
     const w = widthS * this.fs;
     const amp = a * w * PULSE_SCALE;
-    const buf = this.inj[bank];
+    const buf = this.inj[this.bankOf[i]];
     const mask = this.injMask;
     const scale = KERNEL_N / w;
+    const run = this.cylRunner[i];
     let pos = (1 - frac) * scale;
     for (let m = 0; pos < KERNEL_N; m++, pos += scale) {
       const k = Math.floor(pos);
       const t = pos - k;
-      const v = KERNEL[k] + t * (KERNEL[k + 1] - KERNEL[k]);
+      const v = PULSE_KERNEL[k] + t * (PULSE_KERNEL[k + 1] - PULSE_KERNEL[k]);
       buf[(this.head + m) & mask] += amp * v;
+      const pd = run + m;
+      const pi = Math.floor(pd);
+      const pf = pd - pi;
+      buf[(this.head + pi) & mask] += RUNNER_GAIN * (1 - pf) * amp * v;
+      buf[(this.head + pi + 1) & mask] += RUNNER_GAIN * pf * amp * v;
     }
+    this.maybePop();
   }
 
-  private fire(i: number, frac: number): void {
-    if (this.cutNow) return;
-    const a = (0.25 + 0.75 * this.load) * (1 + (this.jitterAmp > 0 ? this.jitterAmp * this.gauss() : 0));
-    this.inject(this.bankOf[i], frac, a);
+  private maybePop(): void {
+    if (this.crackle <= 0 || this.throttle >= CRACKLE_THR || this.rpm <= POP_RPM) return;
+    if (this.liftTick < 0) return;
+    const since = (this.ticks - this.liftTick) / this.fs;
+    if (since < POP_MIN_S || since > POP_MAX_S) return;
+    if ((this.ticks - this.lastPopTick) / this.fs < POP_GAP_S) return;
+    const firesPerS = (this.cyl * this.rpm) / 120;
+    const rate = CRACKLE_RATE * this.crackle * Math.min(1, this.rpm / 8000) * Math.exp(-since / 0.8);
+    if (this.rng() >= rate / firesPerS) return;
+    this.injectPop(POP_AMP * (0.6 + 0.8 * this.rng()), 0.0036 + 0.0054 * this.rng());
+    this.pops++;
+    this.lastPopTick = this.ticks;
   }
 
-  private crackleStep(): void {
-    if (this.throttle >= CRACKLE_THR || this.rpm <= CRACKLE_RPM) {
-      this.crackleArmed = false;
-      this.crackleLeft = 0;
-      return;
-    }
-    if (!this.crackleArmed) {
-      this.crackleArmed = true;
-      this.crackleLeft = Math.round(CRACKLE_S * this.fs);
-    }
-    if (this.crackleLeft <= 0) return;
-    this.crackleLeft--;
-    if (this.rng() < (this.crackle * CRACKLE_RATE) / this.fs) {
-      const bank = this.rng() < 0.5 ? 0 : 1;
-      this.inject(bank, 0, 0.6 + 0.4 * this.rng());
+  private injectPop(amp: number, widthS: number): void {
+    const w = widthS * this.fs;
+    const scale = KERNEL_N / w;
+    const mask = this.injMask;
+    const a = amp * w * PULSE_SCALE;
+    for (let b = 0; b < 2; b++) {
+      const buf = this.inj[b];
+      let pos = 0;
+      for (let m = 0; pos < KERNEL_N; m++, pos += scale) {
+        const k = Math.floor(pos);
+        const t = pos - k;
+        buf[(this.head + m) & mask] +=
+          a * (PULSE_KERNEL[k] + t * (PULSE_KERNEL[k + 1] - PULSE_KERNEL[k]));
+      }
     }
   }
 
@@ -408,7 +495,6 @@ export class EngineVoice {
     const hasWhine = this.whineGain > 0;
     const hasIntake = this.intakeGain > 0;
     const hasBlock = this.blockN > 0;
-    const hasCrackle = this.crackle > 0;
     for (let s = 0; s < n; s++) {
       this.rpm += (this.tRpm - this.rpm) * this.aRpm;
       this.load += (this.tLoad - this.load) * this.aLoad;
@@ -422,6 +508,13 @@ export class EngineVoice {
         if (this.limPhase >= 1) this.limPhase -= 1;
         this.cutNow = this.limPhase >= 0.5;
       } else this.cutNow = false;
+
+      if (this.throttle < CRACKLE_THR) {
+        if (this.armedHigh) {
+          this.armedHigh = false;
+          this.liftTick = this.ticks;
+        }
+      } else if (this.throttle >= ARM_THR) this.armedHigh = true;
 
       const d = (this.rpm * 6) / fs;
       if (d > 1e-9) {
@@ -446,7 +539,6 @@ export class EngineVoice {
           this.angle = a1;
         }
       }
-      if (hasCrackle) this.crackleStep();
 
       const h = this.head & injMask;
       const w = this.head & tubeMask;
@@ -466,19 +558,22 @@ export class EngineVoice {
       this.dcIn1 = rad;
       this.dcOut1 = dc;
 
-      let pre = this.lpOn ? lpStep(this.lpCo, this.lpSt, dc) : dc;
-      if (hasBlock) pre += this.blockStep(x0 + x1);
-      if (hasIntake) pre += this.intakeStep();
+      let ex = this.lpOn ? bqStep(this.lpCo, this.lpSt, dc) : dc;
+      if (hasBlock) ex += this.blockStep(x0 + x1);
+      if (this.lpOn && this.turboStage) ex = bqStep(this.lpCo, this.lp2St, ex);
+      if (this.shelfOn) ex = bqStep(this.shelfCo, this.shelfSt, ex);
+      ex *= this.exhaustGain;
 
       // 2x oversampled clip; 3-tap half-band decimation with one sample of latency
-      const mid = this.clip(0.5 * (this.clipPrev + pre));
-      const cur = this.clip(pre);
-      this.clipPrev = pre;
+      const mid = this.clip(0.5 * (this.clipPrev + ex));
+      const cur = this.clip(ex);
+      this.clipPrev = ex;
       const y = 0.5 * this.clipCurPrev + 0.25 * (this.clipMidPrev + mid);
       this.clipMidPrev = mid;
       this.clipCurPrev = cur;
 
       let extra = 0;
+      if (hasIntake) extra += this.intakeStep();
       if (hasTurbo) {
         let fc = this.turboCenter + this.turboSpan * this.boost;
         if (fc > maxFc) fc = maxFc;
@@ -517,6 +612,7 @@ export class EngineVoice {
       this.dc2In1 = y;
       this.dc2Out1 = o;
       out[s] = PEAK * Math.tanh(((o + extra) * this.gain) / PEAK);
+      this.ticks++;
     }
   }
 

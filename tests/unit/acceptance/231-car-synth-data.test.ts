@@ -53,15 +53,8 @@ describe('231 per-car engine synth data acceptance', () => {
     expect(spec.bank).toEqual([0, 1, 0, 0, 1, 1, 1, 0]);
   });
 
-  it('AT4: gt3-d firingDeg has 10 values starting at 0 with consecutive intervals alternating 90 and 54 (±0.5)', () => {
-    const firingDeg = synthOf('gt3-d').spec.firingDeg;
-    expect(firingDeg.length).toBe(10);
-    expect(firingDeg[0]).toBe(0);
-    for (let i = 1; i < firingDeg.length; i++) {
-      const interval = firingDeg[i] - firingDeg[i - 1];
-      const expected = i % 2 === 1 ? 90 : 54;
-      expect(Math.abs(interval - expected)).toBeLessThanOrEqual(0.5);
-    }
+  it('AT4: gt3-d firingDeg is an even-fire V10 [0,72,144,216,288,360,432,504,576,648]', () => {
+    expect(synthOf('gt3-d').spec.firingDeg).toEqual([0, 72, 144, 216, 288, 360, 432, 504, 576, 648]);
   });
 
   it('AT5: ow26 firingDeg is [0,90,240,330,480,570]', () => {

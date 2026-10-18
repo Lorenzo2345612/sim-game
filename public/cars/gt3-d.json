@@ -68,15 +68,17 @@
     "intakeMix": 0.25,
     "crackle": 0.5,
     "synth": {
-      "firingDeg": [0, 90, 144, 234, 288, 378, 432, 522, 576, 666],
+      "firingDeg": [0, 72, 144, 216, 288, 360, 432, 504, 576, 648],
       "bank": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-      "pipeM": [0.55, 0.55],
-      "tailM": 0.55,
+      "pipeM": [0.825, 0.825],
+      "tailM": 0.825,
       "pulseDeg": 85,
       "intakeHz": 300,
       "lowpassHz": 8000,
       "limiterHz": 16,
       "gainDb": 0,
+      "drive": 2,
+      "crackle": 0.8,
       "jitterAmp": 0.08
     }
   },

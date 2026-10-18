@@ -404,17 +404,19 @@ describe('228 engine voice layers post-code gaps', () => {
     expect(neg).toEqual(zero);
   });
 
-  it('POST13: crackle requires throttle < 0.05 and rpm > 4000 strictly', () => {
+  it('POST13: crackle requires throttle < 0.05 and rpm > 3500 strictly', () => {
     function clusters(lift: VoiceControl): number {
       const voice = new EngineVoice({ ...baseSpec(8), crackle: 1 }, FS, SEED);
       voice.setControl(ctrl(lift.rpm, 1));
       renderSeconds(voice, 0.5);
       voice.setControl(lift);
-      return countClusters(renderSeconds(voice, 1.2));
+      const before = voice.popCount;
+      renderSeconds(voice, 1.2);
+      return voice.popCount - before;
     }
     expect(clusters(ctrl(8000, 0, { throttle: 0.04 }))).toBeGreaterThanOrEqual(3);
     expect(clusters(ctrl(8000, 0, { throttle: 0.05 }))).toBe(0);
-    expect(clusters(ctrl(4000, 0, { throttle: 0 }))).toBe(0);
+    expect(clusters(ctrl(3500, 0, { throttle: 0 }))).toBe(0);
   }, 120000);
 
   it('POST14: wheel whine is audible at exactly minSpeedMs', () => {

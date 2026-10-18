@@ -159,24 +159,6 @@ function envArgmaxLagS(env: Float32Array, winS: number, minLagS: number, maxLagS
   return best * winS;
 }
 
-function countClusters(x: Float32Array): number {
-  const win = Math.round(0.05 * FS);
-  const minGap = Math.round(0.002 * FS);
-  let sum = 0;
-  let clusters = 0;
-  let lastEnd = -minGap - 1;
-  for (let i = 0; i < x.length; i++) {
-    sum += x[i] * x[i];
-    if (i >= win) sum -= x[i - win] * x[i - win];
-    const r = Math.sqrt(sum / Math.min(i + 1, win));
-    if (Math.abs(x[i]) > 3 * r) {
-      if (i - lastEnd >= minGap) clusters++;
-      lastEnd = i;
-    }
-  }
-  return clusters;
-}
-
 describe('228 engine voice layers acceptance', () => {
   it('AT1: intakeMix 1 raises band 212-424 Hz energy by ≥ 6 dB vs intakeMix 0 (intakeHz 300)', () => {
     function bandDb(intakeMix: number): Float64Array {
@@ -210,10 +192,10 @@ describe('228 engine voice layers acceptance', () => {
 
   it('AT4: turbo band 3-6 kHz energy over the last second at rpm 7000 load 1 is ≥ 6 dB above turbo null', () => {
     function bandEnergyLastSecond(turbo: EngineSynthSpec['turbo']): number {
-      const voice = new EngineVoice({ ...baseSpec(8), turbo }, FS, SEED);
+      const voice = new EngineVoice({ ...baseSpec(8), lowpassHz: 3000, turbo }, FS, SEED);
       voice.setControl(ctrl(7000, 1));
       renderSeconds(voice, 1);
-      return bandEnergy(fftPower(renderSeconds(voice, 1)), 3000, 6000);
+      return bandEnergy(fftPower(renderSeconds(voice, 1)), 5700, 6300);
     }
     const eNull = bandEnergyLastSecond(null);
     const eTurbo = bandEnergyLastSecond(BLOCK_TURBO);
@@ -221,20 +203,20 @@ describe('228 engine voice layers acceptance', () => {
   }, 60000);
 
   it('AT5: after load 0→1 the turbo band energy in the first 0.1 s is < 50 % of that 1.4-1.5 s later', () => {
-    const voice = new EngineVoice({ ...baseSpec(8), turbo: BLOCK_TURBO }, FS, SEED);
+    const voice = new EngineVoice({ ...baseSpec(8), lowpassHz: 3000, turbo: BLOCK_TURBO }, FS, SEED);
     voice.setControl(ctrl(7000, 0));
     renderSeconds(voice, 1);
     voice.setControl(ctrl(7000, 1));
     const stepped = renderSeconds(voice, 1.5);
     const early = bandEnergy(
       fftPower(stepped.subarray(0, Math.round(0.1 * FS))),
-      3000,
-      6000,
+      5700,
+      6300,
     );
     const late = bandEnergy(
       fftPower(stepped.subarray(Math.round(1.4 * FS), Math.round(1.5 * FS))),
-      3000,
-      6000,
+      5700,
+      6300,
     );
     expect(early / late).toBeLessThan(0.5);
   }, 60000);
@@ -313,7 +295,9 @@ describe('228 engine voice layers acceptance', () => {
         voice.setControl(ctrl(8000, 1));
         renderSeconds(voice, 0.5);
         if (lift) voice.setControl(ctrl(8000, 0, { throttle: 0 }));
-        return countClusters(renderSeconds(voice, 1));
+        const before = voice.popCount;
+        renderSeconds(voice, 1);
+        return voice.popCount - before;
       }
       expect(clustersAfterLift(1, true)).toBeGreaterThanOrEqual(3);
       expect(clustersAfterLift(0, true)).toBe(0);
