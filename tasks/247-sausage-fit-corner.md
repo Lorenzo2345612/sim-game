@@ -88,6 +88,14 @@ npm test
 - `tests/unit/edge/174-sausage-colliders-and-ring.post.test.ts`: tests that look up a collider at a `sausagePose` position use the first piece of `sausagePieces` instead.
 - `tests/unit/edge/211-fontana-roval-edge.test.ts` EDGE6: replace the sha256 with `sha256sum public/tracks/fontana.json` after the rebuild.
 - 097 AT3, 106 AT5, 155 AT5 already ignore `sausages`: unchanged.
+- `tests/unit/edge/150-sausage-render.post.test.ts` POST8: expect one kerb collider per piece (`Σ max(1, ceil(length))`, 18 for 3 length-6 sausages) instead of one per sausage.
+- Bank pins (all tracks are rebuilt, so the builder's all-zero `bank` array now appears on monza/spa/silverstone): `tests/unit/acceptance/247-sausage-fit-corner.test.ts` AT7 also ignores `bank` when the pre-task JSON has no `bank` and the rebuilt one is all zeros; 097 AT3, 106 AT5, 155 AT5, 159 AT4, 241 AT4: refresh hashes/byte pins to the rebuilt JSONs (`sha256sum public/tracks/<id>.json`) or apply the same `bank` exemption, whichever the test structure allows. Do not change 174's zero-bank assertions.
+
+## Planner answers
+
+- AT4 clearance (footprint rule, applies to every sausage, auto and override): after length/offset are set, compute the AT4 footprint samples (5 along × 3 across, same pose function) against the full centerline. If any sample has `clearance < halfNear + KERB_WIDTH + 0.1`, raise `offset` by the largest deficit + 0.05 and recheck once; if it still fails or the new offset is `≥ 0.8·radii[index]`, drop that sausage. Override offsets act as a minimum. AT4 itself is unchanged.
+- End caps as whole first/last pieces (≤ 1 m) coloured black: confirmed.
+- 053 POST10 (f4.glb byte-identity) passes on master in isolation and this task touches no car files: out of scope, do not edit.
 
 ## Questions for the planner
 
