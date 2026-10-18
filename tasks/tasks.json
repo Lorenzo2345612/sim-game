@@ -3490,7 +3490,7 @@
     {
       "num": "256",
       "title": "Fix two test failures on master after the 247 merge",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
