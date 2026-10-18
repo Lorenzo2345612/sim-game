@@ -3424,7 +3424,7 @@
     {
       "num": "251",
       "title": "Knock-over bollards at runtime",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "250"
       ],
@@ -3644,7 +3644,7 @@
     {
       "num": "268",
       "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
