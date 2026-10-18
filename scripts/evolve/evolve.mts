@@ -25,7 +25,7 @@ const EVALS = Number(arg('evals', '1')); // independent evaluations per generati
 const MUT = { growth: 0.3, speed: Number(arg('speed-mut', '0.3')) }; // fraction of weights mutated per child
 const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: SPEED_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
-const modelDir = join(here, 'models', tag);
+const modelDir = join(here, 'models', arg('model-dir', tag)); // e.g. scratch/<tag> keeps a fork out of export-models
 const PORT = Number(arg('port', '8770'));
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
