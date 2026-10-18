@@ -3411,7 +3411,7 @@
     {
       "num": "250",
       "title": "Bollard placement",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "248"
       ],

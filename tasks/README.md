@@ -251,7 +251,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | done | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
-| 250 | Bollard placement | pending | 248 |
+| 250 | Bollard placement | in progress | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
