@@ -148,13 +148,13 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | done | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | done | 070, 144, 145 |
-| 147 | Debris: detached wings and wheels as physics bodies | in progress | 145, 146 |
+| 147 | Debris: detached wings and wheels as physics bodies | waiting decision | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | in progress | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
 | 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
-| 153 | Simulation cost with 16 cars | pending | 151 |
+| 153 | Simulation cost with 16 cars | in progress | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |

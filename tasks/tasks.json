@@ -2033,7 +2033,7 @@
     {
       "num": "147",
       "title": "Debris: detached wings and wheels as physics bodies",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "145",
         "146"
@@ -2115,7 +2115,7 @@
     {
       "num": "153",
       "title": "Simulation cost with 16 cars",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "151"
       ],
