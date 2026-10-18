@@ -4,7 +4,7 @@ Status: pending
 Phase: 1
 Depends on: 248
 Complexity: complex
-Type: feature
+Type: bugfix
 Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 Milestone: M1.11 (design `docs/design/track-fidelity.md`, "Wave 3")
