@@ -93,3 +93,8 @@ New tracks/cars, retraining, the classic AI, difficulty gating, rewards other th
 
 - Authorised edits to the 269 edge/post tests: `tests/unit/edge/269-neural-driver-edge*` (EDGE7) and `tests/unit/edge/269-evolved-neural-driver.post*` (POST3, POST5, POST12, POST16). Only API updates are allowed: fill the new `NeuralCarState` fields with neutral values (temps at optTempC, wear 0, no wheels off), use the 5-argument `racingTargetPoints`, and replace literal input/weight counts with `N_IN`/`N_W`. Assertions do not change otherwise.
 - AT8 / exported models: `export-models.mts` pads every exported weight array to `N_W` with `padGenome`. Run `npm run export-ai-models` and commit the regenerated `public/ai-models/**` (add it to the files). Each file then holds 674 weights.
+
+## Planner answers (round 3)
+
+- Typecheck: option (a). Add `"allowImportingTsExtensions": true` to `tsconfig.json` (it already has `noEmit`), and remove the now-unused `@ts-expect-error` line at POST8 in `tests/unit/edge/269-evolved-neural-driver.post.test.ts`. Both edits are authorised; add `tsconfig.json` to the files.
+- Still required from round 2: the 269 edge/post API updates, and `padGenome` in export-models with the regenerated `public/ai-models/**` committed. Converting a model's `setup` to genes on resume is optional.
