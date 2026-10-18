@@ -1,5 +1,5 @@
 // Neuroevolution trainer with a live viewer at http://127.0.0.1:8770
-// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing|mintime] [--resume path]
+// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing|mintime] [--resume path] [--racecraft [--opponents 6]]
 // Grid episode grows with progress up to --laps laps; random-start episodes last --secs.
 import { Worker } from 'node:worker_threads';
 import { createServer, type ServerResponse } from 'node:http';
@@ -12,6 +12,7 @@ import { parseCarSpec } from '../../src/physics/carSpec';
 import { minTimeFor } from './mintime.mts';
 import { N_W, N_IN, randomGenome, gauss, mulberry32 } from './policy.mts';
 import { N_SET, joinGenome, splitGenome } from './genome.mts';
+import { pickOpponents } from './racecraft.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
@@ -28,6 +29,7 @@ const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', arg('model-dir', tag)); // e.g. scratch/<tag> keeps a fork out of export-models
 const PORT = Number(arg('port', '8770'));
+const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
 const runDir = join(here, 'runs', `${tag}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
@@ -103,7 +105,7 @@ setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(posit
 // Workers
 const workers: Worker[] = [];
 await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => {
-  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per, line: LINE } });
+  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT } });
   wk.on('message', (m: any) => {
     if (m.type === 'ready') { lapLength = m.lapLength; ok(); }
     if (m.type === 'pos') { positions.set(m.pos, w * per * 4); if (w === 0) simT = m.t; }
@@ -111,10 +113,23 @@ await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => 
   wk.on('error', (e) => { console.error('worker', w, e); process.exit(1); });
   workers.push(wk);
 })));
-console.log(`${W} workers ready, pop ${POP}, ${N_W} weights + ${N_SET} setup genes, lap ${lapLength.toFixed(0)} m, line ${LINE}`);
+console.log(`${W} workers ready, pop ${POP}, ${N_W} weights + ${N_SET} setup genes, lap ${lapLength.toFixed(0)} m, line ${LINE}${RACECRAFT ? `, racecraft (${OPP} opponents per world)` : ''}`);
 
+const oppCache = new Map<string, { weights: number[]; setup?: unknown }>();
+function opponents(): { weights: number[]; setup?: unknown }[] { // frozen hall-of-fame models within 3 s of the fastest
+  if (!OPP) return [];
+  const all = Object.values(hof) as any[];
+  if (!all.length) return [];
+  const bestAvg = Math.min(...all.map((m) => m.avgLap));
+  return pickOpponents(all, bestAvg, OPP, rand).map((m) => {
+    if (!oppCache.has(m.file)) { const j = JSON.parse(readFileSync(join(modelDir, m.file), 'utf8')); oppCache.set(m.file, { weights: j.weights, setup: j.setup }); }
+    return oppCache.get(m.file)!;
+  });
+}
+const KEYS = ['fitness', 'best', 'lapT', 'laps', 'finishT', 'invalidLaps', 'passes', 'lost', 'faults', 'crashFaults'] as const;
+type EvalR = Record<(typeof KEYS)[number], number[]>;
 let perm: number[] = []; // slot -> pop index (genomes shuffled across worlds every generation)
-function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[]; laps: number[]; finishT: number[]; invalidLaps: number[] }> {
+function evalAll(): Promise<EvalR> {
   perm = pop.map((_, i) => i);
   for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
   eliteSlots = perm.map((p, slot) => (p < ELITE ? slot : -1)).filter((x) => x >= 0);
@@ -123,10 +138,10 @@ function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[];
     const batch = shuffled.slice(w * per, (w + 1) * per);
     const h = (m: any) => { if (m.type === 'done') { wk.off('message', h); ok(m); } };
     wk.on('message', h);
-    wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)) });
-  }))).then((rs) => ({ fitness: rs.flatMap((r) => r.fitness), best: rs.flatMap((r) => r.best), lapT: rs.flatMap((r) => r.lapT), laps: rs.flatMap((r) => r.laps), finishT: rs.flatMap((r) => r.finishT), invalidLaps: rs.flatMap((r) => r.invalidLaps) })).then((r) => {
-    const un = (a: number[]) => { const o = new Array(POP); perm.forEach((p, slot) => { o[p] = a[slot]; }); return o; };
-    return { fitness: un(r.fitness), best: un(r.best), lapT: un(r.lapT), laps: un(r.laps), finishT: un(r.finishT), invalidLaps: un(r.invalidLaps) };
+    wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)), opponents: opponents() });
+  }))).then((rs) => {
+    const un = (a: number[]) => { const o = new Array(POP).fill(0); perm.forEach((p, slot) => { o[p] = a[slot] ?? 0; }); return o; };
+    return Object.fromEntries(KEYS.map((k) => [k, un(rs.flatMap((r) => r[k] ?? []))])) as EvalR;
   });
 }
 
@@ -140,11 +155,11 @@ const hof: Record<string, any> = existsSync(join(modelDir, 'index.json')) ? JSON
 // Hall of fame: first genome to finish the full race in each 1 s bucket of average lap; difficulty = pace relative to the fastest.
 function saveModel(i: number, finish: number) {
   const RL = raceLaps(), avg = finish / RL, key = String(Math.floor(avg));
-  if (hof[key]) return;
+  if (hof[key] && (hof[key].rc || !RACECRAFT)) return; // racecraft models replace plain ones in their bucket
   const sp = splitGenome(pop[i], carSpec);
   const file = `race-${key}s-gen${gen}.json`;
   writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(sp.weights), setup: sp.setup }));
-  hof[key] = { file, avgLap: avg, gen };
+  hof[key] = { file, avgLap: avg, gen, ...(RACECRAFT ? { rc: true } : {}) };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
   const difficulties = { expert: all[0].file, hard: pick(1.03), medium: pick(1.07), easy: pick(1.12) };
@@ -155,7 +170,7 @@ let lastR: any = null;
 const raceLaps = () => (speedPhase ? SPEED_LAPS : MAX_LAPS);
 // EVALS > 1: fitness summed, distance averaged, fastest lap kept, race time/laps only when every run finished (worst case)
 async function evalN() {
-  let acc: any = null;
+  let acc: EvalR | null = null;
   for (let e = 0; e < EVALS; e++) {
     const r = await evalAll();
     if (!acc) { acc = r; continue; }
@@ -164,16 +179,17 @@ async function evalN() {
       acc.lapT[i] = acc.lapT[i] > 0 && r.lapT[i] > 0 ? Math.min(acc.lapT[i], r.lapT[i]) : 0;
       acc.laps[i] = Math.min(acc.laps[i], r.laps[i]);
       acc.invalidLaps[i] += r.invalidLaps[i];
+      for (const k of ['passes', 'lost', 'faults', 'crashFaults'] as const) acc[k][i] += r[k][i];
       acc.finishT[i] = acc.finishT[i] > 0 && r.finishT[i] > 0 ? Math.max(acc.finishT[i], r.finishT[i]) : 0;
     }
   }
-  return acc;
+  return acc!;
 }
 for (; gen < GENS; ) {
   const t0 = Date.now();
   // grid episode: room for two more laps than the best managed (capped at MAX_LAPS), plus 2 short random starts
   if (refLap) gridSecs = topLaps >= raceLaps() ? raceLaps() * refLap * 1.25 : Math.min(raceLaps() * refLap * 1.1, (Math.ceil(topLaps) + 2) * refLap * 1.15);
-  episodes = [{ start: 0, secs: gridSecs }, { start: Math.floor(rand() * lapLength), secs: SECS }, { start: Math.floor(rand() * lapLength), secs: SECS }];
+  episodes = [{ start: RACECRAFT ? 1 + Math.floor(rand() * (lapLength - 1)) : 0, secs: gridSecs }, { start: Math.floor(rand() * lapLength), secs: SECS }, { start: Math.floor(rand() * lapLength), secs: SECS }];
   const r = await evalN();
   lastR = r;
   const order = r.fitness.map((f, i) => i).sort((a, b) => r.fitness[b] - r.fitness[a]);
@@ -186,10 +202,12 @@ for (; gen < GENS; ) {
   meanLaps.push(mean / lapLength);
   const avg5 = meanLaps.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, meanLaps.length);
   if (!speedPhase && meanLaps.length >= 5 && avg5 >= SPEED_AT) { speedPhase = true; allTimeBest = -Infinity; console.log(`speed phase from gen ${gen + 1} (mean ${avg5.toFixed(1)} laps)`); }
-  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0).sort((a, b) => a[0] - b[0]);
+  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0 && r.faults[i] === 0 && r.crashFaults[i] === 0).sort((a, b) => a[0] - b[0]);
+  const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
+  const rcLine = RACECRAFT ? ` passes ${sum(r.passes)} faults ${sum(r.faults)} crash ${sum(r.crashFaults)} champ ${r.passes[bestI]}/${r.faults[bestI]}` : '';
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
   history.push({ gen, best: r.best[bestI], mean, bestLap, laps: topLaps });
-  console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+  console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s${rcLine} sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   const champ = { gen, phase: speedPhase ? 'speed' : 'growth', nIn: N_IN, line: LINE, track: trackId, car: carId, distance: r.best[bestI], lapTime: r.lapT[bestI], laps: r.laps[bestI], fitness: r.fitness[bestI], weights: Array.from(pop[bestI]) };
   writeFileSync(join(runDir, `gen-${String(gen).padStart(4, '0')}.json`), JSON.stringify(champ));
   if (r.fitness[bestI] >= allTimeBest) { allTimeBest = r.fitness[bestI]; writeFileSync(join(runDir, 'best.json'), JSON.stringify(champ)); }
