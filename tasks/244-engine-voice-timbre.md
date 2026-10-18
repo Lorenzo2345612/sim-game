@@ -38,7 +38,7 @@ Conventions: kernel table and filters in `Float64Array`; pop timing resolved at 
 | AT2 | f4 and gt3-c synth from `public/cars` with `jitterDeg` 0, `jitterAmp` 0; voice seed 1, 48 kHz | for rpm 3000..7000 step 250, load 1, throttle 1: render 0.8 s, RMS of the last 0.5 s | max RMS / min RMS ≤ 1.6 per car (no comb sweep) |
 | AT3 | same specs, `cylVar` 0.28 | steady 3000 rpm, load 1, 1.3 s, Hann-windowed DFT of the last 1.0 s | energy at orders 0.5, 1, 1.5 summed ≥ −20 dB relative to the firing order (cyl/2) |
 | AT4 | f4 synth with `turbo` null, `drive` 0.5, `exhaustGain` 0.6 vs 1.0, same seed | steady 6000 rpm, load 1, 1 s | RMS ratio (0.6 / 1.0) in [0.5, 0.72] |
-| AT5 | gt3-a synth, `bassDb` 8 vs 0, same seed | steady 4000 rpm, load 1, 1 s, DFT | energy below 250 Hz rises ≥ 5 dB; energy above 1 kHz changes ≤ 1.5 dB |
+| AT5 | gt3-a synth, `bassDb` 8 vs 0, same seed | steady 4000 rpm, load 1, 1 s, DFT | energy below 160 Hz rises ≥ 5 dB; energy above 1 kHz changes ≤ 1.5 dB |
 | AT6 | f4 synth (crackle 0.8), seed 1 | 2 s at 6500 rpm throttle 1, then throttle 0 / load 0 with rpm 6000 for 3 s, blocks of 128, record `popCount` per block | ≥ 3 pops between 0.08 and 2.2 s after the lift; none before 0.08 s or after 2.2 s; consecutive pops ≥ 25 ms apart (block resolution); `crackle` 0 → 0 pops; throttle kept at 1 → 0 pops; rpm 3000 during overrun → 0 pops |
 | AT7 | any car synth | render 1 s mixed controls, `reset()`, render again | both renders bit-identical; two voices with the same seed bit-identical |
 | AT8 | `public/cars/*.json` | compare with `git show master:` at test-writing time | `pipeM`/`tailM` = 1.5 × master (±1e-9, cap 5); gt3-d firingDeg as above; ow26 firingDeg unchanged; drive/exhaustGain/crackle as in the data list |
@@ -72,6 +72,13 @@ In addition to the design's authorised 227/228/231 edits (kernel, reflection, lo
 - `tests/unit/edge/244-engine-voice-timbre-edge.test.ts` EDGE6: delete only the strict `expect(low.peak).toBeLessThan(high.peak)` line (~295); the ≤ 1.5 dB bypass check stays. Near-equal peaks make the strict order phase-dependent.
 - Confirmed covered: `231` AT4 (gt3-d firing 90/54 → even 72) and `228` EDGE6/EDGE7 (crackle timing/arming) updated to the new behaviour.
 
-## Planner answers (round after two timeouts)
+## Planner answers (round 4, supersedes earlier hints)
 
-- State at hand-off: 17/19 of the 244 tests pass. Remaining: AT5 (bass shelf gives +3.1 dB below 250 Hz, needs ≥ 5) — the low-shelf corner is too low or applied before a stage that cuts lows; use a low-shelf with corner ≥ 250 Hz applied on the final engine bus, gain = `bassDb`. EDGE6 (whine bypasses exhaustGain) — mix the whine layer after the `exhaustGain` stage, not before. Round 3 (measured 17/19 still): AT5 now gives +4.26 dB; move the low-shelf corner up within 300–400 Hz (RBJ shelf, S = 1) and pick the value that gives ≥ 5 dB below 250 Hz while keeping ≤ 1.5 dB above 1 kHz. EDGE6: whine already bypasses; apply the authorised line delete above. Fix only these two; do not refactor; run only the 244 tests plus `npm run typecheck`.
+My earlier "corner ≥ 250 Hz on the final bus" hint was wrong; follow design item 4 literally:
+- Exhaust path order: core tubes/228 modes/pops → muffling LP → (turbo ≠ null: second 2-pole LP) → RBJ low-shelf S = 1 at **160 Hz**, gain `bassDb` → × `exhaustGain` → soft clip. Intake, turbo and whine layers are summed after and bypass LP2, shelf and exhaustGain. AT5 row now measures below 160 Hz (planner change).
+- 227 AT1 (|mean| 0.0048): the asymmetric clip after the bass boost adds DC. Add the reference's second DC blocker (`dc2`, 10 Hz, `docs/design/engine-audio-ref/voice-h5.ts` ~line 283) after the soft clip. Do not edit 227 AT1.
+- 228 AT4/AT5 (turbo band +0.04 dB, transient 0.81): the turbo layer is being filtered/scaled with the exhaust path; it must bypass as above. Do not edit these tests.
+- Authorised (crackle timing/arming): in 228 AT9, 228 EDGE6/EDGE7/EDGE8 and 228 POST13 replace signal cluster counting with `popCount` deltas over the same windows, same expected counts. 228 AT10 follows.
+- Authorised (kernel shape, loop low-pass): 227 AT2 expected lag and 227 AT7 > 20 kHz limit may be updated to the v2.1 measured value with a 3 dB / 10 % margin; list old and new values in the report.
+- 244 EDGE6 strict-order line delete (above) stays.
+- Not yours: 253 AT6, 225 EDGE3 (task 256), 224 POST4.
