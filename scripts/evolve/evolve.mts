@@ -20,7 +20,10 @@ const POP = Number(arg('pop', '100')), W = Number(arg('workers', '10')), SECS = 
 const MAX_LAPS = Number(arg('laps', '10')), GENS = Number(arg('gens', '1000'));
 const LINE = (['racing', 'mintime'] as const).find((l) => l === arg('line', 'center')) ?? 'center'; // look-ahead targets + speed profile source
 const SPEED_AT = Number(arg('speed-at', '4')); // mean grid distance (laps, 5-gen average) that switches fitness to speed
-const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: MAX_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
+const SPEED_LAPS = Number(arg('speed-laps', String(MAX_LAPS))); // shorter races in the speed phase = more selections per hour
+const EVALS = Number(arg('evals', '1')); // independent evaluations per generation (fresh conditions), fitness summed
+const MUT = { growth: 0.3, speed: Number(arg('speed-mut', '0.3')) }; // fraction of weights mutated per child
+const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: SPEED_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', tag);
 const PORT = Number(arg('port', '8770'));
@@ -63,9 +66,9 @@ if (bases.length) {
 } else if (resume) console.log('resume skipped: no usable genome');
 if (!pop.length) for (let i = 0; i < POP; i++) pop.push(randomGenome(rand));
 
-function mutate(g: Float64Array, sigma: number): Float64Array {
+function mutate(g: Float64Array, sigma: number, frac = 0.3): Float64Array {
   const c = Float64Array.from(g);
-  for (let i = 0; i < N_W; i++) if (rand() < 0.3) c[i] += sigma * gauss(rand);
+  for (let i = 0; i < N_W; i++) if (rand() < frac) c[i] += sigma * gauss(rand);
   return c;
 }
 function cross(a: Float64Array, b: Float64Array): Float64Array {
@@ -134,10 +137,10 @@ mkdirSync(modelDir, { recursive: true });
 const hof: Record<string, any> = existsSync(join(modelDir, 'index.json')) ? JSON.parse(readFileSync(join(modelDir, 'index.json'), 'utf8')).models ?? {} : {};
 // Hall of fame: first genome to finish the full race in each 1 s bucket of average lap; difficulty = pace relative to the fastest.
 function saveModel(i: number, finish: number) {
-  const avg = finish / MAX_LAPS, key = String(Math.floor(avg));
+  const RL = raceLaps(), avg = finish / RL, key = String(Math.floor(avg));
   if (hof[key]) return;
   const file = `race-${key}s-gen${gen}.json`;
-  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: MAX_LAPS, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(pop[i]) }));
+  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(pop[i]) }));
   hof[key] = { file, avgLap: avg, gen };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
@@ -146,12 +149,28 @@ function saveModel(i: number, finish: number) {
   console.log(`model saved ${file} (avg lap ${avg.toFixed(2)} s)`);
 }
 let lastR: any = null;
+const raceLaps = () => (speedPhase ? SPEED_LAPS : MAX_LAPS);
+// EVALS > 1: fitness summed, distance averaged, fastest lap kept, race time/laps only when every run finished (worst case)
+async function evalN() {
+  let acc: any = null;
+  for (let e = 0; e < EVALS; e++) {
+    const r = await evalAll();
+    if (!acc) { acc = r; continue; }
+    for (let i = 0; i < POP; i++) {
+      acc.fitness[i] += r.fitness[i]; acc.best[i] = (acc.best[i] * e + r.best[i]) / (e + 1);
+      acc.lapT[i] = acc.lapT[i] > 0 && r.lapT[i] > 0 ? Math.min(acc.lapT[i], r.lapT[i]) : 0;
+      acc.laps[i] = Math.min(acc.laps[i], r.laps[i]);
+      acc.finishT[i] = acc.finishT[i] > 0 && r.finishT[i] > 0 ? Math.max(acc.finishT[i], r.finishT[i]) : 0;
+    }
+  }
+  return acc;
+}
 for (; gen < GENS; ) {
   const t0 = Date.now();
   // grid episode: room for two more laps than the best managed (capped at MAX_LAPS), plus 2 short random starts
-  if (refLap) gridSecs = topLaps >= MAX_LAPS ? MAX_LAPS * refLap * 1.25 : Math.min(MAX_LAPS * refLap * 1.1, (Math.ceil(topLaps) + 2) * refLap * 1.15);
+  if (refLap) gridSecs = topLaps >= raceLaps() ? raceLaps() * refLap * 1.25 : Math.min(raceLaps() * refLap * 1.1, (Math.ceil(topLaps) + 2) * refLap * 1.15);
   episodes = [{ start: 0, secs: gridSecs }, { start: Math.floor(rand() * lapLength), secs: SECS }, { start: Math.floor(rand() * lapLength), secs: SECS }];
-  const r = await evalAll();
+  const r = await evalN();
   lastR = r;
   const order = r.fitness.map((f, i) => i).sort((a, b) => r.fitness[b] - r.fitness[a]);
   const bestI = order[0];
@@ -175,7 +194,7 @@ for (; gen < GENS; ) {
   const next: Float64Array[] = order.slice(0, ELITE).map((i) => pop[i]);
   while (next.length < POP) {
     const a = pop[order[Math.floor(rand() * PARENTS)]], b = pop[order[Math.floor(rand() * PARENTS)]];
-    next.push(mutate(rand() < 0.5 ? cross(a, b) : a, sigma));
+    next.push(mutate(rand() < 0.5 ? cross(a, b) : a, sigma, speedPhase ? MUT.speed : MUT.growth));
   }
   pop = next;
   sigma = Math.max(0.06, sigma * 0.985);
