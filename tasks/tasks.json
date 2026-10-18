@@ -3394,7 +3394,7 @@
     {
       "num": "249",
       "title": "QA report: kerb, barrier-fold, sausage, pit-clear checks",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "237",
         "245",
