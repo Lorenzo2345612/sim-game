@@ -38,17 +38,15 @@ for (let i = 0; i < cl.length; i++) {
 // Population
 let gen = 0;
 let pop: Float64Array[] = [];
-const resume = arg('resume', '');
-if (resume && existsSync(resume)) {
-  const g = JSON.parse(readFileSync(resume, 'utf8'));
-  const base = padGenome(g.weights);
-  if (base) {
-    pop.push(base);
-    gen = (g.gen ?? -1) + 1;
-    while (pop.length < POP) pop.push(mutate(base, 0.1));
-  } else console.log(`resume skipped: ${g.weights.length} weights, policy has ${N_W}`);
-  if (base && g.weights.length !== N_W) console.log(`resume padded ${g.weights.length} -> ${N_W} weights`);
-}
+const resume = arg('resume', ''); // one genome file, or several comma-separated (seeds a mixed population)
+const seeds = resume ? resume.split(',').filter((f) => existsSync(f)).map((f) => JSON.parse(readFileSync(f, 'utf8'))) : [];
+const bases = seeds.map((g) => padGenome(g.weights)).filter((b): b is Float64Array => !!b);
+if (bases.length) {
+  pop.push(...bases.slice(0, POP));
+  if (seeds.length === 1) gen = (seeds[0].gen ?? -1) + 1;
+  for (let i = 0; pop.length < POP; i++) pop.push(mutate(bases[i % bases.length], 0.1));
+  console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_W} weights`);
+} else if (resume) console.log('resume skipped: no usable genome');
 if (!pop.length) for (let i = 0; i < POP; i++) pop.push(randomGenome(rand));
 
 function mutate(g: Float64Array, sigma: number): Float64Array {
@@ -79,7 +77,7 @@ createServer((req, res) => {
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(readFileSync(join(here, 'viewer.html')));
+  res.end(readFileSync(join(here, req.url?.startsWith('/multi') ? 'multi.html' : 'viewer.html')));
 }).listen(PORT, '127.0.0.1', () => console.log(`viewer: http://127.0.0.1:${PORT}  run: ${runDir}`));
 setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(positions, (v) => Math.round(v * 10) / 10) }), 66);
 

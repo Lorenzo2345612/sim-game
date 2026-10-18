@@ -25,6 +25,7 @@ const cl: [number, number][] = track.centerline;
 const n = cl.length;
 const cum = cumulativeLengths(cl, true);
 const L = cum[n];
+
 const hwL = new Float64Array(n), hwR = new Float64Array(n);
 for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
 // Centerline speed profile (brake cue): corner speed sqrt(MU_G/kappa), backward pass with constant decel.
@@ -34,8 +35,9 @@ const vProf = new Float64Array(n);
 // Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
 // Cars collide with each other (traffic). Fuel load, compound and wear rate are randomised per car and episode.
 const COMPOUNDS = ['soft', 'medium', 'hard'] as const;
-const FUEL_MIN_L = 18; // measured ~1.3 L/lap at Monza (F4): ≥ 13 laps, grid episode is ≤ 10
+
 const muMed = spec.tyres.compounds.medium.mu0;
+let FUEL_MIN_L = 18; // set after the lap length is known: measured ~0.225 L/km at Monza (F4), sized for 12 laps
 const carMu = new Float64Array(slots), carFuel0 = new Float64Array(slots);
 function makeCar(pose: any, k: number): VehicleModel {
   const startL = FUEL_MIN_L + Math.random() * (spec.fuel.capacityL - FUEL_MIN_L);
@@ -96,6 +98,7 @@ function poseAt(s: number, lat = 0) {
   return { position: { x: a[0] - (tz / l) * lat, y: elev + 0.61, z: a[1] + (tx / l) * lat }, yaw: Math.atan2(-tx, -tz) };
 }
 const grid = gridSlots(track, slots);
+FUEL_MIN_L = Math.min(spec.fuel.capacityL, Math.max(18, (0.25 * L) / 1000 * 12));
 // Start poses in random order: grid slots, or a staggered two-abreast pack behind a random point.
 function startPoses(start: number): any[] {
   const order = Array.from({ length: slots }, (_, k) => k).sort(() => Math.random() - 0.5);
