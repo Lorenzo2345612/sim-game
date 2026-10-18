@@ -65,3 +65,7 @@ npm test
 ## Planner answers (round 2)
 
 - 225 EDGE3 is out of scope here: root cause measured by the planner (AI runs wide at Parabolica, wheel rays climb the armco, car flips); fixed in task 268. Do not edit `src/ai` or 225 tests. Finish with AT1 (done) and AT3; report EDGE3 as expected-failing, owned by 268.
+
+## Planner answers (round 3)
+
+- Authorised: delete the AT2 test block in `tests/unit/acceptance/256-post-merge-regressions.test.ts` (the 225 edge-suite assertion); nothing else in that file. 256 is then done with AT1 + AT3.
