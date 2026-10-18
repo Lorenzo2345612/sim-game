@@ -86,3 +86,11 @@ npm test
 
 - In scope: apply the same rule to `src/render/kerbOuterStrip.ts` — no strip on dropped kerb rows; on inner rows its outer edge is clamped to `0.9·R(i)` and the row is dropped when the remaining width < 0.1 m. Extend AT4/AT5's centroid check to the outer-strip triangles in a unit test (not an acceptance edit).
 - Neighbourhood minimum (fixes junction and apex-adjacent rows, decision 245-coder): `Reff(i, side)` = min of `cornerCurvature(centerline, j).radius` over every j whose arc distance to i (wrapping) is ≤ 10 m and whose corner side equals `side`; when no such j exists the row is not an inner row and stays unchanged. Use `Reff` for the kerb rule (Step 1) and for `kerbOuterStrip` (cap `outer ≤ 0.9·Reff`). Precompute per index once per build (no per-row window scan in render loops). Straight rows next to a bend therefore get clamped or dropped too; this is intended (AT3: inner kerb fully gone around a R 7 bend).
+
+## Planner answers (round 7, supersedes the EDGE7 note above)
+
+Implementation is close; 4 tests left. Work in small steps, one test at a time, and run only that test after each edit.
+1. AT2: apply the authorised edit now — threshold `0.75 - 1e-4` (the test still uses 0.749999).
+2. EDGE2/EDGE3: authorised to set the expected vertex count to 182 (Reff drops 5 more rows each side: 10 m window at 2 m spacing) with a one-line comment saying so; no computed helper needed.
+3. EDGE7: keep the `15.3 - 1e-4` bound and the `outerSide > 0` check (no test edit). My earlier note was wrong: in `circle(7.5)` the right (outer) kerb rows are not inner rows, so Reff must not touch them. A vertex at 15.2918 is an `src/render/kerbOuterStrip.ts` bug: print the offending row index, then check the closed-loop wrap / run-end rows (point normal vs segment normal) and that the outer side uses `half + KERB_WIDTH .. + 0.6` unchanged.
+4. Then run the full 245 acceptance + edge files and `tests/unit/render/kerbOuterStripClearance.test.ts`, then `npm test`.
