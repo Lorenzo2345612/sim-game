@@ -33,6 +33,16 @@ AT2 spawn fix (planner-authorised acceptance-test edit, the only one allowed): i
 
 The AT2 spawn edit IS authorised (see "Planner-authorised test edits" under Files). Apply it first, then do step 5 and AT3–AT5, 225 EDGE3, lint and full tests. Do not report BLOCKED for AT2 again. `computeRacingLine` default margin: 1.4 only when per-index arrays are given, 1.0 when absent (keeps `racingLine.test.ts`) — accepted.
 
+## Planner answers (round 4)
+
+Planner diagnosis (verified in a scratch copy): AT1 and AT2 pass with the two physics fixes below; AT3–AT5 still need the AI work. Two coder runs timed out debugging: do NOT write debug tests, do NOT use git stash/checkout. Apply in this order, run only the named tests after each step:
+1. Delete `tests/unit/edge/tmp-268-debug.test.ts`. Remove the spawn-raise block in the `VehicleModel` constructor ("Raise a spawn sitting below...", ~vehicleModel.ts:231–251); not in scope.
+2. Apply the two authorised test edits now (AT2 spawn `y: (track.elevation[IDX] ?? 0) + 0.6` and its wall-crossing guard; 032 AT5 velocity set once). They are not applied yet.
+3. AT1: in `vehicleModel.ts` `import { BARRIER_GROUP } from './trackColliders'` and `export const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | BARRIER_GROUP));` (the test reads the export).
+4. AT2: in `trackColliders.ts` `addBarrierWalls`, build the trimesh with `RAPIER.ColliderDesc.trimesh(pos, idx, RAPIER.TriMeshFlags.MERGE_DUPLICATE_VERTICES | RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES)` (seam contacts flip the car). Run AT1, AT2 and `tests/unit/physics`.
+5. AT3–AT5 (grass on corner exits; car ends 1–3 m outside the line): pass margin 2.4 to `computeRacingLine` in `raceGame.ts` and use the same value for the traffic edge limit (replace the hard-coded 1.4 `EDGE_LIMIT` in `traffic.ts`); `AI_GRIP_MARGIN` 0.74; implement the step 5 edge-keeping correction in `AiDriver.update` (pass `lateral` and `halfWidth` in the observation): when `|lateral| > halfWidth − 1.0` and moving outward, add steer towards the centre proportional to the excess and scale `vTarget` down; braking earlier (`kb` or `SPEED_PREVIEW_TIME` up) is allowed. Tune with AT3 only (solo monza) until grass ≤ 1 s and 0 resets, then AT4, AT5, 225/089 tests, lint, full suite.
+Keep the stuck/flip reset, per-index half-width arrays, racingLine and traffic changes.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
