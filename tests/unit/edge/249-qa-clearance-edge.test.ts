@@ -181,7 +181,7 @@ describe('249 qa clearance checks edge cases', () => {
     expect(checkOf(inside, 'sausage').level).toBe('fail');
 
     const onLimit = qaReport(
-      straight({ sausages: [{ index: 50, side: 'right', offset: SAUSAGE_LIMIT - 0.25, length: 4 }] }),
+      straight({ sausages: [{ index: 50, side: 'right', offset: SAUSAGE_LIMIT + 0.25, length: 4 }] }),
       null,
       ORIGIN,
     );
