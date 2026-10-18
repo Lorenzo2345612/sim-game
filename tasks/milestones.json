@@ -439,13 +439,17 @@
         "243",
         "257"
       ],
-      "status": "open",
+      "status": "built",
       "prefetch": [
         "241",
         "242",
         "243",
         "257"
-      ]
+      ],
+      "builtAt": "2026-10-17T21:59:42",
+      "commit": "07ece3d",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M1.10",
@@ -628,6 +632,30 @@
       "prefetch": [
         "151"
       ]
+    },
+    {
+      "id": "M2.1e",
+      "title": "Racecraft AI",
+      "tasks": [
+        "258",
+        "259",
+        "260",
+        "261",
+        "262"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M2.3",
+      "title": "Learned AI (imitation + PPO)",
+      "tasks": [
+        "263",
+        "264",
+        "265",
+        "266",
+        "267"
+      ],
+      "status": "open"
     }
   ]
 }

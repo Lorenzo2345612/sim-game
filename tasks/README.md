@@ -255,7 +255,18 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 251 | Knock-over bollards at runtime | pending | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
-| 254 | Weight distribution and rear grip (stable OW-26 rear) | pending | 146, 239 |
+| 254 | Weight distribution and rear grip (stable OW-26 rear) | in progress | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | in progress | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
+| 258 | Frenet race view and track corridor | in progress | - |
+| 259 | Sampling lane planner | pending | 258 |
+| 260 | Racecraft intents (attack, defend, rejoin) | pending | 258 |
+| 261 | RaceGame scenario starts and contact counter | pending | - |
+| 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
+| 263 | RL race environment over RaceGame | pending | 262 |
+| 264 | RL env server (Node) and Python client | pending | 263 |
+| 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
+| 266 | Policy network and learned driver in TS | pending | 263 |
+| 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |

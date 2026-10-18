@@ -3462,7 +3462,7 @@
     {
       "num": "254",
       "title": "Weight distribution and rear grip (stable OW-26 rear)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "146",
         "239"
@@ -3510,6 +3510,147 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/257-drop-243-stale-hash-test.md"
+    },
+    {
+      "num": "258",
+      "title": "Frenet race view and track corridor",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/258-race-view-corridor.md"
+    },
+    {
+      "num": "259",
+      "title": "Sampling lane planner",
+      "status": "pending",
+      "deps": [
+        "258"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/259-lane-planner.md"
+    },
+    {
+      "num": "260",
+      "title": "Racecraft intents (attack, defend, rejoin)",
+      "status": "pending",
+      "deps": [
+        "258"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/260-racecraft-intents.md"
+    },
+    {
+      "num": "261",
+      "title": "RaceGame scenario starts and contact counter",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/261-race-scenario-api.md"
+    },
+    {
+      "num": "262",
+      "title": "Racecraft AI drives the race",
+      "status": "pending",
+      "deps": [
+        "259",
+        "260",
+        "261",
+        "268"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/262-racecraft-wiring.md"
+    },
+    {
+      "num": "263",
+      "title": "RL race environment over RaceGame",
+      "status": "pending",
+      "deps": [
+        "262"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/263-rl-race-env.md"
+    },
+    {
+      "num": "264",
+      "title": "RL env server (Node) and Python client",
+      "status": "pending",
+      "deps": [
+        "263"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/264-rl-env-server.md"
+    },
+    {
+      "num": "265",
+      "title": "PPO trainer with behaviour-cloning warm start",
+      "status": "pending",
+      "deps": [
+        "264",
+        "266"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/265-rl-trainer.md"
+    },
+    {
+      "num": "266",
+      "title": "Policy network and learned driver in TS",
+      "status": "pending",
+      "deps": [
+        "263"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/266-policy-net-driver.md"
+    },
+    {
+      "num": "267",
+      "title": "Learned vs racecraft evaluation and difficulty gate",
+      "status": "pending",
+      "deps": [
+        "266"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/267-learned-ai-eval-gate.md"
+    },
+    {
+      "num": "268",
+      "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/268-ai-driving-regressions.md"
     }
   ]
 }
