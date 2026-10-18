@@ -22,12 +22,19 @@ AI cars stay on track, never climb barriers and recover when stuck or flipped.
 
 AT2 spawn fix (planner-authorised acceptance-test edit, the only one allowed): in `tests/unit/acceptance/268-ai-driving-regressions.test.ts` AT2, replace the spawn `y: groundHeightAt(track, sx, sz) + 0.5` with `y: (track.elevation[IDX] ?? 0) + 0.6` (same lift as `SPAWN_HEIGHT_M` in `raceGame.ts`). Reason: `groundHeightAt` samples the terrain below the floating verge strip, so the car spawned inside the bump stop. Change nothing else in that file. AT2 row now reads "spawned at centerline elevation + 0.6 m". Step 1 is accepted as implemented; continue with steps 2–5.
 
+## Planner answers (round 2)
+
+1. BLOCKER 2 (AT2 spawn) is already authorised in round 1 above: apply it, no further question.
+2. BLOCKER 1 (frozen 032 AT5): keep the step-1 physics as prescribed. 032 AT5 forces `setLinvel(x = 10)` every step, which overrides the contact solver and is not a real driving case. Planner-authorised edit of `tests/unit/acceptance/032-physics-track-colliders.test.ts` AT5 only: set the sideways velocity `{x: 10}` once after settling (keep y/z), then let the car run freely for 2 s; keep every assertion unchanged (centre < 11 every step, y in (−0.5, 2), maxX > 8.5). Nothing else in 032 may change.
+3. Wall-tunnelling guard (added to AT2): in the 268 AT2 test also assert every step that the car centre stays on the track side of the left armco (signed lateral offset from the centreline at the nearest index > −(halfWidthAt(track, 'left', IDX) + barrier offset used by `trackColliders`)). Planner-authorised addition to that test, nothing else.
+4. Then continue with steps 2–5. Do not stop again for these items.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | monza world with track colliders | cast the wheel ray (same filter as `VehicleModel`) straight down from 0.3 m above the top of the left armco wall at index 2504 and horizontally into it at wheel height | the down ray does not hit the barrier collider (hits ground or nothing); the chassis collider still collides with the wall (contact pair exists when the chassis is pushed into it) |
-| AT2 | f4 on monza at index 2504, lateral −9 m, spawned at centerline elevation + 0.6 m, heading 25° towards the left armco, 30 m/s, no input | simulate 3 s | max chassis y − centerline elevation at that index ≤ 0.6 m; up.y > 0.5 throughout |
+| AT2 | f4 on monza at index 2504, lateral −9 m, spawned at centerline elevation + 0.6 m, heading 25° towards the left armco, 30 m/s, no input | simulate 3 s | max chassis y − centerline elevation at that index ≤ 0.6 m; up.y > 0.5 throughout; the car centre never crosses the left armco line |
 | AT3 | RaceGame monza, f4, aiCount 1, expert, seed 3, player brake 1 | 3 laps (≤ 400 s) | AI finishes 3 laps; 0 resets; total time with ≥ 2 wheels on grass/gravel ≤ 1.0 s; best lap ≤ 1.04 × the profile lap time (`Σ ds / v_profile` × speedScale) |
 | AT4 | same as AT3 on spa and on silverstone | 2 laps each | finishes; 0 resets; ≥ 2 wheels on grass/gravel ≤ 1.5 s per track |
 | AT5 | RaceGame monza, f4, aiCount 7, expert, seed 3, player brake 1 (static car on the grid) | 300 s | every AI completes ≥ 2 laps; Σ over AIs of time with ≥ 2 wheels on grass/gravel ≤ 15 s; total resets ≤ 1 |
@@ -71,7 +78,7 @@ Grep of `tests/unit` found no test whose numbers depend on the new default margi
 
 - [ ] All AT rows pass in `tests/unit/acceptance/268-ai-driving-regressions.test.ts`.
 - [ ] Wheel rays ignore `BARRIER_GROUP`; chassis still collides with barriers (AT1).
-- [ ] Frozen 087, 089, 090, 093, 225 and 032 tests pass without edits.
+- [ ] Frozen 087, 089, 090, 093, 225 and 032 tests pass (032 AT5 with the round-2 authorised edit only).
 - [ ] Final `AI_GRIP_MARGIN` and other tuned constants are in [0.70, 0.82] / reported.
 - [ ] `npm run typecheck`, `npm run lint`, `npm test` pass.
 
