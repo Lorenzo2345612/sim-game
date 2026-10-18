@@ -3666,7 +3666,7 @@
     {
       "num": "270",
       "title": "Neural driver v2: kerb line, track limits, tyre inputs, setup genes",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "269"
       ],
@@ -3675,6 +3675,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/270-neural-driver-v2.md"
+    },
+    {
+      "num": "271",
+      "title": "Neural racecraft training: overtakes, defence, contact faults, mixed fields",
+      "status": "pending",
+      "deps": [
+        "270"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/271-neural-racecraft.md"
     }
   ]
 }

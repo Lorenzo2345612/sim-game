@@ -87,7 +87,8 @@
       "242",
       "268",
       "269",
-      "270"
+      "270",
+      "271"
     ]
   },
   "taskProviders": {
@@ -137,6 +138,16 @@
       ]
     },
     "270": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "271": {
       "claude": [
         "acceptance",
         "tester-pre",

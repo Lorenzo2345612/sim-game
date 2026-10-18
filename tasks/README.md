@@ -271,4 +271,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
 | 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
-| 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | pending | 269 |
+| 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | in progress | 269 |
+| 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | pending | 270 |
