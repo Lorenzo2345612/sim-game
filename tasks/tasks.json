@@ -3666,7 +3666,7 @@
     {
       "num": "270",
       "title": "Neural driver v2: kerb line, track limits, tyre inputs, setup genes",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "269"
       ],
