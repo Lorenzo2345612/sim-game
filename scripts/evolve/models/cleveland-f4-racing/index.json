@@ -3,12 +3,27 @@
  "car": "f4",
  "line": "racing",
  "difficulties": {
-  "expert": "race-100s-gen250.json",
-  "hard": "race-103s-gen249.json",
-  "medium": "race-108s-gen245.json",
-  "easy": "race-111s-gen242.json"
+  "expert": "race-97s-gen330.json",
+  "hard": "race-99s-gen303.json",
+  "medium": "race-103s-gen249.json",
+  "easy": "race-108s-gen245.json"
  },
  "models": {
+  "97": {
+   "file": "race-97s-gen330.json",
+   "avgLap": 97.47222222222223,
+   "gen": 330
+  },
+  "98": {
+   "file": "race-98s-gen320.json",
+   "avgLap": 98.63055555555555,
+   "gen": 320
+  },
+  "99": {
+   "file": "race-99s-gen303.json",
+   "avgLap": 99.91666666666667,
+   "gen": 303
+  },
   "100": {
    "file": "race-100s-gen250.json",
    "avgLap": 100.90416666666667,
@@ -44,10 +59,20 @@
    "avgLap": 106.74916666666665,
    "gen": 244
   },
+  "107": {
+   "file": "race-107s-gen269.json",
+   "avgLap": 107.43611111111112,
+   "gen": 269
+  },
   "108": {
    "file": "race-108s-gen245.json",
    "avgLap": 108.18083333333334,
    "gen": 245
+  },
+  "110": {
+   "file": "race-110s-gen275.json",
+   "avgLap": 110.97777777777777,
+   "gen": 275
   },
   "111": {
    "file": "race-111s-gen242.json",
