@@ -65,3 +65,7 @@ npm test
 ## Planner answers
 
 - After `rebuildWorklet` (on `setSound`), re-post the last control state to the new node's port immediately, using the same message shape as the regular per-frame update; no new message type.
+
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/229-engine-audio-wiring.test.ts`: add a no-op `exponentialRampToValueAtTime` method to `FakeParam` (same as the edge twin); nothing else. The widened `FakeWorkletNode` options type in the fallback test is accepted.
