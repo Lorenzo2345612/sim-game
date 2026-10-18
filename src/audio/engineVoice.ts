@@ -44,6 +44,25 @@ const RUNNER_GAIN = -0.35;
 const BASS_HZ = 160;
 const LP_MAX_HZ = 20000;
 const MAX_FC_FRAC = 0.45;
+const TRIG_RATE = 3;
+const TRIG_MAX_DT_S = 0.02;
+const TRIG_BOOST = 0.25;
+const TRIG_REFRACTORY_S = 0.3;
+const HISS_DELAY_S = 0.03;
+const BOV_GAIN = 0.7;
+const BPV_GAIN = 0.7 * 0.178;
+const FLUTTER_GAIN = 0.5;
+const FLUTTER_DELAY_S = 0.04;
+const WG_HOLD = 0.316;
+const WG_CHUFF = 1.0;
+const WG_GATE_LOAD = 0.700001;
+const WG_RAMP_S = 0.04;
+const REF_TAU_S = 0.3;
+// unit-RMS normalisation of the uniform-noise band-passes
+const N_BOV = 0.3;
+const N_BPV = 0.081;
+const N_FLUTTER = 0.148;
+const N_WG = 0.256;
 
 // 4 % Hann rise then exp(-5d)(1-d) decay, u in [0,1], one guard entry for interpolation.
 const RISE = 0.04;
@@ -182,6 +201,22 @@ export class EngineVoice {
   private readonly turboSpan: number;
   private readonly aBoost: number;
   private readonly turboLag0: boolean;
+  private readonly downLag0: boolean;
+  private readonly aDown: number;
+  private readonly valve: number;
+  private readonly flutterAmt: number;
+  private readonly wgAmt: number;
+  private readonly hasTrans: boolean;
+  private readonly aRef: number;
+  private readonly dHw: number;
+  private readonly flCo: Float64Array;
+  private readonly wgCo: Float64Array;
+  private readonly flSt = new Float64Array(4);
+  private readonly wgSt = new Float64Array(4);
+  private readonly hsCo1 = new Float64Array(4);
+  private readonly hsCo2 = new Float64Array(4);
+  private readonly hsSt1 = new Float64Array(4);
+  private readonly hsSt2 = new Float64Array(4);
   private readonly turboSt = new Float64Array(4);
   private readonly whineGain: number;
   private readonly whineOrder: number;
@@ -201,7 +236,7 @@ export class EngineVoice {
   private rpm = 0;
   private load = 0;
   private wSpeed = 0;
-  private boost = 0;
+  boost = 0;
   private whinePhase = 0;
   private limPhase = 0;
   private cutNow = false;
@@ -216,6 +251,44 @@ export class EngineVoice {
   private clipMidPrev = 0;
   private clipCurPrev = 0;
   private ticks = 0;
+  private trRng: () => number = () => 0;
+  private sinceCtl = 0;
+  private lastThr = 0;
+  private lastTrig = -1e15;
+  private refSq = 0;
+  private hissOn = false;
+  private hissBpv = false;
+  private hissT = 0;
+  private hissAtt = 0;
+  private hissK = 0;
+  private hissDec = 0;
+  private hissEnd = 0;
+  private hissAmp = 0;
+  private sinePh = 0;
+  private readonly sineK: number;
+  private flOn = false;
+  private flT = 0;
+  private flNext = 0;
+  private flK = 0;
+  private flN = 0;
+  private flAmp = 0;
+  private flTp = 1e9;
+  private flDec = 0;
+  private flSineDec = 0;
+  private flAmpK = 0;
+  private readonly flDecK: number;
+  private readonly flSineK: number;
+  private readonly chuffK: number;
+  private sineEnv = 0;
+  private flPh = 0;
+  private flW = 0;
+  private hw = 0;
+  private pf = 0;
+  private pm = 0;
+  private chuffOn = false;
+  private chuffEnv = 0;
+  private chuffAmp = 0;
+  private chuffT = 0;
   private liftTick = -1;
   private armedHigh = false;
   private lastPopTick = -1e15;
@@ -285,6 +358,22 @@ export class EngineVoice {
     this.turboSpan = turbo ? turbo.spanHz : 0;
     this.turboLag0 = lagS <= 0;
     this.aBoost = lagS > 0 ? 1 - Math.exp(-1 / (lagS * sampleRate)) : 0;
+    const downLagS = turbo && turbo.downLagS !== undefined ? turbo.downLagS : lagS;
+    this.downLag0 = downLagS <= 0;
+    this.aDown = downLagS > 0 ? 1 - Math.exp(-1 / (downLagS * sampleRate)) : 0;
+    const vk = turbo?.valve;
+    this.valve = vk === 'bov' ? 2 : vk === 'bpv' ? 1 : 0;
+    this.flutterAmt = turbo?.flutter ?? 0;
+    this.wgAmt = turbo && turbo.wastegateKind === 'external' ? (turbo.wastegate ?? 0) : 0;
+    this.hasTrans = this.valve > 0 || this.flutterAmt > 0 || this.wgAmt > 0;
+    this.aRef = 1 - Math.exp(-1 / (REF_TAU_S * sampleRate));
+    this.flDecK = Math.exp(-1 / (0.03 * sampleRate));
+    this.flSineK = Math.exp(-1 / (0.02 * sampleRate));
+    this.chuffK = Math.exp(-1 / (0.08 * sampleRate));
+    this.sineK = Math.exp(-1 / (0.04 * sampleRate));
+    this.dHw = 1 / (WG_RAMP_S * sampleRate);
+    this.flCo = bpCo(Math.min(2000, maxFc), 2, sampleRate, 1);
+    this.wgCo = bpCo(Math.min(3000, maxFc), 1, sampleRate, 1);
     this.whineGain = spec.whine && spec.whine.gain > 0 ? spec.whine.gain : 0;
     this.whineOrder = spec.whine ? spec.whine.order : 0;
     this.whineWheel = !!spec.whine && spec.whine.source === 'wheel';
@@ -309,11 +398,89 @@ export class EngineVoice {
     this.wheelSpeedMs = w < 0 ? 0 : w;
     this.tWheel = this.wheelSpeedMs;
     this.limiter = c.limiter;
+    if (this.hasTrans && Number.isFinite(c.throttle)) {
+      const rate = (this.lastThr - this.throttle) / Math.min(this.sinceCtl / this.fs, TRIG_MAX_DT_S);
+      if (
+        this.sinceCtl > 0 &&
+        rate > TRIG_RATE &&
+        this.boost > TRIG_BOOST &&
+        this.ticks - this.lastTrig >= TRIG_REFRACTORY_S * this.fs
+      ) {
+        this.lastTrig = this.ticks;
+        this.trigger(this.boost);
+      }
+    }
+    this.lastThr = this.throttle;
+    this.sinceCtl = 0;
+  }
+
+  private trigger(s: number): void {
+    const fs = this.fs;
+    const ref = Math.sqrt(this.refSq);
+    if (this.valve > 0) {
+      const bpv = this.valve === 1;
+      this.hissBpv = bpv;
+      this.hissT = 0;
+      this.hissOn = true;
+      this.hsSt1.fill(0);
+      this.hsSt2.fill(0);
+      if (bpv) {
+        this.hsCo1.set(bpCo(1800, 6, fs, 1));
+        this.hissAtt = 0.008;
+        this.hissK = Math.exp(-1 / (0.06 * fs));
+        this.hissEnd = 0.3;
+        this.hissAmp = ref * BPV_GAIN * s;
+        this.sineEnv = 1;
+        this.sinePh = 0;
+      } else {
+        const dur = 0.25 + 0.5 * s;
+        this.hsCo1.set(bpCo(3500 + 2000 * s, 1.5, fs, 1));
+        this.hsCo2.set(bpCo(7000, 1.5, fs, 1));
+        this.hissAtt = 0.005;
+        this.hissK = Math.exp(-3 / (dur * fs));
+        this.hissEnd = 1.5 * dur;
+        this.hissAmp = ref * BOV_GAIN * Math.pow(s, 1.5);
+      }
+      this.hissDec = 1;
+    }
+    const n = Math.round((4 + 4 * s) * this.flutterAmt);
+    if (n >= 1) {
+      this.flOn = true;
+      this.flT = 0;
+      this.flNext = FLUTTER_DELAY_S;
+      this.flK = 0;
+      this.flN = n;
+      this.flAmp = ref * FLUTTER_GAIN * s;
+      this.flTp = 1e9;
+      this.flSt.fill(0);
+    }
+    if (this.wgAmt > 0) {
+      this.chuffOn = true;
+      this.chuffT = 0;
+      this.chuffEnv = 1;
+      this.chuffAmp = ref * WG_CHUFF * this.wgAmt;
+    }
   }
 
   reset(): void {
     this.rng = mulberry32(this.seed);
     this.layerRng = mulberry32(this.seed + 1);
+    this.trRng = mulberry32(this.seed + 7);
+    this.sinceCtl = 0;
+    this.lastThr = 0;
+    this.lastTrig = -1e15;
+    this.refSq = 0;
+    this.hissOn = false;
+    this.flOn = false;
+    this.flTp = 1e9;
+    this.hw = 0;
+    this.pf = 0;
+    this.pm = 0;
+    this.chuffOn = false;
+    this.flSt.fill(0);
+    this.wgSt.fill(0);
+    this.hsSt1.fill(0);
+    this.hsSt2.fill(0);
     this.hasSpare = false;
     this.spare = 0;
     this.tRpm = 0;
@@ -492,6 +659,7 @@ export class EngineVoice {
     const cyl = this.cyl;
     const maxFc = this.maxFc;
     const hasTurbo = this.turboGain > 0;
+    const needBoost = hasTurbo || this.hasTrans;
     const hasWhine = this.whineGain > 0;
     const hasIntake = this.intakeGain > 0;
     const hasBlock = this.blockN > 0;
@@ -499,9 +667,10 @@ export class EngineVoice {
       this.rpm += (this.tRpm - this.rpm) * this.aRpm;
       this.load += (this.tLoad - this.load) * this.aLoad;
       this.wSpeed += (this.tWheel - this.wSpeed) * this.aRpm;
-      if (hasTurbo) {
-        if (this.turboLag0) this.boost = this.load;
-        else this.boost += (this.load - this.boost) * this.aBoost;
+      if (needBoost) {
+        const up = this.load >= this.boost;
+        if (up ? this.turboLag0 : this.downLag0) this.boost = this.load;
+        else this.boost += (this.load - this.boost) * (up ? this.aBoost : this.aDown);
       }
       if (this.limiter) {
         this.limPhase += this.limiterHz / fs;
@@ -611,9 +780,96 @@ export class EngineVoice {
       const o = y - this.dc2In1 + R * this.dc2Out1;
       this.dc2In1 = y;
       this.dc2Out1 = o;
-      out[s] = PEAK * Math.tanh(((o + extra) * this.gain) / PEAK);
+      const v0 = (o + extra) * this.gain;
+      out[s] = PEAK * Math.tanh((this.hasTrans ? v0 + this.transientStep(x0 + x1, v0) : v0) / PEAK);
       this.ticks++;
     }
+    this.sinceCtl += n;
+  }
+
+  private transientStep(pulse: number, v0: number): number {
+    const dt = 1 / this.fs;
+    this.refSq += (v0 * v0 - this.refSq) * this.aRef;
+    const wgOn = this.wgAmt > 0;
+    if (wgOn) {
+      const gate = this.tLoad > WG_GATE_LOAD && this.boost > 0.7;
+      this.hw += gate ? this.dHw : -this.dHw;
+      this.hw = this.hw < 0 ? 0 : this.hw > 1 ? 1 : this.hw;
+      const a = Math.abs(pulse);
+      this.pf = a > this.pf ? a : this.pf * 0.995;
+      this.pm = a > this.pm ? a : this.pm * 0.99999;
+    }
+    const wgActive = wgOn && (this.hw > 0 || this.chuffOn);
+    if (!this.hissOn && !this.flOn && !wgActive) return 0;
+    const nz = this.trRng() * 2 - 1;
+    let tr = 0;
+    if (this.hissOn) {
+      const u = this.hissT - HISS_DELAY_S;
+      this.hissT += dt;
+      if (u >= this.hissEnd) this.hissOn = false;
+      else if (u >= 0) {
+        const env = (u < this.hissAtt ? u / this.hissAtt : 1) * this.hissDec;
+        this.hissDec *= this.hissK;
+        let x: number;
+        if (this.hissBpv) {
+          x = biquad(this.hsCo1, 0, this.hsSt1, 0, nz) / N_BPV;
+          this.sinePh += (TWO_PI * 600) / this.fs;
+          x += 0.5 * Math.sin(this.sinePh) * this.sineEnv;
+          this.sineEnv *= this.sineK;
+        } else {
+          x =
+            (biquad(this.hsCo1, 0, this.hsSt1, 0, nz) +
+              0.355 * biquad(this.hsCo2, 0, this.hsSt2, 0, nz)) /
+            N_BOV;
+        }
+        tr += this.hissAmp * env * x;
+      }
+    }
+    if (this.flOn) tr += this.flutterStep(nz, dt);
+    if (wgActive) {
+      const x = biquad(this.wgCo, 0, this.wgSt, 0, nz) / N_WG;
+      const pe = this.pm > 1e-12 ? this.pf / this.pm : 0;
+      const ref = Math.sqrt(this.refSq);
+      let g = this.hw * WG_HOLD * this.wgAmt * ref * (0.6 + 0.4 * pe);
+      if (this.chuffOn) {
+        const att = this.chuffT < 0.003 ? this.chuffT / 0.003 : 1;
+        g += this.chuffAmp * att * this.chuffEnv;
+        this.chuffEnv *= this.chuffK;
+        this.chuffT += dt;
+        if (this.chuffT > 0.6) this.chuffOn = false;
+      }
+      tr += g * x;
+    }
+    return tr;
+  }
+
+  private flutterStep(nz: number, dt: number): number {
+    const t = this.flT;
+    this.flT += dt;
+    if (this.flK < this.flN && t >= this.flNext) {
+      const k = this.flK;
+      this.flTp = 0;
+      this.flPh = 0;
+      this.flW = (TWO_PI * 250 * Math.pow(0.95, k)) / this.fs;
+      this.flNext = t + 1 / (14 - (7 * k) / this.flN);
+      this.flDec = 1;
+      this.flSineDec = 1;
+      this.flK = k + 1;
+      this.flAmpK = k === 0 ? this.flAmp : this.flAmpK * 0.8;
+    }
+    if (this.flTp > 0.25) {
+      if (this.flK >= this.flN) this.flOn = false;
+      return 0;
+    }
+    const tp = this.flTp;
+    this.flTp += dt;
+    const att = tp < 0.004 ? tp / 0.004 : 1;
+    this.flPh += this.flW;
+    const x = biquad(this.flCo, 0, this.flSt, 0, nz) / N_FLUTTER + 0.5 * Math.sin(this.flPh) * this.flSineDec;
+    const y = this.flAmpK * att * this.flDec * x;
+    this.flDec *= this.flDecK;
+    this.flSineDec *= this.flSineK;
+    return y;
   }
 
   private tubeStep(t: number, x: number, w: number): number {

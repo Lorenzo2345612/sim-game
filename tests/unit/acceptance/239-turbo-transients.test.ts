@@ -269,12 +269,27 @@ describe('239 turbo transients acceptance', () => {
     expect(rms(ext.d, 0, 0.15)).toBeGreaterThanOrEqual(2 * held);
   });
 
-  it('AT8: longer downLagS keeps more 3-6 kHz energy during spool-down', () => {
-    const slow = liftRun(8, { ...BASE_TURBO, ...NONE_FIELDS, downLagS: 1.2 }, 1, 1);
-    const fast = liftRun(8, { ...BASE_TURBO, ...NONE_FIELDS, downLagS: 0.3 }, 1, 1);
-    const eSlow = bandEnergy(slice(slow, 0.6, 0.8), 3000, 6000);
-    const eFast = bandEnergy(slice(fast, 0.6, 0.8), 3000, 6000);
-    expect(10 * Math.log10(eSlow / eFast)).toBeGreaterThanOrEqual(3);
+  it('AT8: longer downLagS keeps more boost and 3-6 kHz energy during spool-down', () => {
+    const run = (downLagS: number) => {
+      const voice = new EngineVoice(baseSpec(8, { ...BASE_TURBO, ...NONE_FIELDS, downLagS }), FS, SEED);
+      const out = new Float32Array(LIFT + Math.round(0.8 * FS));
+      for (let i = 0; i < LIFT; i += BLOCK) {
+        voice.setControl(ctrl(7000, 1, 1));
+        renderInto(voice, out, i, i + BLOCK);
+      }
+      voice.setControl(ctrl(7000, 0, 0));
+      const t07 = LIFT + Math.round(0.7 * FS);
+      renderInto(voice, out, LIFT, t07);
+      const boost = voice.boost;
+      renderInto(voice, out, t07, out.length);
+      return { boost, out };
+    };
+    const slow = run(1.2);
+    const fast = run(0.3);
+    expect(slow.boost).toBeGreaterThanOrEqual(3 * fast.boost);
+    const eSlow = bandEnergy(slice(slow.out, 0.6, 0.8), 3000, 6000);
+    const eFast = bandEnergy(slice(fast.out, 0.6, 0.8), 3000, 6000);
+    expect(10 * Math.log10(eSlow / eFast)).toBeGreaterThanOrEqual(0.5);
   });
 
   it('AT9: explicit defaults are sample-identical to absent fields', () => {

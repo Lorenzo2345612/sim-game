@@ -9,6 +9,11 @@ export interface TurboLayer {
   spanHz: number;
   gain: number;
   lagS: number;
+  valve?: 'none' | 'bpv' | 'bov';
+  flutter?: number;
+  wastegate?: number;
+  wastegateKind?: 'internal' | 'external';
+  downLagS?: number;
 }
 
 export interface WhineLayer {
@@ -228,7 +233,29 @@ function parseTurbo(v: unknown, errors: string[]): TurboLayer | null {
   const gain = turboNum(v, 'gain', 0, 0.3, errors);
   const lagS = turboNum(v, 'lagS', 0, 3, errors);
   if (centerHz === null || spanHz === null || gain === null || lagS === null) return null;
-  return { centerHz, spanHz, gain, lagS };
+  const out: TurboLayer = { centerHz, spanHz, gain, lagS };
+  let bad = false;
+  if (v.valve !== undefined) {
+    if (v.valve === 'none' || v.valve === 'bpv' || v.valve === 'bov') out.valve = v.valve;
+    else {
+      errors.push('synth.turbo.valve must be none, bpv or bov');
+      bad = true;
+    }
+  }
+  if (v.wastegateKind !== undefined) {
+    if (v.wastegateKind === 'internal' || v.wastegateKind === 'external') out.wastegateKind = v.wastegateKind;
+    else {
+      errors.push('synth.turbo.wastegateKind must be internal or external');
+      bad = true;
+    }
+  }
+  for (const [key, hi] of [['flutter', 1], ['wastegate', 1], ['downLagS', 5]] as const) {
+    if (v[key] === undefined) continue;
+    const x = turboNum(v, key, 0, hi, errors);
+    if (x === null) bad = true;
+    else out[key] = x;
+  }
+  return bad ? null : out;
 }
 
 function whineNum(

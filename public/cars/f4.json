@@ -80,7 +80,7 @@
       "drive": 1.4,
       "exhaustGain": 0.8,
       "crackle": 0.8,
-      "turbo": { "centerHz": 3000, "spanHz": 3000, "gain": 0.04, "lagS": 0.3 }
+      "turbo": { "centerHz": 3000, "spanHz": 3000, "gain": 0.04, "lagS": 0.3, "valve": "bpv", "flutter": 0.4, "downLagS": 0.45 }
     }
   },
   "gearbox": { "ratios": [2.3, 1.68, 1.33, 1.1, 0.93, 0.8], "final": 3.5, "reverse": 2.5, "upRpm": 6400, "downRpm": 3200, "shiftTime": 0.15, "efficiency": 0.92 },

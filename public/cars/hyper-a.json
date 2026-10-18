@@ -80,7 +80,7 @@
       "drive": 1.4,
       "exhaustGain": 0.6,
       "crackle": 0.25,
-      "turbo": { "centerHz": 3750, "spanHz": 3500, "gain": 0.03, "lagS": 0.5 },
+      "turbo": { "centerHz": 3750, "spanHz": 3500, "gain": 0.03, "lagS": 0.5, "valve": "bpv", "flutter": 0, "wastegate": 0.3, "wastegateKind": "internal", "downLagS": 0.75 },
       "whine": { "order": 14, "gain": 0.04, "source": "wheel", "minSpeedMs": 33 }
     }
   },
