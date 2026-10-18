@@ -119,6 +119,6 @@ for (;;) {
     next.push(mutate(rand() < 0.5 ? cross(a, b) : a, sigma));
   }
   pop = next;
-  sigma = Math.max(0.03, sigma * 0.985);
+  sigma = Math.max(0.06, sigma * 0.985);
   gen++;
 }

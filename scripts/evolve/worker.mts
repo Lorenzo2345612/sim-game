@@ -28,9 +28,9 @@ const L = cum[n];
 const hwL = new Float64Array(n), hwR = new Float64Array(n);
 for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
 
-const cars: VehicleModel[] = [];
-for (let k = 0; k < slots; k++) {
-  const v = new VehicleModel(world, spec, spawn);
+// Fresh car per episode: VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state.
+function makeCar(pose: any): VehicleModel {
+  const v = new VehicleModel(world, spec, pose);
   configureVehicle(v, track.id);
   const body: any = v.body;
   for (let c = 0; c < body.numColliders(); c++) {
@@ -39,8 +39,14 @@ for (let k = 0; k < slots; k++) {
     const member = g >>> 16;
     col.setCollisionGroups(((member << 16) | ((g & 0xffff) & ~member)) >>> 0);
   }
-  cars.push(v);
+  return v;
 }
+function dropCar(v: VehicleModel): void {
+  for (const col of (v as any).detachCols ?? []) if (col) world.removeCollider(col, true);
+  world.removeRigidBody(v.body);
+}
+const cars: VehicleModel[] = [];
+for (let k = 0; k < slots; k++) cars.push(makeCar(spawn));
 const progress = cars.map(() => new TrackProgress(cl));
 const state: any[] = cars.map(() => null);
 const x = new Float64Array(N_IN), out = new Float64Array(2);
@@ -71,7 +77,8 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
   const lapT = new Float64Array(m).fill(0), offT = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
-    cars[k].reset(pose);
+    dropCar(cars[k]);
+    cars[k] = makeCar(pose);
     progress[k].reset();
     state[k] = cars[k].getState(state[k] ?? undefined);
     const p = progress[k].update(state[k].position.x, state[k].position.z);
