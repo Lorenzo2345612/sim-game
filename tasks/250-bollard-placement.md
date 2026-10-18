@@ -59,6 +59,10 @@ Conventions: metres; arc positions wrap modulo lap length (closing edge included
 
 Two coder timeouts with almost no diff. Task moved to `Models: heavy`. Current state: AT2–AT5, AT9, AT10 pass; AT1 (outer bollards 3.2 m arc from the middle one, need 4 ± 0.3), AT6 (sausage corner must drop its R2 group), AT7 (BOX(7) must yield 0) and AT8 (no built track carries bollards) fail. Work in that order, run only `npx vitest run tests/unit/acceptance/250-bollard-placement.test.ts` (3 s) between edits, full suite once at the end.
 
+## Planner answers (round 3)
+
+Progress confirmed: 18/20 of the 250 acceptance+edge tests pass. Remaining: AT7 (BOX(7) must yield 0 bollards) and AT8 (built tracks carry no bollards: the shipped track JSONs need regenerating with the track-builder so bollards appear, at least 10 tracks). Delete the scratch files `tests/unit/tmp-dbg*.test.ts` before reporting.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |

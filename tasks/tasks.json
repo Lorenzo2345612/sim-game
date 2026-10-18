@@ -3411,13 +3411,13 @@
     {
       "num": "250",
       "title": "Bollard placement",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "248"
       ],
       "complexity": "complex",
-      "type": "feature",
-      "models": "standard",
+      "type": "bugfix",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/250-bollard-placement.md"
     },
