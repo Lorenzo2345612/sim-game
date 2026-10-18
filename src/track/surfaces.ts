@@ -210,6 +210,11 @@ function segmentCovers(seg: TrackSegment, idx: number, n: number): boolean {
   return ((idx - start + n) % n) < segmentLength(start, end, n);
 }
 
+export function hasKerb(track: TrackDataV2, side: Side, i: number): boolean {
+  const n = track.centerline.length;
+  return track.kerbs.some((k) => k.side === side && segmentCovers(k, i, n));
+}
+
 type Lateral = (idx: number) => [latMin: number, latMax: number, u0: number, u1: number];
 
 /**

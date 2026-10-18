@@ -26,7 +26,7 @@ import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import type { DamageMode } from './physics/contactEvents';
 import { engineTorque } from './physics/powertrain';
-import { applySetup, loadSetup } from './physics/setup';
+import { applySetup, loadSetup, type Setup } from './physics/setup';
 import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
 import type { Standing } from './race/classification';
@@ -268,20 +268,22 @@ async function loadNeuralModels(
   trackId: string,
   carId: string,
   difficulty: Difficulty,
-): Promise<Pick<RaceGameOptions, 'neuralModels' | 'neuralLine'>> {
+): Promise<Pick<RaceGameOptions, 'neuralModels' | 'neuralLine' | 'neuralSetups'>> {
   try {
     const base = `/ai-models/${trackId}-${carId}`;
     const res = await fetch(`${base}/${difficulty}.json`);
     if (!res.ok) return { neuralModels: {} };
     const json = await res.json();
     const neuralModels = { [difficulty]: parseNeuralModel(json) };
+    const setup = (json as { setup?: Partial<Setup> }).setup;
+    const neuralSetups = setup ? { [difficulty]: setup } : undefined;
     const line = (json as { line?: string }).line;
-    if (line === 'racing') return { neuralModels, neuralLine: { kind: 'racing' } };
+    if (line === 'racing') return { neuralModels, neuralSetups, neuralLine: { kind: 'racing' } };
     if (line === 'mintime') {
       const mt = await (await fetch(`${base}/line-mintime.json`)).json();
-      return { neuralModels, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
+      return { neuralModels, neuralSetups, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
     }
-    return { neuralModels };
+    return { neuralModels, neuralSetups };
   } catch {
     return { neuralModels: {} };
   }

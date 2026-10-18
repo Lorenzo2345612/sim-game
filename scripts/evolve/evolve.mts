@@ -10,7 +10,8 @@ import { parseTrackData } from '../../src/track/parseTrackData';
 import { halfWidthAt } from '../../src/track/surfaces';
 import { parseCarSpec } from '../../src/physics/carSpec';
 import { minTimeFor } from './mintime.mts';
-import { N_W, N_IN, randomGenome, padGenome, gauss, mulberry32 } from './policy.mts';
+import { N_W, N_IN, randomGenome, gauss, mulberry32 } from './policy.mts';
+import { N_SET, joinGenome, splitGenome } from './genome.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
@@ -23,7 +24,7 @@ const SPEED_AT = Number(arg('speed-at', '4')); // mean grid distance (laps, 5-ge
 const SPEED_LAPS = Number(arg('speed-laps', String(MAX_LAPS))); // shorter races in the speed phase = more selections per hour
 const EVALS = Number(arg('evals', '1')); // independent evaluations per generation (fresh conditions), fitness summed
 const MUT = { growth: 0.3, speed: Number(arg('speed-mut', '0.3')) }; // fraction of weights mutated per child
-const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: SPEED_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
+const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: SPEED_LAPS, speedW: 120, overW: 0, lapW: 100 } };
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', arg('model-dir', tag)); // e.g. scratch/<tag> keeps a fork out of export-models
 const PORT = Number(arg('port', '8770'));
@@ -39,6 +40,7 @@ if (LINE === 'mintime') { // build the cached line once before the workers read 
   const t0 = Date.now(), mt = await minTimeFor(root, track, ps.spec ?? ps, carId);
   console.log(`mintime line: QSS racing ${mt.tRacing.toFixed(2)} s -> mintime ${mt.tMin.toFixed(2)} s, max offset/limit ${mt.maxRatio.toFixed(3)} (${Date.now() - t0} ms)`);
 }
+const carSpec: any = (() => { const ps: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8'))); return ps.spec ?? ps; })();
 const cl: [number, number][] = track.centerline;
 const left: number[][] = [], right: number[][] = [];
 for (let i = 0; i < cl.length; i++) {
@@ -57,23 +59,23 @@ const resume = arg('resume', ''); // one genome file, or several comma-separated
 const seeds = resume ? resume.split(',').filter((f) => existsSync(f)).map((f) => JSON.parse(readFileSync(f, 'utf8'))) : [];
 let snap: any = null; // pop.json snapshot: whole population + trainer state
 if (seeds.length === 1 && seeds[0].pop) { snap = seeds[0]; seeds.splice(0, 1, ...snap.pop.map((w: number[]) => ({ weights: w }))); }
-const bases = seeds.map((g) => padGenome(g.weights)).filter((b): b is Float64Array => !!b);
+const bases = seeds.map((g) => { try { return g.weights.length === N_W + N_SET ? Float64Array.from(g.weights) : joinGenome(g.weights); } catch { return null; } }).filter((b): b is Float64Array => !!b);
 if (bases.length) {
   pop.push(...bases.slice(0, POP));
   gen = snap ? snap.gen + 1 : Math.max(...seeds.map((g) => g.gen ?? -1)) + 1;
   for (let i = 0; pop.length < POP; i++) pop.push(mutate(bases[i % bases.length], 0.1));
-  console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_W} weights`);
+  console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_W + N_SET} genes`);
 } else if (resume) console.log('resume skipped: no usable genome');
-if (!pop.length) for (let i = 0; i < POP; i++) pop.push(randomGenome(rand));
+if (!pop.length) for (let i = 0; i < POP; i++) pop.push(joinGenome(randomGenome(rand)));
 
 function mutate(g: Float64Array, sigma: number, frac = 0.3): Float64Array {
   const c = Float64Array.from(g);
-  for (let i = 0; i < N_W; i++) if (rand() < frac) c[i] += sigma * gauss(rand);
+  for (let i = 0; i < N_W + N_SET; i++) if (rand() < frac) c[i] += (i >= N_W ? 3 : 1) * sigma * gauss(rand);
   return c;
 }
 function cross(a: Float64Array, b: Float64Array): Float64Array {
-  const c = new Float64Array(N_W);
-  for (let i = 0; i < N_W; i++) c[i] = rand() < 0.5 ? a[i] : b[i];
+  const c = new Float64Array(N_W + N_SET);
+  for (let i = 0; i < N_W + N_SET; i++) c[i] = rand() < 0.5 ? a[i] : b[i];
   return c;
 }
 
@@ -109,10 +111,10 @@ await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => 
   wk.on('error', (e) => { console.error('worker', w, e); process.exit(1); });
   workers.push(wk);
 })));
-console.log(`${W} workers ready, pop ${POP}, ${N_W} weights, lap ${lapLength.toFixed(0)} m, line ${LINE}`);
+console.log(`${W} workers ready, pop ${POP}, ${N_W} weights + ${N_SET} setup genes, lap ${lapLength.toFixed(0)} m, line ${LINE}`);
 
 let perm: number[] = []; // slot -> pop index (genomes shuffled across worlds every generation)
-function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[]; laps: number[]; finishT: number[] }> {
+function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[]; laps: number[]; finishT: number[]; invalidLaps: number[] }> {
   perm = pop.map((_, i) => i);
   for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
   eliteSlots = perm.map((p, slot) => (p < ELITE ? slot : -1)).filter((x) => x >= 0);
@@ -122,9 +124,9 @@ function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[];
     const h = (m: any) => { if (m.type === 'done') { wk.off('message', h); ok(m); } };
     wk.on('message', h);
     wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)) });
-  }))).then((rs) => ({ fitness: rs.flatMap((r) => r.fitness), best: rs.flatMap((r) => r.best), lapT: rs.flatMap((r) => r.lapT), laps: rs.flatMap((r) => r.laps), finishT: rs.flatMap((r) => r.finishT) })).then((r) => {
+  }))).then((rs) => ({ fitness: rs.flatMap((r) => r.fitness), best: rs.flatMap((r) => r.best), lapT: rs.flatMap((r) => r.lapT), laps: rs.flatMap((r) => r.laps), finishT: rs.flatMap((r) => r.finishT), invalidLaps: rs.flatMap((r) => r.invalidLaps) })).then((r) => {
     const un = (a: number[]) => { const o = new Array(POP); perm.forEach((p, slot) => { o[p] = a[slot]; }); return o; };
-    return { fitness: un(r.fitness), best: un(r.best), lapT: un(r.lapT), laps: un(r.laps), finishT: un(r.finishT) };
+    return { fitness: un(r.fitness), best: un(r.best), lapT: un(r.lapT), laps: un(r.laps), finishT: un(r.finishT), invalidLaps: un(r.invalidLaps) };
   });
 }
 
@@ -139,8 +141,9 @@ const hof: Record<string, any> = existsSync(join(modelDir, 'index.json')) ? JSON
 function saveModel(i: number, finish: number) {
   const RL = raceLaps(), avg = finish / RL, key = String(Math.floor(avg));
   if (hof[key]) return;
+  const sp = splitGenome(pop[i], carSpec);
   const file = `race-${key}s-gen${gen}.json`;
-  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(pop[i]) }));
+  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(sp.weights), setup: sp.setup }));
   hof[key] = { file, avgLap: avg, gen };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
@@ -160,6 +163,7 @@ async function evalN() {
       acc.fitness[i] += r.fitness[i]; acc.best[i] = (acc.best[i] * e + r.best[i]) / (e + 1);
       acc.lapT[i] = acc.lapT[i] > 0 && r.lapT[i] > 0 ? Math.min(acc.lapT[i], r.lapT[i]) : 0;
       acc.laps[i] = Math.min(acc.laps[i], r.laps[i]);
+      acc.invalidLaps[i] += r.invalidLaps[i];
       acc.finishT[i] = acc.finishT[i] > 0 && r.finishT[i] > 0 ? Math.max(acc.finishT[i], r.finishT[i]) : 0;
     }
   }
@@ -182,7 +186,7 @@ for (; gen < GENS; ) {
   meanLaps.push(mean / lapLength);
   const avg5 = meanLaps.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, meanLaps.length);
   if (!speedPhase && meanLaps.length >= 5 && avg5 >= SPEED_AT) { speedPhase = true; allTimeBest = -Infinity; console.log(`speed phase from gen ${gen + 1} (mean ${avg5.toFixed(1)} laps)`); }
-  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t]) => t > 0).sort((a, b) => a[0] - b[0]);
+  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0).sort((a, b) => a[0] - b[0]);
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
   history.push({ gen, best: r.best[bestI], mean, bestLap, laps: topLaps });
   console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);

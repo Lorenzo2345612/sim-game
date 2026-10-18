@@ -164,6 +164,12 @@ describe('269 evolved neural driver acceptance', () => {
       angvel: { x: 0, y: 0, z: 0 },
       progress: { index: 0, distance: 0, lateral: 0 },
       fuelMassKg: 0,
+      tempFrontC: 90,
+      tempRearC: 90,
+      optTempC: 90,
+      tempWindowC: 20,
+      wearMean: 0,
+      offWheels: 0,
       compoundGrip: 0,
       others: [],
     };

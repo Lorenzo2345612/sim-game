@@ -11,10 +11,14 @@ import { configureVehicle } from '../../src/game/game';
 import { gridSlots } from '../../src/race/grid';
 import { TrackProgress } from '../../src/track/trackProgress';
 import { cumulativeLengths } from '../../src/track/centerline';
-import { halfWidthAt } from '../../src/track/surfaces';
+import { halfWidthAt, hasKerb } from '../../src/track/surfaces';
 import { N_IN, forward } from './policy.mts';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../src/ai/neuralFeatures';
 import { minTimeFor } from './mintime.mts';
+import { splitGenome } from './genome.mts';
+import { trackLimits } from './limits.mts';
+import { applySetup } from '../../src/physics/setup';
+import type { Telemetry } from '../../src/physics/vehicleModel';
 
 const { root, trackId, carId, slots, line = 'center' } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
@@ -27,12 +31,12 @@ const cl: [number, number][] = track.centerline;
 const n = cl.length;
 const cum = cumulativeLengths(cl, true);
 const L = cum[n];
-const hwL: number[] = [], hwR: number[] = [];
-for (let i = 0; i < n; i++) { hwL.push(halfWidthAt(track, 'left', i)); hwR.push(halfWidthAt(track, 'right', i)); }
+const hwL: number[] = [], hwR: number[] = [], kL: boolean[] = [], kR: boolean[] = [];
+for (let i = 0; i < n; i++) { hwL.push(halfWidthAt(track, 'left', i)); hwR.push(halfWidthAt(track, 'right', i)); kL.push(hasKerb(track, 'left', i)); kR.push(hasKerb(track, 'right', i)); }
 // Speed profile (brake cue) and lookups: same extraction the in-game neural AI uses (task 269).
 const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : null;
 const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
-  : line === 'racing' ? { points: racingTargetPoints(cl, track.widthMeters, hwL, hwR) } : undefined;
+  : line === 'racing' ? { points: racingTargetPoints(cl, hwL, hwR, kL, kR) } : undefined;
 const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
 
 // Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
@@ -42,12 +46,15 @@ const COMPOUNDS = ['soft', 'medium', 'hard'] as const;
 const muMed = spec.tyres.compounds.medium.mu0;
 let FUEL_MIN_L = 18; // set after the lap length is known: measured ~0.225 L/km at Monza (F4), sized for 12 laps
 const carMu = new Float64Array(slots), carFuel0 = new Float64Array(slots);
+const carSpec: any[] = Array.from({ length: slots }, () => spec); // per-slot setup applied
+const carCompound: (typeof COMPOUNDS[number])[] = new Array(slots).fill('medium');
 function makeCar(pose: any, k: number): VehicleModel {
   const startL = FUEL_MIN_L + Math.random() * (spec.fuel.capacityL - FUEL_MIN_L);
-  const v = new VehicleModel(world, { ...spec, fuel: { ...spec.fuel, startL } }, pose);
+  const v = new VehicleModel(world, { ...carSpec[k], fuel: { ...spec.fuel, startL } }, pose);
   configureVehicle(v, track.id);
   const c = COMPOUNDS[Math.floor(Math.random() * 3)];
   v.setCompound(c);
+  carCompound[k] = c;
   v.setMultipliers(1 + Math.random() * 4, 1);
   carMu[k] = spec.tyres.compounds[c].mu0 / muMed - 1;
   carFuel0[k] = startL;
@@ -67,6 +74,8 @@ for (let k = 0; k < slots; k++) { cars.push(makeCar(spawn, k)); parkCar(cars[k])
 const progress = cars.map(() => new TrackProgress(cl));
 const state: any[] = cars.map(() => null);
 const x = new Float64Array(N_IN), out = new Float64Array(2);
+const tels: Telemetry[] = cars.map(() => undefined as unknown as Telemetry);
+const limits = cars.map(() => trackLimits());
 const inputs = cars.map(() => ({ throttle: 0, brake: 0, steer: 0, reset: false }));
 const parked = { throttle: 0, brake: 1, steer: 0, reset: false };
 
@@ -105,18 +114,26 @@ const carState: NeuralCarState = {
   angvel: { x: 0, y: 0, z: 0 },
   progress: { index: 0, distance: 0, lateral: 0 },
   fuelMassKg: 0,
+  tempFrontC: 0,
+  tempRearC: 0,
+  optTempC: 0,
+  tempWindowC: 0,
+  wearMean: 0,
+  offWheels: 0,
   compoundGrip: 0,
   others,
 };
 
-function episode(genomes: Float64Array[], start: number, secs: number, epi: number, raceLaps: number, lapW: number) {
+function episode(genomes: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number) {
   const poses = startPoses(start);
   const m = genomes.length;
   const alive = new Array(m).fill(true);
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
-  const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), offT = new Float64Array(m), over = new Float64Array(m);
+  const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), over = new Float64Array(m), invalidLaps = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
     dropCar(cars[k]);
+    carSpec[k] = k < m ? applySetup(spec, setups[k]) : spec;
+    limits[k] = trackLimits();
     cars[k] = makeCar(poses[k], k);
     if (k >= m) parkCar(cars[k]);
     progress[k].reset();
@@ -146,6 +163,17 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         carState.progress = p;
         carState.fuelMassKg = (cars[k] as any).tank?.massKg ?? 0;
         carState.compoundGrip = carMu[k];
+        const tel = (tels[k] = v.getTelemetry(tels[k]));
+        const w = tel.wheels, cs = carSpec[k].tyres.compounds[carCompound[k]];
+        let off = 0;
+        for (let j = 0; j < 4; j++) if (w[j].surface !== 'asphalt' && w[j].surface !== 'kerb') off++;
+        carState.tempFrontC = (w[0].tempC + w[1].tempC) / 2;
+        carState.tempRearC = (w[2].tempC + w[3].tempC) / 2;
+        carState.optTempC = cs.optTempC;
+        carState.tempWindowC = cs.tempWindowC;
+        carState.wearMean = (w[0].wear + w[1].wear + w[2].wear + w[3].wear) / 4;
+        carState.offWheels = off;
+        limits[k].step(off, 4 * FIXED_DT);
         let oc = 0;
         for (let j = 0; j < slots; j++) {
           if (j === k || !alive[j]) continue;
@@ -181,19 +209,20 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       if (dist[k] >= (laps[k] + 1) * L) { // lap completed: fastest single lap and a bonus per lap (faster = more)
         const lt = t - lapStart[k];
         lapStart[k] = t; laps[k]++;
-        if (lapT[k] === 0 || lt < lapT[k]) lapT[k] = lt;
+        const valid = limits[k].lapValid;
+        limits[k].newLap();
+        if (!valid) invalidLaps[k]++;
+        else if (lapT[k] === 0 || lt < lapT[k]) lapT[k] = lt;
         if (process.env.EVO_DEBUG) console.log(`car ${k} lap ${laps[k]} ${lt.toFixed(1)} s fuel used ${(carFuel0[k] - ((cars[k] as any).tank?.litres ?? 0)).toFixed(2)} L`);
-        lapBonus[k] += 500 + Math.max(0, 200 - lt) * lapW;
-        if (raceLaps > 0 && laps[k] >= raceLaps) { finishT[k] = t; alive[k] = false; parkCar(cars[k]); continue; } // race finished
+        if (valid) lapBonus[k] += 500 + Math.max(0, 200 - lt) * lapW;
+        if (raceLaps > 0 && laps[k] >= raceLaps) { finishT[k] = t + 5 * invalidLaps[k]; alive[k] = false; parkCar(cars[k]); continue; } // race finished
       }
       if (dist[k] > best[k] + 3) { best[k] = dist[k]; stallT[k] = 0; } else stallT[k] += FIXED_DT;
       const q = st.rotation, upY = 1 - 2 * (q.x * q.x + q.z * q.z);
-      const lim = p.lateral > 0 ? hwR[p.index] : hwL[p.index];
-      offT[k] = Math.abs(p.lateral) > lim + 0.5 ? offT[k] + FIXED_DT : 0;
-      if (offT[k] > 0.5 || upY < 0.5 || stallT[k] > 4 || dist[k] < best[k] - 30) {
+      if (limits[k].eliminated || upY < 0.5 || stallT[k] > 4 || dist[k] < best[k] - 30) {
         alive[k] = false;
         parkCar(cars[k]); // eliminated cars leave the world so they do not block the others
-        if (process.env.EVO_DEBUG) console.log(`car ${k} out t=${t.toFixed(2)} off=${offT[k].toFixed(2)} up=${upY.toFixed(2)} stall=${stallT[k].toFixed(1)} dist=${dist[k].toFixed(1)} lat=${p.lateral.toFixed(1)} v=${st.forwardSpeed.toFixed(1)}`);
+        if (process.env.EVO_DEBUG) console.log(`car ${k} out t=${t.toFixed(2)} up=${upY.toFixed(2)} stall=${stallT[k].toFixed(1)} dist=${dist[k].toFixed(1)} lat=${p.lateral.toFixed(1)} v=${st.forwardSpeed.toFixed(1)}`);
       }
     }
     const now = performance.now();
@@ -208,23 +237,26 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       parentPort!.postMessage({ type: 'pos', t, epi, pos: Array.from(pos) });
     }
   }
-  return { best, lapT, over, laps, lapBonus, finishT };
+  return { best, lapT, over, laps, lapBonus, finishT, invalidLaps };
 }
 
 parentPort!.on('message', (msg: any) => {
   if (msg.type !== 'eval') return;
-  const genomes: Float64Array[] = msg.genomes.map((g: number[]) => Float64Array.from(g));
+  const split = msg.genomes.map((g: number[]) => splitGenome(g, spec));
+  const genomes: Float64Array[] = split.map((s: any) => s.weights);
+  const setups = split.map((s: any) => s.setup);
+  let invalidLaps: number[] = [];
   const fitness = new Array(genomes.length).fill(0), dist = new Array(genomes.length).fill(0);
   let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
   const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
-    const r = episode(genomes, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW);
+    const r = episode(genomes, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW);
     for (let k = 0; k < genomes.length; k++) {
       fitness[k] += r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
       if (e === 0) dist[k] = r.best[k];
     }
-    if (e === 0) { lapT = Array.from(r.lapT); laps = Array.from(r.laps); finishT = Array.from(r.finishT); }
+    if (e === 0) { lapT = Array.from(r.lapT); laps = Array.from(r.laps); finishT = Array.from(r.finishT); invalidLaps = Array.from(r.invalidLaps); }
   });
-  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT, laps, finishT });
+  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT, laps, finishT, invalidLaps });
 });
 parentPort!.postMessage({ type: 'ready', lapLength: L });

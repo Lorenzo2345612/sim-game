@@ -1,5 +1,6 @@
 import { LOOK, PROD, N_NEAR } from './neuralPolicy';
 import { cumulativeLengths } from '../track/centerline';
+import { KERB_WIDTH } from '../core/constants';
 import { computeRacingLine } from './racingLine';
 
 export interface NeuralCarState {
@@ -11,6 +12,12 @@ export interface NeuralCarState {
   /** TrackProgress sample of this car (index, distance along lap, lateral from centerline). */
   progress: { index: number; distance: number; lateral: number };
   fuelMassKg: number;
+  tempFrontC: number;
+  tempRearC: number;
+  optTempC: number;
+  tempWindowC: number;
+  wearMean: number; // 0..1
+  offWheels: number; // wheels not on asphalt/kerb
   compoundGrip: number; // mu0/muMedium − 1
   /** Self excluded, player included. */
   others: ReadonlyArray<{ position: { x: number; y: number; z: number }; linvel: { x: number; y: number; z: number } }>;
@@ -22,20 +29,28 @@ export interface NeuralLine {
   mintimeSpeed?: ArrayLike<number>;
 }
 
-/** Classic racing line clamped inside the edges with a 1 m car half-width margin (as trained). */
+/** Racing line clamped to the usable width: kerbs count (minus a 0.3 m margin), plain edges keep 0.6 m. */
 export function racingTargetPoints(
   centerline: readonly [number, number][],
-  trackWidthM: number,
   halfWidthLeft: readonly number[],
   halfWidthRight: readonly number[],
+  kerbLeft: readonly boolean[],
+  kerbRight: readonly boolean[],
 ): [number, number][] {
   const cl = centerline, n = cl.length;
-  const rl = computeRacingLine(cl as [number, number][], trackWidthM / 2);
+  const useL = new Float64Array(n), useR = new Float64Array(n);
+  let maxUse = 0;
+  for (let i = 0; i < n; i++) {
+    useL[i] = halfWidthLeft[i] + (kerbLeft[i] ? KERB_WIDTH - 0.3 : -0.6);
+    useR[i] = halfWidthRight[i] + (kerbRight[i] ? KERB_WIDTH - 0.3 : -0.6);
+    maxUse = Math.max(maxUse, useL[i], useR[i]);
+  }
+  const rl = computeRacingLine(cl as [number, number][], maxUse, 0);
   return cl.map((c, i) => {
     const a = cl[(i - 1 + n) % n], b = cl[(i + 1) % n], tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1;
     const rx = -tz / l, rz = tx / l;
     const lat = (rl.points[2 * i] - c[0]) * rx + (rl.points[2 * i + 1] - c[1]) * rz;
-    const q = Math.max(-(halfWidthLeft[i] - 1), Math.min(halfWidthRight[i] - 1, lat));
+    const q = Math.max(-useL[i], Math.min(useR[i], lat));
     return [c[0] + rx * q, c[1] + rz * q] as [number, number];
   });
 }
@@ -142,6 +157,11 @@ export class NeuralFeatures {
     out[o++] = s.fuelMassKg / 25;
     out[o++] = s.compoundGrip * 10;
     this.nearest(out, s, fx, fz, vf, o);
+    o += 3 * N_NEAR;
+    out[o] = (s.tempFrontC - s.optTempC) / s.tempWindowC;
+    out[o + 1] = (s.tempRearC - s.optTempC) / s.tempWindowC;
+    out[o + 2] = s.wearMean;
+    out[o + 3] = s.offWheels / 4;
   }
 
   // Nearest N_NEAR cars within 60 m → forward gap/50, lateral gap/10, closing speed/20 (zeros if none).

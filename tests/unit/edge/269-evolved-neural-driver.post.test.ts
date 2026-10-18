@@ -23,6 +23,12 @@ function makeState(over: Partial<NeuralCarState> = {}): NeuralCarState {
     angvel: { x: 0, y: 0, z: 0 },
     progress: { index: 0, distance: 0, lateral: 0 },
     fuelMassKg: 0,
+    tempFrontC: 90,
+    tempRearC: 90,
+    optTempC: 90,
+    tempWindowC: 20,
+    wearMean: 0,
+    offWheels: 0,
     compoundGrip: 0,
     others: [],
     ...over,
@@ -79,17 +85,16 @@ describe('269 evolved neural driver post-code gaps', () => {
   });
 
   it('POST3: racingTargetPoints keeps the length and clamps inside the edges with a 1 m margin', () => {
-    const pts = racingTargetPoints(RECT, 20, RECT_HW, RECT_HW);
+    const pts = racingTargetPoints(RECT, RECT_HW, RECT_HW, RECT_HW.map(() => false), RECT_HW.map(() => false));
     expect(pts.length).toBe(RECT.length);
     for (let i = 0; i < pts.length; i++) {
       const d = Math.hypot(pts[i][0] - RECT[i][0], pts[i][1] - RECT[i][1]);
       expect(Number.isFinite(d), `point ${i}`).toBe(true);
-      expect(d, `point ${i} margin`).toBeLessThanOrEqual(9 + 1e-9); // hw 10 − 1
+      expect(d, `point ${i} margin`).toBeLessThanOrEqual(9.4 + 1e-9); // hw 10 − 0.6
     }
-    const zero = racingTargetPoints(RECT, 2, new Array(RECT.length).fill(1), new Array(RECT.length).fill(1));
+    const zero = racingTargetPoints(RECT, new Array(RECT.length).fill(1), new Array(RECT.length).fill(1), new Array(RECT.length).fill(false), new Array(RECT.length).fill(false));
     for (let i = 0; i < zero.length; i++) {
-      expect(zero[i][0]).toBeCloseTo(RECT[i][0], 9);
-      expect(zero[i][1]).toBeCloseTo(RECT[i][1], 9);
+      expect(Math.hypot(zero[i][0] - RECT[i][0], zero[i][1] - RECT[i][1])).toBeLessThanOrEqual(0.4 + 1e-9);
     }
   });
 
@@ -107,7 +112,7 @@ describe('269 evolved neural driver post-code gaps', () => {
     inf[N_W - 1] = Number.POSITIVE_INFINITY;
     expect(() => parseNeuralModel({ weights: inf })).toThrow(/Invalid neural model/);
     expect(() => parseNeuralModel({ weights: [] })).toThrow(/Invalid neural model/);
-    expect(() => parseNeuralModel({ weights: new Array<number>(626).fill(0) })).toThrow(
+    expect(() => parseNeuralModel({ weights: new Array<number>(N_W + 16).fill(0) })).toThrow(
       /Invalid neural model/,
     ); // nIn 36 > N_IN
     const zeroIn = parseNeuralModel({ weights: new Array<number>(50).fill(0) });
@@ -145,7 +150,6 @@ describe('269 evolved neural driver post-code gaps', () => {
   }, 60_000);
 
   it('POST8: policy.mts re-exports the shared policy; randomGenome stays deterministic with throttle prior', async () => {
-    // @ts-expect-error TS5097: .mts extension imports are allowed at runtime by Vite, not by tsc here
     const policy = await import('../../../scripts/evolve/policy.mts');
     expect(policy.N_W).toBe(N_W);
     expect(typeof policy.forward).toBe('function');
@@ -341,7 +345,7 @@ describe('269 evolved neural driver post-code gaps', () => {
     expect(padded.length).toBe(N_W);
     expect(padded[0]).toBe(0.25);
     for (let i = 1; i < 16; i++) expect(padded[i], `row0 slot ${i}`).toBe(0);
-    for (let i = 0; i < nIn1 - 16; i++) expect(padded[16 * 35 + i]).toBe(old[16 + i]);
+    for (let i = 0; i < nIn1 - 16; i++) expect(padded[16 * N_IN + i]).toBe(old[16 + i]);
   });
 
   it('POST17: two drivers sharing one features instance stay independent under interleaving', () => {

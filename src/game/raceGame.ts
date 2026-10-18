@@ -7,7 +7,9 @@ import { carLimitsFromSpec, speedProfile } from '../ai/speedProfile';
 import { difficultyParams, trafficDecision, type CarTrafficState, type Difficulty } from '../ai/traffic';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState, type NeuralLine } from '../ai/neuralFeatures';
 import { NeuralDriver } from '../ai/neuralDriver';
-import { halfWidthAt } from '../track/surfaces';
+import { halfWidthAt, hasKerb } from '../track/surfaces';
+import { neuralCarSpec } from '../ai/neuralPolicy';
+import type { Setup } from '../physics/setup';
 import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
@@ -32,6 +34,7 @@ export interface RaceConfig {
 export interface RaceGameOptions extends Partial<GameTune> {
   aiDriver?: 'classic' | 'neural';
   neuralModels?: Partial<Record<Difficulty, Float64Array>>;
+  neuralSetups?: Partial<Record<Difficulty, Partial<Setup>>>;
   /** Target line the models were trained on (default: centerline). */
   neuralLine?: { kind: 'racing' } | { kind: 'mintime'; pts: [number, number][]; v: number[] };
 }
@@ -185,13 +188,18 @@ export class RaceGame {
       : 0;
     const count = aiCount + 1;
     const grid = gridSlots(track, count);
+    const neuralWeights =
+      options?.aiDriver === 'neural' ? options.neuralModels?.[config.difficulty] : undefined;
+    const aiSpec = neuralWeights
+      ? neuralCarSpec(spec, { setup: options?.neuralSetups?.[config.difficulty] })
+      : spec;
     // Per-car spawn: the player (index 0) takes the last slot, AI k (index k+1) slot k.
     const slots: SpawnPose[] = [];
     const vehicles: VehicleModel[] = [];
     for (let i = 0; i < count; i++) {
       const slot = i === 0 ? grid[aiCount] : grid[i - 1];
       slots.push(slot);
-      const vehicle = new VehicleModel(world, spec, slot);
+      const vehicle = new VehicleModel(world, i === 0 ? spec : aiSpec, slot);
       configureVehicle(vehicle, track.id, tune);
       vehicles.push(vehicle);
     }
@@ -206,22 +214,22 @@ export class RaceGame {
       muLong: limits.muLong * AI_GRIP_MARGIN,
     });
     // Neural AI (opt-in): one feature extractor per track, one driver per car; missing model falls back to classic.
-    const neuralWeights =
-      options?.aiDriver === 'neural' ? options.neuralModels?.[config.difficulty] : undefined;
     let neuralFeatures: NeuralFeatures | null = null;
     let compoundGrip = 0;
     if (neuralWeights) {
       const n = track.centerline.length;
-      const halfLeft: number[] = [], halfRight: number[] = [];
+      const halfLeft: number[] = [], halfRight: number[] = [], kerbLeft: boolean[] = [], kerbRight: boolean[] = [];
       for (let i = 0; i < n; i++) {
         halfLeft.push(halfWidthAt(track, 'left', i));
         halfRight.push(halfWidthAt(track, 'right', i));
+        kerbLeft.push(hasKerb(track, 'left', i));
+        kerbRight.push(hasKerb(track, 'right', i));
       }
       const nl = options?.neuralLine;
       let lineArg: NeuralLine | undefined;
       if (nl?.kind === 'mintime') lineArg = { points: nl.pts, mintimeSpeed: nl.v };
       else if (nl?.kind === 'racing') {
-        lineArg = { points: racingTargetPoints(track.centerline, track.widthMeters, halfLeft, halfRight) };
+        lineArg = { points: racingTargetPoints(track.centerline, halfLeft, halfRight, kerbLeft, kerbRight) };
       }
       neuralFeatures = new NeuralFeatures(track.centerline, halfLeft, halfRight, lineArg);
       const muMedium = spec.tyres.compounds.medium.mu0;
@@ -259,6 +267,12 @@ export class RaceGame {
             angvel: { x: 0, y: 0, z: 0 },
             progress: { index: 0, distance: 0, lateral: 0 },
             fuelMassKg: 0,
+            tempFrontC: 0,
+            tempRearC: 0,
+            optTempC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].optTempC,
+            tempWindowC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].tempWindowC,
+            wearMean: 0,
+            offWheels: 0,
             compoundGrip,
             others,
           },
@@ -526,7 +540,15 @@ export class RaceGame {
     s.linvel.x = lv.x; s.linvel.y = lv.y; s.linvel.z = lv.z;
     s.angvel.x = av.x; s.angvel.y = av.y; s.angvel.z = av.z;
     s.progress = this.progresses[i].update(car.position.x, car.position.z);
-    s.fuelMassKg = this.ais[k].vehicle.getTelemetry(tel).fuelKg;
+    const t = this.ais[k].vehicle.getTelemetry(tel);
+    s.fuelMassKg = t.fuelKg;
+    const w = t.wheels;
+    s.tempFrontC = (w[0].tempC + w[1].tempC) / 2;
+    s.tempRearC = (w[2].tempC + w[3].tempC) / 2;
+    s.wearMean = (w[0].wear + w[1].wear + w[2].wear + w[3].wear) / 4;
+    let off = 0;
+    for (let j = 0; j < 4; j++) if (w[j].surface !== 'asphalt' && w[j].surface !== 'kerb') off++;
+    s.offWheels = off;
     let oc = 0;
     for (let j = 0; j < this.count; j++) {
       if (j === i) continue;

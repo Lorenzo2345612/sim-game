@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, copyFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { padGenome } from '../../src/ai/neuralPolicy';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
@@ -22,6 +23,7 @@ interface GenomeJson {
   avgLap: number;
   bestLap: number;
   weights: number[];
+  setup?: Record<string, number>;
 }
 
 // <track>-<car>[-racing|-mintime] source dirs; per track/car the fastest expert wins and its whole set is exported.
@@ -53,13 +55,16 @@ for (const [key, list] of groups) {
     if (!file) continue;
     const genome = JSON.parse(readFileSync(join(srcRoot, dir, file), 'utf8')) as GenomeJson;
     line = genome.line ?? idx.line ?? 'center';
+    const padded = padGenome(genome.weights);
+    if (!padded) throw new Error(`Invalid genome length ${genome.weights.length} in ${dir}/${file}`);
     const out = {
       nIn: genome.nIn,
       line,
       avgLap: genome.avgLap,
       bestLap: genome.bestLap,
       gen: genome.gen,
-      weights: genome.weights,
+      weights: Array.from(padded),
+      ...(genome.setup ? { setup: genome.setup } : {}),
     };
     writeFileSync(join(outDir, `${difficulty}.json`), JSON.stringify(out));
     present.push(difficulty);
