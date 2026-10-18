@@ -1,0 +1,63 @@
+# 256 — Fix two test failures on master after the 247 merge
+
+Status: pending
+Phase: 1
+Depends on: nothing
+Complexity: simple
+Type: bugfix
+Models: standard
+Roles: coder, reviewer
+
+## Goal
+
+`npm test` passes on master again: a stale snapshot test is removed and the hard AI no longer loses distance on monza.
+
+## Context
+
+- Commit 812516a (task 247) legitimately rebuilt the track JSON, so the pre-253 snapshot hash in 253 AT6 is stale by design.
+- `tests/unit/edge/225-ai-grip-margin.test.ts` EDGE3 (monza, 45 s after go, distance medium < hard < expert) fails: medium 1384.3 m vs hard 1281.4 m. It passed when 225 merged, before 247 changed monza sausages.
+
+## Files
+
+- `tests/unit/acceptance/253-runoff-flag-colours.test.ts` — modify — delete the AT6 `it(...)` block and any helpers/constants/imports only it uses. Planner-authorised; touch nothing else in the file.
+- `src/ai/*` — modify — fix for the hard AI (at most 3 files).
+- A temporary probe script outside `src/` and `tests/` — create, then delete before finishing.
+
+## Steps
+
+1. Delete AT6 as described above.
+2. Probe why the hard AI is slower than medium on monza at 45 s (spin, sausage contact, off-track recovery, line/target choice).
+3. Fix in `src/ai/` only (e.g. sausage avoidance in line/target selection, or the hard tier's grip margin). Do not change expert behaviour beyond what the fix needs.
+4. Delete the probe script.
+
+Conventions: not applicable (no new numeric API).
+
+## Acceptance tests (defined by the planner with Opus, before coding)
+
+No new test file; rows reference existing tests.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AT1 | master after the change | `npx vitest run tests/unit/acceptance/253-runoff-flag-colours.test.ts` | passes, no AT6 test present |
+| AT2 | monza | `tests/unit/edge/225-ai-grip-margin.test.ts` | all 3 pass (EDGE3 medium < hard < expert) |
+| AT3 | | `tests/unit/acceptance/225-*.test.ts` and `tests/unit/acceptance/247-*.test.ts` | pass |
+
+## Acceptance criteria
+
+- [ ] AT1–AT3 pass.
+- [ ] Full `npm test` passes except the known flaky 224 POST4.
+- [ ] No probe script left in the repo.
+
+## Verification
+
+```
+npm run typecheck
+npm run lint
+npm test
+```
+
+## Out of scope
+
+- Editing `tests/unit/edge/225-ai-grip-margin.test.ts`, track JSON or sausage placement.
+- Task 252 work (expert spin-free).
+- Any other test edit besides deleting 253 AT6.

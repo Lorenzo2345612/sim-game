@@ -247,7 +247,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 243 | Dry arroyo channel and bridges | in progress | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
-| 246 | Barriers never fold onto the inner kerb | waiting decision | 235 |
+| 246 | Barriers never fold onto the inner kerb | in progress | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | in progress | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
@@ -257,3 +257,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | pending | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
+| 256 | Fix two test failures on master after the 247 merge | pending | - |

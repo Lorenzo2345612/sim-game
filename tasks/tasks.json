@@ -3353,7 +3353,7 @@
     {
       "num": "246",
       "title": "Barriers never fold onto the inner kerb",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "235"
       ],
@@ -3486,6 +3486,17 @@
       "models": "heavy",
       "phase": 2,
       "spec": "tasks/255-per-car-weight-distribution.md"
+    },
+    {
+      "num": "256",
+      "title": "Fix two test failures on master after the 247 merge",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/256-post-merge-regressions.md"
     }
   ]
 }
