@@ -94,3 +94,6 @@ npm test
 ## Planner-authorised test edits
 
 - Per-id sweep tests or JSON byte-hash / sha256 tests (e.g. `tests/unit/edge/211-fontana-roval-edge.test.ts` EDGE6, `tests/unit/acceptance/241-ermita-tracks.test.ts` AT4 hashes if that file exists) that fail only because `bollards` was added may be updated to the new values (`sha256sum public/tracks/<id>.json`, or ignore the `bollards` key in deep compares). Nothing else may be edited; list each edit in the report.
+
+## Planner answers (round 1)
+- EDGE8 in `tests/unit/edge/250-bollard-placement-edge.test.ts` is inconsistent with the spec (end = sausage index arc + length/2). Authorised edit: in EDGE8 change the sausage `length: 10` to `length: 6` (so `+ 3` is length/2); no other edge-test change. The implementation follows the spec and AT5.
