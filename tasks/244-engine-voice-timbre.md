@@ -81,4 +81,5 @@ My earlier "corner ≥ 250 Hz on the final bus" hint was wrong; follow design it
 - Authorised (crackle timing/arming): in 228 AT9, 228 EDGE6/EDGE7/EDGE8 and 228 POST13 replace signal cluster counting with `popCount` deltas over the same windows, same expected counts. 228 AT10 follows.
 - Authorised (kernel shape, loop low-pass): 227 AT2 expected lag and 227 AT7 > 20 kHz limit may be updated to the v2.1 measured value with a 3 dB / 10 % margin; list old and new values in the report.
 - 244 EDGE6 strict-order line delete (above) stays.
+- Authorised: `tests/unit/acceptance/244-engine-voice-timbre.test.ts` AT5 — change the low band upper bound 250 → 160 Hz (and the title); nothing else.
 - Not yours: 253 AT6, 225 EDGE3 (task 256), 224 POST4.
