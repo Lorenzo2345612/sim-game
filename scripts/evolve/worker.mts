@@ -29,7 +29,7 @@ const L = cum[n];
 const hwL = new Float64Array(n), hwR = new Float64Array(n);
 for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
 // Centerline speed profile (brake cue): corner speed sqrt(MU_G/kappa), backward pass with constant decel.
-const MU_G = 1.5 * 9.81, DECEL = 11, OVER_W = 2; // fitness: m lost per (m/s·s) above the profile
+const MU_G = 1.5 * 9.81, DECEL = 11; // overspeed fitness weight comes with each eval (race.overW)
 const vProf = new Float64Array(n);
 
 // Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
@@ -130,13 +130,13 @@ function nearest(k: number, px: number, pz: number, fx: number, fz: number, vf: 
   }
 }
 
-function episode(genomes: Float64Array[], start: number, secs: number, epi: number) {
+function episode(genomes: Float64Array[], start: number, secs: number, epi: number, raceLaps: number, lapW: number) {
   const poses = startPoses(start);
   const m = genomes.length;
   const alive = new Array(m).fill(true);
   aliveRef = alive;
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
-  const lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), offT = new Float64Array(m), over = new Float64Array(m);
+  const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), offT = new Float64Array(m), over = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
     dropCar(cars[k]);
     cars[k] = makeCar(poses[k], k);
@@ -213,7 +213,8 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         lapStart[k] = t; laps[k]++;
         if (lapT[k] === 0 || lt < lapT[k]) lapT[k] = lt;
         if (process.env.EVO_DEBUG) console.log(`car ${k} lap ${laps[k]} ${lt.toFixed(1)} s fuel used ${(carFuel0[k] - ((cars[k] as any).tank?.litres ?? 0)).toFixed(2)} L`);
-        lapBonus[k] += 500 + Math.max(0, 200 - lt) * 20;
+        lapBonus[k] += 500 + Math.max(0, 200 - lt) * lapW;
+        if (raceLaps > 0 && laps[k] >= raceLaps) { finishT[k] = t; alive[k] = false; parkCar(cars[k]); continue; } // race finished
       }
       if (dist[k] > best[k] + 3) { best[k] = dist[k]; stallT[k] = 0; } else stallT[k] += FIXED_DT;
       const q = st.rotation, upY = 1 - 2 * (q.x * q.x + q.z * q.z);
@@ -237,22 +238,23 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       parentPort!.postMessage({ type: 'pos', t, epi, pos: Array.from(pos) });
     }
   }
-  return { best, lapT, over, laps, lapBonus };
+  return { best, lapT, over, laps, lapBonus, finishT };
 }
 
 parentPort!.on('message', (msg: any) => {
   if (msg.type !== 'eval') return;
   const genomes: Float64Array[] = msg.genomes.map((g: number[]) => Float64Array.from(g));
   const fitness = new Array(genomes.length).fill(0), dist = new Array(genomes.length).fill(0);
-  let lapT: number[] = [], laps: number[] = [];
+  let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
+  const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
-    const r = episode(genomes, ep.start, ep.secs, e);
+    const r = episode(genomes, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW);
     for (let k = 0; k < genomes.length; k++) {
-      fitness[k] += r.best[k] - OVER_W * r.over[k] + r.lapBonus[k];
+      fitness[k] += r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
       if (e === 0) dist[k] = r.best[k];
     }
-    if (e === 0) { lapT = Array.from(r.lapT); laps = Array.from(r.laps); }
+    if (e === 0) { lapT = Array.from(r.lapT); laps = Array.from(r.laps); finishT = Array.from(r.finishT); }
   });
-  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT, laps });
+  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT, laps, finishT });
 });
 parentPort!.postMessage({ type: 'ready', lapLength: L });
