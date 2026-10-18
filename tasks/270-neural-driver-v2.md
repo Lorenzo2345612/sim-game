@@ -98,3 +98,9 @@ New tracks/cars, retraining, the classic AI, difficulty gating, rewards other th
 
 - Typecheck: option (a). Add `"allowImportingTsExtensions": true` to `tsconfig.json` (it already has `noEmit`), and remove the now-unused `@ts-expect-error` line at POST8 in `tests/unit/edge/269-evolved-neural-driver.post.test.ts`. Both edits are authorised; add `tsconfig.json` to the files.
 - Still required from round 2: the 269 edge/post API updates, and `padGenome` in export-models with the regenerated `public/ai-models/**` committed. Converting a model's `setup` to genes on resume is optional.
+
+## Planner answers (round 4)
+
+- (a) Authorised: in `tests/unit/edge/087-racing-line.post.test.ts` POST9, also strip value imports from `../physics/setup` before the checks, the same way type imports are stripped. `src/physics/setup.ts` is pure: it has no Rapier and only type imports. No other change to POST9. `neuralCarSpec` stays in `src/ai/neuralPolicy.ts`.
+- (b) Authorised: update 269 post POST3 to the new 0.6 m margin. Use distance ≤ 9.4, and for the hw = 1 case distance ≤ 0.4 instead of on the centreline.
+- (c) Confirmed: 249 AT3, 250 AT9 and 224 POST4 already fail on master. They are known, out of scope, and do not block this task.
