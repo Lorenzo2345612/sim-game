@@ -10,6 +10,11 @@ Complex task, before any code exists. The acceptance tests (`tests/unit/acceptan
 4. Run `npx vitest run tests/unit/edge/NNN-*.test.ts`. Tests are expected to fail now (module missing), never because of errors in the test itself.
 5. Write the final report.
 
+## Work in small increments (mandatory)
+
+- On start (also on a resumed run): check which of this task's test files/cases already exist and continue from there.
+- Write tests a few cases at a time (at most ~150 lines per tool call); run the file after each batch to confirm it compiles and fails or passes as expected.
+
 ## Brevity (mandatory)
 
 - No comments except non-obvious setup. No text between steps.

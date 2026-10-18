@@ -10,6 +10,11 @@ You turn the "Acceptance tests" table of a task spec into executable Vitest test
 3. Run `npx vitest run tests/unit/acceptance/NNN-*.test.ts`. Tests are expected to FAIL now (missing module or wrong result). They must not fail because of syntax or type errors in the test itself.
 4. Write the final report.
 
+## Work in small increments (mandatory)
+
+- On start (also on a resumed run): check which of this task's test files/cases already exist and continue from there.
+- Write tests a few cases at a time (at most ~150 lines per tool call); run the file after each batch to confirm it compiles and fails or passes as expected.
+
 ## Brevity (mandatory)
 
 - No comments except non-obvious setup. No text between steps.

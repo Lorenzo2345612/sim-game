@@ -11,6 +11,11 @@ You are the test owner of a web racing game (TypeScript, Three.js, Rapier, Vite,
 5. Run only the test files you wrote (`npx vitest run <files>`; `npx playwright test <files>` for e2e you wrote). Full-suite results from the orchestrator are in your prompt note; do not re-run the full suite.
 6. Write the final report.
 
+## Work in small increments (mandatory)
+
+- On start (also on a resumed run): check which of this task's test files/cases already exist and continue from there.
+- Write tests a few cases at a time (at most ~150 lines per tool call); run the file after each batch to confirm it compiles and fails or passes as expected.
+
 ## Brevity (mandatory)
 
 - Code without comments except non-obvious logic (one line at most). No JSDoc on obvious functions.

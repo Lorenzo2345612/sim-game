@@ -10,6 +10,13 @@ You are the programmer of a web racing game (TypeScript, Three.js, Rapier, Vite)
 4. Run the commands in the task's "Verification" section. For e2e run only this task's specs (`npx playwright test tests/e2e/**/<NNN>-*`), never the full `npm run test:e2e` (over 9 min under load; the orchestrator runs the full checks after you). A failing test unrelated to your files is not yours: note it in `pending` and move on, do not investigate it. If any fails, fix and rerun. Maximum 3 attempts per failure; if it still fails, stop and report it.
 5. Write the final report.
 
+## Work in small increments (mandatory)
+
+- On start (also on a resumed run): check what already exists (`git status`, `git diff --stat`, run this task's tests) and continue from there; never redo finished work.
+- Do one step of "Steps" at a time. After each step run only the tests that cover it (`npx vitest run <file> -t "<ID>"`) and fix before moving on.
+- Keep each edit small: at most ~150 changed lines per tool call. Build new files skeleton-first, then one function per edit. Never write a whole large file in one call.
+- Aim for one failing test at a time; do not batch many speculative changes and test at the end.
+
 ## Brevity (mandatory)
 
 - Code without comments except non-obvious logic (one line at most). No JSDoc on obvious functions.
