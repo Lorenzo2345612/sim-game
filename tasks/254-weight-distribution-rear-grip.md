@@ -44,6 +44,16 @@ Authorised levers (ow26.json only, in this order; stop at the first that makes `
 3. Final-drive / 1st-gear ratio change of at most ±8 %.
 No calibration test window changes. Run only `npx vitest run tests/unit/calibration/ow26.test.ts tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts` while tuning (each run is about 10 s); do not run the full suite until the end. Report the chosen values.
 
+## Planner answers (round 3)
+
+Accepted final tune: `rearMuScale` 1.03, `aids.tc.slip` 0.08, `gearbox.ratios[0]` 3.7 → 3.404 (lever 3 is authorised; keep it). No `src/` changes. The coder's report must list every CoM-dependent site changed in `vehicleModel.ts` (spec step 3).
+
+Planner-authorised test edits (only these; nothing else in protected tests):
+- `tests/unit/edge/244-engine-voice-timbre-edge.test.ts` EDGE8: update `PINNED['ow26.json']` to the hash of the new `ow26.json` (other cars' hashes unchanged).
+- `tests/unit/edge/254-weight-distribution-rear-grip-edge.test.ts` EDGE1: build `bare` with `chassis.weightFront`, `tyres.rearMuScale` and `wheels.widthRear` deleted (as POST1 does) and compare it with the same spec carrying explicit defaults (0.5, 1, `width`).
+- Same file EDGE8: expect `rearMuScale` within 1.00–1.10 (inclusive) instead of exactly 1.10; other values unchanged.
+- Same file EDGE9: delete it (POST7 covers it).
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Executable contract. The `acceptance` worker turns each row into `tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts` before the coder starts. AT2 baselines (position, velocity, yaw) are recorded from master by the acceptance worker at test-writing time, before any `src/` change, and hard-coded in the test. Nobody else may change these rows or tests.
