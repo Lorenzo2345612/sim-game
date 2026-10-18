@@ -3437,7 +3437,7 @@
     {
       "num": "252",
       "title": "Expert AI drives spin-free on monza and spa",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "225",
         "254"
@@ -3703,6 +3703,19 @@
       "phase": 2,
       "spec": "tasks/272-neural-reference-line.md",
       "note": "implemented by the planner directly (owner request), not dispatched"
+    },
+    {
+      "num": "273",
+      "title": "Expert AI spin-free in 3-car traffic (silverstone)",
+      "status": "pending",
+      "deps": [
+        "252"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/273-ai-traffic-spin-free.md"
     }
   ]
 }

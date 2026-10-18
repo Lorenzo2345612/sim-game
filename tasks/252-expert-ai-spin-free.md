@@ -62,3 +62,10 @@ Vehicle physics, tyre model, car data, changing `AI_GRIP_MARGIN`, mistakes per l
 - Do not change the blocker/alongside priority in `traffic.ts`: 090 POST10 stays frozen. Revert that change, and fix the spin in the driver instead (steer and throttle limits while a car is alongside or close ahead, in `aiDriver.ts`).
 - Tester-pre EDGE6/7/9: the expert cases are required, and the easy/medium cases are advisory (not required to pass).
 - 249 AT3 and 250 AT9 failures are known and unrelated; ignore them.
+
+## Planner answers (coder timeout, round 2)
+
+- Scope cut: AT4 (silverstone, 3 AI traffic) moves to task 273. 252 = AT1, AT2, AT3, AT5 plus existing tests. Single-AI spins only; do not run silverstone or multi-AI probes.
+- Authorised test edit: in `tests/unit/acceptance/252-expert-ai-spin-free.test.ts` change only the AT4 case to `it.skip` with the comment `// moved to task 273`. No other acceptance edits.
+- Time budget: the probe limit in Steps (2 runs per track) is hard. If AT1/AT2 still fail after 2 fix attempts, stop and write the report (BLOCKED, probe numbers, per-run results) before minute 30.
+- Merge leftovers: if the worktree has conflict markers or stray probe files from earlier runs, delete the probe files and resolve markers first; do not re-run old probes.
