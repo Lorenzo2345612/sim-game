@@ -476,6 +476,8 @@ describe('155 close parallel sections acceptance', () => {
         delete copy.runoffs;
         delete copy.trees;
         delete copy.terrain;
+        // 250 adds the bollards array to every rebuilt track.
+        delete copy.bollards;
         return copy;
       };
       const now = strip(track);

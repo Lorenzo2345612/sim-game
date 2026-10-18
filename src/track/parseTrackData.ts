@@ -1,4 +1,4 @@
-import type { Board, EscapeRoad, Sausage, TrackData, TrackDataV2 } from '../core/types';
+import type { Board, Bollard, EscapeRoad, Sausage, TrackData, TrackDataV2 } from '../core/types';
 
 const BARRIER_TYPES = new Set(['armco', 'tyres', 'wall', 'foam']);
 
@@ -25,6 +25,7 @@ export function parseTrackData(json: unknown): TrackData | TrackDataV2 {
     if (!Array.isArray(out.escapeRoads)) out.escapeRoads = [] as EscapeRoad[];
     if (!Array.isArray(out.boards)) out.boards = [] as Board[];
     if (!Array.isArray(out.sausages)) out.sausages = [] as Sausage[];
+    if (!Array.isArray(out.bollards)) out.bollards = [] as Bollard[];
     if (!Array.isArray(out.bank)) {
       const n = Array.isArray(out.centerline) ? (out.centerline as unknown[]).length : 0;
       out.bank = new Array<number>(n).fill(0);

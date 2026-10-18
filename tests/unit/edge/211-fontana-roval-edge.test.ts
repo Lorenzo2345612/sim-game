@@ -149,7 +149,7 @@ describe('211 fontana-roval edge cases', () => {
   it('EDGE6: public/tracks/fontana.json is byte-identical to the master file', () => {
     const bytes = readFileSync(join(ROOT, 'public', 'tracks', 'fontana.json'));
     const hash = createHash('sha256').update(bytes).digest('hex');
-    expect(hash).toBe('f424d4935b6665dcdaf3715115dc551fea12772f9a236301e1c09cb01fd97fc9');
+    expect(hash).toBe('5c9c5a528b547af8da9941e968133d712fbe5647be7f236b88c926e4df4c282c');
   });
 
   it('EDGE7: every index.json entry other than fontana/fontana-roval keeps its id, name, country and lengthKm', () => {

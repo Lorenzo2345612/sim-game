@@ -346,7 +346,7 @@ describe('250 bollard placement edge — barriers and wrapping', () => {
     const { cum, lap } = cumArcs(pts);
     expect(cum[n - 1] + 3, 'sausage end + half length past the finish line').toBeGreaterThan(lap);
     const end = (cum[n - 1] + 3) % lap;
-    const sausage: Sausage[] = [{ index: n - 1, side: 'left', offset: 9, length: 10 }];
+    const sausage: Sausage[] = [{ index: n - 1, side: 'left', offset: 9, length: 6 }];
     const out = buildBollards(pts, undefined, sausage, [], []);
     expect(out).toHaveLength(3);
     const want = [end + 2, end + 4, end + 6].map((a) => a % lap);

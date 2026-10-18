@@ -282,7 +282,7 @@ describe('248 pit clears runoff acceptance', () => {
       cwd: ROOT,
       encoding: 'utf8',
     }).trim();
-    const allowed = ['runoffs', 'barriers', 'boards', 'trees', 'terrain', 'escapeRoads'];
+    const allowed = ['runoffs', 'barriers', 'boards', 'trees', 'terrain', 'escapeRoads', 'bollards'];
     const pin = (t: TrackDataV2): Record<string, unknown> => {
       const copy: Record<string, unknown> = { ...t };
       for (const key of allowed) delete copy[key];

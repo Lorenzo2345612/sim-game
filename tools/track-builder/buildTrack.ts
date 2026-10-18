@@ -5,6 +5,7 @@ import type { GeoJsonLineFeatureCollection, TrackSourceConfig } from './buildTra
 import { centerlineHeights, limitGrade, removeCanopy, smoothProfile } from './elevation';
 import { detectKerbs, detectRunoffs } from './corners';
 import { buildSausages, type SausageOverride } from './sausages';
+import { buildBollards } from './bollards';
 import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads, trimEscapeRoads } from './hazards';
 import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
@@ -170,6 +171,13 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     config.sausages,
     parallel.any ? { left: parallel.halfLeft, right: parallel.halfRight } : undefined,
   );
+  const bollards = buildBollards(
+    centerline,
+    { left: parallel.halfLeft, right: parallel.halfRight },
+    sausages,
+    runoffsClipped,
+    barriers,
+  );
   const treeSpecies: TreeSpecies[] = biome.species.map((sp) => ({
     name: sp.name,
     preset: SPECIES_PRESETS[sp.name].preset,
@@ -200,6 +208,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     grandstands,
     pit,
     sausages,
+    bollards,
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
   if (landmarks.length > 0) data.landmarks = landmarks;

@@ -26,7 +26,7 @@ const wrap = (v: number, n: number) => ((v % n) + n) % n;
 const circularDistance = (a: number, b: number, n: number) => Math.min(wrap(a - b, n), wrap(b - a, n));
 
 // Forward polyline length along the closed lap from index `from` to `to` (closing edge included).
-function arcLength(points: Point2[], from: number, to: number): number {
+export function arcLength(points: Point2[], from: number, to: number): number {
   const n = points.length;
   let len = 0;
   let i = wrap(from, n);
@@ -53,7 +53,7 @@ function detectChicanes(points: Point2[], runs: CornerRun[]): [CornerRun, Corner
 }
 
 // Index of the minimum radius inside the run, first index on ties.
-function apexIndex(rs: number[], run: CornerRun, n: number): number {
+export function apexIndex(rs: number[], run: CornerRun, n: number): number {
   const span = wrap(run.end - run.start, n);
   let best = run.start;
   let bestR = Infinity;

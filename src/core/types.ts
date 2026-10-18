@@ -69,6 +69,8 @@ export interface PitLane { start: number; end: number; side: Side }
 export interface Board { index: number; side: Side; offset: number; label: 50 | 100 | 150 | 200 }
 /** Small yellow kerb on the inside of a chicane apex; offset is metres from the centerline on `side`, length metres along the track. */
 export interface Sausage { index: number; side: Side; offset: number; length: number }
+/** Breakable post on the inside of a corner; x/z local metres, index the nearest centerline sample. */
+export interface Bollard { x: number; z: number; index: number; side: Side }
 export interface SurfaceStrip { // task 031 builds, 032/037 consume
   surface: Surface;
   positions: Float32Array;
@@ -101,6 +103,7 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   escapeRoads?: EscapeRoad[];
   boards?: Board[];
   sausages?: Sausage[];
+  bollards?: Bollard[];
   landmarks?: Landmark[];
   /** Metres from the centerline to the left/right edge per index; absent when no section is narrowed. */
   halfWidthLeft?: number[];

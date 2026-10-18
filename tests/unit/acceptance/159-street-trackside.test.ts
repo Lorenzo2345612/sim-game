@@ -60,6 +60,6 @@ describe('159 street circuit trackside acceptance', () => {
     const hash = createHash('sha256')
       .update(readFileSync(join(ROOT, 'public', 'tracks', 'monza.json')))
       .digest('hex');
-    expect(hash, 'monza.json').toBe('fbf273ecfd1589a742729f6ce029a4426b3ddcca2537c9587756e898cdcb0126');
+    expect(hash, 'monza.json').toBe('f02e1e8c7f32d578647905cb4fb142bd81edc87771022365425914d5a67cd3cf');
   });
 });
