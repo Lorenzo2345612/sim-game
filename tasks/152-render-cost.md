@@ -68,3 +68,9 @@ npx playwright test 152-   # this task's e2e files only; never the full e2e suit
 
 - LOD systems, occlusion culling, texture atlasing, post-processing changes; adaptive quality (154).
 - README, tasks.json, milestones.json.
+
+## Planner answers (round 1)
+
+- EDGE7 is wrong: under the floor-cell convention the three boxes fall in cells (0,0), (0,-1), (-1,0), so 3 meshes is correct. Authorised edit: `tests/unit/edge/152-render-cost-edge.test.ts:163` expects 3 merged meshes (one per cell). No other edge-test changes.
+- Accepted as designed: `renderer.info.autoReset=false` with one manual reset per frame, persistent `debugCameraYaw` offset, far cascade as a second directional light skipped under software GL.
+- Generate the AT4 baseline with `UPDATE_BASELINE=1` and include the PNG in the diff (listed file).
