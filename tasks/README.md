@@ -257,7 +257,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | waiting decision | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
-| 256 | Fix two test failures on master after the 247 merge | in progress | - |
+| 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
 | 259 | Sampling lane planner | pending | 258 |
