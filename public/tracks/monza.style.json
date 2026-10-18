@@ -5,12 +5,12 @@
   "kerbs": { "colors": ["#C8201E", "#DADADA"], "outerStrip": "#1F9A6A" },
   "runoffPaint": {
     "pattern": "none",
-    "colors": ["#1F9A6A", "#C8452E", "#DADADA"],
+    "colors": ["#008C45", "#F4F5F0", "#CD212A"],
     "stripeMeters": 3,
     "ranges": [
-      { "start": 260, "end": 360, "pattern": "bands", "colors": ["#1F9A6A", "#C8452E", "#DADADA"], "stripeMeters": 3 },
-      { "start": 1780, "end": 1900, "pattern": "stripes", "colors": ["#1F9A6A", "#C8452E", "#DADADA"], "stripeMeters": 3 },
-      { "start": 2420, "end": 2580, "pattern": "bands", "colors": ["#1F9A6A", "#DADADA"], "stripeMeters": 3 }
+      { "start": 260, "end": 360, "pattern": "bands", "colors": ["#008C45", "#F4F5F0", "#CD212A"], "stripeMeters": 3 },
+      { "start": 1780, "end": 1900, "pattern": "stripes", "colors": ["#008C45", "#F4F5F0", "#CD212A"], "stripeMeters": 3 },
+      { "start": 2420, "end": 2580, "pattern": "bands", "colors": ["#008C45", "#F4F5F0", "#CD212A"], "stripeMeters": 3 }
     ]
   },
   "barriers": {

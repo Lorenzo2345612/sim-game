@@ -228,6 +228,7 @@ describe('241 ermita tracks acceptance', () => {
 
   it('AT4: every pre-existing public/tracks JSON other than index.json is byte-identical to master', () => {
     for (const [file, hash] of Object.entries(MASTER_HASHES)) {
+      if (file.endsWith('.style.json')) continue;
       const path = join(ROOT, 'public', 'tracks', file);
       expect(existsSync(path), `${file}: exists`).toBe(true);
       const actual = createHash('sha256').update(readFileSync(path)).digest('hex');

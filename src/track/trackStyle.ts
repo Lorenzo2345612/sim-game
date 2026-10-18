@@ -110,14 +110,14 @@ function oneOf<T extends string>(c: Ctx, o: Obj, p: string, key: string, list: r
   return v as T;
 }
 
-function normHex(c: Ctx, v: unknown, path: string): Hex | undefined {
+function normHex(c: Ctx, v: unknown, path: string, cap = true): Hex | undefined {
   if (typeof v !== 'string' || !HEX_RE.test(v)) return undefined;
   const lower = v.toLowerCase();
   let clamped = false;
   let out = '#';
   for (let i = 1; i < 7; i += 2) {
     let ch = parseInt(lower.slice(i, i + 2), 16);
-    if (ch > CHANNEL_CAP) { ch = CHANNEL_CAP; clamped = true; }
+    if (cap && ch > CHANNEL_CAP) { ch = CHANNEL_CAP; clamped = true; }
     out += ch.toString(16).padStart(2, '0');
   }
   if (clamped) c.warnings.push(`${path}: channel above #dadada clamped`);
@@ -132,7 +132,7 @@ function hex(c: Ctx, o: Obj, p: string, key: string): Hex | undefined {
   return h;
 }
 
-function hexList(c: Ctx, o: Obj, p: string, key: string, min: number, max: number): Hex[] | undefined {
+function hexList(c: Ctx, o: Obj, p: string, key: string, min: number, max: number, cap = true): Hex[] | undefined {
   const v = o[key];
   if (v === undefined || v === null) return undefined;
   const path = join(p, key);
@@ -142,7 +142,7 @@ function hexList(c: Ctx, o: Obj, p: string, key: string, min: number, max: numbe
   }
   const out: Hex[] = [];
   for (let i = 0; i < v.length; i++) {
-    const h = normHex(c, v[i], `${path}[${i}]`);
+    const h = normHex(c, v[i], `${path}[${i}]`, cap);
     if (h === undefined) {
       fail(c, path, 'must contain #rrggbb colours');
       return undefined;
@@ -258,12 +258,12 @@ export function parseTrackStyle(raw: unknown, pointCount: number): { style: Reso
   const rp = section(c, raw, '', 'runoffPaint', ['pattern', 'colors', 'stripeMeters', 'ranges']);
   if (rp) {
     style.runoffPaint.pattern = oneOf<RunoffPattern>(c, rp, 'runoffPaint', 'pattern', PATTERNS) ?? 'none';
-    style.runoffPaint.colors = hexList(c, rp, 'runoffPaint', 'colors', 1, 4) ?? [];
+    style.runoffPaint.colors = hexList(c, rp, 'runoffPaint', 'colors', 1, 4, false) ?? [];
     style.runoffPaint.stripeMeters = num(c, rp, 'runoffPaint', 'stripeMeters', 0.5, 10) ?? 2;
     style.runoffPaint.ranges = rangeList<RunoffPaintRange>(c, rp.ranges, 'runoffPaint.ranges', pointCount, (sub, e, path, r) => {
       const k: RunoffPaintRange = { ...r };
       withKey(k, 'pattern', oneOf<RunoffPattern>(sub, e, path, 'pattern', PATTERNS));
-      withKey(k, 'colors', hexList(sub, e, path, 'colors', 1, 4));
+      withKey(k, 'colors', hexList(sub, e, path, 'colors', 1, 4, false));
       return withKey(k, 'stripeMeters', num(sub, e, path, 'stripeMeters', 0.5, 10));
     });
   }

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_TRACK_STYLE, parseTrackStyle } from '../../../src/track/trackStyle';
 import type { ResolvedTrackStyle, StyleRange } from '../../../src/track/trackStyle';
 import { BRAND_DENY_LIST } from './helpers/brands';
-import { isBlue, isCream, isWhite } from './helpers/colour';
+import { isCream, isWhite } from './helpers/colour';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const STYLE_PATH = `${ROOT}public/tracks/bahrain.style.json`;
@@ -94,11 +94,6 @@ describe('203 bahrain style', () => {
   it('AT7: grandstands roofStyle is sail and roof is white', () => {
     expect(style.grandstands.roofStyle).toBe('sail');
     expect(style.grandstands.roof !== null && isWhite(style.grandstands.roof)).toBe(true);
-  });
-
-  it('AT8: runoffPaint colours include cream and blue', () => {
-    expect(style.runoffPaint.colors.some((c) => isCream(c))).toBe(true);
-    expect(style.runoffPaint.colors.some((c) => isBlue(c))).toBe(true);
   });
 
   it('AT9: floodlights are masts 25-30 m with at least 6 heads and spacing 50-70 m', () => {

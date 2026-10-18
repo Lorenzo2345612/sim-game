@@ -5,11 +5,11 @@
   "kerbs": { "colors": ["#D8404A", "#DADADA"] },
   "runoffPaint": {
     "pattern": "none",
-    "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"],
+    "colors": ["#D50032", "#FFFFFF", "#071D49"],
     "stripeMeters": 3,
     "ranges": [
-      { "start": 2380, "end": 2500, "pattern": "stripes", "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"], "stripeMeters": 3 },
-      { "start": 115, "end": 292, "pattern": "stripes", "colors": ["#D12B35", "#DADADA", "#DAC21F", "#1E4F9F"], "stripeMeters": 3 }
+      { "start": 2380, "end": 2500, "pattern": "stripes", "colors": ["#D50032", "#FFFFFF", "#071D49"], "stripeMeters": 3 },
+      { "start": 115, "end": 292, "pattern": "stripes", "colors": ["#D50032", "#FFFFFF", "#071D49"], "stripeMeters": 3 }
     ]
   },
   "barriers": {

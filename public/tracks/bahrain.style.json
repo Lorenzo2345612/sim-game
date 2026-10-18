@@ -4,10 +4,10 @@
   "kerbs": { "colors": ["#C8352F", "#DADADA"] },
   "runoffPaint": {
     "pattern": "bands",
-    "colors": ["#D8C9A0", "#2A3C78", "#C8352F"],
+    "colors": ["#DA291C", "#FFFFFF"],
     "stripeMeters": 4,
     "ranges": [
-      { "start": 240, "end": 330, "side": "left", "pattern": "solid", "colors": ["#2A3C78"] }
+      { "start": 240, "end": 330, "side": "left", "pattern": "solid", "colors": ["#DA291C"] }
     ]
   },
   "barriers": {

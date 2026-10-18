@@ -1,0 +1,14 @@
+{
+  "Italy": ["#008C45", "#F4F5F0", "#CD212A"],
+  "Belgium": ["#FDDA24", "#EF3340"],
+  "United Kingdom": ["#00247D", "#FFFFFF", "#CF142B"],
+  "Mexico": ["#006747", "#FFFFFF", "#C8102E"],
+  "United States": ["#B31942", "#FFFFFF", "#0A3161"],
+  "Qatar": ["#8A1538", "#FFFFFF"],
+  "Bahrain": ["#DA291C", "#FFFFFF"],
+  "Malaysia": ["#D50032", "#FFFFFF", "#071D49"],
+  "Azerbaijan": ["#00B5E2", "#EF3340", "#509E2F"],
+  "Hungary": ["#CE2939", "#FFFFFF", "#477050"],
+  "Singapore": ["#EF3340", "#FFFFFF"],
+  "Austria": ["#C8102E", "#FFFFFF"]
+}

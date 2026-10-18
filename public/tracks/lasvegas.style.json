@@ -5,9 +5,9 @@
   "kerbs": { "colors": ["#cf2a2a", "#dadada"] },
   "runoffPaint": {
     "pattern": "solid",
-    "colors": ["#3fae5a"],
+    "colors": ["#0A3161"],
     "ranges": [
-      { "start": 95, "end": 160, "pattern": "solid", "colors": ["#3fae5a"] }
+      { "start": 95, "end": 160, "pattern": "solid", "colors": ["#0A3161"] }
     ]
   },
   "barriers": {

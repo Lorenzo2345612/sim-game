@@ -5,11 +5,11 @@
   "runoffPaint": {
     "pattern": "none",
     "ranges": [
-      { "start": 40, "end": 200, "side": "right", "pattern": "solid", "colors": ["#da731f"] },
-      { "start": 651, "end": 725, "side": "right", "pattern": "solid", "colors": ["#da731f"] },
-      { "start": 1432, "end": 1516, "side": "left", "pattern": "solid", "colors": ["#1f5fbf"] },
-      { "start": 2146, "end": 2211, "side": "right", "pattern": "solid", "colors": ["#1f5fbf"] },
-      { "start": 2547, "end": 2627, "side": "right", "pattern": "solid", "colors": ["#7a1f2f"] }
+      { "start": 40, "end": 200, "side": "right", "pattern": "solid", "colors": ["#8A1538"] },
+      { "start": 651, "end": 725, "side": "right", "pattern": "solid", "colors": ["#8A1538"] },
+      { "start": 1432, "end": 1516, "side": "left", "pattern": "solid", "colors": ["#8A1538"] },
+      { "start": 2146, "end": 2211, "side": "right", "pattern": "solid", "colors": ["#8A1538"] },
+      { "start": 2547, "end": 2627, "side": "right", "pattern": "solid", "colors": ["#8A1538"] }
     ]
   },
   "barriers": {

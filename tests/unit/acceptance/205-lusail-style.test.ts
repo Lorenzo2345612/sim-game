@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_TRACK_STYLE, parseTrackStyle } from '../../../src/track/trackStyle';
 import type { StyleRange } from '../../../src/track/trackStyle';
 import { BRAND_DENY_LIST } from './helpers/brands';
-import { hsl, isBlue, isCream, isGreen, isOrange, isRed, isTeal } from './helpers/colour';
+import { isCream, isGreen, isTeal } from './helpers/colour';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const STYLE_PATH = `${ROOT}public/tracks/lusail.style.json`;
@@ -101,13 +101,6 @@ describe('205 lusail style acceptance', () => {
     expect(c).not.toBeNull();
     if (c === null) return;
     expect(isTeal(c) || isGreen(c)).toBe(true);
-  });
-
-  it('AT9: runoffPaint ranges include an orange, a blue and a maroon colour', () => {
-    const colors = style.runoffPaint.ranges.flatMap((r) => r.colors ?? []);
-    expect(colors.some(isOrange)).toBe(true);
-    expect(colors.some(isBlue)).toBe(true);
-    expect(colors.some((c) => isRed(c) && hsl(c).l <= 0.35)).toBe(true);
   });
 
   it('AT10: pitBuilding storeys is 2', () => {

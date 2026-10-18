@@ -21,6 +21,7 @@ Out of scope (owned elsewhere): vegetation and ground palette by environment typ
     "ranges": [{ "start": 0, "end": 0, "side": "left", "colors": ["#hex", "#hex"], "outerStrip": "#hex" }]
   },
   "runoffPaint": {
+    // colors must come from public/flags/palettes.json for the track's country (new tracks add their country there); main field colours only, no black, no emblem colours
     "pattern": "none | solid | stripes | bands",                              // stripes: across the run-off; bands: parallel to track; both cycle through colors in order (1-4); solid uses colors[0]
     "colors": ["#hex"],
     "stripeMeters": 2,
@@ -51,6 +52,8 @@ Out of scope (owned elsewhere): vegetation and ground palette by environment typ
   "sky": { "hdri": "<ENV_TABLE name>", "fogDensityScale": 1 }
 }
 ```
+
+Flag palette sources (for the rule above): Italy 2006 decree Pantone TCX; Belgium protocol guide Pantone 115/032 C; UK Flag Institute RGB; Mexico SEGOB Pantone 3425/186 C; USA State Dept Old Glory Red/Blue RGB; Qatar Law 14/2012 Pantone 1955 C; Bahrain flag guide Pantone 485 C; Malaysia ASEAN spec Pantone 199/2768 C; Azerbaijan flag law Pantone 306/032/362 C; Hungary MSZ 1361:2009 TCX; Singapore National Symbols Kit Pantone 032 C; Austria 2018 regulation Pantone 186 C.
 
 Limits (parser rejects outside them): storeys 1-5, heightMeters 3-40 (pit), depthMeters 5-40, glazing 0-1, fence heightMeters 0-8, floodlight heightMeters 4-40, heads 1-12, spacingMeters 10-120, stripeMeters 0.5-10, seats 1-4 colours, kerb colours exactly 2, offsets 0-200 m, rows 4-40, props ≤ 60, fogDensityScale 0.25-4. Unknown keys: warning, ignored. Colours brighter than `#dadada` per channel (linear 0.7, the white-paint cap pinned by 172 AT3): each channel clamped to 0xda, warning.
 

@@ -8,6 +8,7 @@ const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const TRACKS = `${ROOT}public/tracks/`;
 
 const readJson = (name: string): unknown => JSON.parse(readFileSync(TRACKS + name, 'utf8'));
+const PALETTES_PATH = `${ROOT}public/flags/palettes.json`;
 
 interface IndexEntry { id: string; country: string }
 interface RunoffRange { pattern?: string; colors?: string[] }
@@ -15,7 +16,9 @@ interface RunoffPaint { pattern?: string; colors?: string[]; ranges?: RunoffRang
 interface StyleFile { runoffPaint?: RunoffPaint }
 
 const index = readJson('index.json') as IndexEntry[];
-const palettes = (existsSync(`${TRACKS}flag-palettes.json`) ? readJson('flag-palettes.json') : {}) as Record<string, string[]>;
+const palettes = (existsSync(PALETTES_PATH)
+  ? JSON.parse(readFileSync(PALETTES_PATH, 'utf8')) as Record<string, string[]>
+  : {}) as Record<string, string[]>;
 
 const countryOf = (id: string): string | undefined => index.find((e) => e.id === id)?.country;
 const paletteFor = (id: string): string[] | undefined => {

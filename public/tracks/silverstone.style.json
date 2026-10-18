@@ -7,9 +7,9 @@
   },
   "runoffPaint": {
     "pattern": "none",
-    "colors": ["#C8201E"],
+    "colors": ["#00247D", "#FFFFFF", "#CF142B"],
     "stripeMeters": 2,
-    "ranges": [{ "start": 880, "end": 960, "pattern": "stripes", "colors": ["#C8201E", "#DADADA"], "stripeMeters": 2 }]
+    "ranges": [{ "start": 880, "end": 960, "pattern": "stripes", "colors": ["#00247D", "#FFFFFF", "#CF142B"], "stripeMeters": 2 }]
   },
   "barriers": {
     "concrete": { "color": "#DADADA" },

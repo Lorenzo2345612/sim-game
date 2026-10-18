@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_TRACK_STYLE, parseTrackStyle, type StyleRange } from '../../../src/track/trackStyle';
-import { isBlue, isDark, isGreen, isGrey, isRed, isYellow } from './helpers/colour';
+import { isBlue, isGreen, isGrey, isRed, isYellow } from './helpers/colour';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const STYLE_PATH = join(ROOT, 'public', 'tracks', 'spa.style.json');
@@ -110,12 +110,12 @@ describe('189 Spa style', () => {
     expect(r.status).toBe(0);
   });
 
-  it('AT7: a runoffPaint stripes range has red, yellow and dark colours', () => {
+  it('AT7: a runoffPaint stripes range has red and yellow colours', () => {
     const { runoffPaint } = load().result.style;
     const ok = runoffPaint.ranges.some((r) => {
       if (r.pattern !== 'stripes') return false;
       const colors = r.colors ?? runoffPaint.colors;
-      return colors.some(isRed) && colors.some(isYellow) && colors.some(isDark);
+      return colors.some(isRed) && colors.some(isYellow);
     });
     expect(ok).toBe(true);
   });
