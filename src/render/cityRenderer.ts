@@ -10,6 +10,13 @@ const WATER_DROP = 0.3; // metres below the terrain minimum
 const WATER_SCROLL = 0.02; // normal-map uv offset per second
 const CONCRETE_TINT = 0x9a9a9a;
 const WATER_COLOR = 0x2a5a8c;
+const PARAPET_HEIGHT = 0.4;
+const PARAPET_HALF_WIDTH = 0.1;
+const TANK_RADIUS = 0.55;
+const TANK_HEIGHT = 1.1;
+const TANK_COLOR = 0x000000;
+const PLASTER_DEFAULT = 0xe8d8b0;
+const PLASTER_ROUGHNESS = 0.95;
 
 type P2 = [number, number];
 
@@ -208,6 +215,34 @@ function emitWallStrip(
   pushFlatTri(bucket, ring[0], ring[2], ring[3], top, FACADE_TILE);
 }
 
+interface ColorBucket extends GeoBucket {
+  colors: number[];
+}
+
+/** Walls + flat roof + roof-edge parapet of one plaster house, flat-coloured into the merged bucket. */
+function emitPlasterBuilding(
+  bucket: ColorBucket,
+  pts: P2[],
+  height: number,
+  baseY: number,
+  hex: number,
+): void {
+  const before = bucket.positions.length;
+  const geo = extrudeBuilding(pts, height, baseY);
+  const pos = geo.attributes.position.array;
+  const uv = geo.attributes.uv.array;
+  for (let i = 0; i < pos.length; i++) bucket.positions.push(pos[i]);
+  for (let i = 0; i < uv.length; i++) bucket.uvs.push(uv[i]);
+  geo.dispose();
+  const top = baseY + height;
+  for (let i = 0; i < pts.length; i++) {
+    emitWallStrip(bucket, pts[i], pts[(i + 1) % pts.length], top, PARAPET_HEIGHT, PARAPET_HALF_WIDTH);
+  }
+  const color = new THREE.Color().setHex(hex);
+  const added = (bucket.positions.length - before) / 3;
+  for (let i = 0; i < added; i++) bucket.colors.push(color.r, color.g, color.b);
+}
+
 function defaultLoadTexture(url: string): THREE.Texture {
   const texture =
     typeof document !== 'undefined' ? new THREE.TextureLoader().load(url) : new THREE.Texture();
@@ -319,6 +354,8 @@ export function createCityObject(
     `${mat}|${Math.floor(x / CITY_CELL)}|${Math.floor(z / CITY_CELL)}`;
 
   let buildings = 0;
+  const plasterBucket: ColorBucket = { positions: [], uvs: [], colors: [] };
+  const tankPoses: [number, number, number][] = [];
   for (const b of env.buildings) {
     const pts = orientedRing(b.ring);
     if (distinctCount(pts) < 3) continue;
@@ -327,6 +364,19 @@ export function createCityObject(
     for (const p of pts) {
       cx += p[0];
       cz += p[1];
+    }
+    if (b.material === 'plaster') {
+      const baseY = minTerrain(terrainY, pts);
+      emitPlasterBuilding(plasterBucket, pts, b.height, baseY, b.color ?? PLASTER_DEFAULT);
+      if (b.tank) {
+        tankPoses.push([
+          cx / pts.length,
+          baseY + b.height + PARAPET_HEIGHT + TANK_HEIGHT / 2,
+          cz / pts.length,
+        ]);
+      }
+      buildings++;
+      continue;
     }
     const mat = b.material === 'glass'
       ? glassVariant(Math.floor(cx / pts.length / CITY_CELL), Math.floor(cz / pts.length / CITY_CELL))
@@ -369,6 +419,30 @@ export function createCityObject(
     group.add(new THREE.Mesh(geo, materials[mat]));
   }
 
+  const plasterMaterial = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: PLASTER_ROUGHNESS,
+  });
+  const plasterGeo = bucketGeometry(plasterBucket);
+  if (plasterGeo) {
+    plasterGeo.setAttribute('color', new THREE.Float32BufferAttribute(plasterBucket.colors, 3));
+    group.add(new THREE.Mesh(plasterGeo, plasterMaterial));
+  }
+  let tankMaterial: THREE.MeshStandardMaterial | null = null;
+  if (tankPoses.length > 0) {
+    const tankGeometry = new THREE.CylinderGeometry(TANK_RADIUS, TANK_RADIUS, TANK_HEIGHT);
+    tankMaterial = new THREE.MeshStandardMaterial({ color: TANK_COLOR, roughness: 0.7 });
+    const tanks = new THREE.InstancedMesh(tankGeometry, tankMaterial, tankPoses.length);
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < tankPoses.length; i++) {
+      const [tx, ty, tz] = tankPoses[i];
+      matrix.makeTranslation(tx, ty, tz);
+      tanks.setMatrixAt(i, matrix);
+    }
+    tanks.instanceMatrix.needsUpdate = true;
+    group.add(tanks);
+  }
+
   const waterNormal = generateWaterNormalMap();
   textures.add(waterNormal);
   const waterMaterial = new THREE.MeshStandardMaterial({
@@ -403,6 +477,8 @@ export function createCityObject(
         if (mesh.isMesh) mesh.geometry.dispose();
       });
       for (const material of Object.values(materials)) material.dispose();
+      plasterMaterial.dispose();
+      if (tankMaterial) tankMaterial.dispose();
       waterMaterial.dispose();
       for (const texture of textures) texture.dispose();
     },

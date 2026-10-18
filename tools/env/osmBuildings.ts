@@ -1,11 +1,13 @@
 import { projectLonLat, type LonLat, type Point2 } from '../../src/track/geo';
 
-export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone';
+export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone' | 'plaster';
 
 export interface Building {
   ring: Point2[];
   height: number;
   material: BuildingMaterial;
+  color?: number;
+  tank?: boolean;
 }
 
 export interface Wall {

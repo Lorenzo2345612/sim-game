@@ -79,8 +79,8 @@ export interface SurfaceStrip { // task 031 builds, 032/037 consume
 }
 
 /** Baked city environment (tools/env/osmBuildings.ts), served from public/tracks/<id>-env.json. */
-export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone';
-export interface Building { ring: [number, number][]; height: number; material: BuildingMaterial }
+export type BuildingMaterial = 'glass' | 'concrete' | 'brick' | 'stone' | 'plaster';
+export interface Building { ring: [number, number][]; height: number; material: BuildingMaterial; color?: number; tank?: boolean }
 export interface Wall { line: [number, number][]; height: number; thickness: number }
 export interface CityEnv { buildings: Building[]; walls: Wall[]; water: [number, number][][] }
 export type LandmarkKind = 'cylinder-tower' | 'flame-towers' | 'twin-deck' | 'wheel' | 'lattice-tower';
