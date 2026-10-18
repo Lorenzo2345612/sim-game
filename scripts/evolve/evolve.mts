@@ -38,10 +38,13 @@ let pop: Float64Array[] = [];
 const resume = arg('resume', '');
 if (resume && existsSync(resume)) {
   const g = JSON.parse(readFileSync(resume, 'utf8'));
-  const base = Float64Array.from(g.weights);
-  pop.push(base);
-  while (pop.length < POP) pop.push(mutate(base, 0.1));
-} else for (let i = 0; i < POP; i++) pop.push(randomGenome(rand));
+  if (g.weights.length === N_W) {
+    const base = Float64Array.from(g.weights);
+    pop.push(base);
+    while (pop.length < POP) pop.push(mutate(base, 0.1));
+  } else console.log(`resume skipped: ${g.weights.length} weights, policy has ${N_W}`);
+}
+if (!pop.length) for (let i = 0; i < POP; i++) pop.push(randomGenome(rand));
 
 function mutate(g: Float64Array, sigma: number): Float64Array {
   const c = Float64Array.from(g);

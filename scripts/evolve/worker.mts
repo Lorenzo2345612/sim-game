@@ -27,6 +27,9 @@ const cum = cumulativeLengths(cl, true);
 const L = cum[n];
 const hwL = new Float64Array(n), hwR = new Float64Array(n);
 for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
+// Centerline speed profile (brake cue): corner speed sqrt(MU_G/kappa), backward pass with constant decel.
+const MU_G = 1.5 * 9.81, DECEL = 11, OVER_W = 2; // fitness: m lost per (m/s·s) above the profile
+const vProf = new Float64Array(n);
 
 // Fresh car per episode: VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state.
 function makeCar(pose: any): VehicleModel {
@@ -62,6 +65,20 @@ function pointAt(s: number, idxHint: number): [number, number, number] {
   return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), i];
 }
 
+for (let i = 0; i < n; i++) {
+  const a = pointAt(cum[i] - 10, i), b = cl[i], c = pointAt(cum[i] + 10, i);
+  const ab = Math.hypot(b[0] - a[0], b[1] - a[1]), bc = Math.hypot(c[0] - b[0], c[1] - b[1]), ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
+  const cross = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+  const kappa = (2 * cross) / Math.max(ab * bc * ca, 1e-6);
+  vProf[i] = Math.min(90, Math.sqrt(MU_G / Math.max(kappa, 1e-5)));
+}
+for (let pass = 0; pass < 2; pass++) for (let i = n - 1; i >= 0; i--) {
+  const j = (i + 1) % n, ds = cum[i + 1] - cum[i];
+  vProf[i] = Math.min(vProf[i], Math.sqrt(vProf[j] * vProf[j] + 2 * DECEL * ds));
+}
+
+if (process.env.EVO_DEBUG) { const o: string[] = []; for (let i = 0; i < n; i++) if (cum[i] < 1500 && i % 10 === 0) o.push(`${cum[i].toFixed(0)}:${vProf[i].toFixed(0)}`); console.log('vProf', o.join(' ')); }
+
 function poseAt(s: number) {
   if (s === 0) return spawn;
   const a = pointAt(s, 0), b = pointAt(s + 2, a[2]);
@@ -75,7 +92,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
   const m = genomes.length;
   const alive = new Array(m).fill(true);
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
-  const lapT = new Float64Array(m).fill(0), offT = new Float64Array(m);
+  const lapT = new Float64Array(m).fill(0), offT = new Float64Array(m), over = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
     dropCar(cars[k]);
     cars[k] = makeCar(pose);
@@ -112,6 +129,10 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         }
         let o = 1 + LOOK.length;
         for (const j of PROD) x[o++] = x[0] * Math.abs(x[1 + j]) * 4;
+        const v30 = vProf[pointAt(p.distance + 30, i)[2]];
+        x[o++] = Math.max(-3, Math.min(3, (st.forwardSpeed - vProf[i]) / 10));
+        x[o++] = Math.max(-3, Math.min(3, (st.forwardSpeed - v30) / 10));
+        x[o++] = vProf[i] / 60;
         x[o] = (hwR[i] - p.lateral) / 10;
         x[o + 1] = (hwL[i] + p.lateral) / 10;
         x[o + 2] = av.y / 2;
@@ -137,6 +158,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       if (ds < -L / 2) ds += L; else if (ds > L / 2) ds -= L;
       lastS[k] = p.distance;
       dist[k] += ds;
+      over[k] += Math.max(0, st.forwardSpeed - vProf[p.index] - 3) * FIXED_DT;
       if (dist[k] >= L && lapT[k] === 0) lapT[k] = t;
       if (dist[k] > best[k] + 3) { best[k] = dist[k]; stallT[k] = 0; } else stallT[k] += FIXED_DT;
       const q = st.rotation, upY = 1 - 2 * (q.x * q.x + q.z * q.z);
@@ -159,7 +181,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       parentPort!.postMessage({ type: 'pos', t, epi, pos: Array.from(pos) });
     }
   }
-  return { best, lapT };
+  return { best, lapT, over };
 }
 
 parentPort!.on('message', (msg: any) => {
@@ -170,7 +192,7 @@ parentPort!.on('message', (msg: any) => {
   msg.starts.forEach((s: number, e: number) => {
     const r = episode(genomes, s, msg.secs, e);
     for (let k = 0; k < genomes.length; k++) {
-      fitness[k] += r.best[k] + (r.lapT[k] > 0 ? (msg.secs - r.lapT[k]) * 30 : 0);
+      fitness[k] += r.best[k] - OVER_W * r.over[k] + (r.lapT[k] > 0 ? (msg.secs - r.lapT[k]) * 30 : 0);
       if (e === 0) dist[k] = r.best[k];
     }
     if (e === 0) lapT = Array.from(r.lapT);

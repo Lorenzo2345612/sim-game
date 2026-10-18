@@ -1,7 +1,7 @@
 // Tiny MLP policy shared by the evolution workers and the trainer.
 export const LOOK = [5, 10, 20, 35, 55, 80, 110, 150, 200]; // m ahead on the centerline
 export const PROD = [4, 6, 8]; // LOOK indices also fed as speed × |angle| (brake cue)
-export const N_IN = 1 + LOOK.length + PROD.length + 5; // speed, look angles, products, edges, yaw rate, slip, bias
+export const N_IN = 1 + LOOK.length + PROD.length + 3 + 5; // speed, look angles, products, speed-profile cues, edges, yaw rate, slip, bias
 export const N_HID = 16;
 export const N_OUT = 2; // steer, throttle(+)/brake(-)
 export const N_W = N_IN * N_HID + N_HID + N_HID * N_OUT + N_OUT;
