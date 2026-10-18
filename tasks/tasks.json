@@ -3342,7 +3342,7 @@
     {
       "num": "245",
       "title": "Kerbs never fold over the asphalt (radius cap, split strips)",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
