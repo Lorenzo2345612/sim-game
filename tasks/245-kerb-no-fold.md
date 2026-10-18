@@ -94,3 +94,11 @@ Implementation is close; 4 tests left. Work in small steps, one test at a time, 
 2. EDGE2/EDGE3: authorised to set the expected vertex count to 182 (Reff drops 5 more rows each side: 10 m window at 2 m spacing) with a one-line comment saying so; no computed helper needed.
 3. EDGE7: keep the `15.3 - 1e-4` bound and the `outerSide > 0` check (no test edit). My earlier note was wrong: in `circle(7.5)` the right (outer) kerb rows are not inner rows, so Reff must not touch them. A vertex at 15.2918 is an `src/render/kerbOuterStrip.ts` bug: print the offending row index, then check the closed-loop wrap / run-end rows (point normal vs segment normal) and that the outer side uses `half + KERB_WIDTH .. + 0.6` unchanged.
 4. Then run the full 245 acceptance + edge files and `tests/unit/render/kerbOuterStripClearance.test.ts`, then `npm test`.
+
+## Planner answers (round 8, final; supersedes round-7 item 3)
+
+Planner error: in `circle(7.5)` the outer strip spans radial 14.7..15.3, so `>= 15.3` can never hold. Do exactly these edits, then stop thinking and run the tests:
+1. EDGE7 `both` loop: `toBeGreaterThanOrEqual(14.7 - 1e-4)` and add `toBeLessThanOrEqual(15.3 + 1e-4)`; count `outerSide` with `Math.abs(d - 15.3) < 1e-2`. Nothing else in EDGE7. No `src/` change for EDGE7.
+2. AT2: `0.75 - 1e-4`.
+3. EDGE2 and EDGE3: expected vertex count 182 (comment: "Reff drops 5 more rows each side").
+4. Run the three 245 test files, then `npm test`, then write the report. Budget: 10 minutes; no exploration beyond these files.
