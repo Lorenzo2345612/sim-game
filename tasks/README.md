@@ -249,7 +249,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | in progress | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
-| 248 | Pit building clears run-off and the pit wall | in progress | 236, 247 |
+| 248 | Pit building clears run-off and the pit wall | done | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | pending | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |

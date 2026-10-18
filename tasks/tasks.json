@@ -3380,7 +3380,7 @@
     {
       "num": "248",
       "title": "Pit building clears run-off and the pit wall",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "236",
         "247"
