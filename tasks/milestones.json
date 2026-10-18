@@ -454,13 +454,17 @@
     {
       "id": "M2.3o",
       "title": "Neural driver v2 (kerbs, track limits, tyre inputs, setup)",
-      "status": "open",
+      "status": "built",
       "tasks": [
         "270"
       ],
       "prefetch": [
         "270"
-      ]
+      ],
+      "builtAt": "2026-10-18T16:29:01",
+      "commit": "14839ad",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M1.12",
@@ -704,6 +708,43 @@
         "265",
         "266",
         "267"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M3.1",
+      "title": "Career C0: quick weekend (practice, qualifying, sprint, race, points)",
+      "tasks": [
+        "274",
+        "275",
+        "276",
+        "277",
+        "278",
+        "279",
+        "280"
+      ],
+      "prefetch": [
+        "274",
+        "276",
+        "277"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "M7.1",
+      "title": "Electric open-wheel car (AWD, battery, regen, attack mode)",
+      "tasks": [
+        "281",
+        "282",
+        "283",
+        "284",
+        "285",
+        "286"
+      ],
+      "prefetch": [
+        "281",
+        "282",
+        "285"
       ],
       "status": "open"
     }

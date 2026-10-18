@@ -126,12 +126,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 121 | Race number decals | done | 120 |
 | 122 | Livery editor screen | done | 044, 073, 074, 106, 114, 120, 121 |
 | 123 | Driving line overlay coloured by action | done | 088, 093, 118 |
-| 125 | Assist presets and braking assist | pending | 054, 057, 070, 088, 089, 122, 123 |
+| 125 | Assist presets and braking assist | in progress | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
 | 128 | Yellow and blue flags | done | 092 |
 | 129 | Virtual safety car | done | 088, 092 |
-| 130 | Penalty book, HUD messages and wiring of rules | pending | 089, 092, 093, 094, 095, 127, 128, 129 |
+| 130 | Penalty book, HUD messages and wiring of rules | in progress | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
@@ -148,12 +148,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | done | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | done | 070, 144, 145 |
-| 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
-| 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
+| 147 | Debris: detached wings and wheels as physics bodies | in progress | 145, 146 |
+| 148 | Damage HUD, setting, pit repair time, AI reaction | in progress | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
-| 152 | Render cost: draw calls, culling, shadows | pending | 151 |
+| 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
 | 153 | Simulation cost with 16 cars | pending | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
@@ -253,7 +253,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | done | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | done | 248 |
 | 251 | Knock-over bollards at runtime | done | 250 |
-| 252 | Expert AI drives spin-free on monza and spa | waiting decision | 225, 254 |
+| 252 | Expert AI drives spin-free on monza and spa | in progress | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
@@ -274,3 +274,17 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
+| 273 | Expert AI spin-free in 3-car traffic (silverstone) | pending | 252 |
+| 274 | Weekend formats and points tables | pending | - |
+| 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
+| 276 | RaceConfig gridOrder | pending | - |
+| 277 | Qualifying classification | pending | - |
+| 278 | RaceGame timed sessions (practice, qualifying) | pending | 276, 277 |
+| 279 | Session result adapters | pending | 274, 275, 277 |
+| 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
+| 281 | Electric powertrain math | pending | - |
+| 282 | Attack mode rules | pending | - |
+| 283 | CarSpec awd + electric block | pending | 281 |
+| 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
+| 285 | Electric voice | pending | - |
+| 286 | Electric OW car, HUD and AI power | pending | 284, 285 |

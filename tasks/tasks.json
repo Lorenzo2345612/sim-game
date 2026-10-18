@@ -1704,7 +1704,7 @@
     {
       "num": "125",
       "title": "Assist presets and braking assist",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "054",
         "057",
@@ -1779,7 +1779,7 @@
     {
       "num": "130",
       "title": "Penalty book, HUD messages and wiring of rules",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "089",
         "092",
@@ -2033,7 +2033,7 @@
     {
       "num": "147",
       "title": "Debris: detached wings and wheels as physics bodies",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "145",
         "146"
@@ -2047,7 +2047,7 @@
     {
       "num": "148",
       "title": "Damage HUD, setting, pit repair time, AI reaction",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "094",
         "145",
@@ -2102,7 +2102,7 @@
     {
       "num": "152",
       "title": "Render cost: draw calls, culling, shadows",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "151"
       ],
@@ -3437,7 +3437,7 @@
     {
       "num": "252",
       "title": "Expert AI drives spin-free on monza and spa",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "225",
         "254"
@@ -3716,6 +3716,173 @@
       "models": "heavy",
       "phase": 2,
       "spec": "tasks/273-ai-traffic-spin-free.md"
+    },
+    {
+      "num": "274",
+      "title": "Weekend formats and points tables",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/274-weekend-formats-points.md"
+    },
+    {
+      "num": "275",
+      "title": "Weekend controller (grid rules, points, standings)",
+      "status": "pending",
+      "deps": [
+        "274"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/275-weekend-controller.md"
+    },
+    {
+      "num": "276",
+      "title": "RaceConfig gridOrder",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/276-race-grid-order.md"
+    },
+    {
+      "num": "277",
+      "title": "Qualifying classification",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/277-qualifying-classification.md"
+    },
+    {
+      "num": "278",
+      "title": "RaceGame timed sessions (practice, qualifying)",
+      "status": "pending",
+      "deps": [
+        "276",
+        "277"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 3,
+      "spec": "tasks/278-racegame-timed-sessions.md"
+    },
+    {
+      "num": "279",
+      "title": "Session result adapters",
+      "status": "pending",
+      "deps": [
+        "274",
+        "275",
+        "277"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/279-session-result-adapters.md"
+    },
+    {
+      "num": "280",
+      "title": "Quick weekend UI (menu, hub, session HUD)",
+      "status": "pending",
+      "deps": [
+        "274",
+        "275",
+        "276",
+        "278",
+        "279"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 3,
+      "spec": "tasks/280-quick-weekend-ui.md"
+    },
+    {
+      "num": "281",
+      "title": "Electric powertrain math",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/281-electric-powertrain-math.md"
+    },
+    {
+      "num": "282",
+      "title": "Attack mode rules",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/282-attack-mode-rules.md"
+    },
+    {
+      "num": "283",
+      "title": "CarSpec awd + electric block",
+      "status": "pending",
+      "deps": [
+        "281"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/283-carspec-awd-electric.md"
+    },
+    {
+      "num": "284",
+      "title": "AWD electric drive in VehicleModel",
+      "status": "pending",
+      "deps": [
+        "281",
+        "282",
+        "283"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 7,
+      "spec": "tasks/284-awd-electric-vehicle-model.md"
+    },
+    {
+      "num": "285",
+      "title": "Electric voice",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/285-electric-voice.md"
+    },
+    {
+      "num": "286",
+      "title": "Electric OW car, HUD and AI power",
+      "status": "pending",
+      "deps": [
+        "284",
+        "285"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/286-eow-car-data-hud-ai.md"
     }
   ]
 }
