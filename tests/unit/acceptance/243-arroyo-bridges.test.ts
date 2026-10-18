@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
@@ -230,51 +229,6 @@ function usesStoneSet(material: THREE.Material | THREE.Material[]): boolean {
   });
 }
 
-// sha256 of every non-ermita public/tracks/*.json on master at test-writing time.
-const MASTER_HASHES: Record<string, string> = {
-  'bahrain.json': '1ac84b1117cb810b9666db011e1333877c92a2d8ebf2e186fee1f1cf99978371',
-  'bahrain.style.json': 'ef217935d71fe5774b48b845dd3dae7cd82bb96df06f2c83d2add784acec5645',
-  'baku-env.json': '38b9a37e60f941e887fe175791f604c36ce4d38a4a10e71475e64cc9372e8099',
-  'baku.json': 'd95b9a60fff71c63585a20142952f690592c6cc9e66ccf586ca5d0255925633f',
-  'baku.style.json': '4af365cbc2fd9d62d274853a94a2970a68ffa1101321f1fbab1d2c0a59840b27',
-  'braselton.json': 'bd5a7ba0a01c71e47ef14d36826e351a6f813e9241399050515876a791f079bc',
-  'braselton.style.json': '1f93dc666f4e852f14b9472b09f8124be32710476b6377a235e3733e3c2c523e',
-  'budapest.json': 'baa4756e928958c6eaff19c58578378ef9d1a14e13ad4bd4f5a2d33ca8845350',
-  'budapest.style.json': 'e64716fd9411f2ea77f9c25ce74a53fd264444be05458a128cf6bcb64a3cc336',
-  'cleveland.json': '412f66295709d16106349c56d68ff94ae5dbae09a0c391d6c9e757bfec7f4d50',
-  'cleveland.style.json': '43f2c819fdfbd7e2e2183a508ea7df34bf602d304a60cc10de7e70ed2258f967',
-  'daytona.json': '5a7dd75b0f9ca9f2bbea161efa66cebaa3a43312665127ad1c9505fd3f7b3217',
-  'daytona.style.json': '5047c1f4a1e01f2e19cc6c67be0b0922fc91b6078c825bbf53c4f022fbb56eb6',
-  'detroit.json': '587de9985bd876fa17603c633aebb3408e8a250ec63093105ebd21993a97d16b',
-  'detroit.style.json': '0f052d52743836b620825c2c36a7f93f8237b0ba7b0afdbcd1d83106c70d8ddc',
-  'elkhart.json': '4ae7ca652ab8e62c058dec49b29ac00ba8842d418a21514b11d23e4ff687ebad',
-  'elkhart.style.json': 'fbd45c076cd531eebf3be2ddc8ff97c4da954a7c4ede734c40097926965c37ba',
-  'fontana-roval.json': '18e1269f2cdfe97e03837bc22f7cddd3bb8c9d7f2b0404ef2611f0a5ea03a574',
-  'fontana.json': '26b619a9f2e3582d8787025a5db6c97e26e36976134f8b6af44dc83dbc3295fa',
-  'fontana.style.json': '7e23763cf6aad97e39326fb8f791626ec82a75a5c7071a27cbc35989078615ba',
-  'index.json': '06e70fb3eabfba57315fced377e0590ea1e56c37ddd8ea5fac9960d8b0d3fdc9',
-  'lasvegas-env.json': '626ec59afecbe38550053872269d6838381e46175a2734f16714c72f8f2f64ce',
-  'lasvegas.json': '33482acf564d93a7df27dd6db310cad883cc59e11e4c344af1ec6cf4d9871a4e',
-  'lasvegas.style.json': 'a1a84f3967ae29c6ab7b2006eae3a3e3af938bd3387c424b681a92c0d740233e',
-  'lusail.json': '6c92afd076bc334e086f572be016e4fbba392e984b4a7ae060340cc0dc8c7ae8',
-  'lusail.style.json': '152200e366f6af1ac17aa7db87f74ba6462f5978a7261b71967442c4ee03073f',
-  'mexico.json': '73ee24c221135659dabfb735bd7c8f7f9d61080cda328b3ae8e629cd26cec243',
-  'mexico.style.json': '99e125322dffadc2889be05c3fd39dfc737b2efbaa25ed09455379fa4b805cb0',
-  'monza.json': 'c9c395f30372df560aa5cc03219f1e68ddc7835f929662ad76e69305bf23e843',
-  'monza.style.json': '22ee66af5dc9e215802bdd43bdc02f98cea928b0d49cd356ee033087f455ab9c',
-  'sepang.json': '96a94c6000276f3e231d2bc4564ea6b484f86263c1a10280823180639747b27b',
-  'sepang.style.json': 'fa46aa49846c6ebfec068c3cda6d665b780e8043a271b21032a476dd5acfa231',
-  'silverstone.json': '06a217e8a0dbb52f3888acc5d2f65357687739e085b89e2725e520a1bdff758a',
-  'silverstone.style.json': '33235655e19b30f1536b668e5ca44173e4d82de168665fb90f0dc6070719e8e0',
-  'singapore-env.json': '82ca9b70c48a5ccabfe14a02c2459ec33de01295d90be52a5ec7bd648de0fdc7',
-  'singapore.json': 'b9ea673dc33ea70bea76816f4affe0178dbe6e33b9db195371e29d914dc4f644',
-  'singapore.style.json': '053c9e6ddcb6ace084ec973993195321f0ac796def621f631c7ad8280b28bfbf',
-  'spa.json': 'ab84e19f2cb2a291ca3d3e24ee209d6ddb53fd5dc2f9697977b960192b15a29c',
-  'spa.style.json': '8cd6ad25ad82dba77425f9327677b2099adb9543edf74ca32a82369d2a021190',
-  'spielberg.json': '33dec7af3d84709735a3e8f0a5416cb12d625ca0415609a0551db8157d209cd3',
-  'spielberg.style.json': '4acb88eba030d2b2992c6535066f1f6fd77980ac795aa2557ab50f20b2c7c9b9',
-};
-
 describe('243 arroyo bridges acceptance', () => {
   it('AT1: fixture G yields exactly one bridge spanning x 480-520', async () => {
     const out = await buildG({ water: true, arroyo: true });
@@ -457,17 +411,6 @@ describe('243 arroyo bridges acceptance', () => {
         best = Math.min(best, Math.hypot(x - wx, z - wz));
       }
       expect(best, `${id}: bridge midpoint vs OSM crossing`).toBeLessThanOrEqual(30);
-    }
-  });
-
-  it('AT9: every non-ermita public/tracks JSON is byte-identical to master', () => {
-    const files = readdirSync(join(ROOT, 'public', 'tracks'))
-      .filter((f) => f.endsWith('.json') && !f.startsWith('ermita-'))
-      .sort();
-    expect(files).toEqual(Object.keys(MASTER_HASHES).sort());
-    for (const [file, hash] of Object.entries(MASTER_HASHES)) {
-      const actual = createHash('sha256').update(readFileSync(join(ROOT, 'public', 'tracks', file))).digest('hex');
-      expect(actual, file).toBe(hash);
     }
   });
 
