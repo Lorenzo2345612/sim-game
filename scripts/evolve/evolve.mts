@@ -1,5 +1,5 @@
 // Neuroevolution trainer with a live viewer at http://127.0.0.1:8770
-// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--resume path]
+// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing] [--resume path]
 // Grid episode grows with progress up to --laps laps; random-start episodes last --secs.
 import { Worker } from 'node:worker_threads';
 import { createServer, type ServerResponse } from 'node:http';
@@ -16,13 +16,15 @@ const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`)
 const trackId = arg('track', 'monza'), carId = arg('car', 'f4');
 const POP = Number(arg('pop', '100')), W = Number(arg('workers', '10')), SECS = Number(arg('secs', '60'));
 const MAX_LAPS = Number(arg('laps', '10')), GENS = Number(arg('gens', '1000'));
+const LINE = arg('line', 'center') === 'racing' ? 'racing' : 'center'; // look-ahead targets + speed profile source
 const SPEED_AT = Number(arg('speed-at', '4')); // mean grid distance (laps, 5-gen average) that switches fitness to speed
 const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: MAX_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
-const modelDir = join(here, 'models', `${trackId}-${carId}`);
+const tag = `${trackId}-${carId}${LINE === 'racing' ? '-racing' : ''}`;
+const modelDir = join(here, 'models', tag);
 const PORT = Number(arg('port', '8770'));
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
-const runDir = join(here, 'runs', `${trackId}-${carId}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+const runDir = join(here, 'runs', `${tag}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 mkdirSync(runDir, { recursive: true });
 
 // Track outline for the viewer
@@ -77,7 +79,7 @@ createServer((req, res) => {
   if (req.url === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     clients.add(res);
-    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId, carId, pop: POP, elite: ELITE, history })}\n\n`);
+    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId: LINE === 'racing' ? `${trackId} (trazada ideal)` : trackId, carId, pop: POP, elite: ELITE, history })}\n\n`);
     req.on('close', () => clients.delete(res));
     return;
   }
@@ -89,7 +91,7 @@ setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(posit
 // Workers
 const workers: Worker[] = [];
 await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => {
-  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per } });
+  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per, line: LINE } });
   wk.on('message', (m: any) => {
     if (m.type === 'ready') { lapLength = m.lapLength; ok(); }
     if (m.type === 'pos') { positions.set(m.pos, w * per * 4); if (w === 0) simT = m.t; }
@@ -97,7 +99,7 @@ await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => 
   wk.on('error', (e) => { console.error('worker', w, e); process.exit(1); });
   workers.push(wk);
 })));
-console.log(`${W} workers ready, pop ${POP}, ${N_W} weights, lap ${lapLength.toFixed(0)} m`);
+console.log(`${W} workers ready, pop ${POP}, ${N_W} weights, lap ${lapLength.toFixed(0)} m, line ${LINE}`);
 
 let perm: number[] = []; // slot -> pop index (genomes shuffled across worlds every generation)
 function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[]; laps: number[]; finishT: number[] }> {
@@ -128,12 +130,12 @@ function saveModel(i: number, finish: number) {
   const avg = finish / MAX_LAPS, key = String(Math.floor(avg));
   if (hof[key]) return;
   const file = `race-${key}s-gen${gen}.json`;
-  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, track: trackId, car: carId, raceLaps: MAX_LAPS, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(pop[i]) }));
+  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: MAX_LAPS, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(pop[i]) }));
   hof[key] = { file, avgLap: avg, gen };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
   const difficulties = { expert: all[0].file, hard: pick(1.03), medium: pick(1.07), easy: pick(1.12) };
-  writeFileSync(join(modelDir, 'index.json'), JSON.stringify({ track: trackId, car: carId, difficulties, models: hof }, null, 1));
+  writeFileSync(join(modelDir, 'index.json'), JSON.stringify({ track: trackId, car: carId, line: LINE, difficulties, models: hof }, null, 1));
   console.log(`model saved ${file} (avg lap ${avg.toFixed(2)} s)`);
 }
 let lastR: any = null;
@@ -158,7 +160,7 @@ for (; gen < GENS; ) {
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
   history.push({ gen, best: r.best[bestI], mean, bestLap, laps: topLaps });
   console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
-  const champ = { gen, phase: speedPhase ? 'speed' : 'growth', nIn: N_IN, track: trackId, car: carId, distance: r.best[bestI], lapTime: r.lapT[bestI], laps: r.laps[bestI], fitness: r.fitness[bestI], weights: Array.from(pop[bestI]) };
+  const champ = { gen, phase: speedPhase ? 'speed' : 'growth', nIn: N_IN, line: LINE, track: trackId, car: carId, distance: r.best[bestI], lapTime: r.lapT[bestI], laps: r.laps[bestI], fitness: r.fitness[bestI], weights: Array.from(pop[bestI]) };
   writeFileSync(join(runDir, `gen-${String(gen).padStart(4, '0')}.json`), JSON.stringify(champ));
   if (r.fitness[bestI] >= allTimeBest) { allTimeBest = r.fitness[bestI]; writeFileSync(join(runDir, 'best.json'), JSON.stringify(champ)); }
   send('gen', history[history.length - 1]);
@@ -170,7 +172,7 @@ for (; gen < GENS; ) {
   }
   pop = next;
   sigma = Math.max(0.06, sigma * 0.985);
-  writeFileSync(join(runDir, 'pop.json'), JSON.stringify({ gen, speedPhase, refLap, topLaps, sigma, pop: pop.map((g) => Array.from(g)) }));
+  writeFileSync(join(runDir, 'pop.json'), JSON.stringify({ gen, line: LINE, speedPhase, refLap, topLaps, sigma, pop: pop.map((g) => Array.from(g)) }));
   gen++;
 }
 console.log(`finished ${GENS} generations`);

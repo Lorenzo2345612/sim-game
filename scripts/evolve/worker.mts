@@ -12,9 +12,10 @@ import { gridSlots } from '../../src/race/grid';
 import { TrackProgress } from '../../src/track/trackProgress';
 import { cumulativeLengths } from '../../src/track/centerline';
 import { halfWidthAt } from '../../src/track/surfaces';
+import { computeRacingLine } from '../../src/ai/racingLine';
 import { LOOK, PROD, N_IN, N_NEAR, forward } from './policy.mts';
 
-const { root, trackId, carId, slots } = workerData as { root: string; trackId: string; carId: string; slots: number };
+const { root, trackId, carId, slots, line = 'center' } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -25,6 +26,18 @@ const cl: [number, number][] = track.centerline;
 const n = cl.length;
 const cum = cumulativeLengths(cl, true);
 const L = cum[n];
+// Look-ahead targets and speed profile follow `tgt` (centerline, or the classic AI's racing line, same indexing); progress, edges and lateral stay on the centerline.
+let tgt: [number, number][] = cl;
+if (line === 'racing') {
+  const rl = computeRacingLine(cl, track.widthMeters / 2);
+  tgt = cl.map((c, i) => { // clamp inside the edges with a 1 m car half-width margin
+    const a = cl[(i - 1 + n) % n], b = cl[(i + 1) % n], tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1;
+    const rx = -tz / l, rz = tx / l;
+    const lat = (rl.points[2 * i] - c[0]) * rx + (rl.points[2 * i + 1] - c[1]) * rz;
+    const q = Math.max(-(halfWidthAt(track, 'left', i) - 1), Math.min(halfWidthAt(track, 'right', i) - 1, lat));
+    return [c[0] + rx * q, c[1] + rz * q] as [number, number];
+  });
+}
 
 const hwL = new Float64Array(n), hwR = new Float64Array(n);
 for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = halfWidthAt(track, 'right', i); }
@@ -67,24 +80,24 @@ const x = new Float64Array(N_IN), out = new Float64Array(2);
 const inputs = cars.map(() => ({ throttle: 0, brake: 0, steer: 0, reset: false }));
 const parked = { throttle: 0, brake: 1, steer: 0, reset: false };
 
-function pointAt(s: number, idxHint: number): [number, number, number] {
+function pointAt(s: number, idxHint: number, pts: [number, number][] = cl): [number, number, number] {
   s = ((s % L) + L) % L;
   let i = idxHint;
   for (let g = 0; g < n && !(cum[i] <= s && s < cum[i + 1]); g++) i = (i + 1) % n;
   const t = (s - cum[i]) / Math.max(cum[i + 1] - cum[i], 1e-9);
-  const a = cl[i], b = cl[(i + 1) % n];
+  const a = pts[i], b = pts[(i + 1) % n];
   return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), i];
 }
 
 for (let i = 0; i < n; i++) {
-  const a = pointAt(cum[i] - 10, i), b = cl[i], c = pointAt(cum[i] + 10, i);
+  const a = pointAt(cum[i] - 10, i, tgt), b = tgt[i], c = pointAt(cum[i] + 10, i, tgt);
   const ab = Math.hypot(b[0] - a[0], b[1] - a[1]), bc = Math.hypot(c[0] - b[0], c[1] - b[1]), ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
   const cross = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
   const kappa = (2 * cross) / Math.max(ab * bc * ca, 1e-6);
   vProf[i] = Math.min(90, Math.sqrt(MU_G / Math.max(kappa, 1e-5)));
 }
 for (let pass = 0; pass < 2; pass++) for (let i = n - 1; i >= 0; i--) {
-  const j = (i + 1) % n, ds = cum[i + 1] - cum[i];
+  const j = (i + 1) % n, ds = tgt === cl ? cum[i + 1] - cum[i] : Math.hypot(tgt[j][0] - tgt[i][0], tgt[j][1] - tgt[i][1]);
   vProf[i] = Math.min(vProf[i], Math.sqrt(vProf[j] * vProf[j] + 2 * DECEL * ds));
 }
 
@@ -167,7 +180,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         x[0] = st.forwardSpeed / 60;
         let hint = i;
         for (let j = 0; j < LOOK.length; j++) {
-          const pt = pointAt(p.distance + LOOK[j], hint);
+          const pt = pointAt(p.distance + LOOK[j], hint, tgt);
           hint = pt[2];
           const dx = pt[0] - st.position.x, dz = pt[1] - st.position.z;
           x[1 + j] = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz) / Math.PI;
