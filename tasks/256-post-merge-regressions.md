@@ -39,7 +39,7 @@ No new test file; rows reference existing tests.
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | master after the change | `npx vitest run tests/unit/acceptance/253-runoff-flag-colours.test.ts` | passes, no AT6 test present |
-| AT2 | monza | `tests/unit/edge/225-ai-grip-margin.test.ts` | all 3 pass (EDGE3 medium < hard < expert) |
+| AT2 | — | — | moved to task 268 (225 EDGE3 is a symptom of the AI barrier/off-track regression) |
 | AT3 | | `tests/unit/acceptance/225-*.test.ts` and `tests/unit/acceptance/247-*.test.ts` | pass |
 
 ## Acceptance criteria
@@ -61,3 +61,7 @@ npm test
 - Editing `tests/unit/edge/225-ai-grip-margin.test.ts`, track JSON or sausage placement.
 - Task 252 work (expert spin-free).
 - Any other test edit besides deleting 253 AT6.
+
+## Planner answers (round 2)
+
+- 225 EDGE3 is out of scope here: root cause measured by the planner (AI runs wide at Parabolica, wheel rays climb the armco, car flips); fixed in task 268. Do not edit `src/ai` or 225 tests. Finish with AT1 (done) and AT3; report EDGE3 as expected-failing, owned by 268.
