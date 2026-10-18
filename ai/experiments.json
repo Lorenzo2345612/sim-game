@@ -83,7 +83,8 @@
       "224",
       "227",
       "244",
-      "239"
+      "239",
+      "242"
     ]
   },
   "taskProviders": {
@@ -93,6 +94,13 @@
         "acceptance",
         "tester-pre",
         "tester"
+      ]
+    },
+    "242": {
+      "claude": [
+        "coder",
+        "tester",
+        "reviewer"
       ]
     }
   }
