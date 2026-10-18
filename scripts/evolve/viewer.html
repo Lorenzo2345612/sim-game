@@ -12,7 +12,7 @@ h2{margin:0 0 8px;font-size:18px}.k{color:#888}canvas{display:block}
 <canvas id="chart" width="316" height="200"></canvas>
 <div id="laps"></div>
 <canvas id="lchart" width="316" height="120" style="background:#181818;margin-top:6px"></canvas>
-<p class="k">Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
+<p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
 </div>
 <script>
 const map=document.getElementById('map'),ctx=map.getContext('2d'),ch=document.getElementById('chart'),cx=ch.getContext('2d');
@@ -41,7 +41,7 @@ function lapChart(){const c=document.getElementById('lchart'),g=c.getContext('2d
  if(!L.length){el.innerHTML='<p class="k">Vueltas completas: ninguna todavía</p>';return;}
  let rec=[],b=1e9;for(const[i,t]of L)if(t<b){b=t;rec.push([hist[i].gen,t]);}
  const fmt=t=>`${Math.floor(t/60)}:${(t%60).toFixed(2).padStart(5,'0')}`;
- el.innerHTML=`<h2 style="margin-top:10px">Tiempos de vuelta</h2>Récord <b style="color:#f6c">${fmt(b)}</b> · ${L.length} generaciones con vuelta completa<br><span class="k">Récords:</span> `+rec.slice(-8).reverse().map(([g,t])=>`gen ${g}: ${fmt(t)}`).join(' · ');
+ el.innerHTML=`<h2 style="margin-top:10px">Tiempos de vuelta</h2>Récord <b style="color:#f6c">${fmt(b)}</b> · máx. <b>${Math.max(...hist.map(h=>h.laps||0))}</b> vueltas seguidas · ${L.length} generaciones con vuelta completa<br><span class="k">Récords:</span> `+rec.slice(-8).reverse().map(([g,t])=>`gen ${g}: ${fmt(t)}`).join(' · ');
  const lo=Math.min(...L.map(p=>p[1])),hi=Math.max(...L.map(p=>p[1])),n=Math.max(hist.length-1,1);g.strokeStyle='#f6c';g.beginPath();
  L.forEach(([i,t],k)=>{const u=4+i/n*(c.width-8),v=8+(hi>lo?(t-lo)/(hi-lo):0.5)*(c.height-20);k?g.lineTo(u,v):g.moveTo(u,v)});g.stroke();
  g.fillStyle='#aaa';g.fillText(`mejor vuelta por generación (${fmt(lo)}–${fmt(hi)})`,4,c.height-3);}
@@ -53,7 +53,7 @@ function chart(){lapChart();cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.h
 function eliteSet(){eliteIdx=new Set();for(let i=0;i<init.elite;i++)eliteIdx.add(i);}
 const es=new EventSource('/events');
 es.addEventListener('init',e=>{init=JSON.parse(e.data);hist=init.history;eliteSet();fit();chart();});
-es.addEventListener('pos',e=>{const d=JSON.parse(e.data);pos=d.p;gen=d.gen;t=d.t;});
+es.addEventListener('pos',e=>{const d=JSON.parse(e.data);pos=d.p;gen=d.gen;t=d.t;if(d.e)eliteIdx=new Set(d.e);});
 es.addEventListener('gen',e=>{hist.push(JSON.parse(e.data));chart();});
 draw();
 </script></body></html>

@@ -12,7 +12,7 @@ import { gridSlots } from '../../src/race/grid';
 import { TrackProgress } from '../../src/track/trackProgress';
 import { cumulativeLengths } from '../../src/track/centerline';
 import { halfWidthAt } from '../../src/track/surfaces';
-import { LOOK, PROD, N_IN, forward } from './policy.mts';
+import { LOOK, PROD, N_IN, N_NEAR, forward } from './policy.mts';
 
 const { root, trackId, carId, slots } = workerData as { root: string; trackId: string; carId: string; slots: number };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
@@ -31,25 +31,34 @@ for (let i = 0; i < n; i++) { hwL[i] = halfWidthAt(track, 'left', i); hwR[i] = h
 const MU_G = 1.5 * 9.81, DECEL = 11, OVER_W = 2; // fitness: m lost per (m/s·s) above the profile
 const vProf = new Float64Array(n);
 
-// Fresh car per episode: VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state.
-function makeCar(pose: any): VehicleModel {
-  const v = new VehicleModel(world, spec, pose);
+// Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
+// Cars collide with each other (traffic). Fuel load, compound and wear rate are randomised per car and episode.
+const COMPOUNDS = ['soft', 'medium', 'hard'] as const;
+const FUEL_MIN_L = 18; // measured ~1.3 L/lap at Monza (F4): ≥ 13 laps, grid episode is ≤ 10
+const muMed = spec.tyres.compounds.medium.mu0;
+const carMu = new Float64Array(slots), carFuel0 = new Float64Array(slots);
+function makeCar(pose: any, k: number): VehicleModel {
+  const startL = FUEL_MIN_L + Math.random() * (spec.fuel.capacityL - FUEL_MIN_L);
+  const v = new VehicleModel(world, { ...spec, fuel: { ...spec.fuel, startL } }, pose);
   configureVehicle(v, track.id);
-  const body: any = v.body;
-  for (let c = 0; c < body.numColliders(); c++) {
-    const col = body.collider(c);
-    const g = col.collisionGroups() >>> 0;
-    const member = g >>> 16;
-    col.setCollisionGroups(((member << 16) | ((g & 0xffff) & ~member)) >>> 0);
-  }
+  const c = COMPOUNDS[Math.floor(Math.random() * 3)];
+  v.setCompound(c);
+  v.setMultipliers(1 + Math.random() * 4, 1);
+  carMu[k] = spec.tyres.compounds[c].mu0 / muMed - 1;
+  carFuel0[k] = startL;
   return v;
+}
+function parkCar(v: VehicleModel): void {
+  const body: any = v.body;
+  if (body.setEnabled) body.setEnabled(false);
+  else body.setTranslation({ x: 0, y: -1000, z: 0 }, false);
 }
 function dropCar(v: VehicleModel): void {
   for (const col of (v as any).detachCols ?? []) if (col) world.removeCollider(col, true);
   world.removeRigidBody(v.body);
 }
 const cars: VehicleModel[] = [];
-for (let k = 0; k < slots; k++) cars.push(makeCar(spawn));
+for (let k = 0; k < slots; k++) { cars.push(makeCar(spawn, k)); parkCar(cars[k]); }
 const progress = cars.map(() => new TrackProgress(cl));
 const state: any[] = cars.map(() => null);
 const x = new Float64Array(N_IN), out = new Float64Array(2);
@@ -79,23 +88,56 @@ for (let pass = 0; pass < 2; pass++) for (let i = n - 1; i >= 0; i--) {
 
 if (process.env.EVO_DEBUG) { const o: string[] = []; for (let i = 0; i < n; i++) if (cum[i] < 1500 && i % 10 === 0) o.push(`${cum[i].toFixed(0)}:${vProf[i].toFixed(0)}`); console.log('vProf', o.join(' ')); }
 
-function poseAt(s: number) {
-  if (s === 0) return spawn;
+function poseAt(s: number, lat = 0) {
   const a = pointAt(s, 0), b = pointAt(s + 2, a[2]);
   const i = a[2] as number;
   const elev = track.elevation?.[i] ?? 0;
-  return { position: { x: a[0], y: elev + 0.61, z: a[1] }, yaw: Math.atan2(-(b[0] - a[0]), -(b[1] - a[1])) };
+  const tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1;
+  return { position: { x: a[0] - (tz / l) * lat, y: elev + 0.61, z: a[1] + (tx / l) * lat }, yaw: Math.atan2(-tx, -tz) };
+}
+const grid = gridSlots(track, slots);
+// Start poses in random order: grid slots, or a staggered two-abreast pack behind a random point.
+function startPoses(start: number): any[] {
+  const order = Array.from({ length: slots }, (_, k) => k).sort(() => Math.random() - 0.5);
+  return order.map((r) => (start === 0 ? grid[r] : poseAt(start - (r >> 1) * 9, r & 1 ? 2.5 : -2.5)));
+}
+
+// Traffic sensor: N_NEAR closest alive cars within 60 m → forward gap/50, lateral gap/10, closing speed/20 (zeros if none).
+const nd = new Float64Array(64), ni = new Int32Array(64);
+let aliveRef: boolean[] = [];
+function nearest(k: number, px: number, pz: number, fx: number, fz: number, vf: number, o: number): void {
+  let c = 0;
+  for (let j = 0; j < aliveRef.length; j++) {
+    if (j === k || !aliveRef[j]) continue;
+    const sj = state[j].position, dx = sj.x - px, dz = sj.z - pz, d2 = dx * dx + dz * dz;
+    if (d2 > 3600) continue;
+    nd[c] = d2; ni[c++] = j;
+  }
+  for (let a = 0; a < N_NEAR; a++) {
+    let bi = -1;
+    for (let b = 0; b < c; b++) if (ni[b] >= 0 && (bi < 0 || nd[b] < nd[bi])) bi = b;
+    const base = o + 3 * a;
+    if (bi < 0) { x[base] = 0; x[base + 1] = 0; x[base + 2] = 0; continue; }
+    const j = ni[bi]; ni[bi] = -1;
+    const sj = state[j].position, dx = sj.x - px, dz = sj.z - pz;
+    const lvj = (cars[j].body as any).linvel();
+    x[base] = (dx * fx + dz * fz) / 50;
+    x[base + 1] = (dx * -fz + dz * fx) / 10;
+    x[base + 2] = (vf - (lvj.x * fx + lvj.z * fz)) / 20;
+  }
 }
 
 function episode(genomes: Float64Array[], start: number, secs: number, epi: number) {
-  const pose = poseAt(start);
+  const poses = startPoses(start);
   const m = genomes.length;
   const alive = new Array(m).fill(true);
+  aliveRef = alive;
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
-  const lapT = new Float64Array(m).fill(0), offT = new Float64Array(m), over = new Float64Array(m);
+  const lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), offT = new Float64Array(m), over = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
     dropCar(cars[k]);
-    cars[k] = makeCar(pose);
+    cars[k] = makeCar(poses[k], k);
+    if (k >= m) parkCar(cars[k]);
     progress[k].reset();
     state[k] = cars[k].getState(state[k] ?? undefined);
     const p = progress[k].update(state[k].position.x, state[k].position.z);
@@ -108,7 +150,7 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
     let anyAlive = false;
     for (let k = 0; k < slots; k++) {
       const v = cars[k];
-      if (k >= m || !alive[k]) { v.setInput(parked); v.prePhysicsStep(FIXED_DT); continue; }
+      if (k >= m || !alive[k]) continue;
       anyAlive = true;
       if (step % 4 === 0) {
         const st = state[k], q = st.rotation;
@@ -138,6 +180,10 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         x[o + 2] = av.y / 2;
         x[o + 3] = Math.abs(vf) > 2 ? Math.atan2(vr, Math.abs(vf)) : 0;
         x[o + 4] = 1;
+        o += 5;
+        x[o++] = ((cars[k] as any).tank?.massKg ?? 0) / 25;
+        x[o++] = carMu[k] * 10;
+        nearest(k, st.position.x, st.position.z, fx, fz, vf, o);
         forward(genomes[k], x, out);
         const inp = inputs[k];
         inp.steer = out[0];
@@ -159,13 +205,20 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       lastS[k] = p.distance;
       dist[k] += ds;
       over[k] += Math.max(0, st.forwardSpeed - vProf[p.index] - 3) * FIXED_DT;
-      if (dist[k] >= L && lapT[k] === 0) lapT[k] = t;
+      if (dist[k] >= (laps[k] + 1) * L) { // lap completed: fastest single lap and a bonus per lap (faster = more)
+        const lt = t - lapStart[k];
+        lapStart[k] = t; laps[k]++;
+        if (lapT[k] === 0 || lt < lapT[k]) lapT[k] = lt;
+        if (process.env.EVO_DEBUG) console.log(`car ${k} lap ${laps[k]} ${lt.toFixed(1)} s fuel used ${(carFuel0[k] - ((cars[k] as any).tank?.litres ?? 0)).toFixed(2)} L`);
+        lapBonus[k] += 500 + Math.max(0, 200 - lt) * 20;
+      }
       if (dist[k] > best[k] + 3) { best[k] = dist[k]; stallT[k] = 0; } else stallT[k] += FIXED_DT;
       const q = st.rotation, upY = 1 - 2 * (q.x * q.x + q.z * q.z);
       const lim = p.lateral > 0 ? hwR[p.index] : hwL[p.index];
       offT[k] = Math.abs(p.lateral) > lim + 0.5 ? offT[k] + FIXED_DT : 0;
       if (offT[k] > 0.5 || upY < 0.5 || stallT[k] > 4 || dist[k] < best[k] - 30) {
         alive[k] = false;
+        parkCar(cars[k]); // eliminated cars leave the world so they do not block the others
         if (process.env.EVO_DEBUG) console.log(`car ${k} out t=${t.toFixed(2)} off=${offT[k].toFixed(2)} up=${upY.toFixed(2)} stall=${stallT[k].toFixed(1)} dist=${dist[k].toFixed(1)} lat=${p.lateral.toFixed(1)} v=${st.forwardSpeed.toFixed(1)}`);
       }
     }
@@ -181,22 +234,22 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
       parentPort!.postMessage({ type: 'pos', t, epi, pos: Array.from(pos) });
     }
   }
-  return { best, lapT, over };
+  return { best, lapT, over, laps, lapBonus };
 }
 
 parentPort!.on('message', (msg: any) => {
   if (msg.type !== 'eval') return;
   const genomes: Float64Array[] = msg.genomes.map((g: number[]) => Float64Array.from(g));
   const fitness = new Array(genomes.length).fill(0), dist = new Array(genomes.length).fill(0);
-  let lapT: number[] = [];
-  msg.starts.forEach((s: number, e: number) => {
-    const r = episode(genomes, s, msg.secs, e);
+  let lapT: number[] = [], laps: number[] = [];
+  msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
+    const r = episode(genomes, ep.start, ep.secs, e);
     for (let k = 0; k < genomes.length; k++) {
-      fitness[k] += r.best[k] - OVER_W * r.over[k] + (r.lapT[k] > 0 ? (msg.secs - r.lapT[k]) * 30 : 0);
+      fitness[k] += r.best[k] - OVER_W * r.over[k] + r.lapBonus[k];
       if (e === 0) dist[k] = r.best[k];
     }
-    if (e === 0) lapT = Array.from(r.lapT);
+    if (e === 0) { lapT = Array.from(r.lapT); laps = Array.from(r.laps); }
   });
-  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT });
+  parentPort!.postMessage({ type: 'done', fitness, best: dist, lapT, laps });
 });
 parentPort!.postMessage({ type: 'ready', lapLength: L });
