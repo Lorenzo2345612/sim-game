@@ -353,6 +353,14 @@ describe('247 sausage fit corner acceptance', () => {
     const pin = (t: TrackDataV2): Record<string, unknown> => {
       const copy: Record<string, unknown> = { ...t };
       delete copy.sausages;
+      // 248 rebuild: pit-side runoffs clipped; barriers, boards, trees, terrain and escape roads derive from them.
+      delete copy.runoffs;
+      delete copy.barriers;
+      delete copy.boards;
+      delete copy.trees;
+      delete copy.terrain;
+      delete copy.escapeRoads;
+      delete copy.derived;
       return copy;
     };
     for (const { id, track } of builtTracks()) {

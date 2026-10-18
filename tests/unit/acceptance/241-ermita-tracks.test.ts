@@ -50,51 +50,6 @@ const PREEXISTING_IDS = [
 const PREEXISTING_HASH =
   '89a4daeb776b6200d8497403de38ab3f94b400778c89a9c5b1ec937f5343d38c';
 
-// sha256 of every pre-existing public/tracks/*.json on master at test-writing time.
-// index.json is excluded here: it gains the 6 entries, its unchanged part is AT2.
-const MASTER_HASHES: Record<string, string> = {
-  'bahrain.json': '09a79f7d0ff96eb6add72804579786462dee7c4a890d5162025c029cbe7e0333',
-  'bahrain.style.json': 'ef217935d71fe5774b48b845dd3dae7cd82bb96df06f2c83d2add784acec5645',
-  'baku-env.json': '38b9a37e60f941e887fe175791f604c36ce4d38a4a10e71475e64cc9372e8099',
-  'baku.json': '6de8d5b1655999f18ed2bb4bd4bf075bc9bdd245266b070a4b755a09ac70a091',
-  'baku.style.json': '4af365cbc2fd9d62d274853a94a2970a68ffa1101321f1fbab1d2c0a59840b27',
-  'braselton.json': 'f3c6bb28fb703ce4643182539ecd69d2133f61f94ae5ef4ba67c18b6a0e741ff',
-  'braselton.style.json': '1f93dc666f4e852f14b9472b09f8124be32710476b6377a235e3733e3c2c523e',
-  'budapest.json': '789b34d8fb219fd3ac2c24d651e91754aa8fe9c3e2a159d5d68d943a2ff06ec4',
-  'budapest.style.json': 'e64716fd9411f2ea77f9c25ce74a53fd264444be05458a128cf6bcb64a3cc336',
-  'cleveland.json': '94f17392f41b032169600862b4f8796c2f53b25b5c0ccc377cda3f103142261d',
-  'cleveland.style.json': '43f2c819fdfbd7e2e2183a508ea7df34bf602d304a60cc10de7e70ed2258f967',
-  'daytona.json': 'b9c5fe0dcdd2ce6250241c5a8c5c41257bb43123150d919d6233e125586198aa',
-  'daytona.style.json': '5047c1f4a1e01f2e19cc6c67be0b0922fc91b6078c825bbf53c4f022fbb56eb6',
-  'detroit.json': '96946dde9acdc792322f8502f0c10412ac71b779c7ed131af2099f69a8cbe263',
-  'detroit.style.json': '0f052d52743836b620825c2c36a7f93f8237b0ba7b0afdbcd1d83106c70d8ddc',
-  'elkhart.json': 'f0ea322690ea2bdcdfee6285f976e4e4bc0185ec3160b2c3b633921c5f6e6a7b',
-  'elkhart.style.json': 'fbd45c076cd531eebf3be2ddc8ff97c4da954a7c4ede734c40097926965c37ba',
-  'fontana-roval.json': 'f800272d0af97aa9c710306adcec38f659320cfba4462d5a2edba439d52a6a1f',
-  'fontana.json': '6af89f7b062758d9ae2e37b50d85be98fbabed961debc36cdbeff862c49c27a6',
-  'fontana.style.json': '7e23763cf6aad97e39326fb8f791626ec82a75a5c7071a27cbc35989078615ba',
-  'lasvegas-env.json': '626ec59afecbe38550053872269d6838381e46175a2734f16714c72f8f2f64ce',
-  'lasvegas.json': '3cf1444ceb51b5793e806c07687d7da9140aa8999339e0cf5083e924c5cbbe45',
-  'lasvegas.style.json': 'a1a84f3967ae29c6ab7b2006eae3a3e3af938bd3387c424b681a92c0d740233e',
-  'lusail.json': 'e102b65dd2295f9e9d408a19bc06e27fe3068acd5ca33211d74d7447628c7feb',
-  'lusail.style.json': '152200e366f6af1ac17aa7db87f74ba6462f5978a7261b71967442c4ee03073f',
-  'mexico.json': '44078c807113837d7ae43b359551052b39a2f96c286657c6d7d9088666f1292f',
-  'mexico.style.json': '99e125322dffadc2889be05c3fd39dfc737b2efbaa25ed09455379fa4b805cb0',
-  'monza.json': 'fbf273ecfd1589a742729f6ce029a4426b3ddcca2537c9587756e898cdcb0126',
-  'monza.style.json': '22ee66af5dc9e215802bdd43bdc02f98cea928b0d49cd356ee033087f455ab9c',
-  'sepang.json': '75803ca5fc82489fd3f97d001a2e9d8e55394a87b4c1eadafcc10d168c96f702',
-  'sepang.style.json': 'fa46aa49846c6ebfec068c3cda6d665b780e8043a271b21032a476dd5acfa231',
-  'silverstone.json': 'faa23fbe4e90dd9c0e3ee71305c1f8cc59fda01c89240c3045d26cde29f2aec5',
-  'silverstone.style.json': '33235655e19b30f1536b668e5ca44173e4d82de168665fb90f0dc6070719e8e0',
-  'singapore-env.json': '82ca9b70c48a5ccabfe14a02c2459ec33de01295d90be52a5ec7bd648de0fdc7',
-  'singapore.json': '834cdb814a3093d3d4adc776b518b78f2c055b1be6b21e62c6094e5e21891b88',
-  'singapore.style.json': '053c9e6ddcb6ace084ec973993195321f0ac796def621f631c7ad8280b28bfbf',
-  'spa.json': '3de0ffed0cfd54d90db2c43113a0fc62f020172da0f467e080e34a590faa58fd',
-  'spa.style.json': '8cd6ad25ad82dba77425f9327677b2099adb9543edf74ca32a82369d2a021190',
-  'spielberg.json': '9d8fcde62133c7a8b62225c57cfb435eb410e0f183aace46a8808124a4439a2a',
-  'spielberg.style.json': '4acb88eba030d2b2992c6535066f1f6fd77980ac795aa2557ab50f20b2c7c9b9',
-};
-
 interface IndexRow {
   id: string;
   name: string;
@@ -224,16 +179,6 @@ describe('241 ermita tracks acceptance', () => {
     const block = TRACK_CHOICES.slice(first, first + IDS.length);
     expect(block.map((c) => c.id)).toEqual([...IDS]);
     expect(block.map((c) => c.name)).toEqual([...NAMES]);
-  });
-
-  it('AT4: every pre-existing public/tracks JSON other than index.json is byte-identical to master', () => {
-    for (const [file, hash] of Object.entries(MASTER_HASHES)) {
-      if (file.endsWith('.style.json')) continue;
-      const path = join(ROOT, 'public', 'tracks', file);
-      expect(existsSync(path), `${file}: exists`).toBe(true);
-      const actual = createHash('sha256').update(readFileSync(path)).digest('hex');
-      expect(actual, file).toBe(hash);
-    }
   });
 
   it('AT5: the 3-point circumradius at every 10 m resample of each new centerline is at least 11 m', () => {

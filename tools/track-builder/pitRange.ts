@@ -1,4 +1,5 @@
 import type { Point2 } from '../../src/track/geo';
+import type { PitLane, RunoffSegment } from '../../src/core/types';
 
 const MIN_LENGTH_M = 120;
 const SLIDE_LIMIT_M = 600;
@@ -115,4 +116,67 @@ export function clipPitRange(
   throw new Error(
     `clipPitRange(${label}): no straight of >= ${MIN_LENGTH_M} m within ${SLIDE_LIMIT_M} m of index ${startIndex}`,
   );
+}
+
+/**
+ * Removes pit-side runoffs inside the pit window plus `marginMeters` of arc on
+ * either side (closed polyline, closing edge included; `<= margin` inclusive)
+ * and splits what remains into its maximal kept runs. Other sides pass through
+ * untouched; inputs are not mutated.
+ */
+export function clipRunoffsOutOfPit(
+  runoffs: RunoffSegment[], centerline: Point2[], pit: PitLane, marginMeters: number,
+): RunoffSegment[] {
+  const n = centerline.length;
+  if (pit.start === pit.end) return runoffs;
+
+  const cum = new Array<number>(n + 1);
+  cum[0] = 0;
+  for (let i = 0; i < n; i++) {
+    const a = centerline[i];
+    const b = centerline[(i + 1) % n];
+    cum[i + 1] = cum[i] + Math.hypot(b[0] - a[0], b[1] - a[1]);
+  }
+  const lap = cum[n];
+  // Window arc length S..E going forward; outside indices sit on the arc E..S.
+  const windowM = (cum[pit.end] - cum[pit.start] + lap) % lap;
+  const removed = new Array<boolean>(n);
+  for (let i = 0; i < n; i++) {
+    const fromStart = (cum[i] - cum[pit.start] + lap) % lap;
+    if (fromStart <= windowM) removed[i] = true;
+    else removed[i] = Math.min(fromStart - windowM, lap - fromStart) <= marginMeters;
+  }
+
+  const out: RunoffSegment[] = [];
+  for (const r of runoffs) {
+    if (r.side !== pit.side) {
+      out.push(r);
+      continue;
+    }
+    const covered: number[] = [];
+    let i = ((r.start % n) + n) % n;
+    const end = ((r.end % n) + n) % n;
+    for (;;) {
+      covered.push(i);
+      if (i === end) break;
+      i = (i + 1) % n;
+    }
+    covered.sort((a, b) => a - b);
+    let runStart = -1;
+    let runEnd = -1;
+    for (const k of covered) {
+      if (removed[k]) {
+        if (runStart >= 0) out.push({ ...r, start: runStart, end: runEnd });
+        runStart = -1;
+      } else {
+        if (runStart < 0 || k !== runEnd + 1) {
+          if (runStart >= 0) out.push({ ...r, start: runStart, end: runEnd });
+          runStart = k;
+        }
+        runEnd = k;
+      }
+    }
+    if (runStart >= 0) out.push({ ...r, start: runStart, end: runEnd });
+  }
+  return out;
 }

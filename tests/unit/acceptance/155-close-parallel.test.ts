@@ -466,12 +466,16 @@ describe('155 close parallel sections acceptance', () => {
       ) as TrackDataV2;
       // 149 adds the sausages array to every rebuilt track.
       const strip = (t: TrackDataV2): Record<string, unknown> => {
-        const copy: Record<string, unknown> = { ...t, terrain: { ...t.terrain, heights: [] } };
+        const copy: Record<string, unknown> = { ...t };
         delete copy.sausages;
         delete copy.environment;
         delete copy.pit;
         delete copy.barriers;
         delete copy.escapeRoads;
+        // 248 rebuild: runoffs clipped at the pit; barriers, trees and terrain derive from them.
+        delete copy.runoffs;
+        delete copy.trees;
+        delete copy.terrain;
         return copy;
       };
       const now = strip(track);

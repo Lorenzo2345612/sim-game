@@ -299,9 +299,48 @@ describe('140 paved run-offs, escape roads and foam barriers acceptance', () => 
       const spans = classifyCorners(track.centerline)
         .filter((c: BrakingCorner140) => c.kind === 'heavy')
         .map((c: BrakingCorner140) => ({ side: opp(c.side), start: wrap(c.start - 25, n), end: wrap(c.end + 10, n) }));
-      expect(keptGravel(track.runoffs, spans, n), `${id}: kept gravel changed`).toEqual(
-        keptGravel(prev.runoffs, spans, n),
+      // 248: pit-side gravel within the pit window ±50 m is clipped out of the rebuild.
+      const cum = [0];
+      for (let i = 1; i < n; i++) {
+        cum[i] = cum[i - 1] + Math.hypot(
+          track.centerline[i][0] - track.centerline[i - 1][0],
+          track.centerline[i][1] - track.centerline[i - 1][1],
+        );
+      }
+      const lap = cum[n - 1] + Math.hypot(
+        track.centerline[0][0] - track.centerline[n - 1][0],
+        track.centerline[0][1] - track.centerline[n - 1][1],
       );
+      const windowM = (cum[track.pit.end] - cum[track.pit.start] + lap) % lap;
+      const inPitBand = (i: number): boolean => {
+        const fromStart = (cum[i] - cum[track.pit.start] + lap) % lap;
+        return fromStart <= windowM + 50 || lap - fromStart <= 50;
+      };
+      const outsideBandRuns = (rs: RunoffSegment[]): RunoffSegment[] => {
+        const out: RunoffSegment[] = [];
+        for (const g of rs) {
+          if (g.side !== track.pit.side || track.pit.start === track.pit.end) {
+            out.push(g);
+            continue;
+          }
+          const len = wrap(g.end - g.start, n);
+          let runStart = -1;
+          for (let k = 0; k <= len; k++) {
+            const i = wrap(g.start + k, n);
+            if (inPitBand(i)) {
+              if (runStart >= 0) out.push({ ...g, start: runStart, end: wrap(g.start + k - 1, n) });
+              runStart = -1;
+            } else if (runStart < 0) {
+              runStart = i;
+            }
+          }
+          if (runStart >= 0) out.push({ ...g, start: runStart, end: g.end });
+        }
+        return out;
+      };
+      expect(
+        outsideBandRuns(keptGravel(track.runoffs, spans, n)), `${id}: kept gravel changed`,
+      ).toEqual(outsideBandRuns(keptGravel(prev.runoffs, spans, n)));
     }
   }, 120000);
 

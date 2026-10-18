@@ -13,7 +13,7 @@ import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
 import { layoutBarriers } from './barriers';
 import { bankProfile, type BankRange } from './banking';
 import { buildTerrain, clampTerrainBelowStrips } from './terrain';
-import { clipPitRange } from './pitRange';
+import { clipPitRange, clipRunoffsOutOfPit } from './pitRange';
 import { buildTrackSurfaces } from '../../src/track/surfaces';
 import { biomeFor, placeTrees, type Biome } from './trees';
 import type { DemGrid } from '../dem/fetchDem';
@@ -146,9 +146,10 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     ...clipPitRange(centerline, 0, config.pit.fromMeters, config.pit.toMeters, 2, config.id),
     side: config.pit.side,
   };
+  const runoffsClipped = clipRunoffsOutOfPit(runoffsFinal, centerline, pit, 50);
   const barriers = applyMedianWalls(
     applyFoamBarriers(
-      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment, config.walls, bridges),
+      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsClipped, pit, config.environment, config.walls, bridges),
       corners,
     ),
     parallel,
@@ -189,7 +190,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     elevation,
     bank,
     kerbs: kerbsFinal,
-    runoffs: runoffsFinal,
+    runoffs: runoffsClipped,
     barriers,
     boards,
     escapeRoads,

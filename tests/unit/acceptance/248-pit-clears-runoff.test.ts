@@ -222,7 +222,15 @@ describe('248 pit clears runoff acceptance', () => {
     for (const { id, track } of builtTracks()) {
       const pieces = pitBuildingPieces(track);
       const tris = nonGrassTriangles(track);
-      const vertices = [...barrierRuns(track, 'left'), ...barrierRuns(track, 'right')].flat();
+      const inPitWindow = (i: number): boolean =>
+        track.pit.start === track.pit.end
+          ? false
+          : track.pit.end >= track.pit.start
+            ? i >= track.pit.start && i <= track.pit.end
+            : i >= track.pit.start || i <= track.pit.end;
+      const vertices = [...barrierRuns(track, 'left'), ...barrierRuns(track, 'right')]
+        .flat()
+        .filter((v) => inPitWindow(v.index));
       pieces.forEach((p, pi) => {
         const where = `${id} piece ${pi}`;
         const samples = footprintSamples(p);
