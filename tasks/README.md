@@ -246,7 +246,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 242 | Synthetic village buildings (plaster row houses, tanks) | in progress | 241 |
 | 243 | Dry arroyo channel and bridges | pending | 241 |
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
-| 245 | Kerbs never fold over the asphalt (radius cap, split strips) | waiting decision | - |
+| 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | in progress | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | in progress | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
