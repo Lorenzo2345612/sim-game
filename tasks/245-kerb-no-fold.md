@@ -45,7 +45,7 @@ Conventions: lateral values in metres; drop threshold `< 0.4` strict (outer − 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | `STADIUM(30)` + kerbs | `buildTrackSurfaces` | kerb strip vertex positions identical to the pre-change build (record baseline by computing with lateral half..half+1.2) — every kerb vertex lateral offset from its row's centerline point is 6 or 7.2 (±1e-4, Float32 storage) |
-| AT2 | `STADIUM(7.5)` + kerbs | build | kerb vertices within 10 m of a bend centre ((200,−7.5) or (0,−7.5)): all at distance ≥ 0.75 − 1e-6 from that centre; at least one such vertex exists |
+| AT2 | `STADIUM(7.5)` + kerbs | build | kerb vertices within 10 m of a bend centre ((200,−7.5) or (0,−7.5)): all at distance ≥ 0.75 − 1e-4 from that centre (Float32); at least one such vertex exists |
 | AT3 | `STADIUM(7)` + kerbs | build | no kerb vertex within 6.5 m of a bend centre (inner kerb dropped in both bends); outer-side kerb rows in the bends still present (vertices at 13 and 14.2 m ± 1e-6 from the centre) |
 | AT4 | `STADIUM(30)`, `STADIUM(7.5)`, `STADIUM(7)` + kerbs | build | every kerb triangle centroid has `clearance ≥ 6 − 1e-6` |
 | AT5 | every track in `public/tracks/index.json` | build | every kerb triangle centroid has `clearance ≥ halfNear − 0.3` |
@@ -74,7 +74,9 @@ npm test
 - `tests/unit/acceptance/245-kerb-no-fold.test.ts` AT1: tolerance 1e-6 → 1e-4 (table updated; Float32 positions).
 - `tests/unit/edge/245-kerb-no-fold.test.ts` EDGE2: identify a row's inner vertex by its lateral offset (smallest distance to the row's centerline point), not by vertex order.
 - `tests/unit/edge/245-kerb-no-fold.test.ts` EDGE7: the 0.9·R rule is a cap — assert no outer-strip vertex beyond `0.9·R + 1e-6` from the circle centre on inner rows, instead of a vertex exactly at 0.9·R.
-- No other acceptance or edge edits: AT2, AT3, AT5 must pass with the neighbourhood-minimum radius below.
+- `tests/unit/acceptance/245-kerb-no-fold.test.ts` AT2: tolerance 1e-6 → 1e-4 (table updated; measured 0.7499981, Float32).
+- `tests/unit/edge/245-kerb-no-fold.test.ts` EDGE2, EDGE3, EDGE7: expected row counts and bounds use `Reff` (minimum radius within ±10 m arc, same side) instead of the local radius, since tester-pre wrote them before the neighbourhood rule (e.g. EDGE2/EDGE3 expect 202 rows, Reff drops to 182; EDGE7 lower bound 15.2999 vs 15.2918). Compute expectations from the same rule, do not hard-code the new numbers.
+- No other acceptance or edge edits: AT3, AT5 must pass with the neighbourhood-minimum radius below.
 
 ## Questions for the planner
 
