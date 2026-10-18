@@ -77,6 +77,10 @@ export class AiDriver {
     this.speedCap = v;
   }
 
+  setSpeedScale(v: number): void {
+    this.p.speedScale = v;
+  }
+
   reset(obs: AiObservation): void {
     const n = this.line.points.length / 2;
     let best = 0;

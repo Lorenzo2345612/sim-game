@@ -1,4 +1,6 @@
 import type { Vec3 } from '../core/types';
+import { SETTINGS_KEY, type KeyValueStorage } from '../core/settings';
+import type { DamageMode } from './contactEvents';
 
 export interface DamageState {
   frontWing: number;
@@ -102,6 +104,63 @@ export function applyImpact(
     state.rearWing = Math.min(1, state.rearWing + clamp01((j - WING_J0) / WING_JK));
   }
   return state;
+}
+
+const REPAIR_WING_S = 3;
+const REPAIR_SUSPENSION_S = 8;
+const REPAIR_WHEEL_S = 4;
+
+/** Seconds of pit service: 3 s per damaged wing, 8 s per corner with suspension damage, 4 s per punctured or detached wheel. */
+export function repairTime(state: DamageState): number {
+  let t = 0;
+  if (clamp01(state.frontWing) > 0) t += REPAIR_WING_S;
+  if (clamp01(state.rearWing) > 0) t += REPAIR_WING_S;
+  for (let i = 0; i < 4; i++) {
+    if (clamp01(state.suspension[i]) > 0) t += REPAIR_SUSPENSION_S;
+    if (state.puncture[i] || state.detached[i]) t += REPAIR_WHEEL_S;
+  }
+  return t;
+}
+
+export type WidgetColour = 'green' | 'yellow' | 'red' | 'black';
+
+export function widgetColour(value: number, detached: boolean): WidgetColour {
+  if (detached) return 'black';
+  const v = clamp01(value);
+  if (v < 0.2) return 'green';
+  if (v < 0.6) return 'yellow';
+  return 'red';
+}
+
+/** 1 − 0.2·(worst part value); a detached corner counts as 1. */
+export function damageSpeedScale(state: DamageState): number {
+  let worst = Math.max(clamp01(state.frontWing), clamp01(state.rearWing));
+  for (let i = 0; i < 4; i++) {
+    worst = state.detached[i] ? 1 : Math.max(worst, clamp01(state.suspension[i]));
+  }
+  return 1 - 0.2 * worst;
+}
+
+/** Stored damage mode under the `damage` key; missing or invalid values read as 'full'. */
+export function loadDamageMode(storage: KeyValueStorage): DamageMode {
+  let raw: string | null = null;
+  try {
+    raw = storage.getItem(SETTINGS_KEY);
+  } catch {
+    /* treat as missing */
+  }
+  if (raw !== null) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed === 'object' && parsed !== null) {
+        const mode = (parsed as { damage?: unknown }).damage;
+        if (mode === 'off' || mode === 'visual' || mode === 'full') return mode;
+      }
+    } catch {
+      // corrupt JSON falls through to the default
+    }
+  }
+  return 'full';
 }
 
 export function damageEffects(state: DamageState, out?: DamageEffects): DamageEffects {

@@ -17,6 +17,7 @@ import { isJumpStart, StartSequence } from '../race/startSequence';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
 import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
+import { damageSpeedScale, type DamageState } from '../physics/damage';
 import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
 import { V_LOW } from '../physics/tyre';
 import { TrackProgress } from '../track/trackProgress';
@@ -65,6 +66,8 @@ function mulberry32(seed: number): () => number {
 interface AiCar {
   vehicle: VehicleModel;
   driver: AiDriver;
+  /** Difficulty speed scale before the damage slowdown (task 148). */
+  baseSpeedScale: number;
   /** Present when the AI runs the evolved neural policy instead of the classic driver. */
   neural?: { driver: NeuralDriver; state: NeuralCarState; tel: Telemetry };
   progress: TrackProgress;
@@ -245,6 +248,7 @@ export class RaceGame {
       const car: AiCar = {
         vehicle,
         driver: new AiDriver(line, speeds, { speedScale: speedScale + jitter }),
+        baseSpeedScale: speedScale + jitter,
         progress,
         stuckS: 0,
       };
@@ -399,6 +403,10 @@ export class RaceGame {
           );
           ai.driver.setLateralOffset(decision.offset);
           ai.driver.setSpeedCap(decision.speedCap);
+          // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
+          const dmgScale =
+            ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
+          ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }
         ai.vehicle.setInput(this.aiCmd);
@@ -476,6 +484,10 @@ export class RaceGame {
 
   getTelemetry(out?: Telemetry): Telemetry {
     return this.vehicles[0].getTelemetry(out);
+  }
+
+  get playerDamage(): DamageState {
+    return this.vehicles[0].damage;
   }
 
   dispose(): void {

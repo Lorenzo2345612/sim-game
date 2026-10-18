@@ -14,7 +14,7 @@ import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { FrameRing, type PerfStats } from './core/perfStats';
-import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type Preset } from './core/settings';
+import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type KeyValueStorage, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
 import { Game, type LapInfo } from './game/game';
 import { RaceGame, type RaceConfig, type RaceGameOptions } from './game/raceGame';
@@ -25,6 +25,7 @@ import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import type { DamageMode } from './physics/contactEvents';
+import { loadDamageMode, type DamageState } from './physics/damage';
 import { engineTorque } from './physics/powertrain';
 import { applySetup, loadSetup, type Setup } from './physics/setup';
 import type { GearboxMode } from './physics/gearbox';
@@ -83,6 +84,7 @@ import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
 import { RaceHud, type RaceHudData } from './ui/raceHud';
+import { DamageHud } from './ui/damageHud';
 import { Results, type ResultsRow } from './ui/results';
 
 export interface QaCameraInfo {
@@ -179,6 +181,8 @@ declare global {
       startLights(): number;
       /** Race only: ends the race immediately and shows the results overlay (095). */
       finishRaceNow?(): void;
+      /** Merges a patch into the player's damage state (148). */
+      debugDamage(patch: Partial<DamageState>): void;
       qaCamera(view: QaCameraView): QaCameraInfo;
     };
   }
@@ -605,11 +609,12 @@ function drivingLineFromQuery(params: URLSearchParams, storage: Storage): Drivin
     : loadDrivingLineSetting(storage);
 }
 
-function damageModeFromQuery(params: URLSearchParams): DamageMode {
+// ?damage= (145) wins over the stored damage mode (148).
+function damageModeFromQuery(params: URLSearchParams, storage: KeyValueStorage): DamageMode {
   const requested = params.get('damage');
   return requested === 'off' || requested === 'visual' || requested === 'full'
     ? requested
-    : 'full';
+    : loadDamageMode(storage);
 }
 
 /** Query multiplier: a finite value above 0 wins, an absent query keeps the stored option, anything else is 1. */
@@ -698,10 +703,11 @@ async function startGame(trackId: string): Promise<void> {
   let bollardField: BollardField | null = null;
   let bollardRenderer: BollardRenderer | null = null;
   const bollardCars: BollardCar[] = [];
+  const damageMode = damageModeFromQuery(params, window.localStorage);
   if (raceCfg !== null) {
     // raceCfg is only built when raceTrack is non-null.
     raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, raceAiOptions);
-    raceGame.setDamageMode(damageModeFromQuery(params));
+    raceGame.setDamageMode(damageMode);
   } else {
     game = await Game.create(track, gameSpec, tune);
   }
@@ -1141,6 +1147,7 @@ async function startGame(trackId: string): Promise<void> {
   const raceHud = new RaceHud(document.body);
   raceHud.setVisible(raceGame !== null);
   const raceHudData: RaceHudData = { standings: [], playerCar: 0, laps: 0 };
+  const damageHud = raceGame !== null ? new DamageHud(document.body, damageMode) : null;
 
   const ghostRecorder = new GhostRecorder(track.id);
   let ghost = loadGhost(window.localStorage, track.id);
@@ -1489,6 +1496,7 @@ async function startGame(trackId: string): Promise<void> {
         raceHudData.standings = raceGame.standings();
         raceHudData.laps = raceGame.config.laps;
         raceHud.update(raceHudData);
+        damageHud?.update(raceGame.playerDamage);
         if (!resultsShown) {
           const player = raceHudData.standings.find((s) => s.car === 0);
           if (raceGame.raceFinished || player?.finished === true) showResults();
@@ -1624,6 +1632,7 @@ async function startGame(trackId: string): Promise<void> {
       }
       raceGame?.dispose();
       raceGame = next;
+      raceGame.setDamageMode(damageMode);
     } else {
       const next = await Game.create(track, nextSpec, tune);
       if (!running) {
@@ -1777,6 +1786,7 @@ async function startGame(trackId: string): Promise<void> {
     setupHud.dispose();
     setupPanel.dispose();
     raceHud.dispose();
+    damageHud?.dispose();
     results?.hide();
     sim.dispose();
     for (const disposable of disposables) disposable.dispose();
@@ -1865,6 +1875,15 @@ async function startGame(trackId: string): Promise<void> {
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
     finishRaceNow: raceGame !== null ? () => showResults() : undefined,
+    debugDamage: (patch) => {
+      if (raceGame === null) return;
+      const d = raceGame.playerDamage;
+      if (patch.frontWing !== undefined) d.frontWing = patch.frontWing;
+      if (patch.rearWing !== undefined) d.rearWing = patch.rearWing;
+      if (patch.suspension !== undefined) d.suspension = patch.suspension;
+      if (patch.puncture !== undefined) d.puncture = patch.puncture;
+      if (patch.detached !== undefined) d.detached = patch.detached;
+    },
     qaCamera,
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
