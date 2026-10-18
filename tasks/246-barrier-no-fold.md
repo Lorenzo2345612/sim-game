@@ -27,7 +27,7 @@ Audit `docs/research/track-audit-kerbs.md` §3. Colliders and `createBarrierObje
 
 Signatures unchanged (`barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][]`, `BarrierVertex` from 235).
 1. For each non-median vertex at index `i` with `inner(i, side)` (corner `side` equals the barrier side): effective offset = `min(offsetMeters, 0.8 · R(i))`; x, z and y (bank lift) use the effective offset. If `0.8 · R(i) < half(side, i) + KERB_WIDTH + 0.5` the vertex is dropped.
-2. Then drop every non-median vertex with `clearance < halfNear + KERB_WIDTH + 0.5` over all centerline indices (no `NEAR_INDEX_SPAN` exemption for this test). Use exact nearest-point distance (ties: lowest index); the existing grid works if its cell size is at least the largest threshold (no point found in the 3×3 cells ⇒ not dropped).
+2. Then drop every non-median vertex `v` (index `i`) for which some centerline index `j` with circular index distance `|j − i| > NEAR_INDEX_SPAN` (existing constant, 5) has XZ distance `< halfNear(j) + KERB_WIDTH + 0.5`, where `halfNear(j)` = min of both half-widths at `j`. This replaces the existing `halfWidthAt + 0.3` reach of the cross-track test (same loop, larger threshold). Own-window indices stay exempt: a barrier's own offset is data, legacy fixtures with small offsets must keep their output. The existing grid works if its cell size is at least the largest threshold.
 3. Runs split at dropped vertices and pieces under 2 vertices vanish, exactly as today. The existing `crossesTrack` rule stays. Median walls: `isMedianWall` vertices skip both new rules.
 
 Conventions: distances in metres; drop tests strict (`<`); `cornerCurvature` null ⇒ no clamp; sides not mutated; no `three` import.
@@ -46,9 +46,9 @@ Conventions: distances in metres; drop tests strict (`<`); `cornerCurvature` nul
 |---|---|---|---|
 | AT1 | `STADIUM(30)` + armco both sides, offset 12 | `barrierRuns` both sides | identical to the pre-change output (vertex count and x/z/y ±1e-9) |
 | AT2 | `STADIUM(30)` + left armco offset 27 | barrierRuns('left') | vertices in the bends at distance 6 ± 1e-6 from the bend centre; straight vertices at offset 27 ± 1e-6 |
-| AT3 | `STADIUM(8)` + left armco offset 12 | barrierRuns('left') | no vertex with `clearance < 7.7 − 1e-6`; ≥ 2 runs; right side (offset 12 outside) unchanged vs pre-change |
+| AT3 | `STADIUM(8)` + left armco offset 7.9, right armco offset 12 | barrierRuns both sides | left: no vertex with `clearance < 7.7 − 1e-6`, ≥ 2 runs (bends dropped by rule 1, straights kept); right side unchanged vs pre-change |
 | AT4 | 155 median-wall fixture (existing test) | barrierRuns | unchanged vs pre-change |
-| AT5 | every track in `public/tracks/index.json` | barrierRuns both sides | every non-median vertex `clearance ≥ halfNear + KERB_WIDTH + 0.5 − 1e-6` |
+| AT5 | every track in `public/tracks/index.json` | barrierRuns both sides | every non-median vertex `v` has XZ distance `≥ halfNear(j) + KERB_WIDTH + 0.5 − 1e-6` to every centerline index `j` with circular `\|j − v.index\| > 5` |
 | AT6 | source `src/track/barrierPath.ts` | read | no `from 'three'` |
 
 ## Acceptance criteria
@@ -71,7 +71,15 @@ npm test
 
 ## Planner-authorised test edits
 
-None verified by running the suite. If a protected test fails, do not edit it: report it under Questions.
+In `tests/unit/acceptance/246-barrier-no-fold.test.ts` only:
+- AT3 (`it('AT3: ...`, ~line 319): build the fixture with left offset 7.9 and right offset 12 (extend `stadiumTrack` with an optional per-side offset if needed); update the title. Assertions unchanged.
+- AT5 (~line 338): in the nearest-point loop skip `j` with circular index distance to `v.index` ≤ 5, and assert against each remaining `j` within the 3×3 cells (`best` over those only). Nothing else.
+
+## Planner answers
+
+- Rule 2 applies only to centerline indices outside the vertex's own ±5 window (see step 2); this keeps 086, 103, 176, 235 and `barrierPath.test.ts` unchanged.
+- AT4 (155 median fixture): expected to pass with the new step 2; if it still differs, report BLOCKED with the first differing vertex.
+- 253 AT6 (track JSON sha256) and 224 POST4 (ow26) are not yours: list them under `pending`, do not investigate.
 
 ## Questions for the planner
 
