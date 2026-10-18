@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 248
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 Milestone: M1.11 (design `docs/design/track-fidelity.md`, "Wave 3")
 
@@ -54,6 +54,10 @@ Conventions: metres; arc positions wrap modulo lap length (closing edge included
 ## Fixtures (tests)
 
 `STADIUM(R)`: closed loop, width 12, flat, no terrain; straight (0,0)→(200,0) every 2 m (endpoint excluded); semicircle centred (200,−R) to (200,−2R), m = max(12, ceil(π·R)) points at angles π·j/m; straight back to (0,−2R) every 2 m; semicircle centred (0,−R) back to (0,0); every bend a left turn (inside = left). `BOX(R)`: closed loop, width 12, flat; start (0,0) heading +x: straight to (200,0) every 2 m; quarter circle centre (200,−R); straight to (200+R, −R−200); quarter circle centre (200, −R−200); straight to (0, −2R−200); quarter circle centre (0, −R−200); straight to (−R, −R); quarter circle centre (0, −R) back to (0,0); m = max(6, ceil(π·R/2)) points per quarter at angles π/2·j/m; left turns, 4 corners θ = 90°. No runoffs/barriers/sausages unless the row adds them. "Built track" = `public/tracks/<id>.json` for every id in `public/tracks/index.json`.
+
+## Planner answers (round 2)
+
+Two coder timeouts with almost no diff. Task moved to `Models: heavy`. Current state: AT2–AT5, AT9, AT10 pass; AT1 (outer bollards 3.2 m arc from the middle one, need 4 ± 0.3), AT6 (sausage corner must drop its R2 group), AT7 (BOX(7) must yield 0) and AT8 (no built track carries bollards) fail. Work in that order, run only `npx vitest run tests/unit/acceptance/250-bollard-placement.test.ts` (3 s) between edits, full suite once at the end.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
