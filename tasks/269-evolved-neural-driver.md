@@ -64,6 +64,13 @@ Master changed `scripts/evolve/worker.mts`/`evolve.mts` after this branch starte
 - `export-ai-models` also reads `models/<track>-<car>-racing/` and `-mintime/` dirs; per track/car pick the fastest `expert` across lines and keep its whole difficulty set from that same line.
 - `worker.mts` must keep producing identical features for all three lines after the refactor (determinism AT unchanged).
 
+## Planner answers (round 2)
+
+Planner-authorised test edits in `tests/unit/acceptance/269-evolved-neural-driver.test.ts` (only these):
+- `modelPath` returns the repo-relative path `` `public/ai-models/${track}-${car}/${difficulty}.json` `` (no `join(ROOT, ...)`; `readJson` already joins ROOT).
+- AT5: threshold `> 50` becomes `> 10` (and the test title accordingly); the start countdown eats most of the 10 s. The classic-identical position checks stay.
+Then run AT1–AT10, the Playwright spec for AT10, lint and the full suite, and report.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
@@ -72,7 +79,7 @@ Master changed `scripts/evolve/worker.mts`/`evolve.mts` after this branch starte
 | AT2 | same as AT1 on spa with `spa-f4/expert.json` (skip with a clear message only if that file does not exist) | 2 laps (≤ 600 s) | finishes; 0 resets; best lap ≤ 1.08 × model `bestLap` |
 | AT3 | RaceGame monza, f4, aiCount 7, difficulty medium, aiDriver neural, seed 3, player brake 1 | 300 s | every AI completes ≥ 1 lap; total resets ≤ 2 |
 | AT4 | monza single AI, neural expert vs neural easy (AT1 setup) | 2 laps each | expert best lap < easy best lap |
-| AT5 | aiDriver neural on a track with no model (silverstone) | create + 10 s | no throw; AIs use the classic driver and move > 50 m |
+| AT5 | aiDriver neural on a track with no model (silverstone) | create + 10 s | no throw; AIs use the classic driver (positions identical to `aiDriver: 'classic'`) and move > 10 m (start countdown included) |
 | AT6 | AT1 setup run twice | 60 s each | identical AI position (±1e-9) |
 | AT7 | `parseNeuralModel` with weights length 610; a 21-input genome (16·21+16+32+2 weights); length 611 | parse | 610 accepted; 21-input padded to 610 with zero weights on new inputs and identical `forward` output when new inputs are 0; 611 throws `Invalid neural model` |
 | AT8 | `npm run export-ai-models` output | read | `public/ai-models/index.json` lists every exported `<track>-<car>`; every listed file exists with 610 weights |
