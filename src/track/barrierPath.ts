@@ -1,6 +1,7 @@
+import { KERB_WIDTH } from '../core/constants';
 import type { BarrierSegment, Side, TrackDataV2 } from '../core/types';
 import { groundHeightAt } from './ground';
-import { bankTanAt, halfWidthAt } from './surfaces';
+import { bankTanAt, cornerCurvature, halfWidthAt } from './surfaces';
 
 export interface BarrierVertex {
   index: number;
@@ -56,12 +57,32 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
     }
   }
   const sign = side === 'right' ? 1 : -1;
+  const cornerDropped = new Set<BarrierVertex>();
+  const clamped = new Set<BarrierVertex>();
+  const dataOffset = new Map<BarrierVertex, number>();
+  // A median wall sits inside the nominal half-width of its own side (task 155
+  // offsets it at half the separation); ordinary barriers are never sub-half-width.
+  const isMedianData = (i: number, type: string, offsetMeters: number): boolean => {
+    const hw = halfWidthAt(track, side, i);
+    return type === 'wall' && (hw < track.widthMeters / 2 - 1e-9 || offsetMeters < hw);
+  };
   const vertexAt = (i: number, seg: BarrierSegment): BarrierVertex => {
     const [rx, rz] = rightNormalAt(cx, i);
-    const x = cx[i][0] + sign * seg.offsetMeters * rx;
-    const z = cx[i][1] + sign * seg.offsetMeters * rz;
-    const y = (track.elevation[i] ?? 0) + sign * seg.offsetMeters * bankTanAt(track, i);
-    return {
+    const median = isMedianData(i, seg.type, seg.offsetMeters);
+    let offset = seg.offsetMeters;
+    let cornerDrop = false;
+    if (!median) {
+      const corner = cornerCurvature(cx, i);
+      if (corner && corner.side === side) {
+        const cap = 0.8 * corner.radius;
+        if (cap < offset) offset = cap;
+        cornerDrop = cap < halfWidthAt(track, side, i) + KERB_WIDTH + 0.5;
+      }
+    }
+    const x = cx[i][0] + sign * offset * rx;
+    const z = cx[i][1] + sign * offset * rz;
+    const y = (track.elevation[i] ?? 0) + sign * offset * bankTanAt(track, i);
+    const v: BarrierVertex = {
       index: i,
       x,
       z,
@@ -69,17 +90,15 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
       ground: track.terrain ? groundHeightAt(track, x, z) : y,
       type: seg.type,
     };
+    dataOffset.set(v, seg.offsetMeters);
+    if (cornerDrop) cornerDropped.add(v);
+    if (!median && offset < seg.offsetMeters) {
+      clamped.add(v);
+    }
+    return v;
   };
-  // A median wall sits inside the nominal half-width of its own side (task 155
-  // offsets it at half the separation); ordinary barriers are never sub-half-width.
-  const isMedianWall = (v: BarrierVertex): boolean => {
-    const hw = halfWidthAt(track, side, v.index);
-    if (v.type !== 'wall') return false;
-    if (hw < track.widthMeters / 2 - 1e-9) return true;
-    const [rx, rz] = rightNormalAt(cx, v.index);
-    const offset = Math.abs((v.x - cx[v.index][0]) * rx + (v.z - cx[v.index][1]) * rz);
-    return offset < hw;
-  };
+  const isMedianWall = (v: BarrierVertex): boolean =>
+    isMedianData(v.index, v.type, dataOffset.get(v) ?? 0);
   const reach = new Array<number>(n);
   let maxReach = 0;
   for (let j = 0; j < n; j++) {
@@ -109,23 +128,81 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
     }
     return false;
   };
-  const dropped = (v: BarrierVertex): boolean => !isMedianWall(v) && crossesTrack(v);
+  let maxHalf = 0;
+  const halfNearAt = new Array<number>(n);
+  for (let j = 0; j < n; j++) {
+    halfNearAt[j] = Math.min(halfWidthAt(track, 'left', j), halfWidthAt(track, 'right', j));
+    maxHalf = Math.max(maxHalf, halfWidthAt(track, 'left', j), halfWidthAt(track, 'right', j));
+  }
+  const clearCell = Math.max(maxHalf + KERB_WIDTH + 0.5, 1);
+  const clearGrid = new Map<string, number[]>();
+  for (let j = 0; j < n; j++) {
+    const k = `${Math.floor(cx[j][0] / clearCell)},${Math.floor(cx[j][1] / clearCell)}`;
+    const list = clearGrid.get(k);
+    if (list) list.push(j);
+    else clearGrid.set(k, [j]);
+  }
+  const tooClose = (v: BarrierVertex): boolean => {
+    const checkOwn = clamped.has(v);
+    const gx = Math.floor(v.x / clearCell);
+    const gz = Math.floor(v.z / clearCell);
+    for (let a = -1; a <= 1; a++) {
+      for (let b = -1; b <= 1; b++) {
+        for (const j of clearGrid.get(`${gx + a},${gz + b}`) ?? []) {
+          if (!checkOwn && circularIndexDistance(j, v.index, n) <= NEAR_INDEX_SPAN) continue;
+          const t = halfNearAt[j] + KERB_WIDTH + 0.5;
+          const dx = cx[j][0] - v.x;
+          const dz = cx[j][1] - v.z;
+          if (dx * dx + dz * dz < t * t) return true;
+        }
+      }
+    }
+    return false;
+  };
+  const dropped = (v: BarrierVertex): boolean =>
+    !isMedianWall(v) && (cornerDropped.has(v) || tooClose(v) || crossesTrack(v));
+  const cutBetween = (a: BarrierVertex, b: BarrierVertex): boolean => {
+    if (isMedianWall(a) || isMedianWall(b)) return false;
+    const exempt = !clamped.has(a) && !clamped.has(b);
+    const mx = (a.x + b.x) / 2;
+    const mz = (a.z + b.z) / 2;
+    const gx = Math.floor(mx / clearCell);
+    const gz = Math.floor(mz / clearCell);
+    for (let da = -1; da <= 1; da++) {
+      for (let db = -1; db <= 1; db++) {
+        for (const j of clearGrid.get(`${gx + da},${gz + db}`) ?? []) {
+          if (
+            exempt &&
+            (circularIndexDistance(j, a.index, n) <= NEAR_INDEX_SPAN ||
+              circularIndexDistance(j, b.index, n) <= NEAR_INDEX_SPAN)
+          )
+            continue;
+          const t = halfNearAt[j] - 0.3;
+          const dx = cx[j][0] - mx;
+          const dz = cx[j][1] - mz;
+          if (dx * dx + dz * dz < t * t) return true;
+        }
+      }
+    }
+    return false;
+  };
   const covered = winner.map((seg) => seg !== null);
   const runs: BarrierVertex[][] = [];
   if (covered.every((c) => c)) {
     const all = Array.from({ length: n }, (_, i) => vertexAt(i, winner[i]!));
     const keep = all.map((v) => !dropped(v));
-    if (keep.every((k) => k)) {
+    const cut = all.map((v, i) => keep[i] && keep[(i + 1) % n] && cutBetween(v, all[(i + 1) % n]));
+    if (keep.every((k) => k) && !cut.some((c) => c)) {
       runs.push(all);
       return runs;
     }
     let start = 0;
-    while (keep[start]) start = (start + 1) % n;
+    while (keep[start] && !cut[start]) start = (start + 1) % n;
     let fragment: BarrierVertex[] = [];
     for (let k = 1; k <= n; k++) {
       const i = (start + k) % n;
       if (keep[i]) fragment.push(all[i]);
-      else {
+      if (!keep[i] || cut[i]) {
         if (fragment.length >= 2) runs.push(fragment);
         fragment = [];
       }
@@ -143,13 +220,19 @@ export function barrierRuns(track: TrackDataV2, side: Side): BarrierVertex[][] {
     }
     let anyDrop = false;
     let fragment: BarrierVertex[] = [];
-    for (const v of stretch) {
+    for (let q = 0; q < stretch.length; q++) {
+      const v = stretch[q];
       if (dropped(v)) {
         anyDrop = true;
         if (fragment.length >= 2) runs.push(fragment);
         fragment = [];
       } else {
         fragment.push(v);
+        if (q + 1 < stretch.length && !dropped(stretch[q + 1]) && cutBetween(v, stretch[q + 1])) {
+          anyDrop = true;
+          if (fragment.length >= 2) runs.push(fragment);
+          fragment = [];
+        }
       }
     }
     if (!anyDrop) runs.push(stretch);

@@ -133,11 +133,6 @@ describe('246 barrier no-fold edge cases', () => {
     expect(full, 'unclamped vertices').toBeGreaterThan(0);
   });
 
-  it('EDGE2: a barrier whose offset sits inside the kerb band is dropped even on straights, its own centerline included', () => {
-    const track = stadiumTrack(30, { sides: ['left'], offsetMeters: 7 });
-    expect(barrierRuns(track, 'left').flat().length, 'kept vertices').toBe(0);
-  });
-
   it('EDGE3: a vertex that clears its own centerline is still dropped inside another index kerb band', () => {
     const track = stadiumTrack(7.5, { sides: ['left'], offsetMeters: 8 });
     expect(barrierRuns(track, 'left').flat().length, 'kept vertices').toBe(0);

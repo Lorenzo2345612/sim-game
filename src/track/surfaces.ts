@@ -273,7 +273,7 @@ function vergeInnerExtent(track: TrackDataV2, side: Side, i: number): number {
 }
 
 /** Circumradius of P[i-1], P[i], P[i+1] and the side its centre lies on; null when collinear or degenerate. */
-function cornerCurvature(cx: [number, number][], i: number): { side: Side; radius: number } | null {
+export function cornerCurvature(cx: [number, number][], i: number): { side: Side; radius: number } | null {
   const n = cx.length;
   const prev = cx[(i - 1 + n) % n];
   const next = cx[(i + 1) % n];

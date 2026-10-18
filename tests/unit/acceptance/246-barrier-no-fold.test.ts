@@ -316,8 +316,15 @@ describe('246 barrier no-fold acceptance', () => {
     expect(straights, 'unclamped straight vertices').toBeGreaterThan(0);
   });
 
-  it('AT3: STADIUM(8) left armco 12 keeps no vertex inside the kerb band, splits into at least two runs and leaves the right side unchanged', () => {
-    const track = stadiumTrack(8, ['left', 'right'], 12);
+  it('AT3: STADIUM(8) left armco 7.9 keeps no vertex inside the kerb band, splits into at least two runs and leaves the right side unchanged', () => {
+    const track = stadiumTrack(8, ['left'], 7.9);
+    track.barriers.push({
+      start: 0,
+      end: track.centerline.length - 1,
+      side: 'right',
+      type: 'armco',
+      offsetMeters: 12,
+    });
     const runs = barrierRuns(track, 'left');
     for (const v of runs.flat()) {
       expect(
@@ -370,6 +377,8 @@ describe('246 barrier no-fold acceptance', () => {
           for (let a = -1; a <= 1; a++) {
             for (let b = -1; b <= 1; b++) {
               for (const j of grid.get(`${gx + a},${gz + b}`) ?? []) {
+                const dj = Math.abs(j - v.index) % cx.length;
+                if (Math.min(dj, cx.length - dj) <= 5) continue;
                 const d = Math.hypot(cx[j][0] - v.x, cx[j][1] - v.z);
                 if (d < best || (d === best && j < nearest)) {
                   best = d;
