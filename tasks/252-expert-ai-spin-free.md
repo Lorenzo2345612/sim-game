@@ -69,3 +69,7 @@ Vehicle physics, tyre model, car data, changing `AI_GRIP_MARGIN`, mistakes per l
 - Authorised test edit: in `tests/unit/acceptance/252-expert-ai-spin-free.test.ts` change only the AT4 case to `it.skip` with the comment `// moved to task 273`. No other acceptance edits.
 - Time budget: the probe limit in Steps (2 runs per track) is hard. If AT1/AT2 still fail after 2 fix attempts, stop and write the report (BLOCKED, probe numbers, per-run results) before minute 30.
 - Merge leftovers: if the worktree has conflict markers or stray probe files from earlier runs, delete the probe files and resolve markers first; do not re-run old probes.
+
+## Merge note (planner, 2026-10-18)
+
+Master gained task 270 (neural driver v2) which also edits `src/ai/aiDriver.ts` and `src/game/raceGame.ts`. The planner replayed the branch onto master in the worktree (backup: `backup/252-pre-rebase`); 252 changes are applied uncommitted and both files have conflict blocks. Do not run git commands. Keep both sides: 270's neural-driver code paths unchanged and 252's expert spin-free logic applied to the rule-based driver. Remove all markers and re-run Verification, including the 270 and 225 tests.
