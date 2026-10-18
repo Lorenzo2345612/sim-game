@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { FIXED_DT } from '../../../src/core/constants';
 import { createVehicleState } from '../../../src/core/interpolation';
 import type { DriverInput, TrackDataV2 } from '../../../src/core/types';
-import { N_W, forward, parseNeuralModel } from '../../../src/ai/neuralPolicy';
+import { N_IN, N_W, forward, parseNeuralModel } from '../../../src/ai/neuralPolicy';
 import type { NeuralCarState, NeuralFeatures } from '../../../src/ai/neuralFeatures';
 import { NeuralDriver } from '../../../src/ai/neuralDriver';
 import {
@@ -122,21 +122,21 @@ describe('269 evolved neural driver acceptance', () => {
     const padded = parseNeuralModel({ weights: Array.from(old) });
     expect(padded.length).toBe(N_W);
     for (let h = 0; h < 16; h++) {
-      for (let i = 0; i < nInOld; i++) expect(padded[h * 35 + i]).toBe(old[h * nInOld + i]);
-      for (let i = nInOld; i < 35; i++) expect(padded[h * 35 + i]).toBe(0);
+      for (let i = 0; i < nInOld; i++) expect(padded[h * N_IN + i]).toBe(old[h * nInOld + i]);
+      for (let i = nInOld; i < N_IN; i++) expect(padded[h * N_IN + i]).toBe(0);
     }
     const tailOld = nInOld * 16;
-    const tail = 35 * 16;
+    const tail = N_IN * 16;
     for (let i = 0; i < 16 + 32 + 2; i++) expect(padded[tail + i]).toBe(old[tailOld + i]);
 
     const x21 = new Float64Array(21);
     for (let i = 0; i < 21; i++) x21[i] = ((i * 13) % 7) / 10;
-    const x35 = new Float64Array(35);
-    for (let i = 0; i < 21; i++) x35[i] = x21[i];
+    const xIn = new Float64Array(N_IN);
+    for (let i = 0; i < 21; i++) xIn[i] = x21[i];
     const outOld = new Float64Array(2);
     const outNew = new Float64Array(2);
     forward21(old, x21, outOld);
-    forward(padded, x35, outNew);
+    forward(padded, xIn, outNew);
     for (let k = 0; k < 2; k++) expect(outNew[k]).toBeCloseTo(outOld[k], 12);
 
     expect(() => parseNeuralModel({ weights: new Array<number>(611).fill(0) })).toThrow(
