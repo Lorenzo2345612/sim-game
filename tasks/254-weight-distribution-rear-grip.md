@@ -53,6 +53,7 @@ Planner-authorised test edits (only these; nothing else in protected tests):
 - `tests/unit/edge/254-weight-distribution-rear-grip-edge.test.ts` EDGE1: build `bare` with `chassis.weightFront`, `tyres.rearMuScale` and `wheels.widthRear` deleted (as POST1 does) and compare it with the same spec carrying explicit defaults (0.5, 1, `width`).
 - Same file EDGE8: expect `rearMuScale` within 1.00–1.10 (inclusive) instead of exactly 1.10; other values unchanged.
 - Same file EDGE9: delete it (POST7 covers it).
+- `tests/unit/edge/254-weight-distribution-rear-grip.post.test.ts`: delete the unused helpers `steerInput` and `maxAngleAt` (lint only); the removed `BRAKE` const in the edge file is accepted.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
