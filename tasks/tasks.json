@@ -3308,14 +3308,14 @@
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/242-village-buildings.md"
     },
     {
       "num": "243",
       "title": "Dry arroyo channel and bridges",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "241"
       ],
@@ -3335,25 +3335,25 @@
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/244-engine-voice-timbre.md"
     },
     {
       "num": "245",
       "title": "Kerbs never fold over the asphalt (radius cap, split strips)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/245-kerb-no-fold.md"
     },
     {
       "num": "246",
       "title": "Barriers never fold onto the inner kerb",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "235"
       ],
@@ -3366,7 +3366,7 @@
     {
       "num": "247",
       "title": "Sausage kerbs fit the corner (length, offset, curved render/colliders)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "240",
         "241"
@@ -3439,7 +3439,8 @@
       "title": "Expert AI drives spin-free on monza and spa",
       "status": "pending",
       "deps": [
-        "225"
+        "225",
+        "254"
       ],
       "complexity": "complex",
       "type": "bugfix",
@@ -3450,13 +3451,27 @@
     {
       "num": "253",
       "title": "Run-off paint uses only the country's flag colours",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
       "models": "standard",
       "phase": 1,
       "spec": "tasks/253-runoff-flag-colours.md"
+    },
+    {
+      "num": "254",
+      "title": "Weight distribution and rear grip (stable OW-26 rear)",
+      "status": "pending",
+      "deps": [
+        "146",
+        "239"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/254-weight-distribution-rear-grip.md"
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 Status: pending
 Phase: 2
-Depends on: 225
+Depends on: 225, 254
 Complexity: complex
 Type: bugfix
 Models: heavy
