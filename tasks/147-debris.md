@@ -74,3 +74,10 @@ npm test
 
 - Damage computation (144–146), HUD/repair (148), debris sound or particles, wing visual deformation.
 - README, tasks.json, milestones.json.
+
+## Planner answers (round 1)
+
+- Authorised test edits (typecheck only, no assertion changes): `tests/unit/acceptance/147-debris.test.ts:103` and `tests/unit/edge/147-debris-edge.test.ts:218` change `collider()` to `collider(0)`.
+- `src/main.ts` — modify (authorised): construct `debrisRenderer` from `raceGame.debrisField` and update it each frame next to the car renderers; dispose it on race teardown. Nothing else in main.ts.
+- Accepted as designed: optional `wheelRadiusM` 3rd constructor arg, spawn velocity about the chassis origin, 300 m removal skipped with no cars, default collision groups.
+- 249/250 failures are pre-existing and out of scope; ignore them.
