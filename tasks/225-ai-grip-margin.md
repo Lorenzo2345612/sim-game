@@ -34,8 +34,8 @@ Definitions for the tests: "spin" = at any tick after go, the angle between the 
 |---|---|---|---|
 | AT1 | monza, 1 AI, difficulty `expert`, seed 1 | step 60 s sim after go | AI distance > 1500 m (spin-free moved to 252) |
 | AT2 | spa, 1 AI, difficulty `expert`, seed 1 | step 60 s sim after go | AI distance > 1500 m (spin-free moved to 252) |
-| AT3 | monza, 1 AI, seed 1, difficulties `easy` and `expert` (separate games) | step 45 s after go | expert distance > easy distance + 5 m |
-| AT4 | monza, 1 AI, seed 1, `medium` | step 45 s after go | easy distance < medium distance < expert distance |
+| AT3 | — | — | moved to 252 (AT3 there) |
+| AT4 | — | — | moved to 252 (AT3 there) |
 | AT5 | source | read `src/game/raceGame.ts` | exports `AI_GRIP_MARGIN`, value in [0.75, 1.0] |
 
 Existing tests that must still pass: all 088, 089, 092 and 093 acceptance and edge tests.
@@ -60,4 +60,6 @@ AI driver controller changes, mistakes per lap, overtaking logic, speedProfile/t
 
 ## Planner-authorised test edits
 
+- `tests/unit/acceptance/225-*.test.ts`: delete AT3 and AT4 (moved to 252; they need spin-free AI). `tests/unit/edge/225-ai-grip-margin.test.ts`: remove the never-spin assertions of EDGE3 and EDGE4 (keep any non-spin assertions).
 - `tests/unit/acceptance/225-*.test.ts`: remove the "never spins"/"neither spins" assertions from AT1–AT3 to match the updated table; keep the distance assertions.
+- Second split (decision 225-coder #2): AT3/AT4 depend on spin-free AI and move to 252. 225 = stability aid + unit test + margin 0.82 + AT1, AT2, AT5. Run the full `npm test` once before reporting.
