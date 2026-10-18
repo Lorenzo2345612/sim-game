@@ -89,3 +89,13 @@ npm test
 
 - AT5 now checks only barrier vertices whose `index` lies in the pit window (planner change). Barriers of other track sections crossing the building band (sepang 236–239, cleveland 625–627) are pre-existing data conflicts, out of scope here (logged for the 249 QA report). Authorised: in `tests/unit/acceptance/248-pit-clears-runoff.test.ts` AT5 filter the `barrierRuns` vertices to pit-window indices (wrap-aware); nothing else.
 - Apply the already-authorised 155/106/211 edits.
+
+## Planner answers (round 3)
+
+Per-task track-JSON snapshots go stale on every rebuild; they are not regression guards. Authorised:
+- `tests/unit/acceptance/241-ermita-tracks.test.ts`: delete AT4 (`MASTER_HASHES` table and its `it` block); nothing else.
+- `tests/unit/acceptance/253-runoff-flag-colours.test.ts`: delete AT6 and its hash table (same edit task 256 makes; identical deletions merge cleanly).
+- `tests/unit/acceptance/247-sausage-fit-corner.test.ts` AT7: also delete `runoffs`, `barriers`, `boards`, `trees`, `terrain`, `escapeRoads` (and `derived` if present) from both sides before comparing, as in the 155/106 edits; nothing else.
+- `tests/unit/edge/225-ai-grip-margin.test.ts` EDGE3: not yours (task 256 fixes it in `src/ai/`); list under pending and do not change the pit-wall rule for it.
+- Accepted: buildTrack.ts conflict resolution, 140 AT5 split, missing clipRunoffsOutOfPit edge tests (tester covers them).
+List every changed test in the report.
