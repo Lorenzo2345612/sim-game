@@ -94,3 +94,7 @@ npm test
 ## Planner decision (barriers vs houses)
 
 `buildVillageEnv` takes an optional `trackSetback?: number[]` (per centerline index, metres from the centerline to the house front line, same value both sides unless `trackSetbackRight` is also given). Default when absent: `halfWidth + 2.5` per side (fixtures AT1–AT9 use the default). `bakeVillage.ts` passes, per index and side, the `offsetMeters` of the barrier segment covering that index + 1.0 (walls stand between the track and the facades, as on a real street circuit). Only the AT10 row changed accordingly.
+
+## Planner answers (final round)
+
+- 253 AT6 and 225 EDGE3 failures are not yours (task 256): list them under `pending` and report OK if all 242 tests pass. Densify and dispose changes accepted. Do not change code further.
