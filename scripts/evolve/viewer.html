@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Evolución IA</title>
+<style>
+body{margin:0;background:#111;color:#ddd;font:14px system-ui;display:flex;height:100vh}
+#map{flex:1}#side{width:340px;padding:12px;box-sizing:border-box;border-left:1px solid #333}
+h2{margin:0 0 8px;font-size:18px}.k{color:#888}canvas{display:block}
+#chart{width:316px;height:200px;background:#181818;margin-top:10px}
+</style></head><body>
+<canvas id="map"></canvas>
+<div id="side"><h2>Evolución de pilotos IA</h2>
+<div id="info">conectando…</div>
+<canvas id="chart" width="316" height="200"></canvas>
+<p class="k">Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
+</div>
+<script>
+const map=document.getElementById('map'),ctx=map.getContext('2d'),ch=document.getElementById('chart'),cx=ch.getContext('2d');
+let init=null,pos=[],gen=0,t=0,hist=[],view=null;
+function fit(){map.width=map.clientWidth;map.height=innerHeight;if(!init)return;
+ const pts=init.left.concat(init.right);let a=1e9,b=-1e9,c=1e9,d=-1e9;
+ for(const[x,z]of pts){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,z);d=Math.max(d,z);}
+ const s=Math.min((map.width-40)/(b-a),(map.height-40)/(d-c));view={s,ox:20-a*s+(map.width-40-(b-a)*s)/2,oz:20-c*s+(map.height-40-(d-c)*s)/2};}
+addEventListener('resize',fit);
+const P=(x,z)=>[x*view.s+view.ox,z*view.s+view.oz];
+function line(arr){ctx.beginPath();arr.forEach(([x,z],i)=>{const[u,v]=P(x,z);i?ctx.lineTo(u,v):ctx.moveTo(u,v)});ctx.closePath();ctx.stroke();}
+function draw(){requestAnimationFrame(draw);if(!init||!view)return;
+ ctx.fillStyle='#111';ctx.fillRect(0,0,map.width,map.height);ctx.strokeStyle='#555';ctx.lineWidth=1.5;line(init.left);line(init.right);
+ const sz=Math.max(3,view.s*4);let alive=0;
+ for(let pass=0;pass<3;pass++)for(let k=init.pop-1;k>=0;k--){const x=pos[4*k],z=pos[4*k+1],h=pos[4*k+2],al=pos[4*k+3];if(x===undefined)continue;
+  const isElite=eliteIdx.has(k);const p=al?(isElite?2:1):0;if(p!==pass)continue;if(al)alive++;
+  const[u,v]=P(x,z),fx=Math.cos(h),fz=Math.sin(h);
+  ctx.fillStyle=!al?'rgba(200,60,60,.25)':isElite?'#ffcc33':'#4cc3ff';
+  ctx.beginPath();ctx.moveTo(u+fx*sz*1.6,v+fz*sz*1.6);ctx.lineTo(u-fx*sz-fz*sz*.7,v-fz*sz+fx*sz*.7);ctx.lineTo(u-fx*sz+fz*sz*.7,v-fz*sz-fx*sz*.7);ctx.fill();}
+ const last=hist[hist.length-1];
+ document.getElementById('info').innerHTML=`Pista <b>${init.trackId}</b> · auto <b>${init.carId}</b><br>Generación <b>${gen}</b> · tiempo ${t.toFixed(1)} s<br>Vivos <b>${alive}</b> / ${init.pop}<br>`+
+  (last?`Gen anterior: mejor <b>${last.best.toFixed(0)} m</b>, promedio ${last.mean.toFixed(0)} m${last.bestLap?`<br>Mejor vuelta <b>${last.bestLap.toFixed(2)} s</b>`:''}`:'');}
+let eliteIdx=new Set();
+function chart(){cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.height);if(!hist.length)return;
+ const m=Math.max(...hist.map(h=>h.best),1),n=Math.max(hist.length-1,1);
+ for(const[key,col]of[['mean','#888'],['best','#5d5']]){cx.strokeStyle=col;cx.beginPath();hist.forEach((h,i)=>{const u=4+i/n*(ch.width-8),v=ch.height-6-h[key]/m*(ch.height-20);i?cx.lineTo(u,v):cx.moveTo(u,v)});cx.stroke();}
+ cx.fillStyle='#aaa';cx.fillText(`${m.toFixed(0)} m`,4,12);}
+// workers get contiguous slices; elites are pop indices 0..elite-1 → worker 0..; mapped by slice layout
+function eliteSet(){eliteIdx=new Set();for(let i=0;i<init.elite;i++)eliteIdx.add(i);}
+const es=new EventSource('/events');
+es.addEventListener('init',e=>{init=JSON.parse(e.data);hist=init.history;eliteSet();fit();chart();});
+es.addEventListener('pos',e=>{const d=JSON.parse(e.data);pos=d.p;gen=d.gen;t=d.t;});
+es.addEventListener('gen',e=>{hist.push(JSON.parse(e.data));chart();});
+draw();
+</script></body></html>

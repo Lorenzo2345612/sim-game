@@ -6,3 +6,4 @@ test-results/
 playwright-report/
 .claude/worktrees/
 builds/
+scripts/evolve/runs/
