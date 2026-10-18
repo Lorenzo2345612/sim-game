@@ -245,8 +245,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | in progress | 241 |
 | 243 | Dry arroyo channel and bridges | in progress | 241 |
-| 244 | Engine voice timbre v2.1 (approved preview) | waiting decision | 228, 231 |
-| 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
+| 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
+| 245 | Kerbs never fold over the asphalt (radius cap, split strips) | waiting decision | - |
 | 246 | Barriers never fold onto the inner kerb | in progress | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | waiting decision | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
@@ -254,3 +254,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 250 | Bollard placement | pending | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225 |
+| 253 | Run-off paint uses only the country's flag colours | pending | - |

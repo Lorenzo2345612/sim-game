@@ -3328,7 +3328,7 @@
     {
       "num": "244",
       "title": "Engine voice timbre v2.1 (approved preview)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "228",
         "231"
@@ -3342,7 +3342,7 @@
     {
       "num": "245",
       "title": "Kerbs never fold over the asphalt (radius cap, split strips)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3446,6 +3446,17 @@
       "models": "heavy",
       "phase": 2,
       "spec": "tasks/252-expert-ai-spin-free.md"
+    },
+    {
+      "num": "253",
+      "title": "Run-off paint uses only the country's flag colours",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/253-runoff-flag-colours.md"
     }
   ]
 }
