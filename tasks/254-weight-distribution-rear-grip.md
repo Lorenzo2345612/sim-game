@@ -34,6 +34,16 @@ User report: "the F1 is very unstable at the rear". `public/cars/ow26.json` has 
 
 Conventions: `weightFront` and `rearMuScale` bounds inclusive; invalid input throws; defaults applied when the field is absent; spec objects not mutated.
 
+## Planner answers (round 2)
+
+State after two coder timeouts: steps 1–5 are implemented in the worktree and AT1–AT5, AT7 pass. Only AT6 fails: `ow26.test.ts` AT2 (0-100 = 2.26 s, floor 2.3) and AT3 (0-200 = 4.54 s, floor 4.8). The car is now traction-better at launch, so it is too quick, not too slow. Do not rewrite finished work; fix only this.
+
+Authorised levers (ow26.json only, in this order; stop at the first that makes `ow26.test.ts` fully pass while AT4/AT5 still pass):
+1. `tyres.rearMuScale` down from 1.10 to any value in 1.00–1.10 (AT4/AT5 must still pass).
+2. `assists.tc.slip` (the slip target used when TC is on) in 0.08–0.25.
+3. Final-drive / 1st-gear ratio change of at most ±8 %.
+No calibration test window changes. Run only `npx vitest run tests/unit/calibration/ow26.test.ts tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts` while tuning (each run is about 10 s); do not run the full suite until the end. Report the chosen values.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 Executable contract. The `acceptance` worker turns each row into `tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts` before the coder starts. AT2 baselines (position, velocity, yaw) are recorded from master by the acceptance worker at test-writing time, before any `src/` change, and hard-coded in the test. Nobody else may change these rows or tests.
