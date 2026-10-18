@@ -63,3 +63,10 @@ npm test
 
 - Worklet/EngineAudio wiring (229), turbo transients (239), mixer (230), offline render tool (232).
 - Any change to `engineSynth.ts` or to car fields other than `sound.synth`.
+
+## Planner-authorised test edits
+
+In addition to the design's authorised 227/228/231 edits (kernel, reflection, loop LP, crackle, pipeM/tailM, gt3-d, layer-off), which remain authorised:
+- `tests/unit/acceptance/226-engine-sound-spec.test.ts` AT3: add `cylVar: 0.2`, `bassDb: 4`, `exhaustGain: 0.8` to `FULL_RAW` (non-default, in range); nothing else.
+- `tests/unit/edge/227-engine-voice-core.post.test.ts` POST4: re-scope to `cylVar: 0` (with zero jitter and zero cylVar the seed does not affect the output).
+- Confirmed covered: `231` AT4 (gt3-d firing 90/54 → even 72) and `228` EDGE6/EDGE7 (crackle timing/arming) updated to the new behaviour.
