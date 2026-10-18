@@ -3501,7 +3501,7 @@
     {
       "num": "257",
       "title": "Drop the stale track-hash test in 243",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "243"
       ],
