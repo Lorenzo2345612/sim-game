@@ -179,10 +179,16 @@ describe('097 terrain below strips acceptance', () => {
       const prev = JSON.parse(
         execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }),
       ) as TrackDataV2;
+      const pinned = pin(now);
+      const before = pin(prev);
+      // 247 rebuild: the builder emits an all-zero bank array where the pre-task JSON had none.
+      if (!('bank' in before) && Array.isArray(pinned.bank) && (pinned.bank as number[]).every((b) => b === 0)) {
+        delete pinned.bank;
+      }
       expect(
-        pin(now),
+        pinned,
         `${id}: fields other than kerbs/run-offs/terrain.heights changed`,
-      ).toEqual(pin(prev));
+      ).toEqual(before);
       expect(now.terrain.heights.length, `${id}: heights length`).toBe(prev.terrain.heights.length);
     }
   }, 120000);

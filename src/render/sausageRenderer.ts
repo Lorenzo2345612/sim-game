@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import type { Sausage, TrackDataV2 } from '../core/types';
+import type { TrackDataV2 } from '../core/types';
 import {
   SAUSAGE_BASE_WIDTH,
   SAUSAGE_CAP_LENGTH,
   SAUSAGE_HEIGHT,
   SAUSAGE_TOP_WIDTH,
-  sausagePose,
+  sausagePieces,
+  type SausagePiece,
 } from '../track/sausages';
 
 export {
@@ -66,36 +67,74 @@ export function createSausageGeometry(length: number): THREE.BufferGeometry {
   return geometry;
 }
 
+/**
+ * One-metre trapezoid prism along Z centred at 0, plain body colour: the
+ * instanced unit scaled to each piece length.
+ */
+export function createSausageBodyGeometry(): THREE.BufferGeometry {
+  const bw = SAUSAGE_BASE_WIDTH / 2;
+  const tw = SAUSAGE_TOP_WIDTH / 2;
+  const h = SAUSAGE_HEIGHT;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  for (const z of [-0.5, 0.5]) {
+    positions.push(-bw, 0, z, bw, 0, z, tw, h, z, -tw, h, z);
+    for (let k = 0; k < 4; k++) colors.push(BODY_COLOR.r, BODY_COLOR.g, BODY_COLOR.b);
+  }
+  const indices = [
+    2, 3, 7, 2, 7, 6,
+    0, 1, 5, 0, 5, 4,
+    1, 2, 6, 1, 6, 5,
+    3, 0, 4, 3, 4, 7,
+    3, 2, 1, 3, 1, 0,
+    4, 5, 6, 4, 6, 7,
+  ];
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+const WHITE_COLOR = new THREE.Color(1, 1, 1);
+
 export function createSausages(track: TrackDataV2): SausageObject {
   const group = new THREE.Group();
   group.name = 'sausages';
   const sausages = track.sausages ?? [];
-  const byLength = new Map<number, Sausage[]>();
+  const pieces: { piece: SausagePiece; end: boolean }[] = [];
   for (const s of sausages) {
-    const list = byLength.get(s.length);
-    if (list === undefined) byLength.set(s.length, [s]);
-    else list.push(s);
+    const parts = sausagePieces(track, s);
+    for (let i = 0; i < parts.length; i++) {
+      pieces.push({ piece: parts[i], end: i === 0 || i === parts.length - 1 });
+    }
   }
-  const geometries: THREE.BufferGeometry[] = [];
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    flatShading: true,
-    roughness: 0.5,
-    metalness: 0,
-  });
-  const matrix = new THREE.Matrix4();
-  for (const [length, list] of byLength) {
-    const geometry = createSausageGeometry(length);
-    geometries.push(geometry);
-    const mesh = new THREE.InstancedMesh(geometry, material, list.length);
-    mesh.name = `sausages-${length}`;
-    for (let i = 0; i < list.length; i++) {
-      const { position, yaw } = sausagePose(track, list[i]);
-      matrix.makeRotationY(yaw);
-      matrix.setPosition(position.x, position.y, position.z);
+  let geometry: THREE.BufferGeometry | null = null;
+  let material: THREE.MeshStandardMaterial | null = null;
+  if (pieces.length > 0) {
+    geometry = createSausageBodyGeometry();
+    material = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.5,
+      metalness: 0,
+    });
+    const mesh = new THREE.InstancedMesh(geometry, material, pieces.length);
+    mesh.name = 'sausages';
+    const matrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3();
+    for (let i = 0; i < pieces.length; i++) {
+      const { piece, end } = pieces[i];
+      matrix.makeRotationY(piece.yaw);
+      scale.set(1, 1, piece.length);
+      matrix.scale(scale);
+      matrix.setPosition(piece.position.x, piece.position.y, piece.position.z);
       mesh.setMatrixAt(i, matrix);
+      mesh.setColorAt(i, end ? CAP_COLOR : WHITE_COLOR);
     }
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
     mesh.receiveShadow = true;
     group.add(mesh);
   }
@@ -106,8 +145,8 @@ export function createSausages(track: TrackDataV2): SausageObject {
     dispose(): void {
       if (disposed) return;
       disposed = true;
-      for (const geometry of geometries) geometry.dispose();
-      material.dispose();
+      geometry?.dispose();
+      material?.dispose();
     },
   };
 }

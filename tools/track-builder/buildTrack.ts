@@ -151,7 +151,12 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const biome = biomeFor(config.environment ?? 'parkland', config.biome);
   const trees = placeTrees(config.id, centerline, terrain, barriers, biome);
   const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
-  const sausages = buildSausages(centerline, config.widthMeters, config.sausages);
+  const sausages = buildSausages(
+    centerline,
+    config.widthMeters,
+    config.sausages,
+    parallel.any ? { left: parallel.halfLeft, right: parallel.halfRight } : undefined,
+  );
   const treeSpecies: TreeSpecies[] = biome.species.map((sp) => ({
     name: sp.name,
     preset: SPECIES_PRESETS[sp.name].preset,

@@ -130,8 +130,24 @@ function nearestIndexAt(pts: Point2[], atMeters: number): number {
   return best;
 }
 
+// Forward polyline length along the closed lap from index `from` to `to`.
+const wrap = (v: number, n: number): number => ((v % n) + n) % n;
+
+function arcLength(pts: Point2[], from: number, to: number): number {
+  const n = pts.length;
+  let len = 0;
+  let i = wrap(from, n);
+  const target = wrap(to, n);
+  while (i !== target) {
+    const j = (i + 1) % n;
+    len += Math.hypot(pts[j][0] - pts[i][0], pts[j][1] - pts[i][1]);
+    i = j;
+  }
+  return len;
+}
+
 describe('149 sausage placement acceptance', () => {
-  it('AT1: chicane fixture with width 12 gives two sausages at the arc apexes, left on the left, right on the right, offset 7.8, length 6', () => {
+  it('AT1: chicane fixture with width 12 gives two sausages at the arc apexes, left on the left, right on the right, offset 7.8, length half the corner run clamped to 6..20', () => {
     const pts = chicaneFixture();
     const runs = detectCorners(pts);
     const sausages: Sausage149[] = buildSausages(pts, WIDTH);
@@ -142,7 +158,8 @@ describe('149 sausage placement acceptance', () => {
       const run = runs.find((r) => r.side === side && r.minRadius < 80);
       expect(atSide[0].index, `${side} apex index`).toBe(apexIndex(pts, run));
       expect(atSide[0].offset, `${side} offset`).toBeCloseTo(7.8, 9);
-      expect(atSide[0].length, `${side} length`).toBeCloseTo(6, 9);
+      const expected = Math.min(20, Math.max(6, 0.5 * arcLength(pts, run!.start, run!.end)));
+      expect(atSide[0].length, `${side} length`).toBeCloseTo(expected, 6);
     }
   });
 

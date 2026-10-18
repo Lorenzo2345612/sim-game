@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { RAPIER, createPhysicsWorld, initPhysics } from '../../../src/physics/physicsWorld';
 import { surfaceOf } from '../../../src/physics/trackColliders';
 import type { Sausage, TrackDataV2, Vec3 } from '../../../src/core/types';
+import { sausagePieces } from '../../../src/track/sausages';
 import { fixture } from '../acceptance/022-fixture-trackdatav2';
 
 const SAUSAGE_RENDERER_MODULE = '../../../src/render/sausageRenderer';
@@ -173,7 +174,7 @@ describe('150 sausage kerb render and colliders edge', () => {
     obj.dispose();
   });
 
-  it('EDGE7: createSausages instances equal-length sausages in one mesh and leaves the track untouched', async () => {
+  it('EDGE7: createSausages instances every piece in one mesh and leaves the track untouched', async () => {
     const mod = await loadSausageRenderer();
     const track = straightTrack({
       sausages: [
@@ -184,15 +185,16 @@ describe('150 sausage kerb render and colliders edge', () => {
     const before = JSON.stringify(track);
     const obj = mod.createSausages(track);
     expect(obj.count).toBe(2);
-    expect(obj.group.children.length, 'one mesh for equal lengths').toBe(1);
+    expect(obj.group.children.length, 'one mesh for all pieces').toBe(1);
     const mesh = obj.group.children[0];
     expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
-    expect((mesh as THREE.InstancedMesh).count).toBe(2);
+    expect((mesh as THREE.InstancedMesh).name).toBe('sausages');
+    expect((mesh as THREE.InstancedMesh).count, 'one instance per piece').toBe(12);
     expect(JSON.stringify(track), 'input not mutated').toBe(before);
     obj.dispose();
   });
 
-  it('EDGE8: the instance matrix carries the sausage pose in position and tangent', async () => {
+  it('EDGE8: the instance matrix carries the first piece pose in position and tangent', async () => {
     const mod = await loadSausageRenderer();
     const elevation = Array.from({ length: POINTS }, () => 0);
     elevation[15] = 2.5;
@@ -200,17 +202,18 @@ describe('150 sausage kerb render and colliders edge', () => {
       elevation,
       sausages: [{ index: 15, side: 'right', offset: 7.8, length: 6 }],
     });
+    const first = sausagePieces(track, track.sausages![0])[0];
     const obj = mod.createSausages(track);
     const mesh = obj.group.children[0] as THREE.InstancedMesh;
     const m = new THREE.Matrix4();
     mesh.getMatrixAt(0, m);
     const e = m.elements;
-    expect(e[12]).toBeCloseTo(7.8, 5);
-    expect(e[13]).toBeCloseTo(2.5, 5);
-    expect(e[14]).toBeCloseTo(-30, 5);
-    expect(e[8], 'local Z x').toBeCloseTo(0, 5);
+    expect(e[12]).toBeCloseTo(first.position.x, 5);
+    expect(e[13]).toBeCloseTo(first.position.y, 5);
+    expect(e[14]).toBeCloseTo(first.position.z, 5);
+    expect(e[8], 'local Z x').toBeCloseTo(Math.sin(first.yaw) * first.length, 5);
     expect(e[9], 'local Z y').toBeCloseTo(0, 5);
-    expect(e[10], 'local Z z').toBeCloseTo(-1, 5);
+    expect(e[10], 'local Z z').toBeCloseTo(Math.cos(first.yaw) * first.length, 5);
     obj.dispose();
   });
 

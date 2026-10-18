@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../../../src/physics/physicsWorld';
 import { surfaceOf } from '../../../src/physics/trackColliders';
-import { sausagePose } from '../../../src/track/sausages';
+import { sausagePieces, sausagePose } from '../../../src/track/sausages';
 import { parseTrackData } from '../../../src/track/parseTrackData';
 import { buildTrackSurfaces } from '../../../src/track/surfaces';
 import { bankProfile } from '../../../tools/track-builder/banking';
@@ -97,25 +97,25 @@ describe('174 banked sausage colliders, index edges and ring-wrapped ranges', ()
     await initPhysics();
   });
 
-  it('the sausage convex hull sits on the banked base of its index', () => {
+  it('the first sausage-piece hull sits on the banked base of its index', () => {
     const bank = new Array<number>(N).fill(10 * DEG);
     const s: Sausage = { index: 15, side: 'right', offset: 7.8, length: 6 };
-    const pose = sausagePose(loopTrack(bank), s);
+    const first = sausagePieces(loopTrack(bank), s)[0];
     const world = createPhysicsWorld(loopTrack(bank, [s]));
     world.step();
-    const hit = colliderAt(world, pose.position.x, pose.position.y, pose.position.z);
+    const hit = colliderAt(world, first.position.x, first.position.y, first.position.z);
     expect(hit, 'no collider at the banked sausage base').not.toBeNull();
     expect(hit!.surface).toBe('kerb');
     expect(hit!.y).toBeCloseTo(7.8 * Math.tan(10 * DEG), 6);
     world.free();
   }, 30000);
 
-  it('without bank the sausage hull base stays at the plain elevation', () => {
+  it('without bank the sausage-piece hull base stays at the plain elevation', () => {
     const s: Sausage = { index: 15, side: 'right', offset: 7.8, length: 6 };
+    const first = sausagePieces(loopTrack(), s)[0];
     const world = createPhysicsWorld(loopTrack(undefined, [s]));
     world.step();
-    const pose = sausagePose(loopTrack(), s);
-    const hit = colliderAt(world, pose.position.x, 0, pose.position.z);
+    const hit = colliderAt(world, first.position.x, 0, first.position.z);
     expect(hit, 'no collider at the flat sausage base').not.toBeNull();
     expect(hit!.y).toBeCloseTo(0, 12);
     world.free();

@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
 import { barrierRuns } from '../track/barrierPath';
-import { sausageHullPoints, sausagePose } from '../track/sausages';
+import { sausageHullPoints, sausagePieces } from '../track/sausages';
 import { buildTrackSurfaces } from '../track/surfaces';
 
 const WALL_BOTTOM = -0.3;
@@ -69,16 +69,17 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
   }
 }
 
-/** Fixed convex-hull per sausage, kerb surface and default friction like the kerb strips. */
+/** One convex hull per sausage piece, kerb surface and default friction like the kerb strips. */
 function addSausageColliders(world: RAPIER.World, track: TrackDataV2): void {
   for (const s of track.sausages ?? []) {
-    const desc = RAPIER.ColliderDesc.convexHull(sausageHullPoints(s.length));
-    if (desc === null) continue;
-    const { position, yaw } = sausagePose(track, s);
-    desc
-      .setTranslation(position.x, position.y, position.z)
-      .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) });
-    registerSurface(world.createCollider(desc), 'kerb');
+    for (const piece of sausagePieces(track, s)) {
+      const desc = RAPIER.ColliderDesc.convexHull(sausageHullPoints(piece.length));
+      if (desc === null) continue;
+      desc
+        .setTranslation(piece.position.x, piece.position.y, piece.position.z)
+        .setRotation({ x: 0, y: Math.sin(piece.yaw / 2), z: 0, w: Math.cos(piece.yaw / 2) });
+      registerSurface(world.createCollider(desc), 'kerb');
+    }
   }
 }
 

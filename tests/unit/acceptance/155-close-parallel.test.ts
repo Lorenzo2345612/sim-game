@@ -474,7 +474,13 @@ describe('155 close parallel sections acceptance', () => {
         delete copy.escapeRoads;
         return copy;
       };
-      expect(strip(track), `${id}: JSON changed (sausages ignored)`).toEqual(strip(prev));
+      const now = strip(track);
+      const before = strip(prev);
+      // 247 rebuild: the builder emits an all-zero bank array where the pre-task JSON had none.
+      if (!('bank' in before) && Array.isArray(now.bank) && (now.bank as number[]).every((b) => b === 0)) {
+        delete now.bank;
+      }
+      expect(now, `${id}: JSON changed (sausages ignored)`).toEqual(before);
     }
   }, 120000);
 });

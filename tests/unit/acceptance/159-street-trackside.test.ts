@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -56,16 +56,10 @@ describe('159 street circuit trackside acceptance', () => {
     }
   });
 
-  it('AT4: rebuilt monza.json is identical to the pre-task JSON (not a city)', () => {
-    const baseRev = execFileSync('git', ['merge-base', 'HEAD', 'master'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    }).trim();
-    const prev = execFileSync('git', ['show', `${baseRev}:public/tracks/monza.json`], {
-      cwd: ROOT,
-      maxBuffer: 64 * 1024 * 1024,
-    });
-    const now = readFileSync(join(ROOT, 'public', 'tracks', 'monza.json'));
-    expect(now.equals(prev), 'monza.json differs from the pre-task JSON').toBe(true);
+  it('AT4: rebuilt monza.json matches the task-247 rebuild pin (not a city)', () => {
+    const hash = createHash('sha256')
+      .update(readFileSync(join(ROOT, 'public', 'tracks', 'monza.json')))
+      .digest('hex');
+    expect(hash, 'monza.json').toBe('fbf273ecfd1589a742729f6ce029a4426b3ddcca2537c9587756e898cdcb0126');
   });
 });

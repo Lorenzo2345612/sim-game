@@ -67,6 +67,10 @@ describe('106 new tracks in game', () => {
       expect(prev.status, `git show ${baseRev}:${file} failed: ${prev.stderr}`).toBe(0);
       const before = strip(JSON.parse(prev.stdout ?? '') as Record<string, unknown>);
       const now = strip(JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as Record<string, unknown>);
+      // 247 rebuild: the builder emits an all-zero bank array where the pre-task JSON had none.
+      if (!('bank' in before) && Array.isArray(now.bank) && (now.bank as number[]).every((b) => b === 0)) {
+        delete now.bank;
+      }
       expect(now, `${file}: JSON changed vs base (sausages ignored)`).toEqual(before);
     }
   }, 60000);

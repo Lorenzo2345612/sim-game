@@ -12,6 +12,7 @@ interface SausageObject {
 }
 interface SausageRenderer {
   createSausageGeometry(length: number): THREE.BufferGeometry;
+  createSausageBodyGeometry(): THREE.BufferGeometry;
   createSausages(track: TrackDataV2): SausageObject;
   sausagePose(track: TrackDataV2, s: Sausage): { position: { x: number; y: number; z: number }; yaw: number };
 }
@@ -144,7 +145,7 @@ describe('150 sausage kerb render and colliders post-code gaps', () => {
     expect(wrappedLow.position.z).toBeCloseTo(-2 * (POINTS - 1), 6);
   });
 
-  it('POST5: mixed lengths get one InstancedMesh per distinct length with vertex colours and no shadow draw', async () => {
+  it('POST5: mixed lengths get one InstancedMesh over every piece with vertex colours and no shadow draw', async () => {
     const mod = await loadSausageRenderer();
     const track = straightTrack({
       sausages: [
@@ -155,26 +156,20 @@ describe('150 sausage kerb render and colliders post-code gaps', () => {
     });
     const obj = mod.createSausages(track);
     expect(obj.count, 'count = sausages').toBe(3);
-    expect(obj.group.children.length, 'one mesh per distinct length').toBe(2);
-    const meshes = new Map<string, THREE.InstancedMesh>();
-    for (const child of obj.group.children) {
-      expect(child, 'mesh child').toBeInstanceOf(THREE.InstancedMesh);
-      meshes.set(child.name, child as THREE.InstancedMesh);
-    }
-    const long = meshes.get('sausages-6');
-    const short = meshes.get('sausages-2.4');
-    if (long === undefined || short === undefined) throw new Error(`missing mesh names: ${[...meshes.keys()].join(',')}`);
-    expect(long.count, 'two 6 m sausages').toBe(2);
-    expect(short.count, 'one 2.4 m sausage').toBe(1);
-    for (const [mesh, length] of [[long, 6], [short, 2.4]] as const) {
-      mesh.geometry.computeBoundingBox();
-      const box = mesh.geometry.boundingBox;
-      if (box === null) throw new Error('no bounding box');
-      expect(box.max.z - box.min.z, `${length} m geometry length`).toBeCloseTo(length, 6);
-      const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-      expect((material as THREE.MeshStandardMaterial).vertexColors, 'vertex colours on').toBe(true);
-      expect(mesh.castShadow, 'no shadow-pass draw').toBe(false);
-    }
+    expect(obj.group.children.length, 'one mesh for every piece').toBe(1);
+    const mesh = obj.group.children[0] as THREE.InstancedMesh;
+    expect(mesh, 'mesh child').toBeInstanceOf(THREE.InstancedMesh);
+    expect(mesh.name).toBe('sausages');
+    expect(mesh.count, '6 + 3 + 6 pieces').toBe(15);
+    const body = mod.createSausageBodyGeometry();
+    body.computeBoundingBox();
+    const box = body.boundingBox;
+    if (box === null) throw new Error('no bounding box');
+    expect(box.max.z - box.min.z, 'body geometry length 1').toBeCloseTo(1, 6);
+    body.dispose();
+    const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    expect((material as THREE.MeshStandardMaterial).vertexColors, 'vertex colours on').toBe(true);
+    expect(mesh.castShadow, 'no shadow-pass draw').toBe(false);
     obj.dispose();
     expect(() => obj.dispose(), 'second dispose is a no-op').not.toThrow();
   });
@@ -207,7 +202,7 @@ describe('150 sausage kerb render and colliders post-code gaps', () => {
     expect(pose.position.y).toBeCloseTo(0, 6);
   });
 
-  it('POST8: every sausage adds exactly one kerb collider that does not fall and is hit at its top', async () => {
+  it('POST8: every sausage piece adds one kerb collider that does not fall and is hit at its top', async () => {
     const baseline = createPhysicsWorld(straightTrack());
     let baselineKerb = 0;
     baseline.forEachCollider((c) => {
@@ -225,7 +220,11 @@ describe('150 sausage kerb render and colliders post-code gaps', () => {
     world.forEachCollider((c) => {
       if (surfaceOf(c) === 'kerb') colliders.push(c);
     });
-    expect(colliders.length, 'one collider per sausage').toBe(3);
+    const expectedColliders = (track.sausages ?? []).reduce(
+      (sum, s) => sum + Math.max(1, Math.ceil(s.length)),
+      0,
+    );
+    expect(colliders.length, 'one collider per piece').toBe(expectedColliders);
     for (let i = 0; i < 5; i++) world.step();
     for (const s of track.sausages ?? []) {
       const { position } = mod.sausagePose(track, s);
