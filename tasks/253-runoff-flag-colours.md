@@ -26,12 +26,13 @@ Closed design rule. Schema: `docs/design/track-style.md`; parser `src/track/trac
 
 ## Steps
 
-1. `flag-palettes.json`: object keyed by the exact `country` strings of `index.json`; value = flag colours in flag order, uppercase hex; flag white is `#DADADA`:
-   - Italy `["#009246","#DADADA","#CE2B37"]`; Belgium `["#FDDA24","#EF3340"]`; United Kingdom `["#012169","#DADADA","#C8102E"]`; Mexico `["#006847","#DADADA","#CE1126"]`; United States `["#B22234","#DADADA","#3C3B6E"]`; Qatar `["#8A1538","#DADADA"]`; Bahrain `["#CE1126","#DADADA"]`; Malaysia `["#CC0001","#DADADA","#010066"]`; Azerbaijan `["#0092BC","#E4002B","#00AF66"]`; Hungary `["#CD2A3E","#DADADA","#436F4D"]`; Singapore `["#EF3340","#DADADA"]`; Austria `["#C8102E","#DADADA"]`.
+1. `flag-palettes.json`: object keyed by the exact `country` strings of `index.json`; value = flag colours in flag order, uppercase hex; white is the official white (`#FFFFFF` unless the source defines another). Values are the official specification (official RGB where given, otherwise the official Pantone published sRGB); copy them exactly:
+   - Italy `["#008C45","#F4F5F0","#CD212A"]`; Belgium `["#FDDA24","#EF3340"]`; United Kingdom `["#00247D","#FFFFFF","#CF142B"]`; Mexico `["#006747","#FFFFFF","#C8102E"]`; United States `["#B31942","#FFFFFF","#0A3161"]`; Qatar `["#8A1538","#FFFFFF"]`; Bahrain `["#DA291C","#FFFFFF"]`; Malaysia `["#D50032","#FFFFFF","#071D49"]`; Azerbaijan `["#00B5E2","#EF3340","#509E2F"]`; Hungary `["#CE2939","#FFFFFF","#477050"]`; Singapore `["#EF3340","#FFFFFF"]`; Austria `["#C8102E","#FFFFFF"]`.
+   - Sources (put them in `docs/design/track-style.md` next to the rule): Italy 2006 decree Pantone TCX; Belgium protocol guide Pantone 115/032 C; UK Flag Institute RGB; Mexico SEGOB Pantone 3425/186 C; USA State Dept Old Glory Red/Blue RGB; Qatar Law 14/2012 Pantone 1955 C; Bahrain flag guide Pantone 485 C; Malaysia ASEAN spec Pantone 199/2768 C; Azerbaijan flag law Pantone 306/032/362 C; Hungary MSZ 1361:2009 TCX; Singapore National Symbols Kit Pantone 032 C; Austria 2018 regulation Pantone 186 C.
    - Palette rule (user): only the main field colours of the flag; never black; emblem/charge colours (suns, stars, crescents, coats of arms) do not count (Argentina = light blue + white; Mexico = green, white, red). New countries follow the same rule.
 2. In each style file with `runoffPaint`, rewrite only `colors` (top-level and every `ranges[].colors`):
    - effective pattern (own, else inherited from top level) `stripes` or `bands`: full country palette in flag order;
-   - `solid`: `[nearest palette colour to the old colors[0]]` by RGB Euclidean distance, ignoring `#DADADA` (countries with one non-white colour use it);
+   - `solid`: `[nearest palette colour to the old colors[0]]` by RGB Euclidean distance, ignoring white (countries with one non-white colour use it);
    - top-level `colors` with pattern `none`: full palette.
 3. Patterns, sides, start/end, `stripeMeters` and every non-`runoffPaint` field unchanged. Track `.json` files untouched. Keep each file's existing formatting/indentation.
 
