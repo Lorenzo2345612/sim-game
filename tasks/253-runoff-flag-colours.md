@@ -15,13 +15,14 @@ Every painted run-off area (`runoffPaint`) uses only the colours of the flag of 
 
 ## Context
 
-Closed design rule. Schema: `docs/design/track-style.md`; parser `src/track/trackStyle.ts`; renderer `src/render/trackSurfaceRenderer.ts` (both unchanged). Style file `<id>.style.json` belongs to the `index.json` entry with the same `id`; its `country` selects the palette. Data-only task: no code in `src/`.
+Closed design rule. Schema: `docs/design/track-style.md`; parser `src/track/trackStyle.ts`; renderer `src/render/trackSurfaceRenderer.ts` (renderer unchanged). Style file `<id>.style.json` belongs to the `index.json` entry with the same `id`; its `country` selects the palette. Data task plus one parser change (see Planner answers).
 
 ## Files
 
-- `public/tracks/flag-palettes.json` — create.
+- `public/flags/palettes.json` — create.
+- `src/track/trackStyle.ts` — modify: `runoffPaint` colours bypass `CHANNEL_CAP`.
 - `public/tracks/*.style.json` — modify (only those with `runoffPaint`; colours only).
-- `docs/design/track-style.md` — modify: one line under `runoffPaint`: colours must come from `public/tracks/flag-palettes.json` for the track's country; new tracks add their country there (main field colours only, no black, no emblem colours).
+- `docs/design/track-style.md` — modify: one line under `runoffPaint`: colours must come from `public/flags/palettes.json` for the track's country; new tracks add their country there (main field colours only, no black, no emblem colours).
 - `tests/unit/acceptance/253-runoff-flag-colours.test.ts` — create from the table.
 
 ## Steps
@@ -48,7 +49,7 @@ The acceptance worker embeds in the test the pre-task values taken from master a
 | AT2 | every `public/tracks/*.style.json` with `runoffPaint` | collect top-level `colors` and every `ranges[].colors` | every colour (case-insensitive) is in the palette of that track's country |
 | AT3 | same files | entries whose effective pattern is `stripes` or `bands` | colour list equals the full country palette in flag order |
 | AT4 | same files vs `git show HEAD~:<file>` captured as fixtures at test-writing time OR recomputed from the pre-task values embedded in the test | deep compare with all `colors` fields removed | identical (patterns, sides, ranges, stripeMeters unchanged) |
-| AT5 | each updated style file | parse with the existing `trackStyle.ts` parser | no validation errors |
+| AT5 | each updated style file | parse with the `trackStyle.ts` parser | no validation errors |
 | AT6 | `public/tracks/*.json` excluding `*.style.json` and `flag-palettes.json` | sha256 vs pre-task | unchanged |
 | AT7 | `flag-palettes.json` | read every colour | no colour has max(R,G,B) < 0x40 (no black); Belgium = `["#FDDA24","#EF3340"]`, Malaysia has no `#FFCC00` |
 | AT8 | `flag-palettes.json` | deep compare | equals exactly the 12 palettes listed in step 1 (order and hex) |
@@ -65,6 +66,19 @@ npm run typecheck
 npm run lint
 npm test
 ```
+
+
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/241-ermita-tracks.test.ts` AT4 (line ~234): exclude `*.style.json` from the byte-identity check.
+- `tests/unit/acceptance/189-spa-style.test.ts` AT7 (dark colour in a spa stripes range), `tests/unit/acceptance/203-bahrain-style.test.ts` AT8 (cream + blue run-off), `tests/unit/acceptance/205-lusail-style.test.ts` AT9 (orange/blue/maroon ranges): delete the run-off colour assertions (superseded by the flag rule); keep their pattern/range assertions.
+- `tests/unit/acceptance/253-runoff-flag-colours.test.ts`: palette path becomes `public/flags/palettes.json`.
+
+## Planner answers
+
+- Palette file moves to `public/flags/palettes.json` (outside `public/tracks/`, so track globs in 156/236/241 are unaffected; no edits there).
+- `src/track/trackStyle.ts`: colours under `runoffPaint` (top-level `colors` and `ranges[].colors`) bypass `CHANNEL_CAP` — no clamp, no warning (user wants the exact flag tones on screen). All other style colours keep the cap. This fixes the no-warnings and `check:styles` tests.
+- 224 POST4 timeout: flaky, unrelated; ignore. detroit unchanged and the solid/top-level rewrites as reported: accepted.
 
 ## Out of scope
 
