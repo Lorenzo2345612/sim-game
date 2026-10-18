@@ -3655,7 +3655,7 @@
     {
       "num": "269",
       "title": "Evolved neural AI opponents (opt-in, experimental)",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",

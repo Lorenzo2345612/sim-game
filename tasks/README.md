@@ -270,5 +270,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
 | 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
-| 269 | Evolved neural AI opponents (opt-in, experimental) | in progress | - |
+| 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | pending | 269 |
