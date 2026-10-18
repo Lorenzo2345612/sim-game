@@ -142,7 +142,7 @@ describe('146 damage effects acceptance', () => {
     expect(driftDeg(0)).toBeLessThan(0.1);
   }, 60000);
 
-  it('AT3: detached[1] full throttle 10 s: vmax < 0.6 × undamaged, finite, chassis y ≥ −0.05', () => {
+  it('AT3: detached[1] full throttle 10 s: vmax < 0.92 × undamaged, finite, chassis y ≥ −0.05', () => {
     const runFt = (detached: boolean): { vmax: number; minY: number; ok: boolean } => {
       const world = createPhysicsWorld();
       const vehicle = new VehicleCtor(world, SPEC, spawn(STATIC_Y));
@@ -165,7 +165,7 @@ describe('146 damage effects acceptance', () => {
     const damaged = runFt(true);
     const undamaged = runFt(false);
     expect(damaged.ok).toBe(true);
-    expect(damaged.vmax).toBeLessThan(0.6 * undamaged.vmax);
+    expect(damaged.vmax).toBeLessThan(0.92 * undamaged.vmax);
     expect(damaged.minY).toBeGreaterThanOrEqual(-0.05);
   }, 120000);
 

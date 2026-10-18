@@ -117,7 +117,7 @@ describe('146 damage effects edge', () => {
     const undamaged = rearAt(0);
     const damaged = rearAt(1);
     expectRel(damaged.rear, 0.5 * undamaged.rear, 0.01);
-    expect(damaged.front).toBe(undamaged.front);
+    expectRel(damaged.front, undamaged.front, 1e-6);
   }, 30000);
 
   it('EDGE2: zero damage getDownforce equals the raw aeroForces output', () => {

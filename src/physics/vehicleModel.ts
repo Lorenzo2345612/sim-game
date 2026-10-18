@@ -18,7 +18,13 @@ import { solveWheel, WheelSolveInput, WheelSolveOutput } from './wheelSolver';
 import { aeroForces, AeroForces } from './aero';
 import { Ers, type ErsInput } from './ers';
 import { ActiveAero } from './activeAero';
-import { createDamageState, type CarZones, type DamageState } from './damage';
+import {
+  createDamageState,
+  damageEffects,
+  type CarZones,
+  type DamageEffects,
+  type DamageState,
+} from './damage';
 import type { DamageMode } from './contactEvents';
 
 const RPM_PER_RPS = 60 / (2 * Math.PI);
@@ -35,6 +41,9 @@ const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~CHASSIS_GROUP);
 // an opposing force at massShare·|vx|/dt, so a mm/s gravity creep on an uphill spawn
 // would cap throttle exactly at the slope pull and the car could never launch.
 const VX_REST = 0.05;
+// Scraping corner ball for a lost wheel (task 146): bottom sits at ground level at static ride height.
+const DETACH_RADIUS = 0.12;
+const DETACH_FRICTION = 0.8;
 
 const tmpSurfaces: Surface[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
 const tmpRay = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
@@ -177,6 +186,13 @@ export class VehicleModel {
   private readonly brakeT: number[] = [0, 0, 0, 0];
   private readonly drivenKappas: number[] = [0, 0];
   private readonly aeroOut: AeroForces = { front: 0, rear: 0, drag: 0 };
+  private readonly dmgFx: DamageEffects = {
+    aeroFront: 1,
+    aeroRear: 1,
+    toe: [0, 0, 0, 0],
+    gripScale: [1, 1, 1, 1],
+  };
+  private readonly detachCols: (RAPIER.Collider | null)[] = [null, null, null, null];
   private readonly solveIn: WheelSolveInput = {
     omega: 0,
     r: 0,
@@ -346,6 +362,41 @@ export class VehicleModel {
   prePhysicsStep(dt: number): void {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     const spec = this.spec;
+    // Damage effects (task 146): one reused object, identity unless mode is 'full'.
+    const dmgFull = this.damageMode === 'full';
+    const fx = this.dmgFx;
+    if (dmgFull) {
+      damageEffects(this.damage, fx);
+      if (!Number.isFinite(fx.aeroFront)) fx.aeroFront = 1;
+      if (!Number.isFinite(fx.aeroRear)) fx.aeroRear = 1;
+      for (let i = 0; i < 4; i++) {
+        if (!Number.isFinite(fx.toe[i])) fx.toe[i] = 0;
+        if (!Number.isFinite(fx.gripScale[i])) fx.gripScale[i] = 1;
+      }
+    } else {
+      fx.aeroFront = 1;
+      fx.aeroRear = 1;
+      fx.toe[0] = 0;
+      fx.toe[1] = 0;
+      fx.toe[2] = 0;
+      fx.toe[3] = 0;
+      fx.gripScale[0] = 1;
+      fx.gripScale[1] = 1;
+      fx.gripScale[2] = 1;
+      fx.gripScale[3] = 1;
+    }
+    for (let i = 0; i < 4; i++) {
+      if (!dmgFull || !this.damage.detached[i] || this.detachCols[i] !== null) continue;
+      const hub = this.zones.hubs[i];
+      this.detachCols[i] = this.world.createCollider(
+        RAPIER.ColliderDesc.ball(DETACH_RADIUS)
+          .setTranslation(hub.x, hub.y - spec.wheels.radius + DETACH_RADIUS, hub.z)
+          .setFriction(DETACH_FRICTION)
+          .setDensity(0)
+          .setCollisionGroups(CHASSIS_COLLISION_GROUPS),
+        this.body,
+      );
+    }
     const body = this.body;
     const R = spec.wheels.radius;
     const wheels = this.wheels;
@@ -377,10 +428,10 @@ export class VehicleModel {
     const steerTarget = -this.input.steer * maxAngle;
     const slew = st.rate * dt;
     this.steer += Math.min(slew, Math.max(-slew, steerTarget - this.steer));
-    wheels[0].steer = this.steer;
-    wheels[1].steer = this.steer;
-    wheels[2].steer = 0;
-    wheels[3].steer = 0;
+    wheels[0].steer = this.steer + fx.toe[0];
+    wheels[1].steer = this.steer + fx.toe[1];
+    wheels[2].steer = fx.toe[2];
+    wheels[3].steer = fx.toe[3];
 
     // Rays and suspension.
     tmpRay.dir.x = -upx;
@@ -435,6 +486,16 @@ export class VehicleModel {
       w.fzBase = suspensionForce(axle, xRaw, xdot);
     }
 
+    // Lost wheel: the ray result is ignored, no suspension or tyre force; the corner ball drags instead.
+    for (let i = 0; i < 4; i++) {
+      if (!dmgFull || !this.damage.detached[i]) continue;
+      const w = wheels[i];
+      w.hit = false;
+      w.x = 0;
+      w.fz = 0;
+      w.fzBase = 0;
+    }
+
     // Dirt pickup/clean per wheel, from the surface just sampled.
     for (let i = 0; i < 4; i++) {
       const w = wheels[i];
@@ -446,7 +507,11 @@ export class VehicleModel {
       const l = wheels[a * 2];
       const r = wheels[a * 2 + 1];
       const axle = a === 0 ? spec.suspension.front : spec.suspension.rear;
-      const arb = antiRoll(axle.arb, l.x, r.x);
+      // No bar across an axle that lost a wheel.
+      const arb =
+        dmgFull && (this.damage.detached[a * 2] || this.damage.detached[a * 2 + 1])
+          ? 0
+          : antiRoll(axle.arb, l.x, r.x);
       if (l.hit) l.fz = Math.max(0, l.fzBase + arb);
       if (r.hit) r.fz = Math.max(0, r.fzBase - arb);
     }
@@ -493,7 +558,8 @@ export class VehicleModel {
       w.grip =
         gripFactor(this.compoundSpec, w.tyre, this.pressureKpa, spec.tyres.optPressureKpa) *
         SURFACE_GRIP[w.surface] *
-        dirtGripFactor(w.dirt, w.surface);
+        dirtGripFactor(w.dirt, w.surface) *
+        fx.gripScale[i];
     }
 
     // Powertrain, brakes and aids. Update without pedals: the 045 standstill
@@ -631,6 +697,8 @@ export class VehicleModel {
       ? this.activeAero.update(this.aeroZone, this.input.throttle, this.input.brake, dt)
       : undefined;
     aeroForces(spec, speed, meanX, undefined, this.aeroOut, blend);
+    this.aeroOut.front *= fx.aeroFront;
+    this.aeroOut.rear *= fx.aeroRear;
     rotVec(q, 0, 0, spec.wheels.positions[0][2]);
     tmpPoint.x = p.x + rv.x;
     tmpPoint.y = p.y + rv.y;
@@ -730,6 +798,13 @@ export class VehicleModel {
     return t;
   }
 
+  getDownforce(out?: { front: number; rear: number }): { front: number; rear: number } {
+    const r = out ?? { front: 0, rear: 0 };
+    r.front = this.aeroOut.front;
+    r.rear = this.aeroOut.rear;
+    return r;
+  }
+
   getState(out?: VehicleState): VehicleState {
     const state: VehicleState =
       out ??
@@ -773,6 +848,21 @@ export class VehicleModel {
   }
 
   reset(spawn: SpawnPose): void {
+    for (let i = 0; i < 4; i++) {
+      const col = this.detachCols[i];
+      if (col !== null) {
+        this.world.removeCollider(col, true);
+        this.detachCols[i] = null;
+      }
+    }
+    const fresh = createDamageState();
+    for (let i = 0; i < 4; i++) {
+      this.damage.suspension[i] = fresh.suspension[i];
+      this.damage.puncture[i] = fresh.puncture[i];
+      this.damage.detached[i] = fresh.detached[i];
+    }
+    this.damage.frontWing = fresh.frontWing;
+    this.damage.rearWing = fresh.rearWing;
     const q = spawnRotation(spawn);
     this.body.setTranslation(spawn.position, true);
     this.body.setRotation(q, true);
