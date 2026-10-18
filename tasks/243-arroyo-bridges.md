@@ -88,6 +88,8 @@ npm test
 
 ## Planner-authorised test edits
 
+- `tests/unit/acceptance/243-arroyo-bridges.test.ts` AT6/AT7: rewrite to the updated table rows (AT6 `armco` instead of `wall`; AT7 no parapets above the deck, side walls only).
+
 - `tests/unit/edge/243-arroyo-bridges-edge.test.ts` EDGE9: inside a bridge span both sides are `armco` at `widthMeters/2 + 1.25` (7.25 m), matching AT6 and "on both sides"; outside spans the baseline type/offset is kept.
 - `tests/unit/edge/142-kerbs-every-corner.post.test.ts:167`: for `ermita-*` tracks, the elevation deep-equal skips indices strictly inside bridge spans (`bridges[].start < i < end`); all other tracks and indices unchanged.
 
