@@ -3302,7 +3302,7 @@
     {
       "num": "242",
       "title": "Synthetic village buildings (plaster row houses, tanks)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "241"
       ],
