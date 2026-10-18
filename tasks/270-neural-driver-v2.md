@@ -83,3 +83,8 @@ npm test
 ## Out of scope
 
 New tracks/cars, retraining, the classic AI, difficulty gating, rewards other than listed.
+
+## Planner answers (round 1)
+
+- AT5 API: add `neuralSetups?: Partial<Record<Difficulty, Partial<Setup>>>` to the RaceGame options type (next to `neuralModels`). When the neural driver is used for a difficulty, the AI car's spec is `neuralCarSpec(baseSpec, { setup: options.neuralSetups?.[difficulty] })`. `loadNeuralModels` in `src/main.ts` returns `neuralSetups` from each model JSON's `setup` (add `src/main.ts`, loader only, to the files). The AT5 test passes `aiDriver: 'neural'`, `neuralModels` and `neuralSetups: { <difficulty>: { rearWing: 0 } }`, and reads the AI car's rear downforce coefficient through the existing vehicle/spec getters.
+- AT8 scope: the acceptance worker makes the AT8 edit in `tests/unit/acceptance/269-evolved-neural-driver.test.ts`. Authorised there: replace literals denoting the current padded length (`610` → `N_W`) and the current input count (`35` in `h * 35`, `i < 35`, `35 * 16`, `new Float64Array(35)` → `N_IN`), both imported from `src/ai/neuralPolicy`. Rename `x35` freely. Nothing else in that file changes.
