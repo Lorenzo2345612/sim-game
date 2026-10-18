@@ -29,6 +29,10 @@ AT2 spawn fix (planner-authorised acceptance-test edit, the only one allowed): i
 3. Wall-tunnelling guard (added to AT2): in the 268 AT2 test also assert every step that the car centre stays on the track side of the left armco (signed lateral offset from the centreline at the nearest index > −(halfWidthAt(track, 'left', IDX) + barrier offset used by `trackColliders`)). Planner-authorised addition to that test, nothing else.
 4. Then continue with steps 2–5. Do not stop again for these items.
 
+## Planner answers (round 3)
+
+The AT2 spawn edit IS authorised (see "Planner-authorised test edits" under Files). Apply it first, then do step 5 and AT3–AT5, 225 EDGE3, lint and full tests. Do not report BLOCKED for AT2 again. `computeRacingLine` default margin: 1.4 only when per-index arrays are given, 1.0 when absent (keeps `racingLine.test.ts`) — accepted.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
@@ -47,6 +51,12 @@ Frozen 225 tests (expert never spins, difficulty orders pace) must pass, includi
 AT3–AT5 are slow headless `RaceGame` runs (`RaceGame.create(track, spec, {trackId, carId, laps, aiCount, difficulty, seed})`, `g.step(input)`, `g.vehicles[i].getWheelSurfaces()`, `g.traffic[i].distance`): put them in `tests/unit/acceptance/268-*.test.ts` with per-test timeout up to 600 000 ms.
 
 ## Files
+
+**Planner-authorised test edits (apply exactly these; the coder rule's "Planner-authorised" exception covers them):**
+- `tests/unit/acceptance/268-ai-driving-regressions.test.ts` AT2 (line ~306): `y: groundHeightAt(track, sx, sz) + 0.5` → `y: (track.elevation[IDX] ?? 0) + 0.6`; plus the AT2 wall-crossing assertion from round 2.
+- `tests/unit/acceptance/032-physics-track-colliders.test.ts` AT5: set `{x: 10}` sideways velocity once after settling instead of every step (round 2).
+- `tests/unit/edge/` and every other test: no edits.
+
 
 - `src/physics/trackColliders.ts` — modify: `export const BARRIER_GROUP = 0x0004;` barrier trimesh gets `setCollisionGroups((BARRIER_GROUP << 16) | 0xffff)`.
 - `src/physics/vehicleModel.ts` — modify: `WHEEL_RAY_FILTER_GROUPS` also clears `BARRIER_GROUP` in its low 16 bits (both raycast sites, ~lines 455 and 749). `CHASSIS_COLLISION_GROUPS` unchanged (chassis still hits barriers). Import `BARRIER_GROUP` from `trackColliders`.
