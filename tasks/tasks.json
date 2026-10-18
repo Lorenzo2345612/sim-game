@@ -2018,7 +2018,7 @@
     {
       "num": "146",
       "title": "Damage effects on the vehicle (aero, toe, grip, lost wheel)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "070",
         "144",
