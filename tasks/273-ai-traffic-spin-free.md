@@ -49,3 +49,5 @@ npm test
 ## Out of scope
 
 Physics, tyres, car data, overtaking logic, `traffic.ts` priorities.
+
+Also un-skip 252 edge EDGE6 and EDGE9 (silverstone easy/medium traffic) — they must pass.
