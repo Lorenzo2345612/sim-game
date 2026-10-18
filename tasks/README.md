@@ -153,9 +153,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
-| 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
+| 152 | Render cost: draw calls, culling, shadows | waiting decision | 151 |
 | 153 | Simulation cost with 16 cars | in progress | 151 |
-| 154 | Adaptive quality (dynamic resolution, auto preset) | pending | 151 |
+| 154 | Adaptive quality (dynamic resolution, auto preset) | in progress | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |
 | 157 | City bake from OSM: buildings, old-city walls, water | done | 106 |
@@ -253,14 +253,14 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | done | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | done | 248 |
 | 251 | Knock-over bollards at runtime | done | 250 |
-| 252 | Expert AI drives spin-free on monza and spa | in progress | 225, 254 |
+| 252 | Expert AI drives spin-free on monza and spa | waiting decision | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
-| 259 | Sampling lane planner | pending | 258 |
+| 259 | Sampling lane planner | in progress | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | pending | 258 |
 | 261 | RaceGame scenario starts and contact counter | pending | - |
 | 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
