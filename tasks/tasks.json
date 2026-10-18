@@ -3514,7 +3514,7 @@
     {
       "num": "258",
       "title": "Frenet race view and track corridor",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
