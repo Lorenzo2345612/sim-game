@@ -3424,7 +3424,7 @@
     {
       "num": "251",
       "title": "Knock-over bollards at runtime",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "250"
       ],

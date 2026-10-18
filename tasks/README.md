@@ -252,7 +252,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 248 | Pit building clears run-off and the pit wall | done | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | done | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | done | 248 |
-| 251 | Knock-over bollards at runtime | in progress | 250 |
+| 251 | Knock-over bollards at runtime | done | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | in progress | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
@@ -271,3 +271,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
 | 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | in progress | - |
+| 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | pending | 269 |
