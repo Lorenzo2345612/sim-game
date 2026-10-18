@@ -83,6 +83,10 @@ npm run lint
 npm test
 ```
 
+## Planner answers
+
+- Output limit (decision 242-coder, two timeouts): write `tools/env/villageBuildings.ts` incrementally — first a skeleton with exported types and stub functions, then fill one function per edit (each edit < 150 lines), running the 242 acceptance tests after each. Do not design the whole file before writing; commit progress early. Order: generator → bake CLI → cityRenderer plaster path → bake env files.
+
 ## Out of scope
 
 - street furniture, textures for plaster, roofs other than flat, interiors, LOD/instancing of houses, changing OSM bake/render of other materials, editing the input JSONs, e2e tests.
