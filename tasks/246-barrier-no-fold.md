@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 235
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, coder, reviewer, tester-pre, tester
 Milestone: M1.11 (design `docs/design/track-fidelity.md`, "Wave 2")
 
