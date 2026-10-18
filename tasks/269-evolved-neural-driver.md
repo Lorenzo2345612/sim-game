@@ -57,6 +57,13 @@ export interface RaceGameOptions { aiDriver?: 'classic' | 'neural'; neuralModels
 
 Conventions: features computed in double precision, no rounding; `<`/`<=` as in worker.mts; invalid model input throws; `fill` mutates only `out`, never inputs.
 
+## Planner answers (round 1)
+
+Master changed `scripts/evolve/worker.mts`/`evolve.mts` after this branch started (commits caafbbd, 593ae13: `--line center|racing|mintime`). Before finishing, merge master into the worktree and port the line-dependent features too:
+- Saved models carry `line` (`center` default when absent). `neuralFeatures` takes the target-line points per centerline index and the speed profile built from them: `center` = centerline, `racing` = `computeRacingLine(...)` exactly as `worker.mts` builds it (clamped inside edges), `mintime` = the cached `scripts/evolve/lines/<track>-<car>-mintime.json`, which `export-ai-models` copies to `public/ai-models/<track>-<car>/line-mintime.json` when a mintime model is exported.
+- `export-ai-models` also reads `models/<track>-<car>-racing/` and `-mintime/` dirs; per track/car pick the fastest `expert` across lines and keep its whole difficulty set from that same line.
+- `worker.mts` must keep producing identical features for all three lines after the refactor (determinism AT unchanged).
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
