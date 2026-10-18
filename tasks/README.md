@@ -253,7 +253,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | done | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | done | 248 |
 | 251 | Knock-over bollards at runtime | in progress | 250 |
-| 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
+| 252 | Expert AI drives spin-free on monza and spa | in progress | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
