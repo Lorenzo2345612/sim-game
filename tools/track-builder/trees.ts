@@ -1,5 +1,6 @@
 import type { Point2 } from '../../src/track/geo';
 import type { EnvironmentType, Terrain, TreeInstances, BarrierSegment } from '../../src/core/types';
+import { distanceToPolyline, type Arroyo } from './arroyo';
 
 export interface Biome { species: { name: string; weight: number }[]; density: number }
 
@@ -30,6 +31,8 @@ export function biomeFor(environment: EnvironmentType, biome: Biome): Biome {
 const CELL = 12;
 const MAX_TREES = 6000;
 const CLEARANCE = 15;
+const ARROYO_EDGE = 15;
+const ARROYO_DENSITY = 3;
 
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -82,7 +85,7 @@ function nearestCenterlineDistance(grid: Grid, x: number, z: number): number {
 
 export function placeTrees(
   trackId: string, centerline: Point2[], terrain: Terrain,
-  barriers: BarrierSegment[], biome: Biome,
+  barriers: BarrierSegment[], biome: Biome, arroyos?: Arroyo[],
 ): TreeInstances[] {
   const rng = mulberry32(fnv1a32(trackId));
   const maxOffset = barriers.length ? Math.max(...barriers.map((b) => b.offsetMeters)) : 0;
@@ -120,7 +123,11 @@ export function placeTrees(
       const x = minX + (i + rx) * CELL;
       const z = minZ + (j + rz) * CELL;
       if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
-      if (densityRoll >= biome.density) continue;
+      const onBank =
+        arroyos !== undefined &&
+        arroyos.some((a) => distanceToPolyline(a.line, x, z) <= a.width / 2 + ARROYO_EDGE);
+      const density = onBank ? biome.density * ARROYO_DENSITY : biome.density;
+      if (densityRoll >= density) continue;
       if (nearestCenterlineDistance(grid, x, z) <= exclusion) continue;
 
       let name = cumulative[cumulative.length - 1]?.name ?? '';

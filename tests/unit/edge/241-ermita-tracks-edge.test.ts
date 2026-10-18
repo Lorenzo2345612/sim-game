@@ -269,7 +269,14 @@ describe('241 ermita tracks edge cases', () => {
       const track = loadTrack(id);
       const n = track.centerline.length;
       expect(track.barriers.length, `${id}: barriers present`).toBeGreaterThan(0);
+      const spans = track.bridges ?? [];
       for (const b of track.barriers) {
+        // Task 243: bridge spans carry armco guardrails; outside spans wall/foam only.
+        const onBridge =
+          b.type === 'armco' &&
+          b.start <= b.end &&
+          spans.some((s) => b.start >= s.from && b.end <= s.to);
+        if (onBridge) continue;
         expect(['wall', 'foam'], `${id}: barrier type`).toContain(b.type);
       }
       for (const side of ['left', 'right'] as const) {

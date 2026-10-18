@@ -489,6 +489,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },
@@ -514,6 +515,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },
@@ -541,6 +543,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },
@@ -568,6 +571,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },
@@ -595,6 +599,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },
@@ -621,6 +626,7 @@
     "environment": "desert",
     "reverse": false,
     "walls": true,
+    "arroyo": true,
     "biome": {
       "species": [
         { "name": "shrub-dry", "weight": 0.6 },

@@ -8,6 +8,7 @@ import { buildSausages, type SausageOverride } from './sausages';
 import { applyFoamBarriers, applyPavedRunoffs, classifyCorners, detectEscapeRoads, trimEscapeRoads } from './hazards';
 import { buildBoards } from './boards';
 import { loadGravelPolygons } from './osmAreas';
+import { applyBridgeElevation, findBridges, loadArroyos, type Arroyo, type Bridge } from './arroyo';
 import { analyzeParallel, applyMedianWalls, stripParallel } from './parallel';
 import { layoutBarriers } from './barriers';
 import { bankProfile, type BankRange } from './banking';
@@ -42,6 +43,8 @@ interface TrackConfig extends TrackSourceConfig {
   sausages?: SausageOverride[];
   banking?: BankRange[];
   landmarks?: { kind: LandmarkKind; lon: number; lat: number; height: number; heading?: number }[];
+  /** Dry arroyo corridors of `assets/source/osm/<id>-areas.json` become beds and bridges. */
+  arroyo?: boolean;
 }
 
 const SPECIES_PRESETS: Record<string, { preset: string; heightMeters: number }> = {
@@ -119,7 +122,14 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   }
   const limited = limitGrade(smoothed, minRun, config.maxGrade ?? 0.08);
   const startHeight = limited[0];
-  const elevation = limited.map((h) => h - startHeight);
+  const rawElevation = limited.map((h) => h - startHeight);
+  let arroyos: Arroyo[] | undefined;
+  let bridges: Bridge[] | undefined;
+  if (config.arroyo) {
+    arroyos = loadArroyos(join('assets/source/osm', `${config.id}-areas.json`), origin);
+    bridges = findBridges(centerline, arroyos);
+  }
+  const elevation = bridges?.length ? applyBridgeElevation(rawElevation, bridges) : rawElevation;
   const kerbs = detectKerbs(centerline);
   const gravelPolygons = loadGravelPolygons(
     join('assets/source/osm', `${config.id}-areas.json`),
@@ -138,7 +148,7 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   };
   const barriers = applyMedianWalls(
     applyFoamBarriers(
-      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment, config.walls),
+      layoutBarriers(centerline, config.widthMeters, kerbsFinal, runoffsFinal, pit, config.environment, config.walls, bridges),
       corners,
     ),
     parallel,
@@ -147,9 +157,11 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
   const escapeRoads = detectEscapeRoads(centerline);
   const boards = buildBoards(centerline, config.widthMeters, barriers);
   const maxBarrierOffset = Math.max(...barriers.map((b) => b.offsetMeters));
-  const terrain = buildTerrain(grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset, bank);
+  const terrain = buildTerrain(
+    grid, centerline, elevation, origin, config.widthMeters, maxBarrierOffset, bank, arroyos, bridges,
+  );
   const biome = biomeFor(config.environment ?? 'parkland', config.biome);
-  const trees = placeTrees(config.id, centerline, terrain, barriers, biome);
+  const trees = placeTrees(config.id, centerline, terrain, barriers, biome, arroyos);
   const grandstands = placeGrandstands(centerline, cum, lapLength, config.widthMeters, config.grandstands);
   const sausages = buildSausages(
     centerline,
@@ -190,6 +202,8 @@ function buildTrackV2(config: TrackConfig): { data: TrackDataV2; droppedEscapeRo
     source: { ...base.source, dem: 'Copernicus GLO-30' },
   };
   if (landmarks.length > 0) data.landmarks = landmarks;
+  if (bridges !== undefined && bridges.length > 0) data.bridges = bridges;
+  if (arroyos !== undefined && arroyos.length > 0) data.arroyos = arroyos;
   if (parallel.any) {
     data.halfWidthLeft = parallel.halfLeft;
     data.halfWidthRight = parallel.halfRight;

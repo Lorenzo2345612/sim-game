@@ -340,7 +340,7 @@ describe('243 arroyo bridges acceptance', () => {
     expect(flagOff).toEqual(noWater);
   });
 
-  it('AT6: bridge spans get wall barriers at 7.25 m on both sides', async () => {
+  it('AT6: bridge spans get armco guardrails at 7.25 m on both sides', async () => {
     const out = await buildG({ water: true, arroyo: true });
     const bridges = out.bridges ?? [];
     expect(bridges).toHaveLength(1);
@@ -349,13 +349,13 @@ describe('243 arroyo bridges acceptance', () => {
       for (let i = from; i <= to; i++) {
         const covering = out.barriers.filter((s) => s.side === side && i >= s.start && i <= s.end);
         expect(covering, `${side} index ${i} coverage`).toHaveLength(1);
-        expect(covering[0].type, `${side} index ${i} type`).toBe('wall');
+        expect(covering[0].type, `${side} index ${i} type`).toBe('armco');
         expect(Math.abs(covering[0].offsetMeters - 7.25), `${side} index ${i} offset`).toBeLessThanOrEqual(0.01);
       }
     }
   });
 
-  it('AT7: the bridge renderer builds deck, two stone parapets and two stone side walls with no piers', async () => {
+  it('AT7: the bridge renderer builds deck and two stone side walls, with no parapets above the deck and no piers', async () => {
     const { createBridgeObject } = await loadModule<BridgeRendererModule>(BRIDGE_RENDERER_MODULE);
     const track: TrackDataG = {
       ...fixture,
@@ -391,20 +391,13 @@ describe('243 arroyo bridges acceptance', () => {
     const deckTop = boxOf(deck!).max.y;
     expect(Math.abs(deckTop - -0.05), 'deck top 0.05 below the track surface').toBeLessThanOrEqual(0.05);
 
-    const parapets = meshes.filter((m) => {
-      const b = boxOf(m);
-      const e = extent(b);
-      return Math.abs(e.x - span) <= 0.5 && Math.abs(e.y - 0.7) <= 0.01 &&
-        Math.abs(e.z - 0.5) <= 0.05 && Math.abs(Math.abs(zCenter(b)) - half) <= 0.01;
-    });
-    expect(parapets, 'two parapets').toHaveLength(2);
-    expect(parapets.map((p) => Math.sign(zCenter(boxOf(p)))).sort(), 'one parapet per side').toEqual([-1, 1]);
-    for (const p of parapets) {
-      const b = boxOf(p);
-      expect(Math.abs(b.max.y - deckTop - 0.7), 'parapet 0.7 above the deck top').toBeLessThanOrEqual(0.01);
-      expect(Math.abs(extent(b).z - 0.5), 'parapet thickness').toBeLessThanOrEqual(0.01);
-      expect(Math.abs(Math.abs(zCenter(b)) - half), 'parapet lateral offset').toBeLessThanOrEqual(0.01);
-      expect(usesStoneSet(p.material), 'parapet stone set').toBe(true);
+    // No parapets: nothing box-like stands on the deck top above it.
+    for (let k = 0; k < meshes.length; k++) {
+      const b = boxes[k];
+      expect(
+        b.min.y < deckTop - 0.01 || extent(b).y < 0.4,
+        `mesh ${k} must not be a parapet above the deck top`,
+      ).toBe(true);
     }
 
     const walls = meshes.filter((m) => {
@@ -414,10 +407,13 @@ describe('243 arroyo bridges acceptance', () => {
         Math.abs(e.z - 0.5) <= 0.05 && Math.abs(Math.abs(zCenter(b)) - half) <= 0.01;
     });
     expect(walls, 'two side walls').toHaveLength(2);
+    expect(walls.map((w) => Math.sign(zCenter(boxOf(w)))).sort(), 'one wall per side').toEqual([-1, 1]);
     for (const w of walls) {
       const b = boxOf(w);
       expect(Math.abs(b.max.y - deckTop), 'wall top = deck top').toBeLessThanOrEqual(0.01);
       expect(b.min.y, 'wall bottom at mid-span follows the bed').toBeLessThanOrEqual(gTerrainY(500, 0) + 0.05);
+      expect(Math.abs(extent(b).z - 0.5), 'wall thickness').toBeLessThanOrEqual(0.05);
+      expect(Math.abs(Math.abs(zCenter(b)) - half), 'wall lateral offset').toBeLessThanOrEqual(0.01);
       expect(usesStoneSet(w.material), 'wall stone set').toBe(true);
     }
 

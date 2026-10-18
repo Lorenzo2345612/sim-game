@@ -107,5 +107,9 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   halfWidthRight?: number[];
   /** Cross-slope in radians per centerline index; positive = right edge higher. Absent or zero = flat. */
   bank?: number[];
+  /** Bridge spans over an arroyo, as inclusive centerline indices. Absent when the track has none. */
+  bridges?: { from: number; to: number }[];
+  /** Dry arroyo corridors: polyline in local metres plus the full corridor width in metres. */
+  arroyos?: { line: [number, number][]; width: number }[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

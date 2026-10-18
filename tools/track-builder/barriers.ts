@@ -1,6 +1,7 @@
 import type { Point2 } from '../../src/track/geo';
 import { KERB_WIDTH, VERGE_WIDTH, BARRIER_GAP } from '../../src/core/constants';
 import type { BarrierSegment, TrackSegment, RunoffSegment, PitLane, Side, EnvironmentType } from '../../src/core/types';
+import type { Bridge } from './arroyo';
 
 function covers(start: number, end: number, i: number): boolean {
   return end >= start ? i >= start && i <= end : i >= start || i <= end;
@@ -19,28 +20,34 @@ function maxWidthAt(segments: RunoffSegment[], side: Side, i: number): number | 
 export function layoutBarriers(
   centerline: Point2[], widthMeters: number,
   kerbs: TrackSegment[], runoffs: RunoffSegment[], pit?: PitLane,
-  environment?: EnvironmentType, walls?: boolean,
+  environment?: EnvironmentType, walls?: boolean, bridges?: Bridge[],
 ): BarrierSegment[] {
   const n = centerline.length;
   const hasKerb = (side: Side, i: number) =>
     kerbs.some((k) => k.side === side && covers(k.start, k.end, i));
+  const onBridge = (i: number) =>
+    bridges !== undefined && bridges.some((b) => i >= b.from && i <= b.to);
 
   const out: BarrierSegment[] = [];
   for (const side of ['left', 'right'] as const) {
     let current: BarrierSegment | null = null;
     for (let i = 0; i < n; i++) {
       const runoffWidth = maxWidthAt(runoffs, side, i);
-      const offset = Math.round(
-        (widthMeters / 2 + (hasKerb(side, i) ? KERB_WIDTH : 0) +
-          (runoffWidth ?? VERGE_WIDTH) + BARRIER_GAP) * 2,
-      ) / 2;
+      const offset = onBridge(i)
+        ? widthMeters / 2 + 1.25
+        : Math.round(
+            (widthMeters / 2 + (hasKerb(side, i) ? KERB_WIDTH : 0) +
+              (runoffWidth ?? VERGE_WIDTH) + BARRIER_GAP) * 2,
+          ) / 2;
       // City circuits and `walls` tracks are walls all round; applyFoamBarriers runs afterwards and keeps its foam.
       const type: BarrierSegment['type'] =
-        environment === 'city' || walls === true || (pit && pit.side === side && covers(pit.start, pit.end, i))
-          ? 'wall'
-          : runoffs.some((r) => r.surface === 'gravel' && r.side === side && covers(r.start, r.end, i))
-            ? 'tyres'
-            : 'armco';
+        onBridge(i)
+          ? 'armco'
+          : environment === 'city' || walls === true || (pit && pit.side === side && covers(pit.start, pit.end, i))
+            ? 'wall'
+            : runoffs.some((r) => r.surface === 'gravel' && r.side === side && covers(r.start, r.end, i))
+              ? 'tyres'
+              : 'armco';
       if (current && current.type === type && current.offsetMeters === offset) {
         current.end = i;
       } else {

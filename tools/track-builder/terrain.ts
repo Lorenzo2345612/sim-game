@@ -2,6 +2,7 @@ import type { DemGrid } from '../dem/fetchDem';
 import { sampleDem } from './elevation';
 import { unprojectXZ, type LonLat, type Point2 } from '../../src/track/geo';
 import type { SurfaceStrip, Terrain } from '../../src/core/types';
+import { arroyoDepthAt, type Arroyo, type Bridge } from './arroyo';
 
 const MARGIN = 400;
 const SPACING = 8;
@@ -60,6 +61,7 @@ function rightNormalAt(cx: Point2[], i: number): [number, number] {
 export function buildTerrain(
   grid: DemGrid, centerline: Point2[], elevation: number[],
   origin: LonLat, widthMeters: number, maxBarrierOffset: number, bank?: number[],
+  arroyos?: Arroyo[], bridges?: Bridge[],
 ): Terrain {
   if (centerline.length < 2) {
     throw new Error('buildTerrain: centerline needs >= 2 points');
@@ -93,6 +95,8 @@ export function buildTerrain(
 
   const corridor = widthMeters / 2 + maxBarrierOffset + 5;
   const cells = buildCellGrid(centerline, corridor + BLEND);
+  // Road-corridor nodes keep their height unless a bridge span crosses them there.
+  const roadEdge = widthMeters / 2 + 5;
 
   const [startLon, startLat] = unprojectXZ(centerline[0], origin);
   const startDem = sampleDem(grid, startLon, startLat);
@@ -107,8 +111,10 @@ export function buildTerrain(
       const [lon, lat] = unprojectXZ([x, z], origin);
       let h = sampleDem(grid, lon, lat) - startDem;
       const idx = nearestIndex(cells, x, z, centerline);
+      let nearRoad = false;
       if (idx >= 0) {
         const d = Math.hypot(x - centerline[idx][0], z - centerline[idx][1]);
+        nearRoad = d <= roadEdge;
         // The corridor follows the cross-slope so the banked sections blend back
         // to the natural height instead of stepping at the verge edge.
         const bankAngle = bank === undefined ? 0 : bank[idx] ?? 0;
@@ -120,6 +126,11 @@ export function buildTerrain(
         } else if (d < corridor + BLEND) {
           h = flat + (h - flat) * ((d - corridor) / BLEND);
         }
+      }
+      if (arroyos !== undefined && arroyos.length > 0) {
+        const inBridge =
+          idx >= 0 && bridges !== undefined && bridges.some((b) => idx >= b.from && idx <= b.to);
+        if (inBridge || !nearRoad) h -= arroyoDepthAt(arroyos, x, z);
       }
       heights[j * (rows + 1) + i] = Math.round(h * 100) / 100;
     }

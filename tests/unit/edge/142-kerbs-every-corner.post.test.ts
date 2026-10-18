@@ -164,6 +164,15 @@ describe('142 kerbs post-coder gaps', () => {
         }),
       ) as TrackDataV2;
       for (const key of ['centerline', 'elevation'] as const) {
+        // Task 243 flattens ermita elevation over bridge spans (inclusive ends stay put).
+        if (key === 'elevation' && id.startsWith('ermita-')) {
+          const spans = track.bridges ?? [];
+          for (let i = 0; i < track.elevation.length; i++) {
+            if (spans.some((b) => i > b.from && i < b.to)) continue;
+            expect(track.elevation[i], `${id}: elevation[${i}] changed`).toEqual(prev.elevation[i]);
+          }
+          continue;
+        }
         expect(track[key], `${id}: ${key} changed`).toEqual(prev[key]);
       }
       // Task 155: tracks with narrowed parallel sections store kerbs after stripParallel.

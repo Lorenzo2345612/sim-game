@@ -198,8 +198,8 @@ describe('243 arroyo bridges edge cases', () => {
     for (let i = 0; i < CENTERLINE.length; i++) {
       for (const side of ['left', 'right'] as const) {
         const got = covering(out, side, i);
-        if (side === 'left' && i >= 480 && i <= 520) {
-          expect(got.type).toBe('wall');
+        if (i >= 480 && i <= 520) {
+          expect(got.type).toBe('armco');
           expect(Math.abs(got.offsetMeters - (WIDTH / 2 + 1.25))).toBeLessThanOrEqual(1e-9);
         } else {
           const want = covering(baseline, side, i);

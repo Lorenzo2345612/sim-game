@@ -42,6 +42,7 @@ import { createTerrainMaterial, groundPalette, terrainTrackDistance } from './re
 import { createTrackSurfaceObject } from './render/trackSurfaceRenderer';
 import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
+import { createBridgeObject } from './render/bridgeRenderer';
 import { createSausages } from './render/sausageRenderer';
 import { createKerbOuterStrips } from './render/kerbOuterStrip';
 import { createCityObject, type CityObject } from './render/cityRenderer';
@@ -839,9 +840,15 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(markings.group);
     disposables.push(markings);
 
+    const terrainY = (x: number, z: number): number => terrainHeightAt(track.terrain, x, z);
+
     const barriers = createBarrierObject(track, undefined, trackStyle);
     scene.add(barriers.group);
     disposables.push(barriers);
+
+    const bridges = createBridgeObject(track, terrainY);
+    if (bridges.group.children.length > 0) scene.add(bridges.group);
+    disposables.push(bridges);
 
     const floodlights = createFloodlights(track, trackStyle);
     if (floodlights !== null) {
@@ -869,8 +876,6 @@ async function startGame(trackId: string): Promise<void> {
       disposables.push(props);
       stats.props = props.group.userData.placed as number;
     }
-
-    const terrainY = (x: number, z: number): number => terrainHeightAt(track.terrain, x, z);
 
     // Baked LODs replace the preset tree farDistance cull (052 presets keep the value, the
     // field no longer consumes it): instances are never culled by distance, LOD 2 (crossed
