@@ -2018,7 +2018,7 @@
     {
       "num": "146",
       "title": "Damage effects on the vehicle (aero, toe, grip, lost wheel)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "070",
         "144",
@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3315,7 +3315,7 @@
     {
       "num": "243",
       "title": "Dry arroyo channel and bridges",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "241"
       ],
@@ -3328,7 +3328,7 @@
     {
       "num": "244",
       "title": "Engine voice timbre v2.1 (approved preview)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "228",
         "231"
@@ -3366,7 +3366,7 @@
     {
       "num": "247",
       "title": "Sausage kerbs fit the corner (length, offset, curved render/colliders)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "240",
         "241"

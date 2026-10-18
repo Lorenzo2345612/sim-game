@@ -147,7 +147,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | done | 070, 093, 144 |
-| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144, 145 |
+| 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | in progress | 070, 144, 145 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
@@ -226,7 +226,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 222 | Per-car RPM range in the HUD | done | - |
 | 223 | ERS and active-aero HUD widget | done | 219, 221 |
 | 224 | OW-26 3D model through the car pipeline | done | 221 |
-| 225 | Expert AI must not spin; difficulty orders pace | waiting decision | 093 |
+| 225 | Expert AI must not spin; difficulty orders pace | in progress | 093 |
 | 226 | Engine sound spec types, parser and CarSound.synth | done | - |
 | 227 | EngineVoice core: pulse train, exhaust tubes, DC block, soft clip, slew | done | 226 |
 | 228 | EngineVoice layers: intake, block, muffling, turbo, whine, limiter, crackle | done | 227 |
@@ -244,11 +244,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 240 | Smooth bank transitions on ovals (auto ramp, smoothstep) | done | - |
 | 241 | Ermita de Guadalupe street circuit: 5 layouts | done | - |
 | 242 | Synthetic village buildings (plaster row houses, tanks) | in progress | 241 |
-| 243 | Dry arroyo channel and bridges | pending | 241 |
-| 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
+| 243 | Dry arroyo channel and bridges | in progress | 241 |
+| 244 | Engine voice timbre v2.1 (approved preview) | waiting decision | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | in progress | 235 |
-| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | in progress | 240, 241 |
+| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | waiting decision | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | pending | 248 |
