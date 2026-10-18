@@ -13,6 +13,7 @@ import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld
 import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
 import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
+import { V_LOW } from '../physics/tyre';
 import { TrackProgress } from '../track/trackProgress';
 
 export interface RaceConfig {
@@ -25,6 +26,8 @@ export interface RaceConfig {
 }
 
 type World = ReturnType<typeof createPhysicsWorld>;
+
+export const AI_GRIP_MARGIN: number = 0.82;
 
 const MAX_AI = 15;
 const JUMP_PENALTY_S = 5;
@@ -85,6 +88,7 @@ export class RaceGame {
   private readonly events: RAPIER.EventQueue;
   private readonly damageCars: DamageCar[];
   private readonly damageRng: () => number;
+  private readonly rearAxleM: number;
   private time = 0;
   private disposed = false;
 
@@ -106,6 +110,7 @@ export class RaceGame {
     othersByCar: CarTrafficState[][],
     observations: AiObservation[],
     aheadIdx: number,
+    rearAxleM: number,
   ) {
     this.track = track;
     this.config = config;
@@ -124,6 +129,7 @@ export class RaceGame {
     this.othersByCar = othersByCar;
     this.observations = observations;
     this.aheadIdx = aheadIdx;
+    this.rearAxleM = rearAxleM;
     this.count = vehicles.length;
     this.linePoints = line.points.length / 2;
     this.halfWidth = track.widthMeters / 2;
@@ -175,7 +181,12 @@ export class RaceGame {
     const rng = mulberry32(config.seed);
     const { speedScale } = difficultyParams(config.difficulty);
     const line = computeRacingLine(track.centerline, track.widthMeters / 2);
-    const speeds = speedProfile(line, carLimitsFromSpec(spec, vehicles[0].getTelemetry().fuelKg));
+    const limits = carLimitsFromSpec(spec, vehicles[0].getTelemetry().fuelKg);
+    const speeds = speedProfile(line, {
+      ...limits,
+      muLat: limits.muLat * AI_GRIP_MARGIN,
+      muLong: limits.muLong * AI_GRIP_MARGIN,
+    });
     const ais: AiCar[] = [];
     const observations: AiObservation[] = [];
     for (let k = 0; k < aiCount; k++) {
@@ -188,7 +199,7 @@ export class RaceGame {
         progress,
         stuckS: 0,
       });
-      observations.push({ x: 0, z: 0, yaw: 0, speed: 0 });
+      observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
     }
     const traffic: CarTrafficState[] = [];
     for (let i = 0; i < count; i++) traffic.push({ distance: 0, lateral: 0, speed: 0 });
@@ -211,6 +222,8 @@ export class RaceGame {
     }
     const spacing = track.centerline.length > 0 ? track.lengthMeters / track.centerline.length : 0;
     const aheadIdx = Math.max(1, Math.round(LOOKAHEAD_M / (spacing > 0 ? spacing : LOOKAHEAD_M)));
+    const wp = spec.wheels.positions;
+    const rearAxleM = Math.abs((wp[2][2] + wp[3][2]) / 2);
     const game = new RaceGame(
       track,
       { ...config, aiCount },
@@ -229,6 +242,7 @@ export class RaceGame {
       othersByCar,
       observations,
       aheadIdx,
+      rearAxleM,
     );
     game.refreshProgress();
     return game;
@@ -308,6 +322,7 @@ export class RaceGame {
     this.time += FIXED_DT;
     for (let i = 0; i < this.count; i++) this.vehicles[i].getState(this.current[i]);
     this.refreshProgress();
+    this.updateAiDynamics();
     for (let i = 0; i < this.count; i++) {
       this.classification.update(i, this.traffic[i].distance, raceTime);
     }
@@ -391,6 +406,35 @@ export class RaceGame {
       t.distance = sample.distance;
       t.lateral = sample.lateral;
       t.speed = s.forwardSpeed;
+    }
+  }
+
+  // Rear axle slip angle and yaw rate over the tick just stepped; the AI reads
+  // them on the next tick together with the matching (x, z, yaw, speed).
+  private updateAiDynamics(): void {
+    const dt = FIXED_DT;
+    for (let k = 0; k < this.ais.length; k++) {
+      const p = this.prev[k + 1];
+      const c = this.current[k + 1];
+      const q = c.rotation;
+      const fx = -2 * (q.w * q.y + q.x * q.z);
+      const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
+      const pq = p.rotation;
+      const pfx = -2 * (pq.w * pq.y + pq.x * pq.z);
+      const pfz = -1 + 2 * (pq.x * pq.x + pq.y * pq.y);
+      let dYaw = Math.atan2(-fx, -fz) - Math.atan2(-pfx, -pfz);
+      if (dYaw > Math.PI) dYaw -= 2 * Math.PI;
+      else if (dYaw < -Math.PI) dYaw += 2 * Math.PI;
+      const yawRate = dYaw / dt;
+      const vx = (c.position.x - p.position.x) / dt;
+      const vz = (c.position.z - p.position.z) / dt;
+      const vLong = vx * fx + vz * fz;
+      // Velocity at the rear axle: CG velocity plus the yaw rotation about it.
+      const vLat = vx * -fz + vz * fx + this.rearAxleM * yawRate;
+      const obs = this.observations[k];
+      obs.yawRate = yawRate;
+      obs.rearSlip = Math.atan2(vLat, Math.max(Math.abs(vLong), V_LOW));
+      obs.steerAngle = c.wheels[0].steering;
     }
   }
 

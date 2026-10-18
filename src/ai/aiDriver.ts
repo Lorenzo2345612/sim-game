@@ -1,7 +1,15 @@
 import type { DriverInput } from '../core/types';
 import type { RacingLine } from './racingLine';
 
-export interface AiObservation { x: number; z: number; yaw: number; speed: number }
+export interface AiObservation {
+  x: number;
+  z: number;
+  yaw: number;
+  speed: number;
+  rearSlip?: number;
+  yawRate?: number;
+  steerAngle?: number;
+}
 
 export interface AiParams {
   speedScale: number;
@@ -28,6 +36,8 @@ export const DEFAULT_AI_PARAMS: AiParams = {
 const OFFSET_SLEW_RATE = 1.5;
 const SPEED_PREVIEW_TIME = 0.3;
 const LOCAL_SEARCH = 50;
+const REAR_SLIP_LIMIT = (6 * Math.PI) / 180;
+const YAW_RATE_ERROR_LIMIT = 0.25;
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
@@ -38,6 +48,7 @@ export class AiDriver {
   private reqOffset = 0;
   private offset = 0;
   private speedCap: number | null = null;
+  private lastSteer = 0;
   private idx = 0;
   private segIdx = 0;
   private s = 0;
@@ -138,8 +149,47 @@ export class AiDriver {
     const err = vTarget - obs.speed;
     out.throttle = clamp(this.p.kp * err, 0, 1);
     out.brake = clamp(-this.p.kb * err, 0, 1);
+
+    // Stability aid: past the rear-slip or yaw-rate-error threshold, ease the
+    // throttle and hold same-sign steering growth while the car still yaws as
+    // its steering geometry asks; once yaw diverges the steering is free to
+    // catch the slide.
+    const scale = this.stabilityScale(obs);
+    if (scale < 1) {
+      out.throttle *= scale;
+      const yawErr = this.yawError(obs);
+      if (yawErr <= YAW_RATE_ERROR_LIMIT && Math.abs(out.steer) > Math.abs(this.lastSteer)) {
+        out.steer = out.steer > 0 ? Math.abs(this.lastSteer) : -Math.abs(this.lastSteer);
+      }
+    }
+    this.lastSteer = out.steer;
     out.reset = false;
     return out;
+  }
+
+  // |yaw rate - v * steer curvature|; 0 when the observation carries no yaw rate
+  private yawError(obs: AiObservation): number {
+    if (obs.yawRate === undefined) return 0;
+    const kappa = Math.tan(obs.steerAngle ?? 0) / this.p.wheelbase;
+    return Math.abs(obs.yawRate - obs.speed * kappa);
+  }
+
+  // min throttle scale from rear slip and yaw-rate error; 1 when both are calm
+  private stabilityScale(obs: AiObservation): number {
+    let scale = 1;
+    if (obs.rearSlip !== undefined) {
+      const slip = Math.abs(obs.rearSlip);
+      if (slip > REAR_SLIP_LIMIT) {
+        const s = 1 - (slip - REAR_SLIP_LIMIT) / REAR_SLIP_LIMIT;
+        if (s < scale) scale = s > 0 ? s : 0;
+      }
+    }
+    const yawErr = this.yawError(obs);
+    if (yawErr > YAW_RATE_ERROR_LIMIT) {
+      const s = 1 - (yawErr - YAW_RATE_ERROR_LIMIT) / YAW_RATE_ERROR_LIMIT;
+      if (s < scale) scale = s > 0 ? s : 0;
+    }
+    return scale;
   }
 
   private normalAt(i: number, n: number): void {
