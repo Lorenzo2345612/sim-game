@@ -14,6 +14,7 @@ import { cumulativeLengths } from '../../src/track/centerline';
 import { halfWidthAt } from '../../src/track/surfaces';
 import { computeRacingLine } from '../../src/ai/racingLine';
 import { LOOK, PROD, N_IN, N_NEAR, forward } from './policy.mts';
+import { minTimeFor } from './mintime.mts';
 
 const { root, trackId, carId, slots, line = 'center' } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
@@ -28,6 +29,8 @@ const cum = cumulativeLengths(cl, true);
 const L = cum[n];
 // Look-ahead targets and speed profile follow `tgt` (centerline, or the classic AI's racing line, same indexing); progress, edges and lateral stay on the centerline.
 let tgt: [number, number][] = cl;
+const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : null;
+if (mt) tgt = mt.pts;
 if (line === 'racing') {
   const rl = computeRacingLine(cl, track.widthMeters / 2);
   tgt = cl.map((c, i) => { // clamp inside the edges with a 1 m car half-width margin
@@ -101,6 +104,7 @@ for (let pass = 0; pass < 2; pass++) for (let i = n - 1; i >= 0; i--) {
   vProf[i] = Math.min(vProf[i], Math.sqrt(vProf[j] * vProf[j] + 2 * DECEL * ds));
 }
 
+if (mt) for (let i = 0; i < n; i++) vProf[i] = Math.min(90, mt.v[i] * 0.97); // QSS profile (aero + power + braking) replaces the 1.5 g cue
 if (process.env.EVO_DEBUG) { const o: string[] = []; for (let i = 0; i < n; i++) if (cum[i] < 1500 && i % 10 === 0) o.push(`${cum[i].toFixed(0)}:${vProf[i].toFixed(0)}`); console.log('vProf', o.join(' ')); }
 
 function poseAt(s: number, lat = 0) {

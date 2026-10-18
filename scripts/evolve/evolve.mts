@@ -1,5 +1,5 @@
 // Neuroevolution trainer with a live viewer at http://127.0.0.1:8770
-// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing] [--resume path]
+// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing|mintime] [--resume path]
 // Grid episode grows with progress up to --laps laps; random-start episodes last --secs.
 import { Worker } from 'node:worker_threads';
 import { createServer, type ServerResponse } from 'node:http';
@@ -8,6 +8,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseTrackData } from '../../src/track/parseTrackData';
 import { halfWidthAt } from '../../src/track/surfaces';
+import { parseCarSpec } from '../../src/physics/carSpec';
+import { minTimeFor } from './mintime.mts';
 import { N_W, N_IN, randomGenome, padGenome, gauss, mulberry32 } from './policy.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -16,10 +18,10 @@ const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`)
 const trackId = arg('track', 'monza'), carId = arg('car', 'f4');
 const POP = Number(arg('pop', '100')), W = Number(arg('workers', '10')), SECS = Number(arg('secs', '60'));
 const MAX_LAPS = Number(arg('laps', '10')), GENS = Number(arg('gens', '1000'));
-const LINE = arg('line', 'center') === 'racing' ? 'racing' : 'center'; // look-ahead targets + speed profile source
+const LINE = (['racing', 'mintime'] as const).find((l) => l === arg('line', 'center')) ?? 'center'; // look-ahead targets + speed profile source
 const SPEED_AT = Number(arg('speed-at', '4')); // mean grid distance (laps, 5-gen average) that switches fitness to speed
 const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: MAX_LAPS, speedW: 120, overW: 0.3, lapW: 100 } };
-const tag = `${trackId}-${carId}${LINE === 'racing' ? '-racing' : ''}`;
+const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', tag);
 const PORT = Number(arg('port', '8770'));
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
@@ -29,6 +31,11 @@ mkdirSync(runDir, { recursive: true });
 
 // Track outline for the viewer
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
+if (LINE === 'mintime') { // build the cached line once before the workers read it
+  const ps: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
+  const t0 = Date.now(), mt = await minTimeFor(root, track, ps.spec ?? ps, carId);
+  console.log(`mintime line: QSS racing ${mt.tRacing.toFixed(2)} s -> mintime ${mt.tMin.toFixed(2)} s, max offset/limit ${mt.maxRatio.toFixed(3)} (${Date.now() - t0} ms)`);
+}
 const cl: [number, number][] = track.centerline;
 const left: number[][] = [], right: number[][] = [];
 for (let i = 0; i < cl.length; i++) {
@@ -79,7 +86,7 @@ createServer((req, res) => {
   if (req.url === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     clients.add(res);
-    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId: LINE === 'racing' ? `${trackId} (trazada ideal)` : trackId, carId, pop: POP, elite: ELITE, history })}\n\n`);
+    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId: LINE === 'racing' ? `${trackId} (trazada ideal)` : LINE === 'mintime' ? `${trackId} (tiempo mínimo)` : trackId, carId, pop: POP, elite: ELITE, history })}\n\n`);
     req.on('close', () => clients.delete(res));
     return;
   }
