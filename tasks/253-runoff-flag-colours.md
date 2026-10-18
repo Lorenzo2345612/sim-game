@@ -21,13 +21,14 @@ Closed design rule. Schema: `docs/design/track-style.md`; parser `src/track/trac
 
 - `public/tracks/flag-palettes.json` — create.
 - `public/tracks/*.style.json` — modify (only those with `runoffPaint`; colours only).
-- `docs/design/track-style.md` — modify: one line under `runoffPaint`: colours must come from `public/tracks/flag-palettes.json` for the track's country; new tracks add their country there.
+- `docs/design/track-style.md` — modify: one line under `runoffPaint`: colours must come from `public/tracks/flag-palettes.json` for the track's country; new tracks add their country there (main field colours only, no black, no emblem colours).
 - `tests/unit/acceptance/253-runoff-flag-colours.test.ts` — create from the table.
 
 ## Steps
 
 1. `flag-palettes.json`: object keyed by the exact `country` strings of `index.json`; value = flag colours in flag order, uppercase hex; flag white is `#DADADA`:
-   - Italy `["#009246","#DADADA","#CE2B37"]`; Belgium `["#1C1C1E","#FDDA24","#EF3340"]`; United Kingdom `["#012169","#DADADA","#C8102E"]`; Mexico `["#006847","#DADADA","#CE1126"]`; United States `["#B22234","#DADADA","#3C3B6E"]`; Qatar `["#8A1538","#DADADA"]`; Bahrain `["#CE1126","#DADADA"]`; Malaysia `["#CC0001","#DADADA","#010066","#FFCC00"]`; Azerbaijan `["#0092BC","#E4002B","#00AF66"]`; Hungary `["#CD2A3E","#DADADA","#436F4D"]`; Singapore `["#EF3340","#DADADA"]`; Austria `["#C8102E","#DADADA"]`.
+   - Italy `["#009246","#DADADA","#CE2B37"]`; Belgium `["#FDDA24","#EF3340"]`; United Kingdom `["#012169","#DADADA","#C8102E"]`; Mexico `["#006847","#DADADA","#CE1126"]`; United States `["#B22234","#DADADA","#3C3B6E"]`; Qatar `["#8A1538","#DADADA"]`; Bahrain `["#CE1126","#DADADA"]`; Malaysia `["#CC0001","#DADADA","#010066"]`; Azerbaijan `["#0092BC","#E4002B","#00AF66"]`; Hungary `["#CD2A3E","#DADADA","#436F4D"]`; Singapore `["#EF3340","#DADADA"]`; Austria `["#C8102E","#DADADA"]`.
+   - Palette rule (user): only the main field colours of the flag; never black; emblem/charge colours (suns, stars, crescents, coats of arms) do not count (Argentina = light blue + white; Mexico = green, white, red). New countries follow the same rule.
 2. In each style file with `runoffPaint`, rewrite only `colors` (top-level and every `ranges[].colors`):
    - effective pattern (own, else inherited from top level) `stripes` or `bands`: full country palette in flag order;
    - `solid`: `[nearest palette colour to the old colors[0]]` by RGB Euclidean distance, ignoring `#DADADA` (countries with one non-white colour use it);
@@ -47,6 +48,7 @@ The acceptance worker embeds in the test the pre-task values taken from master a
 | AT3 | same files | entries whose effective pattern is `stripes` or `bands` | colour list equals the full country palette in flag order |
 | AT4 | same files vs `git show HEAD~:<file>` captured as fixtures at test-writing time OR recomputed from the pre-task values embedded in the test | deep compare with all `colors` fields removed | identical (patterns, sides, ranges, stripeMeters unchanged) |
 | AT5 | each updated style file | parse with the existing `trackStyle.ts` parser | no validation errors |
+| AT7 | `flag-palettes.json` | read every colour | no colour has max(R,G,B) < 0x40 (no black); Belgium = `["#FDDA24","#EF3340"]`, Malaysia has no `#FFCC00` |
 | AT6 | `public/tracks/*.json` excluding `*.style.json` and `flag-palettes.json` | sha256 vs pre-task | unchanged |
 
 ## Acceptance criteria
