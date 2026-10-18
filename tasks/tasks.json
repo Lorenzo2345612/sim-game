@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3342,7 +3342,7 @@
     {
       "num": "245",
       "title": "Kerbs never fold over the asphalt (radius cap, split strips)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3359,7 +3359,7 @@
       ],
       "complexity": "complex",
       "type": "feature",
-      "models": "standard",
+      "models": "heavy",
       "phase": 1,
       "spec": "tasks/246-barrier-no-fold.md"
     },
