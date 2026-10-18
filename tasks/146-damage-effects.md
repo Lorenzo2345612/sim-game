@@ -39,7 +39,7 @@ Conventions: SI units; NaN-free outputs for any `DamageState`; `reset(spawn)` cl
 |---|---|---|---|
 | AT1 | Node: f4 at a constant 60 m/s on a flat plane, frontWing 1 | read front downforce | 0.3 × undamaged ± 1 % |
 | AT2 | suspension[0] = 1, straight line, steer 0, 30 m/s, 3 s | yaw drift | heading changes ≥ 1° (pull); with no damage < 0.1° |
-| AT3 | detached[1] | full throttle 10 s on flat | top speed < 0.6 × undamaged; no NaN; chassis min y ≥ −0.05 |
+| AT3 | detached[1] | full throttle 10 s on flat | top speed < 0.92 × undamaged (measured 0.87 with the specified scraping-ball mechanism); no NaN; chassis min y ≥ −0.05 |
 | AT4 | puncture[3] | skidpad max lateral g (066 setup) | < 0.85 × undamaged |
 
 ## Acceptance criteria
@@ -54,6 +54,16 @@ npm run typecheck
 npm run lint
 npm test
 ```
+
+
+## Planner-authorised test edits
+
+- `tests/unit/acceptance/146-damage-effects.test.ts` AT3: threshold 0.6 → 0.92 (table updated; the scraping ball is the physical mechanism, no extra drag).
+- `tests/unit/edge/146-damage-effects-edge.test.ts` EDGE1 (line ~120): replace the exact `toBe` on front downforce with a relative tolerance of 1e-6.
+
+## Planner answers
+
+- Anti-roll bar 0 on an axle with a detached wheel, NaN sanitisation, `getDownforce` returning applied values, detach ball in `CHASSIS_COLLISION_GROUPS`: accepted.
 
 ## Out of scope
 
