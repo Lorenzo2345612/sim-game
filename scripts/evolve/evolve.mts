@@ -112,7 +112,7 @@ function evalAll(): Promise<{ fitness: number[]; best: number[]; lapT: number[];
 }
 
 let episodes: { start: number; secs: number }[] = [];
-let gridSecs = 150, refLap = 0, topLaps = 0;
+let gridSecs = Math.max(150, lapLength / 20), refLap = 0, topLaps = 0; // first grid episode fits ~1.5 laps at early pace
 for (; gen < GENS; ) {
   const t0 = Date.now();
   // grid episode: room for two more laps than the best managed (capped at MAX_LAPS), plus 2 short random starts
