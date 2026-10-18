@@ -410,7 +410,7 @@
         "253",
         "256"
       ],
-      "status": "open",
+      "status": "built",
       "prefetch": [
         "233",
         "234",
@@ -430,18 +430,32 @@
         "256",
         "269",
         "270"
-      ]
+      ],
+      "builtAt": "2026-10-18T14:08:25",
+      "commit": "c6036bf",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M2.3n",
       "title": "Evolved neural AI opponents (experimental)",
       "tasks": [
-        "269",
-        "270"
+        "269"
       ],
       "status": "open",
       "prefetch": [
         "269"
+      ]
+    },
+    {
+      "id": "M2.3o",
+      "title": "Neural driver v2 (kerbs, track limits, tyre inputs, setup)",
+      "status": "open",
+      "tasks": [
+        "270"
+      ],
+      "prefetch": [
+        "270"
       ]
     },
     {
