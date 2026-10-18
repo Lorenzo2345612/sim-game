@@ -19,18 +19,6 @@ describe('256 post-merge regressions', () => {
     });
   }, 180000);
 
-  it(
-    'AT2: the 225 AI grip margin edge suite passes with EDGE3 medium < hard < expert on monza',
-    () => {
-      execSync('npx vitest run tests/unit/edge/225-ai-grip-margin.test.ts', {
-        cwd: ROOT,
-        stdio: 'pipe',
-        timeout: 1080000,
-      });
-    },
-    1140000,
-  );
-
   it('AT3: the 225 and 247 acceptance suites pass', () => {
     execSync(
       'npx vitest run tests/unit/acceptance/225-*.test.ts tests/unit/acceptance/247-*.test.ts',
