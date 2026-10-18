@@ -250,7 +250,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 246 | Barriers never fold onto the inner kerb | done | 235 |
 | 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | done | 236, 247 |
-| 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
+| 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | in progress | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | in progress | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
@@ -270,3 +270,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
 | 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
+| 269 | Evolved neural AI opponents (opt-in, experimental) | in progress | - |

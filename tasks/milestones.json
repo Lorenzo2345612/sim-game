@@ -427,7 +427,19 @@
         "250",
         "251",
         "253",
-        "256"
+        "256",
+        "269"
+      ]
+    },
+    {
+      "id": "M2.3n",
+      "title": "Evolved neural AI opponents (experimental)",
+      "tasks": [
+        "269"
+      ],
+      "status": "open",
+      "prefetch": [
+        "269"
       ]
     },
     {
@@ -465,7 +477,7 @@
         "232",
         "239"
       ],
-      "status": "open",
+      "status": "built",
       "prefetch": [
         "226",
         "230",
@@ -476,7 +488,11 @@
         "229",
         "232",
         "239"
-      ]
+      ],
+      "builtAt": "2026-10-17T22:39:02",
+      "commit": "cd86026",
+      "buildOk": true,
+      "testsOk": false
     },
     {
       "id": "M2.1",

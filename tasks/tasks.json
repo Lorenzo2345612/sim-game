@@ -3394,7 +3394,7 @@
     {
       "num": "249",
       "title": "QA report: kerb, barrier-fold, sausage, pit-clear checks",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "237",
         "245",
@@ -3651,6 +3651,17 @@
       "models": "heavy",
       "phase": 2,
       "spec": "tasks/268-ai-driving-regressions.md"
+    },
+    {
+      "num": "269",
+      "title": "Evolved neural AI opponents (opt-in, experimental)",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/269-evolved-neural-driver.md"
     }
   ]
 }
