@@ -71,22 +71,29 @@ Planner-authorised test edits in `tests/unit/acceptance/269-evolved-neural-drive
 - AT5: threshold `> 50` becomes `> 10` (and the test title accordingly); the start countdown eats most of the 10 s. The classic-identical position checks stay.
 Then run AT1–AT10, the Playwright spec for AT10, lint and the full suite, and report.
 
+## Planner answers (round 3)
+
+- Models were trained before task 254 (rear grip), so lap times drift: AT1 factor 1.06 → 1.08, AT2 1.08 → 1.10 (acceptance table updated).
+- AT8 assertion: every key in `index.json` has its files, and every source model dir's base key (`-racing`/`-mintime` stripped) is listed.
+- AT6 gets a 600 000 ms per-test timeout, like AT1–AT4.
+- Planner-authorised test edits in `tests/unit/acceptance/269-evolved-neural-driver.test.ts`, exactly: AT1 factor `1.06` → `1.08`; AT2 factor `1.08` → `1.10`; AT8 assertion as above; AT6 `it()` timeout `600_000`. Nothing else in the test changes. Do not retrain or modify model files.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | RaceGame monza, f4, aiCount 1, difficulty expert, aiDriver neural with `public/ai-models/monza-f4/expert.json`, seed 3, player brake 1 | 3 laps (≤ 600 s) | AI finishes 3 laps; 0 resets; AI best lap ≤ 1.06 × the model file's `bestLap` |
-| AT2 | same as AT1 on spa with `spa-f4/expert.json` (skip with a clear message only if that file does not exist) | 2 laps (≤ 600 s) | finishes; 0 resets; best lap ≤ 1.08 × model `bestLap` |
+| AT1 | RaceGame monza, f4, aiCount 1, difficulty expert, aiDriver neural with `public/ai-models/monza-f4/expert.json`, seed 3, player brake 1 | 3 laps (≤ 600 s) | AI finishes 3 laps; 0 resets; AI best lap ≤ 1.08 × the model file's `bestLap` |
+| AT2 | same as AT1 on spa with `spa-f4/expert.json` (skip with a clear message only if that file does not exist) | 2 laps (≤ 600 s) | finishes; 0 resets; best lap ≤ 1.10 × model `bestLap` |
 | AT3 | RaceGame monza, f4, aiCount 7, difficulty medium, aiDriver neural, seed 3, player brake 1 | 300 s | every AI completes ≥ 1 lap; total resets ≤ 2 |
 | AT4 | monza single AI, neural expert vs neural easy (AT1 setup) | 2 laps each | expert best lap < easy best lap |
 | AT5 | aiDriver neural on a track with no model (silverstone) | create + 10 s | no throw; AIs use the classic driver (positions identical to `aiDriver: 'classic'`) and move > 10 m (start countdown included) |
 | AT6 | AT1 setup run twice | 60 s each | identical AI position (±1e-9) |
 | AT7 | `parseNeuralModel` with weights length 610; a 21-input genome (16·21+16+32+2 weights); length 611 | parse | 610 accepted; 21-input padded to 610 with zero weights on new inputs and identical `forward` output when new inputs are 0; 611 throws `Invalid neural model` |
-| AT8 | `npm run export-ai-models` output | read | `public/ai-models/index.json` lists every exported `<track>-<car>`; every listed file exists with 610 weights |
+| AT8 | `npm run export-ai-models` output | read | every key in `public/ai-models/index.json` has its files; every source model dir's base key (dir name with `-racing`/`-mintime` stripped) is listed; every listed file has 610 weights |
 | AT9 | NeuralDriver, physics steps 0..11 | call `decide` each step | features/forward evaluated only on steps 0, 4, 8; other steps return the held inputs |
 | AT10 | Playwright: race setup with monza + f4, then silverstone + f4 | open menu | neural toggle visible for monza, hidden for silverstone |
 
-AT1–AT4 are slow headless runs: per-test timeout up to 600 000 ms in `tests/unit/acceptance/269-*.test.ts`.
+AT1–AT4 and AT6 are slow headless runs: per-test timeout up to 600 000 ms in `tests/unit/acceptance/269-*.test.ts`.
 
 ## Acceptance criteria
 
