@@ -3462,7 +3462,7 @@
     {
       "num": "254",
       "title": "Weight distribution and rear grip (stable OW-26 rear)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "146",
         "239"
