@@ -49,7 +49,7 @@ Conventions: arc distances along the closed polyline (closing edge included), `�
 | AT2 | AT1 output → `layoutBarriers` | right side over 10..30 | type `wall`, offset 11 |
 | AT3 | `STRAIGHT` + right barrier offset 18 over 0..99 | `pitBuildingPieces` | every piece near face at distance ≥ 19 − 1e-6 from the centerline |
 | AT4 | `STRAIGHT` + right barrier offset 8 | pitBuildingPieces | identical to the pre-change output |
-| AT5 | every built track | pit pieces | no footprint sample (≤ 2 m grid) inside a non-grass `buildTrackSurfaces` triangle; no `barrierRuns` vertex inside a footprint |
+| AT5 | every built track | pit pieces | no footprint sample (≤ 2 m grid) inside a non-grass `buildTrackSurfaces` triangle; no `barrierRuns` vertex with `index` in the pit window (`pit.start..pit.end`, wrap-aware) inside a footprint |
 | AT6 | rebuilt JSONs vs pre-task | deep compare | only `runoffs`, `barriers` (and fields derived from them) differ |
 
 ## Acceptance criteria
@@ -84,3 +84,8 @@ npm test
 
 - Each piece is a straight box: its near-face offset = max of the per-vertex required offsets over the piece's vertices (steps at joints are fine).
 - Authorised: an existing test that pins a built track's `runoffs`/`barriers` values inside a pit window (±50 m) may update those expected values to the rebuilt data; list each edit in the report. Any other failure: stop and report.
+
+## Planner answers (AT5 cross-section barriers)
+
+- AT5 now checks only barrier vertices whose `index` lies in the pit window (planner change). Barriers of other track sections crossing the building band (sepang 236–239, cleveland 625–627) are pre-existing data conflicts, out of scope here (logged for the 249 QA report). Authorised: in `tests/unit/acceptance/248-pit-clears-runoff.test.ts` AT5 filter the `barrierRuns` vertices to pit-window indices (wrap-aware); nothing else.
+- Apply the already-authorised 155/106/211 edits.
