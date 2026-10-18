@@ -3088,7 +3088,7 @@
     {
       "num": "225",
       "title": "Expert AI must not spin; difficulty orders pace",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "093"
       ],
