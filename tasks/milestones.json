@@ -463,28 +463,6 @@
       ]
     },
     {
-      "id": "M2.3q",
-      "title": "Neural AI learns from the owner's reference lap",
-      "status": "open",
-      "tasks": [
-        "272"
-      ],
-      "prefetch": [
-        "272"
-      ]
-    },
-    {
-      "id": "M2.3p",
-      "title": "Neural racecraft (overtake, defend, no contact)",
-      "status": "open",
-      "tasks": [
-        "271"
-      ],
-      "prefetch": [
-        "271"
-      ]
-    },
-    {
       "id": "M1.12",
       "title": "Ermita de Guadalupe street circuit (5 layouts, village, arroyo)",
       "tasks": [

@@ -3679,7 +3679,7 @@
     {
       "num": "271",
       "title": "Neural racecraft training: overtakes, defence, contact faults, mixed fields",
-      "status": "pending",
+      "status": "blocked",
       "deps": [
         "272"
       ],
@@ -3687,12 +3687,13 @@
       "type": "feature",
       "models": "standard",
       "phase": 2,
-      "spec": "tasks/271-neural-racecraft.md"
+      "spec": "tasks/271-neural-racecraft.md",
+      "note": "implemented by the planner directly (owner request), not dispatched"
     },
     {
       "num": "272",
       "title": "Neural trainer: reference-lap target line and speed profile",
-      "status": "pending",
+      "status": "blocked",
       "deps": [
         "270"
       ],
@@ -3700,7 +3701,8 @@
       "type": "feature",
       "models": "standard",
       "phase": 2,
-      "spec": "tasks/272-neural-reference-line.md"
+      "spec": "tasks/272-neural-reference-line.md",
+      "note": "implemented by the planner directly (owner request), not dispatched"
     }
   ]
 }
