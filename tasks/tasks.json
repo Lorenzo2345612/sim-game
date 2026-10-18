@@ -2033,7 +2033,7 @@
     {
       "num": "147",
       "title": "Debris: detached wings and wheels as physics bodies",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "145",
         "146"

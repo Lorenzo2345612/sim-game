@@ -148,7 +148,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 144 | Damage model (pure) | done | 058 |
 | 145 | Contact impacts from Rapier into the damage model | done | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | done | 070, 144, 145 |
-| 147 | Debris: detached wings and wheels as physics bodies | in progress | 145, 146 |
+| 147 | Debris: detached wings and wheels as physics bodies | done | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | done | 094, 145, 146 |
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
