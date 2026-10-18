@@ -40,6 +40,7 @@ Definitions (same as 225): "spin" = at any tick after go, the angle between the 
 | AT2 | spa, 1 AI, difficulty `expert`, seed 1 | step 60 s sim after go | AI never spins; AI distance > 1500 m |
 | AT3 | monza, 1 AI, seed 1, `easy`, `medium`, `expert` (separate games) | step 45 s after go | none spins; easy < medium < expert distance |
 | AT4 | silverstone, 3 AI expert, seeds 1–3 | step 60 s after go | no AI spins |
+| AT5 | spa, 1 AI, seed 1, `easy` and `expert` (separate games) | step 45 s after go | easy distance < expert distance (from 225 EDGE4) |
 
 Existing tests that must still pass: 088, 089, 092, 093, 225 acceptance and edge tests.
 
