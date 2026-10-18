@@ -95,7 +95,8 @@ function startPoses(start: number): any[] {
 }
 
 // Reused per-decision state: the others list holds the nearest alive cars, self excluded.
-const others = Array.from({ length: slots }, () => ({ position: { x: 0, y: 0, z: 0 }, linvel: { x: 0, y: 0, z: 0 } }));
+const othersPool = Array.from({ length: slots }, () => ({ position: { x: 0, y: 0, z: 0 }, linvel: { x: 0, y: 0, z: 0 } }));
+const others: typeof othersPool = [];
 const carState: NeuralCarState = {
   position: { x: 0, y: 0, z: 0 },
   rotation: { x: 0, y: 0, z: 0, w: 1 },
@@ -148,7 +149,8 @@ function episode(genomes: Float64Array[], start: number, secs: number, epi: numb
         let oc = 0;
         for (let j = 0; j < slots; j++) {
           if (j === k || !alive[j]) continue;
-          const sj = state[j].position, oj = others[oc++];
+          const sj = state[j].position, oj = othersPool[oc];
+          others[oc++] = oj;
           oj.position.x = sj.x; oj.position.y = sj.y; oj.position.z = sj.z;
           const lvj = (cars[j].body as any).linvel();
           oj.linvel.x = lvj.x; oj.linvel.y = lvj.y; oj.linvel.z = lvj.z;
