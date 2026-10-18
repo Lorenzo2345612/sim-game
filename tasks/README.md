@@ -248,7 +248,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 244 | Engine voice timbre v2.1 (approved preview) | in progress | 228, 231 |
 | 245 | Kerbs never fold over the asphalt (radius cap, split strips) | in progress | - |
 | 246 | Barriers never fold onto the inner kerb | waiting decision | 235 |
-| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | in progress | 240, 241 |
+| 247 | Sausage kerbs fit the corner (length, offset, curved render/colliders) | done | 240, 241 |
 | 248 | Pit building clears run-off and the pit wall | pending | 236, 247 |
 | 249 | QA report: kerb, barrier-fold, sausage, pit-clear checks | pending | 237, 245, 246, 247, 248 |
 | 250 | Bollard placement | pending | 248 |

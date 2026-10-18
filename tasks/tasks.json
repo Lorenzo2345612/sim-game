@@ -3366,7 +3366,7 @@
     {
       "num": "247",
       "title": "Sausage kerbs fit the corner (length, offset, curved render/colliders)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "240",
         "241"
