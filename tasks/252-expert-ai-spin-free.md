@@ -55,3 +55,10 @@ npm test
 ## Out of scope
 
 Vehicle physics, tyre model, car data, changing `AI_GRIP_MARGIN`, mistakes per lap, overtaking logic, HUD, committing the probe.
+
+## Planner answers (coder timeout)
+
+- Required: AT1–AT5 plus every existing test. The 3-AI traffic spin is in scope, because AT4 covers it.
+- Do not change the blocker/alongside priority in `traffic.ts`: 090 POST10 stays frozen. Revert that change, and fix the spin in the driver instead (steer and throttle limits while a car is alongside or close ahead, in `aiDriver.ts`).
+- Tester-pre EDGE6/7/9: the expert cases are required, and the easy/medium cases are advisory (not required to pass).
+- 249 AT3 and 250 AT9 failures are known and unrelated; ignore them.
