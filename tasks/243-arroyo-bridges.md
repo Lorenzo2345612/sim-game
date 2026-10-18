@@ -86,6 +86,16 @@ npm run lint
 npm test
 ```
 
+## Planner-authorised test edits
+
+- `tests/unit/edge/243-arroyo-bridges-edge.test.ts` EDGE9: inside a bridge span both sides are `wall` at `widthMeters/2 + 1.25` (7.25 m), matching AT6 and "on both sides"; outside spans the baseline type/offset is kept.
+- `tests/unit/edge/142-kerbs-every-corner.post.test.ts:167`: for `ermita-*` tracks, the elevation deep-equal skips indices strictly inside bridge spans (`bridges[].start < i < end`); all other tracks and indices unchanged.
+
+## Planner answers
+
+- ermita-mixto with no crossings omits `bridges`: correct.
+- Wall bottoms clamped to the deck top, DECK_DROP 0.05 m, exported `distanceToPolyline`, `createBridgeObject` call in `src/main.ts`: accepted.
+
 ## Out of scope
 
 - Water rendering/flow, culvert-specific visuals, bridge physics beyond the wall barriers, kerbs/runoff changes on spans, polygon water, non-ermita tracks, village buildings (242), e2e tests.
