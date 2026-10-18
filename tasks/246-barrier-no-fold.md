@@ -29,7 +29,8 @@ Signatures unchanged (`barrierRuns(track: TrackDataV2, side: Side): BarrierVerte
 1. For each non-median vertex at index `i` with `inner(i, side)` (corner `side` equals the barrier side): effective offset = `min(offsetMeters, 0.8 · R(i))`; x, z and y (bank lift) use the effective offset. If `0.8 · R(i) < half(side, i) + KERB_WIDTH + 0.5` the vertex is dropped.
 2. Then drop every non-median vertex `v` (index `i`) for which some centerline index `j` with circular index distance `|j − i| > NEAR_INDEX_SPAN` (existing constant, 5) has XZ distance `< halfNear(j) + KERB_WIDTH + 0.5`, where `halfNear(j)` = min of both half-widths at `j`. This replaces the existing `halfWidthAt + 0.3` reach of the cross-track test (same loop, larger threshold). Own-window indices stay exempt: a barrier's own offset is data, legacy fixtures with small offsets must keep their output. The existing grid works if its cell size is at least the largest threshold.
 2b. Clamped vertices (step 1 effective offset < `offsetMeters`) get the step 2 test against every centerline index, own window included (no exemption): the window exemption is only for unclamped data offsets.
-2c. After 2–2b, a segment between two kept consecutive vertices whose XZ midpoint is within `halfNear(j) − 0.3` of any centerline index `j` (all indices) splits the run there (no vertex dropped). This keeps 176 AT2 (baku 300–301, 1241, 1341) passing.
+2c. After 2–2b, a segment between two kept consecutive vertices whose XZ midpoint is within `halfNear(j) − 0.3` of any centerline index `j` (all indices) splits the run there (no vertex dropped). This keeps 176 AT2 (baku 300–301, 1241, 1341) passing. When neither endpoint is clamped, 2c skips centerline indices within 5 of either endpoint index.
+2d. `isMedianWall` uses the data `offsetMeters`, not the clamped offset.
 3. Runs split at dropped vertices and pieces under 2 vertices vanish, exactly as today. The existing `crossesTrack` rule stays. Median walls: `isMedianWall` vertices skip both new rules.
 
 Conventions: distances in metres; drop tests strict (`<`); `cornerCurvature` null ⇒ no clamp; sides not mutated; no `three` import.
@@ -77,7 +78,7 @@ In `tests/unit/acceptance/246-barrier-no-fold.test.ts` only:
 - AT3 (`it('AT3: ...`, ~line 319): build the fixture with left offset 7.9 and right offset 12 (extend `stadiumTrack` with an optional per-side offset if needed); update the title. Assertions unchanged.
 - AT5 (~line 338): in the nearest-point loop skip `j` with circular index distance to `v.index` ≤ 5, and assert against each remaining `j` within the 3×3 cells (`best` over those only). Nothing else.
 - `tests/unit/edge/246-barrier-no-fold-edge.test.ts`: delete EDGE2 (contradicts the own-window exemption). Nothing else.
-- `tests/unit/edge/176-barrier-full-ring.post.test.ts` POST1: change only the fixture so the two straights are 40 m apart (U-turn ends sampled every 2 m at x = 300 and x = 0; adjust `lengthMeters`, `sectors`, terrain `originZ`/`sizeZ` to match). Assertions unchanged.
+- `tests/unit/edge/176-barrier-full-ring.post.test.ts` POST1: change only the fixture to a stadium: two 300 m straights 40 m apart joined by semicircles of radius 20 m sampled every ~2 m (no sharp corners), `widthMeters` 4, offsets 2; adjust `lengthMeters`, `sectors`, terrain `originZ`/`sizeZ` to match. Assertions unchanged.
 
 ## Planner answers
 
