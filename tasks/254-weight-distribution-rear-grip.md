@@ -40,7 +40,7 @@ State after two coder timeouts: steps 1–5 are implemented in the worktree and 
 
 Authorised levers (ow26.json only, in this order; stop at the first that makes `ow26.test.ts` fully pass while AT4/AT5 still pass):
 1. `tyres.rearMuScale` down from 1.10 to any value in 1.00–1.10 (AT4/AT5 must still pass).
-2. `assists.tc.slip` (the slip target used when TC is on) in 0.08–0.25.
+2. `aids.tc.slip` (the slip target used when TC is on) in 0.08–0.25.
 3. Final-drive / 1st-gear ratio change of at most ±8 %.
 No calibration test window changes. Run only `npx vitest run tests/unit/calibration/ow26.test.ts tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts` while tuning (each run is about 10 s); do not run the full suite until the end. Report the chosen values.
 
