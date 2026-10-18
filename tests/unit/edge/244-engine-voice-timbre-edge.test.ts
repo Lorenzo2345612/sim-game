@@ -23,7 +23,7 @@ const PINNED: Record<string, string> = {
   'hyper-a.json': 'c418544b13b4839545fcd4a8f9f2d352d8caf6c4efd8a1631cf4247c2f3c47c8',
   'index.json': 'ae277e0021615e04acbf70d386f85377340e752c0de7f6245744b6f6761eb829',
   'lmp2-a.json': '95b15ce1078531d311e2ad480987abf2e87d3f48a3a1e08fea11ac14f7355168',
-  'ow26.json': '2c4337be979319b7f2d5c046c8a47c0be8df795a671c91abfe8a55621fcb73f0',
+  'ow26.json': 'bc6b4f39bc29dd34e37e46f7e03c04b073dbd00087a24f4534774dc65c6d834a',
 };
 
 const CTOR_NAMES = [

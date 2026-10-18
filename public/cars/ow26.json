@@ -9,6 +9,7 @@
   "chassis": {
     "massKg": 768,
     "cgHeight": 0.28,
+    "weightFront": 0.455,
     "inertia": {
       "x": 1790,
       "y": 1830,
@@ -44,7 +45,8 @@
       ]
     ],
     "radius": 0.357711,
-    "width": 0.35,
+    "width": 0.305,
+    "widthRear": 0.405,
     "inertia": 1.8
   },
   "suspension": {
@@ -76,6 +78,7 @@
   "tyres": {
     "optPressureKpa": 140,
     "pressureKpa": 140,
+    "rearMuScale": 1.03,
     "compounds": {
       "soft": {
         "mu0": 2.3,
@@ -213,7 +216,7 @@
   },
   "gearbox": {
     "ratios": [
-      3.7,
+      3.404,
       2.7,
       2.1,
       1.74,
@@ -246,7 +249,7 @@
     },
     "tc": {
       "enabled": false,
-      "slip": 0.2
+      "slip": 0.08
     }
   },
   "fuel": {

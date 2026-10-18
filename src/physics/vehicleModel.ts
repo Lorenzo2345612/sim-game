@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import type { CarSpec, TyreCompound, TyreName } from './carSpec';
+import { DEFAULT_WEIGHT_FRONT, type CarSpec, type TyreCompound, type TyreName } from './carSpec';
 import type { AeroTelemetry, ErsTelemetry } from './hybridTypes';
 import { Gearbox, GearboxMode, REVERSE_MAX_SPEED_MS } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
@@ -183,6 +183,7 @@ export class VehicleModel {
   private readonly gearbox: Gearbox;
   private readonly tank: FuelTank;
   private readonly wheels: WheelModel[];
+  private readonly comZ: number;
   private readonly brakeT: number[] = [0, 0, 0, 0];
   private readonly drivenKappas: number[] = [0, 0];
   private readonly aeroOut: AeroForces = { front: 0, rear: 0, drag: 0 };
@@ -257,8 +258,17 @@ export class VehicleModel {
 
     // Static corner loads from the dry mass set the ride height the spec asks for.
     const pos = spec.wheels.positions;
+    // Local CoM z: weightFront 0.5 keeps the historical CoM at the body origin so every
+    // existing car stays bit-identical; other values place the CoM so the front axle
+    // carries weightFront of the static load (mean front/rear wheel z, front more negative).
+    const zFront = (pos[0][2] + pos[1][2]) / 2;
+    const zRear = (pos[2][2] + pos[3][2]) / 2;
+    this.comZ =
+      spec.chassis.weightFront === DEFAULT_WEIGHT_FRONT
+        ? 0
+        : zFront + (1 - spec.chassis.weightFront) * (zRear - zFront);
     const axleSpan = pos[2][2] - pos[0][2];
-    const frontShare = pos[2][2] / axleSpan; // weight on the front axle = b/L
+    const frontShare = (pos[2][2] - this.comZ) / axleSpan; // weight on the front axle = b/L
     this.wheels = [];
     for (let i = 0; i < 4; i++) {
       const axle = i < 2 ? spec.suspension.front : spec.suspension.rear;
@@ -350,7 +360,7 @@ export class VehicleModel {
     const I = this.spec.chassis.inertia;
     this.body.setAdditionalMassProperties(
       m,
-      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: this.comZ },
       { x: I.x * k, y: I.y * k, z: I.z * k },
       { x: 0, y: 0, z: 0, w: 1 },
       true,
@@ -420,6 +430,11 @@ export class VehicleModel {
     const fwdy = rv.y;
     const fwdz = rv.z;
     const forwardSpeed = lv.x * fwdx + lv.y * fwdy + lv.z * fwdz;
+    // Point velocities use r from the CoM: linvel is the CoM velocity, not the origin's.
+    rotVec(q, 0, 0, this.comZ);
+    const comx = p.x + rv.x;
+    const comy = p.y + rv.y;
+    const comz = p.z + rv.z;
 
     // Steering: positive = left, speed-blended limit, slew-limited.
     const st = spec.steering;
@@ -474,9 +489,9 @@ export class VehicleModel {
       w.nx = hit.normal.x;
       w.ny = hit.normal.y;
       w.nz = hit.normal.z;
-      const rmx = ox - p.x;
-      const rmy = oy - p.y;
-      const rmz = oz - p.z;
+      const rmx = ox - comx;
+      const rmy = oy - comy;
+      const rmz = oz - comz;
       const vmx = lv.x + av.y * rmz - av.z * rmy;
       const vmy = lv.y + av.z * rmx - av.x * rmz;
       const vmz = lv.z + av.x * rmy - av.y * rmx;
@@ -544,9 +559,9 @@ export class VehicleModel {
       w.latAxis[0] = rtx;
       w.latAxis[1] = rty;
       w.latAxis[2] = rtz;
-      const hx = w.cx + upx * R - p.x;
-      const hy = w.cy + upy * R - p.y;
-      const hz = w.cz + upz * R - p.z;
+      const hx = w.cx + upx * R - comx;
+      const hy = w.cy + upy * R - comy;
+      const hz = w.cz + upz * R - comz;
       const vcx = vpx + av.y * hz - av.z * hy;
       const vcy = vpy + av.z * hx - av.x * hz;
       const vcz = vpz + av.x * hy - av.y * hx;
@@ -636,7 +651,8 @@ export class VehicleModel {
         this.brakeT[i] > 0 || Math.abs(w.vl) >= VX_REST ? w.vl : 0;
       this.solveIn.fz = w.fz;
       this.solveIn.compound = this.compoundSpec;
-      this.solveIn.factor = w.grip;
+      // rearMuScale multiplies mu of the driven wheels only (all compounds).
+      this.solveIn.factor = i < 2 ? w.grip : w.grip * spec.tyres.rearMuScale;
       this.solveIn.alpha = w.alpha;
       this.solveIn.massShare = share;
       this.solveIn.dt = dt;

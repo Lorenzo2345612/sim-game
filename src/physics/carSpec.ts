@@ -103,6 +103,7 @@ export interface CarSpec {
   chassis: {
     massKg: number;
     cgHeight: number;
+    weightFront: number;
     inertia: Vec3;
     halfExtents: Vec3;
   };
@@ -110,6 +111,7 @@ export interface CarSpec {
     positions: [number, number, number][];
     radius: number;
     width: number;
+    widthRear: number;
     inertia: number;
   };
   suspension: { front: AxleSpec; rear: AxleSpec };
@@ -122,6 +124,7 @@ export interface CarSpec {
   tyres: {
     optPressureKpa: number;
     pressureKpa: number;
+    rearMuScale: number;
     compounds: Record<TyreName, TyreCompound>;
   };
   aero: {
@@ -169,6 +172,8 @@ export interface CarSpec {
 }
 
 const WHEEL_INERTIA_DEFAULT = 1.2;
+export const DEFAULT_WEIGHT_FRONT = 0.5;
+export const DEFAULT_REAR_MU_SCALE = 1;
 
 function fail(path: string): never {
   throw new Error(`Invalid car spec: ${path} is missing or invalid`);
@@ -350,6 +355,12 @@ function posNum(root: unknown, path: string): number {
   return v;
 }
 
+function optBounded(root: unknown, path: string, def: number, lo: number, hi: number): number {
+  const v = optNum(root, path) ?? def;
+  if (!(v >= lo && v <= hi)) fail(path);
+  return v;
+}
+
 const HYBRID_FIELDS = [
   'mgukW', 'batteryJ', 'deployJPerLap', 'harvestJPerLap', 'overtakeExtraJ', 'minSpeedMs',
   'taperStartMs', 'taperEndMs', 'overtakeTaperStartMs', 'overtakeTaperEndMs',
@@ -408,6 +419,7 @@ export function parseCarSpec(json: unknown): CarSpec {
 
   const massKg = num(json, 'chassis.massKg');
   const cgHeight = num(json, 'chassis.cgHeight');
+  const weightFront = optBounded(json, 'chassis.weightFront', DEFAULT_WEIGHT_FRONT, 0.3, 0.7);
   const explicitInertia =
     pick(json, 'chassis.inertia') === undefined ? null : vec3(json, 'chassis.inertia');
   const halfExtents = vec3(json, 'chassis.halfExtents');
@@ -416,6 +428,8 @@ export function parseCarSpec(json: unknown): CarSpec {
   const positions = wheelPositions(json);
   const radius = num(json, 'wheels.radius');
   const width = num(json, 'wheels.width');
+  const widthRear = optNum(json, 'wheels.widthRear') ?? width;
+  if (!(widthRear > 0)) fail('wheels.widthRear');
   const wheelInertia = optNum(json, 'wheels.inertia') ?? WHEEL_INERTIA_DEFAULT;
 
   const front = axle(json, 'suspension.front');
@@ -430,6 +444,7 @@ export function parseCarSpec(json: unknown): CarSpec {
 
   const optPressureKpa = num(json, 'tyres.optPressureKpa');
   const pressureKpa = optNum(json, 'tyres.pressureKpa') ?? optPressureKpa;
+  const rearMuScale = optBounded(json, 'tyres.rearMuScale', DEFAULT_REAR_MU_SCALE, 0.8, 1.3);
   const medium = compound(json, 'tyres.compounds.medium');
   const compounds = {
     soft: compound(json, 'tyres.compounds.soft'),
@@ -526,11 +541,11 @@ export function parseCarSpec(json: unknown): CarSpec {
     category,
     model: { url: modelUrl },
     drive,
-    chassis: { massKg, cgHeight, inertia, halfExtents },
-    wheels: { positions, radius, width, inertia: wheelInertia },
+    chassis: { massKg, cgHeight, weightFront, inertia, halfExtents },
+    wheels: { positions, radius, width, widthRear, inertia: wheelInertia },
     suspension: { front, rear },
     steering,
-    tyres: { optPressureKpa, pressureKpa, compounds },
+    tyres: { optPressureKpa, pressureKpa, rearMuScale, compounds },
     aero,
     engine,
     sound,
