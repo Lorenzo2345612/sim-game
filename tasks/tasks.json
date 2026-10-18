@@ -3315,7 +3315,7 @@
     {
       "num": "243",
       "title": "Dry arroyo channel and bridges",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "241"
       ],
@@ -3497,6 +3497,19 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/256-post-merge-regressions.md"
+    },
+    {
+      "num": "257",
+      "title": "Drop the stale track-hash test in 243",
+      "status": "pending",
+      "deps": [
+        "243"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/257-drop-243-stale-hash-test.md"
     }
   ]
 }
