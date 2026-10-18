@@ -10,6 +10,8 @@ h2{margin:0 0 8px;font-size:18px}.k{color:#888}canvas{display:block}
 <div id="side"><h2>Evolución de pilotos IA</h2>
 <div id="info">conectando…</div>
 <canvas id="chart" width="316" height="200"></canvas>
+<div id="laps"></div>
+<canvas id="lchart" width="316" height="120" style="background:#181818;margin-top:6px"></canvas>
 <p class="k">Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
 </div>
 <script>
@@ -34,7 +36,16 @@ function draw(){requestAnimationFrame(draw);if(!init||!view)return;
  document.getElementById('info').innerHTML=`Pista <b>${init.trackId}</b> · auto <b>${init.carId}</b><br>Generación <b>${gen}</b> · tiempo ${t.toFixed(1)} s<br>Vivos <b>${alive}</b> / ${init.pop}<br>`+
   (last?`Gen anterior: mejor <b>${last.best.toFixed(0)} m</b>, promedio ${last.mean.toFixed(0)} m${last.bestLap?`<br>Mejor vuelta <b>${last.bestLap.toFixed(2)} s</b>`:''}`:'');}
 let eliteIdx=new Set();
-function chart(){cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.height);if(!hist.length)return;
+function lapChart(){const c=document.getElementById('lchart'),g=c.getContext('2d');g.fillStyle='#181818';g.fillRect(0,0,c.width,c.height);
+ const L=hist.map((h,i)=>[i,h.bestLap]).filter(p=>p[1]>0);const el=document.getElementById('laps');
+ if(!L.length){el.innerHTML='<p class="k">Vueltas completas: ninguna todavía</p>';return;}
+ let rec=[],b=1e9;for(const[i,t]of L)if(t<b){b=t;rec.push([hist[i].gen,t]);}
+ const fmt=t=>`${Math.floor(t/60)}:${(t%60).toFixed(2).padStart(5,'0')}`;
+ el.innerHTML=`<h2 style="margin-top:10px">Tiempos de vuelta</h2>Récord <b style="color:#f6c">${fmt(b)}</b> · ${L.length} generaciones con vuelta completa<br><span class="k">Récords:</span> `+rec.slice(-8).reverse().map(([g,t])=>`gen ${g}: ${fmt(t)}`).join(' · ');
+ const lo=Math.min(...L.map(p=>p[1])),hi=Math.max(...L.map(p=>p[1])),n=Math.max(hist.length-1,1);g.strokeStyle='#f6c';g.beginPath();
+ L.forEach(([i,t],k)=>{const u=4+i/n*(c.width-8),v=8+(hi>lo?(t-lo)/(hi-lo):0.5)*(c.height-20);k?g.lineTo(u,v):g.moveTo(u,v)});g.stroke();
+ g.fillStyle='#aaa';g.fillText(`mejor vuelta por generación (${fmt(lo)}–${fmt(hi)})`,4,c.height-3);}
+function chart(){lapChart();cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.height);if(!hist.length)return;
  const m=Math.max(...hist.map(h=>h.best),1),n=Math.max(hist.length-1,1);
  for(const[key,col]of[['mean','#888'],['best','#5d5']]){cx.strokeStyle=col;cx.beginPath();hist.forEach((h,i)=>{const u=4+i/n*(ch.width-8),v=ch.height-6-h[key]/m*(ch.height-20);i?cx.lineTo(u,v):cx.moveTo(u,v)});cx.stroke();}
  cx.fillStyle='#aaa';cx.fillText(`${m.toFixed(0)} m`,4,12);}
