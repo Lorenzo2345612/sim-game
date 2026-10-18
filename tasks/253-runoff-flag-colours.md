@@ -51,6 +51,7 @@ The acceptance worker embeds in the test the pre-task values taken from master a
 | AT5 | each updated style file | parse with the existing `trackStyle.ts` parser | no validation errors |
 | AT6 | `public/tracks/*.json` excluding `*.style.json` and `flag-palettes.json` | sha256 vs pre-task | unchanged |
 | AT7 | `flag-palettes.json` | read every colour | no colour has max(R,G,B) < 0x40 (no black); Belgium = `["#FDDA24","#EF3340"]`, Malaysia has no `#FFCC00` |
+| AT8 | `flag-palettes.json` | deep compare | equals exactly the 12 palettes listed in step 1 (order and hex) |
 
 ## Acceptance criteria
 
