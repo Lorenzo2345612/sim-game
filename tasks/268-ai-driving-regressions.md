@@ -18,12 +18,16 @@ AI cars stay on track, never climb barriers and recover when stuck or flipped.
 - 7 AI, 240 s: 27–79 s per car with wheels on grass/gravel, 0–5 resets each, two cars still on lap 1; grass entries spread over most corners (solo: one per corner).
 - Causes to fix: (1) barrier walls are inside `WHEEL_RAY_FILTER_GROUPS` (`src/physics/vehicleModel.ts`); (2) racing line and `trafficDecision` use constant `widthMeters/2`, line margin 1.0 m ≈ car half width; (3) speed profile/steering let the car exceed track limits on corner exit; (4) stuck detection uses speed only.
 
+## Planner answers (round 1)
+
+AT2 spawn fix (planner-authorised acceptance-test edit, the only one allowed): in `tests/unit/acceptance/268-ai-driving-regressions.test.ts` AT2, replace the spawn `y: groundHeightAt(track, sx, sz) + 0.5` with `y: (track.elevation[IDX] ?? 0) + 0.6` (same lift as `SPAWN_HEIGHT_M` in `raceGame.ts`). Reason: `groundHeightAt` samples the terrain below the floating verge strip, so the car spawned inside the bump stop. Change nothing else in that file. AT2 row now reads "spawned at centerline elevation + 0.6 m". Step 1 is accepted as implemented; continue with steps 2–5.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | monza world with track colliders | cast the wheel ray (same filter as `VehicleModel`) straight down from 0.3 m above the top of the left armco wall at index 2504 and horizontally into it at wheel height | the down ray does not hit the barrier collider (hits ground or nothing); the chassis collider still collides with the wall (contact pair exists when the chassis is pushed into it) |
-| AT2 | f4 on monza at index 2504, lateral −9 m, heading 25° towards the left armco, 30 m/s, no input | simulate 3 s | max chassis y − centerline elevation at that index ≤ 0.6 m; up.y > 0.5 throughout |
+| AT2 | f4 on monza at index 2504, lateral −9 m, spawned at centerline elevation + 0.6 m, heading 25° towards the left armco, 30 m/s, no input | simulate 3 s | max chassis y − centerline elevation at that index ≤ 0.6 m; up.y > 0.5 throughout |
 | AT3 | RaceGame monza, f4, aiCount 1, expert, seed 3, player brake 1 | 3 laps (≤ 400 s) | AI finishes 3 laps; 0 resets; total time with ≥ 2 wheels on grass/gravel ≤ 1.0 s; best lap ≤ 1.04 × the profile lap time (`Σ ds / v_profile` × speedScale) |
 | AT4 | same as AT3 on spa and on silverstone | 2 laps each | finishes; 0 resets; ≥ 2 wheels on grass/gravel ≤ 1.5 s per track |
 | AT5 | RaceGame monza, f4, aiCount 7, expert, seed 3, player brake 1 (static car on the grid) | 300 s | every AI completes ≥ 2 laps; Σ over AIs of time with ≥ 2 wheels on grass/gravel ≤ 15 s; total resets ≤ 1 |
