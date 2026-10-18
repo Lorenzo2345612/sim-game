@@ -254,6 +254,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 250 | Bollard placement | pending | 248 |
 | 251 | Knock-over bollards at runtime | pending | 250 |
 | 252 | Expert AI drives spin-free on monza and spa | pending | 225, 254 |
-| 253 | Run-off paint uses only the country's flag colours | in progress | - |
+| 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | pending | 146, 239 |
 | 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |

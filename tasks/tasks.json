@@ -3451,7 +3451,7 @@
     {
       "num": "253",
       "title": "Run-off paint uses only the country's flag colours",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
