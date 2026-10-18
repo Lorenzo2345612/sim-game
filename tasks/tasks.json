@@ -2003,7 +2003,7 @@
     {
       "num": "145",
       "title": "Contact impacts from Rapier into the damage model",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "070",
         "093",

@@ -146,7 +146,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 142 | Kerbs on every corner with entry/exit extensions | done | 098 |
 | 143 | Distance-to-corner boards (builder data + rendering) | done | 140 |
 | 144 | Damage model (pure) | done | 058 |
-| 145 | Contact impacts from Rapier into the damage model | in progress | 070, 093, 144 |
+| 145 | Contact impacts from Rapier into the damage model | done | 070, 093, 144 |
 | 146 | Damage effects on the vehicle (aero, toe, grip, lost wheel) | pending | 070, 144, 145 |
 | 147 | Debris: detached wings and wheels as physics bodies | pending | 145, 146 |
 | 148 | Damage HUD, setting, pit repair time, AI reaction | pending | 094, 145, 146 |
