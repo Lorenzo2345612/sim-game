@@ -48,8 +48,8 @@ The acceptance worker embeds in the test the pre-task values taken from master a
 | AT3 | same files | entries whose effective pattern is `stripes` or `bands` | colour list equals the full country palette in flag order |
 | AT4 | same files vs `git show HEAD~:<file>` captured as fixtures at test-writing time OR recomputed from the pre-task values embedded in the test | deep compare with all `colors` fields removed | identical (patterns, sides, ranges, stripeMeters unchanged) |
 | AT5 | each updated style file | parse with the existing `trackStyle.ts` parser | no validation errors |
-| AT7 | `flag-palettes.json` | read every colour | no colour has max(R,G,B) < 0x40 (no black); Belgium = `["#FDDA24","#EF3340"]`, Malaysia has no `#FFCC00` |
 | AT6 | `public/tracks/*.json` excluding `*.style.json` and `flag-palettes.json` | sha256 vs pre-task | unchanged |
+| AT7 | `flag-palettes.json` | read every colour | no colour has max(R,G,B) < 0x40 (no black); Belgium = `["#FDDA24","#EF3340"]`, Malaysia has no `#FFCC00` |
 
 ## Acceptance criteria
 
