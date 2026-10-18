@@ -154,11 +154,11 @@ Shared definitions:
 - Fixture `STADIUM(R)`: closed loop, width 12, flat elevation 0, no terrain, no runoffs/barriers/sausages unless the row adds them. Straight A from (0,0) to (200,0) sampled every 2 m (endpoint excluded); semicircle centred (200,−R) from (200,0) to (200,−2R), m = max(12, ceil(π·R)) points at angles π·j/m, j = 0..m−1; straight B from (200,−2R) to (0,−2R) every 2 m; semicircle centred (0,−R) back to (0,0), same m. Direction +x then turning toward −z: every bend is a left turn, inside = left. Kerbs (when the row says "kerbs") cover every index on both sides.
 
 ### 245 Kerbs never fold over the asphalt (`src/track/surfaces.ts`)
-Kerb rows where `inner(i, side)`: `outer = min(half + KERB_WIDTH, 0.9·R(i))`; if `outer − half < 0.4` the row is dropped (the strip splits). Other rows unchanged. Physics surface lookup must see the same strips (verify which function it uses; if it is not `buildTrackSurfaces`, apply the same rule there).
+Kerb rows with an inner corner within ±10 m arc (`Reff` = min inner-side radius over that window): `outer = min(half + KERB_WIDTH, 0.9·Reff)`; if `outer − half < 0.4` the row is dropped (the strip splits). Other rows unchanged. Physics surface lookup must see the same strips (verify which function it uses; if it is not `buildTrackSurfaces`, apply the same rule there).
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | `STADIUM(30)` + kerbs | `buildTrackSurfaces` | kerb strip vertex positions identical to the pre-change build (record baseline by computing with lateral half..half+1.2) — every kerb vertex lateral offset from its row's centerline point is 6 or 7.2 (±1e-6) |
+| AT1 | `STADIUM(30)` + kerbs | `buildTrackSurfaces` | kerb strip vertex positions identical to the pre-change build (record baseline by computing with lateral half..half+1.2) — every kerb vertex lateral offset from its row's centerline point is 6 or 7.2 (±1e-4) |
 | AT2 | `STADIUM(7.5)` + kerbs | build | kerb vertices within 10 m of a bend centre ((200,−7.5) or (0,−7.5)): all at distance ≥ 0.75 − 1e-6 from that centre; at least one such vertex exists |
 | AT3 | `STADIUM(7)` + kerbs | build | no kerb vertex within 6.5 m of a bend centre (inner kerb dropped in both bends); outer-side kerb rows in the bends still present (vertices at 13 and 14.2 m ± 1e-6 from the centre) |
 | AT4 | `STADIUM(30)`, `STADIUM(7.5)`, `STADIUM(7)` + kerbs | build | every kerb triangle centroid has `clearance ≥ 6 − 1e-6` |

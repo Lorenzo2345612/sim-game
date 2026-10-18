@@ -27,8 +27,8 @@ Audit `docs/research/track-audit-kerbs.md` §1: kerb ribbons use constant latera
 ```ts
 export function cornerCurvature(cx: [number, number][], i: number): { side: Side; radius: number } | null  // existing, now exported
 ```
-1. In `buildTrackSurfaces`, for each kerb row at index `idx` (including the one extension row either side that `segmentRows` adds) with `inner(idx, seg.side)`: `outer = min(half + KERB_WIDTH, INNER_CURVE_CLAMP · R(idx))`. If `outer − half < 0.4` the row is dropped.
-2. Other rows (outer side, straights where `cornerCurvature` is null, outer ≥ half + 0.4) are byte-identical to today (lateral `half`..`half + KERB_WIDTH`, same y, u, v).
+1. In `buildTrackSurfaces`, for each kerb row at index `idx` (including the one extension row either side that `segmentRows` adds) with an effective inner radius `Reff(idx, seg.side)` (see Planner answers, neighbourhood minimum): `outer = min(half + KERB_WIDTH, INNER_CURVE_CLAMP · Reff)`. If `outer − half < 0.4` the row is dropped.
+2. Other rows (no inner corner within the window, or outer ≥ half + KERB_WIDTH after the cap) are geometrically identical to today (lateral `half`..`half + KERB_WIDTH`, same y, u, v).
 3. Dropping rows splits a segment's strip: each maximal run of kept consecutive rows with ≥ 2 rows becomes its own `kerb` strip carrying the same `segment: {kind: 'kerb', index}`; `v` coordinates keep the values they would have had unsplit. Implement by giving `segmentRows` an optional row filter and emitting one strip per run.
 4. The kerb exemption in `filterStripTriangles` stays unchanged.
 
@@ -71,7 +71,10 @@ npm test
 
 ## Planner-authorised test edits
 
-None verified by running the suite; no known fixture combines kerbs with R < ~8 m. If a protected test fails, do not edit it: report it under Questions.
+- `tests/unit/acceptance/245-kerb-no-fold.test.ts` AT1: tolerance 1e-6 → 1e-4 (table updated; Float32 positions).
+- `tests/unit/edge/245-kerb-no-fold.test.ts` EDGE2: identify a row's inner vertex by its lateral offset (smallest distance to the row's centerline point), not by vertex order.
+- `tests/unit/edge/245-kerb-no-fold.test.ts` EDGE7: the 0.9·R rule is a cap — assert no outer-strip vertex beyond `0.9·R + 1e-6` from the circle centre on inner rows, instead of a vertex exactly at 0.9·R.
+- No other acceptance or edge edits: AT2, AT3, AT5 must pass with the neighbourhood-minimum radius below.
 
 ## Questions for the planner
 
@@ -80,3 +83,4 @@ None verified by running the suite; no known fixture combines kerbs with R < ~8 
 ## Planner answers
 
 - In scope: apply the same rule to `src/render/kerbOuterStrip.ts` — no strip on dropped kerb rows; on inner rows its outer edge is clamped to `0.9·R(i)` and the row is dropped when the remaining width < 0.1 m. Extend AT4/AT5's centroid check to the outer-strip triangles in a unit test (not an acceptance edit).
+- Neighbourhood minimum (fixes junction and apex-adjacent rows, decision 245-coder): `Reff(i, side)` = min of `cornerCurvature(centerline, j).radius` over every j whose arc distance to i (wrapping) is ≤ 10 m and whose corner side equals `side`; when no such j exists the row is not an inner row and stays unchanged. Use `Reff` for the kerb rule (Step 1) and for `kerbOuterStrip` (cap `outer ≤ 0.9·Reff`). Precompute per index once per build (no per-row window scan in render loops). Straight rows next to a bend therefore get clamped or dropped too; this is intended (AT3: inner kerb fully gone around a R 7 bend).
