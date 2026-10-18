@@ -2,22 +2,23 @@
 <html lang="es"><head><meta charset="utf-8"><title>Evolución IA</title>
 <style>
 body{margin:0;background:#111;color:#ddd;font:14px system-ui;display:flex;height:100vh}
-#map{flex:1}#side{width:340px;padding:12px;box-sizing:border-box;border-left:1px solid #333}
-h2{margin:0 0 8px;font-size:18px}.k{color:#888}canvas{display:block}
-#chart{width:316px;height:200px;background:#181818;margin-top:10px}
+#map{flex:1;min-width:0;min-height:0}#side{width:clamp(160px,30%,320px);padding:8px;box-sizing:border-box;border-left:1px solid #333;overflow:auto;font-size:12px}
+h2{margin:0 0 6px;font-size:14px}.k{color:#888;font-size:11px}canvas{display:block}
+#chart,#lchart{width:100%;background:#181818;margin-top:6px}
+@media (max-width:480px){body{flex-direction:column}#side{width:100%;max-height:42%;border-left:0;border-top:1px solid #333}}
 </style></head><body>
 <canvas id="map"></canvas>
 <div id="side"><h2>Evolución de pilotos IA</h2>
 <div id="info">conectando…</div>
 <canvas id="chart" width="316" height="200"></canvas>
 <div id="laps"></div>
-<canvas id="lchart" width="316" height="120" style="background:#181818;margin-top:6px"></canvas>
+<canvas id="lchart" width="316" height="120"></canvas>
 <p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
 </div>
 <script>
 const map=document.getElementById('map'),ctx=map.getContext('2d'),ch=document.getElementById('chart'),cx=ch.getContext('2d');
 let init=null,pos=[],gen=0,t=0,hist=[],view=null;
-function fit(){map.width=map.clientWidth;map.height=innerHeight;if(!init)return;
+function fit(){map.width=map.clientWidth;map.height=map.clientHeight;const lc=document.getElementById('lchart');ch.width=lc.width=ch.clientWidth;ch.height=Math.min(140,Math.round(ch.width*0.5));lc.height=Math.min(90,Math.round(lc.width*0.32));if(hist.length)chart();if(!init)return;
  const pts=init.left.concat(init.right);let a=1e9,b=-1e9,c=1e9,d=-1e9;
  for(const[x,z]of pts){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,z);d=Math.max(d,z);}
  const s=Math.min((map.width-40)/(b-a),(map.height-40)/(d-c));view={s,ox:20-a*s+(map.width-40-(b-a)*s)/2,oz:20-c*s+(map.height-40-(d-c)*s)/2};}
