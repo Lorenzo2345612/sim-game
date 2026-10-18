@@ -254,7 +254,8 @@ describe('174 track banking edge cases', () => {
       [
         findStrip(stripsB, 'kerb'),
         findStrip(stripsF, 'kerb'),
-        Array.from({ length: 9 }, (_, j) => [1 + j, 1 + j] as [number, number]),
+        // Reff drops kerb rows 1-2 (10 m window of the R = 3.2 corner); kept rows 3..9.
+        Array.from({ length: 7 }, (_, j) => [3 + j, 3 + j] as [number, number]),
       ],
       [
         findStrip(stripsB, 'gravel'),

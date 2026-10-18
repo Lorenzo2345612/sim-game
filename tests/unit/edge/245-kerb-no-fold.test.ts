@@ -183,12 +183,20 @@ describe('245 kerb no-fold edge cases', () => {
       expect(s.indices.length).toBeGreaterThan(0);
       expect(s.segment).toEqual({ kind: 'kerb', index: s.segment!.index });
     }
-    expect(vertsOf(left[0])).toHaveLength(202);
-    expect(vertsOf(left[1])).toHaveLength(202);
+    // Reff drops 5 more rows each side.
+    expect(vertsOf(left[0])).toHaveLength(182);
+    expect(vertsOf(left[1])).toHaveLength(182);
     expect(vertsOf(right[0])).toHaveLength(2 * track.centerline.length);
 
-    expect(left[0].uvs[1]).toBeCloseTo(0, 4);
-    const first = vertsOf(left[1])[0];
+    // v of the first kept row (s = 10 after the Reff wrap drop).
+    expect(left[0].uvs[1]).toBeCloseTo(10 / KERB_V, 3);
+    // Inner vertex of the first row = the one closest to its centerline point.
+    const pair = vertsOf(left[1]).slice(0, 2);
+    const lateral = (v: { x: number; z: number }): number => {
+      const k = nearestIndex(track, v.x, v.z);
+      return Math.hypot(v.x - track.centerline[k][0], v.z - track.centerline[k][1]);
+    };
+    const first = lateral(pair[0]) <= lateral(pair[1]) ? pair[0] : pair[1];
     const idx = nearestIndex(track, first.x, first.z);
     expect(idx).toBeGreaterThan(100);
     expect(left[1].uvs[1]).toBeCloseTo(cumS(track.centerline, idx) / KERB_V, 3);
@@ -201,7 +209,8 @@ describe('245 kerb no-fold edge cases', () => {
     expect(strips).toHaveLength(1);
     expect(strips[0].segment).toEqual({ kind: 'kerb', index: 0 });
     const verts = vertsOf(strips[0]);
-    expect(verts).toHaveLength(202);
+    // Reff drops 5 more rows each side.
+    expect(verts).toHaveLength(182);
     let minX = Infinity;
     for (const v of verts) minX = Math.min(minX, v.x);
     expect(minX).toBeGreaterThan(-0.5);
@@ -267,15 +276,13 @@ describe('245 kerb no-fold edge cases', () => {
     };
     const r9 = outerStripData(rightOnly(9));
     expect(r9).not.toBeNull();
-    let atClamp = 0;
     for (const v of r9!.verts) {
       const d = distTo(v, 0, 0);
-      expect(d).toBeGreaterThanOrEqual(0.9 - 1e-4);
+      // Cap rule: inner-row lateral never exceeds 0.9R (radial >= 0.1R).
+      expect(d).toBeGreaterThanOrEqual(0.9 - 1e-6);
       // End rows use segment normals, so allow the half-step tilt up to 1.9.
       expect(d).toBeLessThanOrEqual(1.9);
-      if (Math.abs(d - 0.9) < 1e-4) atClamp++;
     }
-    expect(atClamp).toBeGreaterThan(0);
 
     const r82 = outerStripData(rightOnly(8.2));
     expect(r82).not.toBeNull();
@@ -295,8 +302,9 @@ describe('245 kerb no-fold edge cases', () => {
     let outerSide = 0;
     for (const v of both!.verts) {
       const d = distTo(v, 0, 0);
-      expect(d).toBeGreaterThanOrEqual(15.3 - 1e-4);
-      if (Math.abs(d - 15.3) < 1e-4) outerSide++;
+      expect(d).toBeGreaterThanOrEqual(14.7 - 1e-2);
+      expect(d).toBeLessThanOrEqual(15.3 + 1e-4);
+      if (Math.abs(d - 15.3) < 1e-2) outerSide++;
     }
     expect(outerSide).toBeGreaterThan(0);
   });

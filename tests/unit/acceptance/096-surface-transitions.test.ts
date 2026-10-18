@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import type { RunoffSegment, Side, SurfaceStrip, Terrain, TrackDataV2, TrackSegment } from '../../../src/core/types';
-import { buildTrackSurfaces } from '../../../src/track/surfaces';
+import {
+  buildTrackSurfaces,
+  halfWidthAt,
+  INNER_CURVE_CLAMP,
+  innerCornerRadii,
+} from '../../../src/track/surfaces';
 import { addTrackColliders, surfaceOf } from '../../../src/physics/trackColliders';
 import { initPhysics, RAPIER } from '../../../src/physics/physicsWorld';
 import { GRAVITY, KERB_WIDTH } from '../../../src/core/constants';
@@ -118,6 +123,30 @@ function outerExtentAt(track: TrackDataV2, side: Side, idx: number): number {
   return ext;
 }
 
+/** Indices whose kerb outer edge the Reff cap shrinks (or drops) on `side`. */
+function reffClampedRows(track: TrackDataV2, side: Side): Set<number> {
+  const cx = track.centerline;
+  const n = cx.length;
+  const reff = innerCornerRadii(cx);
+  const out = new Set<number>();
+  for (const seg of track.kerbs) {
+    if (seg.side !== side) continue;
+    const start = ((seg.start % n) + n) % n;
+    const end = ((seg.end % n) + n) % n;
+    const k = ((end - start + n) % n) + 1;
+    const ext = k + 2 <= n ? 1 : 0;
+    const first = (((start - ext) % n) + n) % n;
+    for (let j = 0; j < k + 2 * ext; j++) {
+      const idx = (first + j) % n;
+      const half = halfWidthAt(track, side, idx);
+      const near = side === 'left' ? reff.left[idx] : reff.right[idx];
+      if (!Number.isFinite(near)) continue;
+      if (INNER_CURVE_CLAMP * near < half + KERB_WIDTH) out.add(idx);
+    }
+  }
+  return out;
+}
+
 function castDown(
   world: RAPIER.World,
   x: number,
@@ -220,6 +249,10 @@ describe('096 surface transitions acceptance', () => {
       const grid = buildIndexGrid(cx);
       world = trackWorld(track);
       const fromY = Math.max(...track.elevation) + 60;
+      const clamped = {
+        left: reffClampedRows(track, 'left'),
+        right: reffClampedRows(track, 'right'),
+      };
       const exposed: string[] = [];
       for (let i = 0; i < n; i++) {
         const j = (i + 1) % n;
@@ -228,6 +261,10 @@ describe('096 surface transitions acceptance', () => {
         const mz = (cx[i][1] + cx[j][1]) / 2;
         for (const side of [1, -1]) {
           const name: Side = side === 1 ? 'right' : 'left';
+          // Reff-clamped kerbs end before half+KERB_WIDTH, so the band below
+          // legitimately exposes terrain on those rows (and their chords).
+          const clampedRows = name === 'left' ? clamped.left : clamped.right;
+          if (clampedRows.has(i) || clampedRows.has(j)) continue;
           // band covered at both rows: outside-corner fans past the extents belong to other rows
           const ext = Math.min(outerExtentAt(track, name, i), outerExtentAt(track, name, j));
           for (let t = half + 0.1; t <= ext; t += 0.5) {

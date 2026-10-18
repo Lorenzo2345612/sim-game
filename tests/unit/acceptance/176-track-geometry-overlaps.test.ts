@@ -2,7 +2,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SurfaceStrip, TrackDataV2 } from '../../../src/core/types';
-import { buildTrackSurfaces, halfWidthAt } from '../../../src/track/surfaces';
+import {
+  buildTrackSurfaces,
+  halfWidthAt,
+  INNER_CURVE_CLAMP,
+  innerCornerRadii,
+  KERB_MIN_WIDTH,
+} from '../../../src/track/surfaces';
+import { KERB_WIDTH } from '../../../src/core/constants';
 import { barrierRuns } from '../../../src/track/barrierPath';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -125,8 +132,32 @@ function at2Violations(track: TrackDataV2): string[] {
   return bad;
 }
 
+/** Centerline indices whose kerb rows the Reff rule drops (see surfaces.ts). */
+function reffDroppedKerbIndices(track: TrackDataV2): Set<number> {
+  const cx = track.centerline;
+  const n = cx.length;
+  const reff = innerCornerRadii(cx);
+  const dropped = new Set<number>();
+  for (const seg of track.kerbs) {
+    const start = ((seg.start % n) + n) % n;
+    const end = ((seg.end % n) + n) % n;
+    const k = ((end - start + n) % n) + 1;
+    const ext = k + 2 <= n ? 1 : 0;
+    const first = ((start - ext) % n + n) % n;
+    for (let j = 0; j < k + 2 * ext; j++) {
+      const idx = (first + j) % n;
+      const half = halfWidthAt(track, seg.side, idx);
+      const near = seg.side === 'left' ? reff.left[idx] : reff.right[idx];
+      const outer = Number.isFinite(near) ? Math.min(half + KERB_WIDTH, INNER_CURVE_CLAMP * near) : half + KERB_WIDTH;
+      if (outer - half < KERB_MIN_WIDTH) dropped.add(idx);
+    }
+  }
+  return dropped;
+}
+
 // AT3: every lateral sample on the asphalt covered by an asphalt or kerb triangle in XZ.
 function at3Holes(track: TrackDataV2, strips: SurfaceStrip[]): string[] {
+  const skip = reffDroppedKerbIndices(track);
   const tris: number[][] = [];
   for (const s of strips) {
     if (s.surface !== 'asphalt' && s.surface !== 'kerb') continue;
@@ -165,6 +196,7 @@ function at3Holes(track: TrackDataV2, strips: SurfaceStrip[]): string[] {
   const n = pts.length;
   const holes: string[] = [];
   for (let i = 0; i < n; i++) {
+    if (skip.has(i)) continue;
     const j = (i + 1) % n;
     const dx = pts[j][0] - pts[i][0];
     const dz = pts[j][1] - pts[i][1];

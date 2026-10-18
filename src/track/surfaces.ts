@@ -9,7 +9,9 @@ const KERB_UV_V = 1.5;
 const VERGE_FLAT = 6;
 const VERGE_SLOPE = 3;
 const VERGE_DROP = 0.3;
-const INNER_CURVE_CLAMP = 0.9; // lateral ribbons stay inside this multiple of the corner radius
+export const INNER_CURVE_CLAMP = 0.9; // lateral ribbons stay inside this multiple of the corner radius
+export const KERB_MIN_WIDTH = 0.4; // clamped inner kerb thinner than this is dropped
+export const INNER_ARC_WINDOW = 10; // metres of arc around a row that inherit its corner radii
 
 interface PointIndex {
   cell: number;
@@ -210,7 +212,11 @@ function segmentCovers(seg: TrackSegment, idx: number, n: number): boolean {
 
 type Lateral = (idx: number) => [latMin: number, latMax: number, u0: number, u1: number];
 
-/** Emit (latMin, latMax) vertex pairs along the ring indices of a segment; empty when k < 2. */
+/**
+ * Emit (latMin, latMax) vertex pairs along the ring indices of a segment as maximal
+ * runs of kept rows; empty when k < 2. `keep` drops rows without stopping s or v, so
+ * surviving rows keep the v they would have had unsplit.
+ */
 function segmentRows(
   track: TrackDataV2,
   start: number,
@@ -218,7 +224,8 @@ function segmentRows(
   latOf: Lateral,
   yOf: (idx: number, lat: number) => number,
   vScale: number,
-): Vertex[][] {
+  keep?: (idx: number) => boolean,
+): Vertex[][][] {
   const cx = track.centerline;
   const n = cx.length;
   const k = segmentLength(start, end, n);
@@ -226,7 +233,8 @@ function segmentRows(
   // One extra row each side covers the band to the neighbouring row; skipped when the
   // segment covers the whole ring or the extension would wrap onto itself (k + 2 > n).
   const ext = k + 2 <= n ? 1 : 0;
-  const rows: Vertex[][] = [];
+  const runs: Vertex[][][] = [];
+  let run: Vertex[][] = [];
   let s = 0;
   let s0 = 0;
   const first = normIndex(start - ext, n);
@@ -240,23 +248,33 @@ function segmentRows(
     if (j === ext) s0 = s;
     prevX = x;
     prevZ = z;
+    if (keep && !keep(idx)) {
+      if (run.length > 0) {
+        runs.push(run);
+        run = [];
+      }
+      continue;
+    }
     const [latMin, latMax, u0, u1] = latOf(idx);
     const [rx, rz] = rightNormal(cx, idx);
     const v = s / vScale;
-    rows.push([
+    run.push([
       { x: x + rx * latMin, y: yOf(idx, latMin), z: z + rz * latMin, u: u0, v },
       { x: x + rx * latMax, y: yOf(idx, latMax), z: z + rz * latMax, u: u1, v },
     ]);
   }
+  if (run.length > 0) runs.push(run);
   // Re-base v on the original start row so it stays 0 there and negative on the pre-row.
   const shift = s0 / vScale;
   if (shift !== 0) {
-    for (const row of rows) {
-      row[0].v -= shift;
-      row[1].v -= shift;
+    for (const rows of runs) {
+      for (const row of rows) {
+        row[0].v -= shift;
+        row[1].v -= shift;
+      }
     }
   }
-  return rows;
+  return runs;
 }
 
 /** Outermost lateral extent of asphalt, kerbs and runoffs on one side at centerline index i. */
@@ -287,6 +305,37 @@ export function cornerCurvature(cx: [number, number][], i: number): { side: Side
   const c = Math.hypot(v1x + v2x, v1z + v2z);
   if (cross === 0 || a === 0 || b === 0 || c === 0) return null;
   return { side: cross > 0 ? 'right' : 'left', radius: (a * b * c) / (2 * Math.abs(cross)) };
+}
+
+/**
+ * Per index, the smallest corner radius of each side within INNER_ARC_WINDOW
+ * arc distance (wrapping); Infinity where no such corner exists. Precompute
+ * once per build so junction and apex-adjacent rows inherit the bend radius.
+ */
+export function innerCornerRadii(cx: [number, number][]): {
+  left: Float64Array;
+  right: Float64Array;
+} {
+  const n = cx.length;
+  const left = new Float64Array(n).fill(Infinity);
+  const right = new Float64Array(n).fill(Infinity);
+  if (n === 0) return { left, right };
+  const s = new Float64Array(n);
+  for (let i = 1; i < n; i++) {
+    s[i] = s[i - 1] + Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
+  }
+  const total = s[n - 1] + Math.hypot(cx[0][0] - cx[n - 1][0], cx[0][1] - cx[n - 1][1]);
+  for (let j = 0; j < n; j++) {
+    const corner = cornerCurvature(cx, j);
+    if (corner === null) continue;
+    const target = corner.side === 'left' ? left : right;
+    for (let i = 0; i < n; i++) {
+      const d = Math.abs(s[i] - s[j]);
+      if (Math.min(d, total - d) > INNER_ARC_WINDOW) continue;
+      if (corner.radius < target[i]) target[i] = corner.radius;
+    }
+  }
+  return { left, right };
 }
 
 /** Closed grass verge: inner and flat columns at elev(i), outer column at elev(i) - VERGE_DROP. */
@@ -537,25 +586,39 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   }
   strips.push(makeStrip('asphalt', asphaltRows, true));
 
+  const reff = innerCornerRadii(cx);
   for (let ki = 0; ki < track.kerbs.length; ki++) {
     const seg = track.kerbs[ki];
     const start = normIndex(seg.start, n);
     const end = normIndex(seg.end, n);
     const sign = seg.side === 'right' ? 1 : -1;
     const uMin = sign > 0 ? 0 : 1;
-    const rows = segmentRows(
+    const outerOf = (idx: number): number => {
+      const half = halfWidthAt(track, seg.side, idx);
+      // Inner side of a corner (own row or ±10 m arc neighbour): the kerb may
+      // not reach past 0.9 x the neighbourhood's smallest corner radius.
+      const near = seg.side === 'left' ? reff.left[idx] : reff.right[idx];
+      if (!Number.isFinite(near)) return half + KERB_WIDTH;
+      return Math.min(half + KERB_WIDTH, INNER_CURVE_CLAMP * near);
+    };
+    const runs = segmentRows(
       track,
       start,
       end,
       (idx) => {
         const latInner = sign * halfWidthAt(track, seg.side, idx);
-        const latOuter = sign * (halfWidthAt(track, seg.side, idx) + KERB_WIDTH);
+        const latOuter = sign * outerOf(idx);
         return [Math.min(latInner, latOuter), Math.max(latInner, latOuter), uMin, 1 - uMin];
       },
       (idx, lat) => elev(idx) + KERB_Y + lat * bankTanAt(track, idx),
       KERB_UV_V,
+      (idx) => outerOf(idx) - halfWidthAt(track, seg.side, idx) >= KERB_MIN_WIDTH,
     );
-    if (rows.length > 0) strips.push({ ...makeStrip('kerb', rows, false), segment: { kind: 'kerb', index: ki } });
+    for (const rows of runs) {
+      if (rows.length >= 2) {
+        strips.push({ ...makeStrip('kerb', rows, false), segment: { kind: 'kerb', index: ki } });
+      }
+    }
   }
 
   for (let ri = 0; ri < track.runoffs.length; ri++) {
@@ -563,7 +626,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
     const start = normIndex(seg.start, n);
     const end = normIndex(seg.end, n);
     const sign = seg.side === 'right' ? 1 : -1;
-    const rows = segmentRows(
+    const [rows] = segmentRows(
       track,
       start,
       end,
@@ -589,7 +652,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       (idx, lat) => elev(idx) + RUNOFF_Y + lat * bankTanAt(track, idx),
       UV_SCALE,
     );
-    if (rows.length > 0) strips.push({ ...makeStrip(seg.surface, rows, false), segment: { kind: 'runoff', index: ri } });
+    if (rows) strips.push({ ...makeStrip(seg.surface, rows, false), segment: { kind: 'runoff', index: ri } });
   }
 
   const escapeStrips = escapeRoadStrips(track);

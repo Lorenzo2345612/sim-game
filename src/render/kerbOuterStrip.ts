@@ -1,10 +1,17 @@
 import * as THREE from 'three';
 import { KERB_WIDTH } from '../core/constants';
 import type { TrackDataV2 } from '../core/types';
-import { halfWidthAt, KERB_Y } from '../track/surfaces';
+import {
+  halfWidthAt,
+  innerCornerRadii,
+  INNER_CURVE_CLAMP,
+  KERB_MIN_WIDTH,
+  KERB_Y,
+} from '../track/surfaces';
 import { segmentOverride, type ResolvedTrackStyle } from '../track/trackStyle';
 
 const STRIP_WIDTH = 0.6;
+const MIN_REMAINING = 0.1; // clamped outer strip thinner than this is dropped
 
 export interface KerbOuterStrips {
   group: THREE.Group;
@@ -44,6 +51,7 @@ export function createKerbOuterStrips(track: TrackDataV2, style: ResolvedTrackSt
   const cx = track.centerline;
   const n = cx.length;
   if (n === 0) return null;
+  const reff = innerCornerRadii(cx);
   const order: string[] = [];
   const buckets = new Map<string, Bucket>();
   for (const kerb of track.kerbs) {
@@ -61,7 +69,7 @@ export function createKerbOuterStrips(track: TrackDataV2, style: ResolvedTrackSt
       order.push(key);
     }
     const sign = kerb.side === 'right' ? 1 : -1;
-    const base = bucket.positions.length / 3;
+    let prevBase = -1;
     let prevX = cx[start][0];
     let prevZ = cx[start][1];
     for (let j = 0; j < k; j++) {
@@ -71,31 +79,50 @@ export function createKerbOuterStrips(track: TrackDataV2, style: ResolvedTrackSt
       if (j > 0) bucket.meters += Math.hypot(x - prevX, z - prevZ);
       prevX = x;
       prevZ = z;
+      const half = halfWidthAt(track, kerb.side, idx);
+      // Inner-side rows (own corner or ±10 m arc neighbour) cap the strip at
+      // 0.9 x the neighbourhood's smallest corner radius; dropped kerb rows
+      // lose their outer strip too.
+      const near = kerb.side === 'left' ? reff.left[idx] : reff.right[idx];
+      const clamp = Number.isFinite(near) ? INNER_CURVE_CLAMP * near : Number.POSITIVE_INFINITY;
+      if (clamp - half < KERB_MIN_WIDTH) {
+        prevBase = -1;
+        continue;
+      }
+      const inner = half + KERB_WIDTH;
+      const outer = Math.min(inner + STRIP_WIDTH, clamp);
+      if (outer - inner < MIN_REMAINING) {
+        prevBase = -1;
+        continue;
+      }
       const [rx, rz] = rightNormalAt(cx, idx);
-      const inner = sign * (halfWidthAt(track, kerb.side, idx) + KERB_WIDTH);
-      const outer = sign * (halfWidthAt(track, kerb.side, idx) + KERB_WIDTH + STRIP_WIDTH);
-      const latMin = Math.min(inner, outer);
-      const latMax = Math.max(inner, outer);
+      const latA = sign * inner;
+      const latB = sign * outer;
+      const latMin = Math.min(latA, latB);
+      const latMax = Math.max(latA, latB);
       const y = (track.elevation[idx] ?? 0) + KERB_Y;
+      const base = bucket.positions.length / 3;
       bucket.positions.push(x + rx * latMin, y, z + rz * latMin, x + rx * latMax, y, z + rz * latMax);
-    }
-    for (let j = 0; j + 1 < k; j++) {
-      const a = base + j * 2;
-      const b = a + 1;
-      const d = a + 2;
-      const e = a + 3;
-      bucket.indices.push(a, b, d, b, e, d);
+      if (prevBase >= 0) {
+        const a = prevBase;
+        const b = a + 1;
+        const d = base;
+        const e = base + 1;
+        bucket.indices.push(a, b, d, b, e, d);
+      }
+      prevBase = base;
     }
   }
-  if (order.length === 0) return null;
+  const built = order
+    .map((key) => ({ key, bucket: buckets.get(key) }))
+    .filter((e): e is { key: string; bucket: Bucket } => e.bucket !== undefined && e.bucket.positions.length > 0);
+  if (built.length === 0) return null;
   const group = new THREE.Group();
   group.name = 'kerbOuterStrips';
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.MeshStandardMaterial[] = [];
   let total = 0;
-  order.forEach((key, i) => {
-    const bucket = buckets.get(key);
-    if (bucket === undefined) return;
+  built.forEach(({ key, bucket }, i) => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(bucket.positions, 3));
     geometry.setIndex(bucket.indices);

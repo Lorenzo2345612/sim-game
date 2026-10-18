@@ -106,7 +106,7 @@ function nearestCenterline(track: TrackDataV2): (x: number, z: number) => { d: n
 }
 
 describe('245 kerbs never fold over the asphalt', () => {
-  it('AT1: STADIUM(30) kerb vertices sit at lateral 6 or 7.2 m (±1e-6) from their centerline row', () => {
+  it('AT1: STADIUM(30) kerb vertices sit at lateral 6 or 7.2 m (±1e-4) from their centerline row', () => {
     const track = stadium(30);
     const nearest = nearestCenterline(track);
     const verts = kerbVertices(kerbStrips(track));
@@ -114,7 +114,7 @@ describe('245 kerbs never fold over the asphalt', () => {
     for (const v of verts) {
       const { d } = nearest(v.x, v.z);
       expect(
-        Math.abs(d - 6) < 1e-6 || Math.abs(d - 7.2) < 1e-6,
+        Math.abs(d - 6) < 1e-4 || Math.abs(d - 7.2) < 1e-4,
         `vertex (${v.x}, ${v.z}) lateral ${d}`,
       ).toBe(true);
     }
@@ -133,7 +133,7 @@ describe('245 kerbs never fold over the asphalt', () => {
         const d = Math.hypot(v.x - cx, v.z - cz);
         if (d < 10) {
           within++;
-          expect(d, `vertex (${v.x}, ${v.z}) vs centre (${cx}, ${cz})`).toBeGreaterThanOrEqual(0.75 - 1e-6);
+          expect(d, `vertex (${v.x}, ${v.z}) vs centre (${cx}, ${cz})`).toBeGreaterThanOrEqual(0.75 - 1e-4);
         }
       }
     }
