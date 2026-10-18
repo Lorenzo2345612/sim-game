@@ -5,7 +5,7 @@ Phase: 1
 Depends on: 228, 231
 Complexity: complex
 Type: feature
-Models: standard
+Models: heavy
 Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
@@ -70,3 +70,7 @@ In addition to the design's authorised 227/228/231 edits (kernel, reflection, lo
 - `tests/unit/acceptance/226-engine-sound-spec.test.ts` AT3: add `cylVar: 0.2`, `bassDb: 4`, `exhaustGain: 0.8` to `FULL_RAW` (non-default, in range); nothing else.
 - `tests/unit/edge/227-engine-voice-core.post.test.ts` POST4: re-scope to `cylVar: 0` (with zero jitter and zero cylVar the seed does not affect the output).
 - Confirmed covered: `231` AT4 (gt3-d firing 90/54 → even 72) and `228` EDGE6/EDGE7 (crackle timing/arming) updated to the new behaviour.
+
+## Planner answers (round after two timeouts)
+
+- State at hand-off: 17/19 of the 244 tests pass. Remaining: AT5 (bass shelf gives +3.1 dB below 250 Hz, needs ≥ 5) — the low-shelf corner is too low or applied before a stage that cuts lows; use a low-shelf with corner ≥ 250 Hz applied on the final engine bus, gain = `bassDb`. EDGE6 (whine bypasses exhaustGain) — mix the whine layer after the `exhaustGain` stage, not before. Fix only these two; do not refactor; run only the 244 tests plus `npm run typecheck`.
