@@ -24,6 +24,7 @@ import { GamepadInput, mergeInputs } from './input/gamepad';
 import { KeyboardInput } from './input/keyboard';
 import { parseCarSpec, type CarSpec } from './physics/carSpec';
 import type { DamageMode } from './physics/contactEvents';
+import { engineTorque } from './physics/powertrain';
 import { applySetup, loadSetup } from './physics/setup';
 import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
@@ -1503,7 +1504,10 @@ async function startGame(trackId: string): Promise<void> {
       }
 
       updateGhostCar(info.currentLapTime);
-      engineAudio?.update(sim.rpm(), simInput.throttle, NO_SLIP);
+      const rpmNow = sim.rpm();
+      const fullTq = engineTorque(baseSpec.engine, rpmNow, 1);
+      const load = fullTq > 0 ? Math.min(1, Math.max(0, engineTorque(baseSpec.engine, rpmNow, simInput.throttle) / fullTq)) : 0;
+      engineAudio?.update(rpmNow, simInput.throttle, NO_SLIP, ({ load, wheelSpeedMs: Math.abs(interp.forwardSpeed) }));
       const gearNow = sim.gear();
       effectState.speed = Math.abs(interp.forwardSpeed);
       effectState.surface = sim.surfaceUnderCar();

@@ -257,7 +257,7 @@ describe('109 engine worklet post gaps', () => {
     const src = readFileSync(join(__dirname, '..', '..', '..', 'src', 'audio', 'engineWorklet.ts'), 'utf8');
     expect(src.includes('three')).toBe(false);
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    expect(imports).toEqual(['./engineSynth']);
+    expect(imports).toEqual(['./engineVoice', './soundSpec']);
   });
 
   it('POST2: a rejected addModule restores oscillator gains from the stored rpm/throttle without a further update', async () => {
@@ -356,7 +356,7 @@ describe('109 engine worklet post gaps', () => {
     ctx.resolveAddModules();
     await flush();
     expect(instances.length).toBe(1);
-    expect(instances[0].processorOptions?.cylinders).toBe(8);
+    expect((instances[0].processorOptions?.synth as { firingDeg: number[] }).firingDeg.length).toBe(8);
   });
 
   it('POST10: setSound after dispose does not build a worklet node', async () => {
@@ -413,7 +413,7 @@ describe('109 engine worklet post gaps', () => {
     vi.resetModules();
     await import('../../../src/audio/engineWorklet');
     expect(registered.length).toBe(1);
-    const proc = new registered[0].ctor({ processorOptions: { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, seed: 1 } });
+    const proc = new registered[0].ctor({ processorOptions: { synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }), seed: 1 } });
     proc.port.onmessage?.({ data: { rpm: 6000, throttle: 1 } });
     expect(proc.process([], [])).toBe(true);
     expect(proc.process([], [[]])).toBe(true);
@@ -438,15 +438,19 @@ describe('109 engine worklet post gaps', () => {
     await import('../../../src/audio/engineWorklet');
     const defaults = new registered[0].ctor({});
     const explicit = new registered[0].ctor({
-      processorOptions: { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, seed: 1 },
+      processorOptions: { synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }), seed: 1 },
     });
     const msg = { rpm: 6000, throttle: 0.8 };
     defaults.port.onmessage?.({ data: msg });
     explicit.port.onmessage?.({ data: msg });
-    const a = new Float32Array(128);
-    const b = new Float32Array(128);
-    defaults.process([], [[a]]);
-    explicit.process([], [[b]]);
+    let a = new Float32Array(128);
+    let b = new Float32Array(128);
+    for (let i = 0; i < 40; i++) {
+      a = new Float32Array(128);
+      b = new Float32Array(128);
+      defaults.process([], [[a]]);
+      explicit.process([], [[b]]);
+    }
     expect(Array.from(a)).toEqual(Array.from(b));
     expect(a.some((x) => x !== 0)).toBe(true);
   });
@@ -466,15 +470,19 @@ describe('109 engine worklet post gaps', () => {
     globals.sampleRate = 48000;
     vi.resetModules();
     await import('../../../src/audio/engineWorklet');
-    const proc = new registered[0].ctor({ processorOptions: { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, seed: 1 } });
-    const out = new Float32Array(128);
+    const proc = new registered[0].ctor({ processorOptions: { synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }), seed: 1 } });
+    let out = new Float32Array(128);
     for (const data of [null, 'rpm', { rpm: '6000', throttle: 'loud' }, { rpm: [1], throttle: {} }, []]) {
       expect(() => proc.port.onmessage?.({ data })).not.toThrow();
       expect(proc.process([], [[out]])).toBe(true);
       expect(Array.from(out).every((x) => Number.isFinite(x))).toBe(true);
     }
     proc.port.onmessage?.({ data: { rpm: 6000, throttle: 1 } });
-    proc.process([], [[out]]);
+    for (let i = 0; i < 40; i++) {
+      out = new Float32Array(128);
+      expect(proc.process([], [[out]])).toBe(true);
+      expect(Array.from(out).every((x) => Number.isFinite(x))).toBe(true);
+    }
     expect(out.some((x) => x !== 0)).toBe(true);
   });
 

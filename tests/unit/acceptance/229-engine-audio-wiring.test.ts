@@ -10,6 +10,7 @@ interface FakeParam {
   value: number;
   setValueAtTime(value: number): FakeParam;
   linearRampToValueAtTime(value: number): FakeParam;
+  exponentialRampToValueAtTime(value: number): FakeParam;
   setTargetAtTime(value: number): FakeParam;
   cancelScheduledValues(): FakeParam;
 }
@@ -22,6 +23,10 @@ function param(initial = 0): FakeParam {
       return p;
     },
     linearRampToValueAtTime(v: number) {
+      p.value = v;
+      return p;
+    },
+    exponentialRampToValueAtTime(v: number) {
       p.value = v;
       return p;
     },

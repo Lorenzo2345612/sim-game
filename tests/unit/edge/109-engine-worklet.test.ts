@@ -312,9 +312,10 @@ describe('109 engine worklet edge cases', () => {
     expect(instances[0].name).toBe('engine-synth');
     const options = instances[0].processorOptions;
     expect(options).toBeDefined();
-    expect(options!.cylinders).toBe(8);
-    expect(options!.exhaustLengthM).toBeCloseTo(1.4, 6);
-    expect(options!.intakeMix).toBeCloseTo(0.25, 6);
+    const synth = options!.synth as { firingDeg: number[]; pipeM: [number, number]; intakeMix: number };
+    expect(synth.firingDeg.length).toBe(8);
+    expect(synth.pipeM[0]).toBeCloseTo(0.7, 6);
+    expect(synth.intakeMix).toBeCloseTo(0.25, 6);
     expect(Number.isFinite(options!.seed)).toBe(true);
     expect(instances[0].connectCount).toBeGreaterThan(0);
   });
@@ -394,18 +395,22 @@ describe('109 engine worklet edge cases', () => {
     expect(registered.length).toBe(1);
     expect(registered[0].name).toBe('engine-synth');
     const proc = new registered[0].ctor({
-      processorOptions: { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, seed: 1 },
+      processorOptions: { synth: legacySynthSpec({ cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 }), seed: 1 },
     });
     const data = { rpm: 3000, throttle: 0.5 };
     proc.port.onmessage?.({ data });
     for (const h of handlers) h({ data });
-    const out = new Float32Array(128);
-    const kept = proc.process([], [[out]], {
+    const params = {
       rpm: new Float32Array(128).fill(3000),
       throttle: new Float32Array(128).fill(0.5),
-    });
-    expect(kept).toBe(true);
-    expect(Array.from(out).every((x) => Number.isFinite(x) && Math.abs(x) <= 1)).toBe(true);
+    };
+    expect(proc.process([], [[new Float32Array(128)]], params)).toBe(true);
+    let out = new Float32Array(128);
+    for (let i = 0; i < 40; i++) {
+      out = new Float32Array(128);
+      expect(proc.process([], [[out]], params)).toBe(true);
+      expect(Array.from(out).every((x) => Number.isFinite(x) && Math.abs(x) <= 1)).toBe(true);
+    }
     expect(out.some((x) => x !== 0)).toBe(true);
   });
 

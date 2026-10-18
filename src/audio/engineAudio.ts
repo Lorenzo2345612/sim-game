@@ -109,6 +109,8 @@ export class EngineAudio {
   private moduleState: 'none' | 'loading' | 'ready' | 'failed' = 'none';
   private lastRpm = 0;
   private lastThrottle = 0;
+  private lastLoad = 0;
+  private lastWheelSpeedMs = 0;
   private limiterRpm = LIMITER_RPM;
   private windBase = 0;
   private kerbBase = 0;
@@ -234,22 +236,30 @@ export class EngineAudio {
     }
   }
 
-  update(rpm: number, throttle: number, slipRatios: readonly number[]): void {
+  update(
+    rpm: number,
+    throttle: number,
+    slipRatios: readonly number[],
+    extra?: { load?: number; wheelSpeedMs?: number },
+  ): void {
     if (this.disposed) return;
-    const offsets = crackleSchedule(this.lastThrottle, throttle, rpm, this.limiterRpm, this.sound.crackle, Math.random);
-    if (offsets.length > 0) this.scheduleCrackle(offsets);
+    // With a live worklet the voice makes its own overrun pops, so no crackle one-shots.
+    if (!this.workletNode) {
+      const offsets = crackleSchedule(this.lastThrottle, throttle, rpm, this.limiterRpm, this.sound.crackle, Math.random);
+      if (offsets.length > 0) this.scheduleCrackle(offsets);
+    }
     this.lastRpm = rpm;
     this.lastThrottle = throttle;
+    const load = extra?.load;
+    const wheel = extra?.wheelSpeedMs;
+    this.lastLoad = clamp(load !== undefined && Number.isFinite(load) ? load : throttle, 0, 1);
+    this.lastWheelSpeedMs = Math.max(0, wheel !== undefined && Number.isFinite(wheel) ? wheel : 0);
     const { frequencyHz, gain } = engineParams(rpm, throttle);
     this.squealBase = tyreSquealGain(slipRatios);
     if (this.workletNode) {
       this.engineBase = 0;
       this.subBase = 0;
-      try {
-        this.workletNode.port.postMessage({ rpm, throttle });
-      } catch {
-        /* port already closed */
-      }
+      this.postControl();
     } else if (this.moduleState === 'loading') {
       // While addModule is pending the engine stays silent instead of doubling paths.
       this.engineBase = 0;
@@ -631,9 +641,7 @@ export class EngineAudio {
         numberOfInputs: 0,
         outputChannelCount: [1],
         processorOptions: {
-          cylinders: this.sound.cylinders,
-          exhaustLengthM: this.sound.exhaustLengthM,
-          intakeMix: this.sound.intakeMix,
+          synth: this.sound.synth,
           seed: WORKLET_SEED,
         },
       });
@@ -647,12 +655,22 @@ export class EngineAudio {
       this.disconnectWorklet();
       return;
     }
+    this.postControl();
+    this.applyGains();
+  }
+
+  private postControl(): void {
     try {
-      this.workletNode?.port.postMessage({ rpm: this.lastRpm, throttle: this.lastThrottle });
+      this.workletNode?.port.postMessage({
+        rpm: this.lastRpm,
+        load: this.lastLoad,
+        throttle: this.lastThrottle,
+        wheelSpeedMs: this.lastWheelSpeedMs,
+        limiter: this.lastRpm >= this.limiterRpm - 50,
+      });
     } catch {
       /* node without a port still renders */
     }
-    this.applyGains();
   }
 
   private disconnectWorklet(): void {

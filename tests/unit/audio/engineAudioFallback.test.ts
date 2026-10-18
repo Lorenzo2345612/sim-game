@@ -131,7 +131,7 @@ class FakeWorkletNode {
   constructor(
     _ctx: unknown,
     public name: string,
-    public options: { processorOptions?: { cylinders?: number } },
+    public options: { processorOptions?: { synth?: { firingDeg: number[] } } },
   ) {
     FakeWorkletNode.instances.push(this);
   }
@@ -213,8 +213,8 @@ describe('109 engine worklet fallback', () => {
     expect(String(moduleUrl)).toContain('engineWorklet');
     expect(audio.getStats()).toEqual({ running: true, engine: 'worklet', firingHz: (6000 * 8) / 120 });
     const workletNode = FakeWorkletNode.instances[0];
-    expect(workletNode.options.processorOptions?.cylinders).toBe(8);
-    expect(workletNode.messages.at(-1)).toEqual({ rpm: 6000, throttle: 0.7 });
+    expect(workletNode.options.processorOptions?.synth?.firingDeg.length).toBe(8);
+    expect(workletNode.messages.at(-1)).toEqual({ rpm: 6000, load: 0.7, throttle: 0.7, wheelSpeedMs: 0, limiter: false });
     expect(ctx.gains[0].gain.value).toBe(0);
     expect(ctx.gains[2].gain.value).toBeGreaterThan(0);
     expect(ctx.gains[3].gain.value).toBeGreaterThan(0);
@@ -232,7 +232,7 @@ describe('109 engine worklet fallback', () => {
     audio.setSound(SOUND);
     expect(FakeWorkletNode.instances.length).toBe(2);
     expect(FakeWorkletNode.instances[0].disconnected).toBe(1);
-    expect(FakeWorkletNode.instances[1].options.processorOptions?.cylinders).toBe(8);
+    expect(FakeWorkletNode.instances[1].options.processorOptions?.synth?.firingDeg.length).toBe(8);
     audio.dispose();
     expect(FakeWorkletNode.instances[1].disconnected).toBe(1);
     const stats = audio.getStats();
