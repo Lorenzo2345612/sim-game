@@ -2047,7 +2047,7 @@
     {
       "num": "148",
       "title": "Damage HUD, setting, pit repair time, AI reaction",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "094",
         "145",
