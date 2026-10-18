@@ -44,6 +44,7 @@ import { createTrackMarkingsObject } from './render/trackMarkingsRenderer';
 import { createBarrierObject } from './render/barrierRenderer';
 import { createBridgeObject } from './render/bridgeRenderer';
 import { createSausages } from './render/sausageRenderer';
+import { createBollardRenderer, type BollardRenderer } from './render/bollardRenderer';
 import { createKerbOuterStrips } from './render/kerbOuterStrip';
 import { createCityObject, type CityObject } from './render/cityRenderer';
 import { createLandmarks } from './render/landmarks';
@@ -70,6 +71,7 @@ import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
 import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
 import { parseTrackData } from './track/parseTrackData';
+import { bollardCarFromState, createBollardField, stepBollards, type BollardCar, type BollardField } from './track/bollards';
 import { HudV2, type HudV2Data } from './ui/hudV2';
 import { HudTyres, type HudTyresData } from './ui/hudTyres';
 import { HudErs, type HudErsData } from './ui/hudErs';
@@ -660,6 +662,9 @@ async function startGame(trackId: string): Promise<void> {
   if (params.get('race') === '1' && raceTrack === null) throw new Error('?race=1 requires a v2 track');
   let game: Game | null = null;
   let raceGame: RaceGame | null = null;
+  let bollardField: BollardField | null = null;
+  let bollardRenderer: BollardRenderer | null = null;
+  const bollardCars: BollardCar[] = [];
   if (raceCfg !== null) {
     // raceCfg is only built when raceTrack is non-null.
     raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, tune);
@@ -674,6 +679,17 @@ async function startGame(trackId: string): Promise<void> {
     step: (input) => {
       if (raceGame !== null) raceGame.step(input);
       else game?.step(input);
+      if (bollardField !== null) {
+        if (raceGame !== null) {
+          raceGame.getStates(raceStates);
+          for (let i = 0; i < bollardCars.length; i++) {
+            bollardCarFromState(raceStates[i], 2.0, 0.8, bollardCars[i]);
+          }
+        } else {
+          bollardCarFromState(game!.getCurrentState(), 2.0, 0.8, bollardCars[0]);
+        }
+        stepBollards(bollardField, bollardCars, FIXED_DT);
+      }
     },
     get simTime() {
       return raceGame !== null ? raceGame.simTime : game?.simTime ?? 0;
@@ -860,6 +876,16 @@ async function startGame(trackId: string): Promise<void> {
     const sausages = createSausages(track);
     scene.add(sausages.group);
     disposables.push(sausages);
+
+    if (raceTrack !== null && (raceTrack.bollards?.length ?? 0) > 0) {
+      bollardField = createBollardField(raceTrack);
+      for (let i = 0; i < (raceGame?.carCount ?? 1); i++) {
+        bollardCars.push({ x: 0, z: 0, yaw: 0, vx: 0, vz: 0, halfLength: 2.0, halfWidth: 0.8 });
+      }
+      bollardRenderer = createBollardRenderer(bollardField);
+      scene.add(bollardRenderer.mesh);
+      disposables.push(bollardRenderer);
+    }
 
     const boards = createDistanceBoards(track);
     scene.add(boards.group);
@@ -1417,6 +1443,7 @@ async function startGame(trackId: string): Promise<void> {
       simRing.push(performance.now() - simStart);
       interpolateVehicleState(sim.getPrevState(), sim.getCurrentState(), alpha, interp);
       car.update(interp);
+      bollardRenderer?.update();
       if (raceGame !== null) {
         const prevs = raceGame.getPrevStates();
         for (let k = 0; k < aiCars.length; k++) {
