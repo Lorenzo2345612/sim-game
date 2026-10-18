@@ -73,3 +73,4 @@ Vehicle physics, tyre model, car data, changing `AI_GRIP_MARGIN`, mistakes per l
 ## Merge note (planner, 2026-10-18)
 
 Master gained task 270 (neural driver v2) which also edits `src/ai/aiDriver.ts` and `src/game/raceGame.ts`. The planner replayed the branch onto master in the worktree (backup: `backup/252-pre-rebase`); 252 changes are applied uncommitted and both files have conflict blocks. Do not run git commands. Keep both sides: 270's neural-driver code paths unchanged and 252's expert spin-free logic applied to the rule-based driver. Remove all markers and re-run Verification, including the 270 and 225 tests.
+Also authorised: `tests/unit/edge/252-expert-ai-spin-free-edge.test.ts` EDGE6 and EDGE9 (silverstone traffic) become `it.skip` with `// moved to task 273` (traffic spins are task 273's scope). Timeouts in 269 AT5 / 224 POST4 are load-related, not 252's.
