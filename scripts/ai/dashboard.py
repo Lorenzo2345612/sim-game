@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Local progress dashboard for the AI pipeline (spec: tasks/021-progress-dashboard.md).
 
-Usage: python3 scripts/ai/dashboard.py [--port 8765]   → http://127.0.0.1:8765
-Only whitelisted actions: run, stop, resolve, tests. Binds to 127.0.0.1.
+Usage: python3 scripts/ai/dashboard.py [--port 8765] [--host 0.0.0.0]   → http://127.0.0.1:8765
+Only whitelisted actions: run, stop, resolve, tests. Binds to 127.0.0.1 by default; a non-loopback
+--host requires the token in .ai/dashboard-token (open /?t=<token> once; it is kept in a cookie).
 """
 import argparse
+import hmac
+import secrets
 import json
 import os
 import shlex
@@ -671,7 +674,34 @@ def action(body):
     return 400, {"error": "unknown action"}
 
 
+TOKEN_FILE = ROOT / ".ai" / "dashboard-token"
+TOKEN = None  # set when bound to a non-loopback host
+
+
+def load_token():
+    if not TOKEN_FILE.exists():
+        TOKEN_FILE.write_text(secrets.token_urlsafe(24))
+    TOKEN_FILE.chmod(0o600)
+    return TOKEN_FILE.read_text().strip()
+
+
 class Handler(BaseHTTPRequestHandler):
+    def authorized(self):
+        if TOKEN is None:
+            return True
+        q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+        cookies = dict(c.strip().split("=", 1) for c in (self.headers.get("Cookie") or "").split(";") if "=" in c)
+        if hmac.compare_digest(cookies.get("dt", ""), TOKEN):
+            return True
+        if hmac.compare_digest(q.get("t", ""), TOKEN):
+            self.send_response(303)
+            self.send_header("Set-Cookie", f"dt={TOKEN}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000")
+            self.send_header("Location", urlparse(self.path).path or "/")
+            self.end_headers()
+            return False
+        self.send(403, {"error": "forbidden"})
+        return False
+
     def send(self, code, body, ctype="application/json"):
         data = body if isinstance(body, bytes) else json.dumps(body).encode()
         self.send_response(code)
@@ -681,6 +711,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        if not self.authorized():
+            return
         u = urlparse(self.path)
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         if u.path == "/":
@@ -715,6 +747,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(404, {"error": "not found"})
 
     def do_POST(self):
+        if not self.authorized():
+            return
         if self.path != "/api/action":
             return self.send(404, {"error": "not found"})
         try:
@@ -727,17 +761,20 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def make_server(port):
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+def make_server(port, host="127.0.0.1"):
+    global TOKEN
+    TOKEN = None if host in ("127.0.0.1", "localhost", "::1") else load_token()
+    return ThreadingHTTPServer((host, port), Handler)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
-    server = make_server(args.port)
+    server = make_server(args.port, args.host)
     threading.Thread(target=refresh_quota, daemon=True).start()
-    print(f"Dashboard: http://127.0.0.1:{server.server_address[1]}", flush=True)
+    print(f"Dashboard: http://{args.host}:{server.server_address[1]}" + (" (token: .ai/dashboard-token)" if TOKEN else ""), flush=True)
     server.serve_forever()
 
 
