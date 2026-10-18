@@ -3437,7 +3437,7 @@
     {
       "num": "252",
       "title": "Expert AI drives spin-free on monza and spa",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "225",
         "254"
@@ -3662,6 +3662,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/269-evolved-neural-driver.md"
+    },
+    {
+      "num": "270",
+      "title": "Neural driver v2: kerb line, track limits, tyre inputs, setup genes",
+      "status": "pending",
+      "deps": [
+        "269"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/270-neural-driver-v2.md"
     }
   ]
 }

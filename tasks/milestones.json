@@ -428,14 +428,16 @@
         "251",
         "253",
         "256",
-        "269"
+        "269",
+        "270"
       ]
     },
     {
       "id": "M2.3n",
       "title": "Evolved neural AI opponents (experimental)",
       "tasks": [
-        "269"
+        "269",
+        "270"
       ],
       "status": "open",
       "prefetch": [
