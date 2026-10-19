@@ -31,6 +31,8 @@ import { applySetup, loadSetup, type Setup } from './physics/setup';
 import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
 import type { Standing } from './race/classification';
+import type { SectorFlag } from './race/flags';
+import type { PenaltyBook, PenaltyEntry } from './race/penalties';
 import { CameraRig, type CameraMode } from './render/cameraRig';
 import { DynamicResolution, autoPreset } from './render/dynamicResolution';
 import { HeadMotion } from './render/headMotion';
@@ -186,6 +188,10 @@ declare global {
       finishRaceNow?(): void;
       /** Merges a patch into the player's damage state (148). */
       debugDamage(patch: Partial<DamageState>): void;
+      /** Race only: penalty book entries in insertion order (130). */
+      raceEvents?(): readonly PenaltyEntry[];
+      /** Race only: books `count` track-limit strikes for the player (130). */
+      forceTrackLimits?(count: number): void;
       qaCamera(view: QaCameraView): QaCameraInfo;
     };
   }
@@ -296,14 +302,34 @@ async function loadNeuralModels(
   }
 }
 
-function resultRows(standings: readonly Standing[]): ResultsRow[] {
+function penaltyReasons(book: PenaltyBook, car: number): string[] {
+  const out: string[] = [];
+  for (const e of book.forCar(car)) {
+    if (e.kind !== 'penalty' || out.includes(e.reason)) continue;
+    out.push(e.reason);
+  }
+  return out;
+}
+
+function resultRows(standings: readonly Standing[], book: PenaltyBook): ResultsRow[] {
   return standings.map((s) => ({
     position: s.position,
     name: s.car === 0 ? 'You' : `AI ${s.car}`,
     totalTime: s.totalTime,
     bestLap: s.bestLap,
     penalty: s.penalty,
+    penaltyReasons: penaltyReasons(book, s.car),
   }));
+}
+
+function toastText(e: PenaltyEntry, entries: readonly PenaltyEntry[], index: number): string {
+  if (e.kind === 'penalty') return `+${e.seconds} s`;
+  let n = 0;
+  for (let i = 0; i <= index; i++) {
+    const w = entries[i];
+    if (w.car === e.car && w.kind === 'warning' && w.reason === e.reason) n++;
+  }
+  return `Track limits ${n}/3`;
 }
 
 const emptyLapInfo = (): LapInfo => ({
@@ -1191,8 +1217,33 @@ async function startGame(trackId: string): Promise<void> {
 
   const raceHud = new RaceHud(document.body);
   raceHud.setVisible(raceGame !== null);
-  const raceHudData: RaceHudData = { standings: [], playerCar: 0, laps: 0 };
+  const raceFlags: SectorFlag[] = ['green', 'green', 'green'];
+  const raceHudData: RaceHudData = {
+    standings: [],
+    playerCar: 0,
+    laps: 0,
+    flags: raceFlags,
+    blue: false,
+    vscPhase: 'off',
+    vscDelta: 0,
+  };
   const damageHud = raceGame !== null ? new DamageHud(document.body, damageMode) : null;
+  let toastGame: RaceGame | null = null;
+  let toastCursor = 0;
+  // New player book entries become HUD toasts; a restart resets the cursor.
+  const syncToasts = (game: RaceGame): void => {
+    if (toastGame !== game) {
+      toastGame = game;
+      toastCursor = 0;
+      raceHud.clearToasts();
+    }
+    const entries = game.penalties.entries();
+    while (toastCursor < entries.length) {
+      const i = toastCursor++;
+      const e = entries[i];
+      if (e.car === 0) raceHud.pushToast(toastText(e, entries, i));
+    }
+  };
 
   const ghostRecorder = new GhostRecorder(track.id);
   let ghost = loadGhost(window.localStorage, track.id);
@@ -1586,8 +1637,15 @@ async function startGame(trackId: string): Promise<void> {
         stats.startLightsOn = Math.min(5, Math.max(0, lit));
         raceHudData.standings = raceGame.standings();
         raceHudData.laps = raceGame.config.laps;
+        raceFlags[0] = raceGame.flags.sectorFlag(1);
+        raceFlags[1] = raceGame.flags.sectorFlag(2);
+        raceFlags[2] = raceGame.flags.sectorFlag(3);
+        raceHudData.blue = raceGame.playerBlueFlag;
+        raceHudData.vscPhase = raceGame.vsc.phase;
+        raceHudData.vscDelta = raceGame.playerVscDelta;
         raceHud.update(raceHudData);
         damageHud?.update(raceGame.playerDamage);
+        syncToasts(raceGame);
         if (!resultsShown) {
           const player = raceHudData.standings.find((s) => s.car === 0);
           if (raceGame.raceFinished || player?.finished === true) showResults();
@@ -1766,7 +1824,7 @@ async function startGame(trackId: string): Promise<void> {
     paused = true;
     engineAudio?.setPaused(true);
     mixer?.setPaused(true);
-    results?.show(resultRows(raceGame.standings()), {
+    results?.show(resultRows(raceGame.standings(), raceGame.penalties), {
       onRestart: () => {
         results?.hide();
         resultsShown = false;
@@ -1975,6 +2033,9 @@ async function startGame(trackId: string): Promise<void> {
       if (patch.puncture !== undefined) d.puncture = patch.puncture;
       if (patch.detached !== undefined) d.detached = patch.detached;
     },
+    raceEvents: raceGame !== null ? () => raceGame?.penalties.entries() ?? [] : undefined,
+    forceTrackLimits:
+      raceGame !== null ? (count: number) => raceGame?.debugForceTrackLimits(0, count) : undefined,
     qaCamera,
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;

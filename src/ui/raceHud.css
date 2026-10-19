@@ -82,3 +82,76 @@
 .race-row.player .race-row-pos {
   color: var(--ui-accent);
 }
+
+#flags {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+#flags > div {
+  width: clamp(16px, 2.2vmin, 26px);
+  height: clamp(16px, 2.2vmin, 26px);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: #1f9d4d;
+}
+
+#flags > div[data-state='yellow'] {
+  background: #f2b705;
+}
+
+#flags > div[data-state='double-yellow'] {
+  background: repeating-linear-gradient(45deg, #f2b705 0 6px, #6d5400 6px 12px);
+}
+
+#blue-banner,
+#vsc-banner {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.3em 1.1em;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel);
+  backdrop-filter: blur(6px);
+  font-size: clamp(14px, 1.4vmin + 4px, 20px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+#blue-banner {
+  top: 56px;
+  color: #6db3ff;
+}
+
+#vsc-banner {
+  top: 96px;
+  color: var(--ui-accent);
+}
+
+#toasts {
+  position: absolute;
+  left: 50%;
+  bottom: 14vh;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.toast {
+  padding: 0.35em 1.1em;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  backdrop-filter: blur(6px);
+  font-size: clamp(13px, 1.2vmin + 4px, 18px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

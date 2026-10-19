@@ -20,6 +20,10 @@ import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence } from '../race/startSequence';
+import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
+import { FlagState, type FlagCar } from '../race/flags';
+import { Vsc } from '../race/vsc';
+import { PenaltyBook, type PenaltyReason } from '../race/penalties';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
 import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
@@ -59,6 +63,9 @@ const STUCK_SPEED_MS = 1;
 const STUCK_RESET_S = 5;
 const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision inputs
 const SPAWN_HEIGHT_M = 0.6;
+const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
+const YELLOW_GAP_M = 30; // nearest car ahead within this gap caps the yellow reaction
+const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car must not allocate
 
 // Local copy (engineSynth has one too); the race never draws unseeded randoms.
 function mulberry32(seed: number): () => number {
@@ -137,6 +144,24 @@ export class RaceGame {
   private readonly carPos: Vec3[];
   private readonly spawnPos: Vec3 = { x: 0, y: 0, z: 0 };
   private readonly spawnVel: Vec3 = { x: 0, y: 0, z: 0 };
+  readonly penalties: PenaltyBook;
+  readonly trackLimits: TrackLimits;
+  readonly flags: FlagState;
+  readonly vsc: Vsc;
+  private readonly flagCars: FlagCar[];
+  private readonly stopped: Uint8Array;
+  private readonly stoppedSec: Float64Array;
+  private readonly blueUntil: Float64Array;
+  private readonly ruleOffset: Float64Array;
+  private readonly ruleCap: Float64Array;
+  private readonly yellow: Uint8Array;
+  private readonly totalDist: Float64Array;
+  private readonly finished: Uint8Array;
+  private readonly wheelsOff: Uint8Array;
+  private readonly sectorB1: number;
+  private readonly sectorB2: number;
+  private blue0 = false;
+  private vscDelta0 = 0;
   private time = 0;
   private stepIndex = 0;
   private disposed = false;
@@ -199,6 +224,25 @@ export class RaceGame {
     this.wingSpawned = new Array<boolean>(this.count * 2).fill(false);
     this.carPos = new Array<Vec3>(this.count);
     for (let i = 0; i < this.count; i++) this.carPos[i] = { x: 0, y: 0, z: 0 };
+    this.penalties = new PenaltyBook(this.count);
+    this.trackLimits = new TrackLimits(this.count);
+    this.sectorB1 = this.lapLength / 3;
+    this.sectorB2 = (this.lapLength * 2) / 3;
+    this.flags = new FlagState([0, this.sectorB1, this.sectorB2], this.lapLength);
+    this.vsc = new Vsc(speeds, line.dist, this.lapLength, this.count);
+    this.flagCars = [];
+    for (let i = 0; i < this.count; i++) {
+      this.flagCars.push({ distance: 0, lapDistance: 0, speed: 0, offTrack: false, retired: false });
+    }
+    this.stopped = new Uint8Array(this.count);
+    this.stoppedSec = new Float64Array(this.count);
+    this.blueUntil = new Float64Array(this.count).fill(Number.NEGATIVE_INFINITY);
+    this.ruleOffset = new Float64Array(this.count);
+    this.ruleCap = new Float64Array(this.count).fill(Number.NaN);
+    this.yellow = new Uint8Array(this.count);
+    this.totalDist = new Float64Array(this.count);
+    this.finished = new Uint8Array(this.count);
+    this.wheelsOff = new Uint8Array(this.count);
   }
 
   setDamageMode(mode: DamageMode): void {
@@ -416,6 +460,10 @@ export class RaceGame {
       for (let k = 0; k < this.ais.length; k++) {
         const i = k + 1;
         const ai = this.ais[k];
+        if (this.stopped[i] === 1) {
+          this.holdStopped(ai);
+          continue;
+        }
         if (ai.neural) {
           this.fillNeuralState(k, ai.neural.state, ai.neural.tel);
           const d = ai.neural.driver.decide(this.stepIndex, ai.neural.state);
@@ -450,11 +498,11 @@ export class RaceGame {
             this.decision,
           );
           ai.driver.setLateralOffset(decision.offset);
-          ai.driver.setSpeedCap(decision.speedCap);
           // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
           const dmgScale =
             ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
           ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
+          this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }
         ai.vehicle.setInput(this.aiCmd);
@@ -479,6 +527,7 @@ export class RaceGame {
     for (let i = 0; i < this.count; i++) {
       this.classification.update(i, this.traffic[i].distance, raceTime);
     }
+    if (!before) this.applyRules();
 
     if (before) {
       for (let i = 0; i < this.count; i++) {
@@ -487,13 +536,17 @@ export class RaceGame {
         const slot = this.slots[i].position;
         // Suspension settle is vertical; only the horizontal creep counts.
         if (isJumpStart(Math.hypot(p.x - slot.x, p.z - slot.z), phase)) {
-          this.classification.addPenalty(i, JUMP_PENALTY_S);
+          this.book(i, 'penalty', JUMP_PENALTY_S, 'jump start');
           this.penalised[i] = true;
         }
       }
     } else {
       for (let k = 0; k < this.ais.length; k++) {
         const ai = this.ais[k];
+        if (this.stopped[k + 1] === 1) {
+          ai.stuckS = 0;
+          continue;
+        }
         if (Math.abs(this.current[k + 1].forwardSpeed) < STUCK_SPEED_MS) {
           ai.stuckS += FIXED_DT;
           if (ai.stuckS >= STUCK_RESET_S) {
@@ -548,6 +601,35 @@ export class RaceGame {
 
   get playerDamage(): DamageState {
     return this.vehicles[0].damage;
+  }
+
+  /** Blue flag on the player this tick (false until the first post-go tick). */
+  get playerBlueFlag(): boolean {
+    return this.blue0;
+  }
+
+  /** Player's last VSC delta in seconds (0 while VSC is off). */
+  get playerVscDelta(): number {
+    return this.vscDelta0;
+  }
+
+  /** Test hook: holds an AI car stopped from now on (player not allowed). */
+  debugStopCar(car: number): void {
+    if (!Number.isInteger(car) || car < 1 || car >= this.count) {
+      throw new RangeError(`car ${car} is not an AI car`);
+    }
+    this.stopped[car] = 1;
+    const body = this.vehicles[car].body;
+    body.setLinvel(ZERO_VEL, true);
+    body.setAngvel(ZERO_VEL, true);
+  }
+
+  /** Test hook: books `count` track-limit strikes (3 warnings then a penalty). */
+  debugForceTrackLimits(car: number, count: number): void {
+    if (!Number.isInteger(car) || car < 0 || car >= this.count) {
+      throw new RangeError(`car out of range: ${car}`);
+    }
+    for (let i = 0; i < count; i++) this.bookStrike(car, this.trackLimits.forceStrike(car));
   }
 
   dispose(): void {
@@ -678,6 +760,137 @@ export class RaceGame {
     out.x = lv.x + av.y * rz - av.z * ry;
     out.y = lv.y + av.z * rx - av.x * rz;
     out.z = lv.z + av.x * ry - av.y * rx;
+  }
+
+  private book(car: number, kind: 'warning' | 'penalty', seconds: number, reason: PenaltyReason): void {
+    this.penalties.add(car, kind, seconds, reason, this.time);
+    if (kind === 'penalty') this.classification.addPenalty(car, seconds);
+  }
+
+  private bookStrike(car: number, ev: TrackLimitEvent): void {
+    this.book(
+      car,
+      ev.type === 'warning' ? 'warning' : 'penalty',
+      ev.type === 'warning' ? 0 : ev.seconds,
+      'track limits',
+    );
+  }
+
+  private holdStopped(ai: AiCar): void {
+    this.aiCmd.throttle = 0;
+    this.aiCmd.brake = 1;
+    this.aiCmd.steer = 0;
+    this.aiCmd.reset = false;
+    ai.vehicle.body.setLinvel(ZERO_VEL, true);
+    ai.vehicle.body.setAngvel(ZERO_VEL, true);
+    ai.vehicle.setInput(this.aiCmd);
+    ai.vehicle.prePhysicsStep(FIXED_DT);
+  }
+
+  // Per-tick rules after go: track limits, flags, VSC and the penalties they book.
+  private applyRules(): void {
+    const n = this.count;
+    const t = this.time;
+    const rows = this.classification.standings();
+    for (let k = 0; k < rows.length; k++) {
+      this.totalDist[rows[k].car] = rows[k].distance;
+      this.finished[rows[k].car] = rows[k].finished ? 1 : 0;
+    }
+    for (let i = 0; i < n; i++) {
+      this.wheelsOff[i] = countWheelsOff(this.vehicles[i].getWheelSurfaces());
+      const ev = this.trackLimits.update(i, this.wheelsOff[i], t);
+      if (ev !== null) this.bookStrike(i, ev);
+      const fc = this.flagCars[i];
+      fc.distance = this.totalDist[i];
+      fc.lapDistance = this.traffic[i].distance;
+      fc.speed = this.current[i].forwardSpeed;
+      fc.offTrack = this.wheelsOff[i] >= 4;
+      fc.retired = this.finished[i] === 1;
+    }
+    this.flags.update(this.flagCars, t);
+    const overtakes = this.flags.overtakeUnderYellow();
+    for (let k = 0; k < overtakes.length; k++) {
+      this.book(overtakes[k].car, 'penalty', 5, 'yellow flag overtake');
+    }
+    let maxStopped = 0;
+    for (let i = 0; i < n; i++) {
+      if (Math.abs(this.current[i].forwardSpeed) < STUCK_SPEED_MS && this.wheelsOff[i] < 4) {
+        this.stoppedSec[i] += FIXED_DT;
+        if (this.stoppedSec[i] > maxStopped) maxStopped = this.stoppedSec[i];
+      } else {
+        this.stoppedSec[i] = 0;
+      }
+    }
+    this.vsc.update(maxStopped, t);
+    for (let i = 0; i < n; i++) {
+      const delta = this.vsc.delta(i, this.traffic[i].distance, t);
+      if (i === 0) this.vscDelta0 = delta;
+    }
+    const vscEvents = this.vsc.drainEvents();
+    for (let k = 0; k < vscEvents.length; k++) {
+      this.book(vscEvents[k].car, 'penalty', vscEvents[k].seconds, 'VSC delta');
+    }
+    this.updateRuleReactions();
+  }
+
+  // Reaction data for the next tick's AI commands: VSC and yellow caps take the
+  // minimum with the traffic cap; blue also steers 2 m to the roomier side.
+  private updateRuleReactions(): void {
+    const n = this.count;
+    const t = this.time;
+    const vscOn = this.vsc.phase === 'deployed' || this.vsc.phase === 'ending';
+    for (let i = 0; i < n; i++) {
+      this.yellow[i] = 0;
+      const idx = this.indices[i];
+      const flag = this.flags.sectorFlag(this.sectorOf(this.traffic[i].distance) + 1);
+      let cap = vscOn ? 0.6 * this.speeds[idx] : Number.NaN;
+      if (flag !== 'green') {
+        this.yellow[i] = 1;
+        let best = -1;
+        let bestGap = Number.POSITIVE_INFINITY;
+        for (let j = 0; j < n; j++) {
+          if (j === i) continue;
+          const gap = this.wrapGap(this.traffic[j].distance - this.traffic[i].distance);
+          if (gap > 0 && gap < bestGap) {
+            bestGap = gap;
+            best = j;
+          }
+        }
+        if (best >= 0 && bestGap <= YELLOW_GAP_M) {
+          const ahead = this.traffic[best].speed;
+          cap = Number.isNaN(cap) ? ahead : Math.min(cap, ahead);
+        }
+      }
+      if (this.flags.blueFor(i)) this.blueUntil[i] = t + BLUE_HOLD_S;
+      if (t <= this.blueUntil[i]) {
+        const off = this.line.offsets[idx];
+        const left = halfWidthAt(this.track, 'left', idx) + off;
+        const right = halfWidthAt(this.track, 'right', idx) - off;
+        this.ruleOffset[i] = right >= left ? 2 : -2;
+        const blueCap = 0.95 * this.speeds[idx];
+        cap = Number.isNaN(cap) ? blueCap : Math.min(cap, blueCap);
+      }
+      this.ruleCap[i] = cap;
+    }
+    this.blue0 = this.flags.blueFor(0);
+  }
+
+  private applyRulesReaction(i: number, driver: AiDriver, trafficCap: number | null): void {
+    if (this.yellow[i] === 1) driver.setLateralOffset(0); // no overtaking line under yellow
+    else if (this.time <= this.blueUntil[i]) driver.setLateralOffset(this.ruleOffset[i]);
+    const ruleCap = this.ruleCap[i];
+    // Several caps (traffic, blue, yellow, VSC) combine as the minimum.
+    if (Number.isNaN(ruleCap)) driver.setSpeedCap(trafficCap);
+    else driver.setSpeedCap(trafficCap === null ? ruleCap : Math.min(trafficCap, ruleCap));
+  }
+
+  private sectorOf(lapDistance: number): number {
+    return lapDistance >= this.sectorB2 ? 2 : lapDistance >= this.sectorB1 ? 1 : 0;
+  }
+
+  private wrapGap(raw: number): number {
+    const g = ((raw % this.lapLength) + this.lapLength) % this.lapLength;
+    return g > this.lapLength / 2 ? g - this.lapLength : g;
   }
 
   private respawnOnLine(k: number): void {

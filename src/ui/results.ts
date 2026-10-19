@@ -7,6 +7,7 @@ export interface ResultsRow {
   totalTime: number | null;
   bestLap: number | null;
   penalty: number;
+  penaltyReasons?: string[];
 }
 
 export class Results {
@@ -45,7 +46,14 @@ export class Results {
       this.cell(tr, row.name);
       this.cell(tr, row.totalTime === null ? 'DNF' : formatLapTime(row.totalTime));
       this.cell(tr, row.bestLap === null ? '-' : formatLapTime(row.bestLap));
-      this.cell(tr, String(row.penalty));
+      const reasons = row.penaltyReasons ?? [];
+      const text =
+        row.penalty <= 0
+          ? '-'
+          : reasons.length > 0
+            ? `${row.penalty} s (${reasons.join(', ')})`
+            : `${row.penalty} s`;
+      this.cell(tr, text, 'penalty');
       this.tbody.appendChild(tr);
     }
     this.actions.replaceChildren(
@@ -59,9 +67,10 @@ export class Results {
     this.root.style.display = 'none';
   }
 
-  private cell(tr: HTMLElement, text: string): void {
+  private cell(tr: HTMLElement, text: string, className?: string): void {
     const td = this.doc.createElement('td');
     td.textContent = text;
+    if (className !== undefined) td.className = className;
     tr.appendChild(td);
   }
 
