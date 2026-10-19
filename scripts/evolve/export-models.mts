@@ -1,14 +1,16 @@
 // Copies the trained difficulty genomes to public/ai-models/ for the in-game neural AI (task 269).
 // npx tsx scripts/evolve/export-models.mts  (or: npm run export-ai-models)
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, copyFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { padGenome } from '../../src/ai/neuralPolicy';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
 const srcRoot = join(here, 'models');
-const outRoot = join(root, 'public/ai-models');
+const outFlag = process.argv.indexOf('--out');
+const outRoot =
+  outFlag !== -1 && process.argv[outFlag + 1] ? resolve(process.argv[outFlag + 1]) : join(root, 'public/ai-models');
 const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'] as const;
 
 interface IndexJson {
@@ -76,4 +78,5 @@ for (const [key, list] of groups) {
 }
 mkdirSync(outRoot, { recursive: true });
 writeFileSync(join(outRoot, 'index.json'), JSON.stringify(index, null, 1));
-console.log(`exported ${Object.keys(index).length} track-car model set(s) to public/ai-models`);
+const outLabel = outRoot.startsWith(root) ? relative(root, outRoot) : outRoot;
+console.log(`exported ${Object.keys(index).length} track-car model set(s) to ${outLabel}`);

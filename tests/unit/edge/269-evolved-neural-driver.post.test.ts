@@ -1,4 +1,6 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from '../../../src/core/constants';
@@ -163,61 +165,76 @@ describe('269 evolved neural driver post-code gaps', () => {
   });
 
   it('POST9: export picks the fastest expert across line dirs and keeps that line whole set and line field', () => {
-    const index = JSON.parse(readFileSync(join(ROOT, 'public/ai-models/index.json'), 'utf8')) as Record<
-      string,
-      string[]
-    >;
-    const srcRoot = join(ROOT, 'scripts/evolve/models');
-    const dirs = readdirSync(srcRoot).filter((d) => existsSync(join(srcRoot, d, 'index.json')));
-    for (const [key, diffs] of Object.entries(index)) {
-      const candidates = dirs.filter((d) => d.replace(/-(racing|mintime)$/, '') === key);
-      expect(candidates.length, `${key} candidates`).toBeGreaterThan(0);
-      const experts = candidates.map((d) => {
-        const idx = JSON.parse(readFileSync(join(srcRoot, d, 'index.json'), 'utf8')) as {
+    const outDir = mkdtempSync(join(tmpdir(), 'export-models-post9-'));
+    try {
+      const tsx = join(ROOT, 'node_modules', '.bin', 'tsx');
+      execFileSync(tsx, ['scripts/evolve/export-models.mts', '--out', outDir], {
+        cwd: ROOT,
+        stdio: 'pipe',
+      });
+      const index = JSON.parse(readFileSync(join(outDir, 'index.json'), 'utf8')) as Record<
+        string,
+        string[]
+      >;
+      const srcRoot = join(ROOT, 'scripts/evolve/models');
+      const dirs = readdirSync(srcRoot).filter((d) => existsSync(join(srcRoot, d, 'index.json')));
+      expect(Object.keys(index).sort(), 'exported keys').toEqual(
+        [...new Set(dirs.map((d) => d.replace(/-(racing|mintime)$/, '')))].sort(),
+      );
+      const ORDER = ['easy', 'medium', 'hard', 'expert'];
+      for (const [key, diffs] of Object.entries(index)) {
+        const candidates = dirs.filter((d) => d.replace(/-(racing|mintime)$/, '') === key);
+        expect(candidates.length, `${key} candidates`).toBeGreaterThan(0);
+        const experts = candidates.map((d) => {
+          const idx = JSON.parse(readFileSync(join(srcRoot, d, 'index.json'), 'utf8')) as {
+            difficulties?: Record<string, string>;
+          };
+          const file = idx.difficulties?.expert;
+          expect(file, `${d} has expert`).toBeTruthy();
+          const g = JSON.parse(readFileSync(join(srcRoot, d, file!), 'utf8')) as { bestLap: number };
+          return g.bestLap;
+        });
+        const minBest = Math.min(...experts);
+        const winner = candidates[experts.indexOf(minBest)];
+        const winIdx = JSON.parse(readFileSync(join(srcRoot, winner, 'index.json'), 'utf8')) as {
+          line?: string;
           difficulties?: Record<string, string>;
         };
-        const file = idx.difficulties?.expert;
-        expect(file, `${d} has expert`).toBeTruthy();
-        const g = JSON.parse(readFileSync(join(srcRoot, d, file!), 'utf8')) as { bestLap: number };
-        return g.bestLap;
-      });
-      const minBest = Math.min(...experts);
-      const winner = candidates[experts.indexOf(minBest)];
-      const winIdx = JSON.parse(readFileSync(join(srcRoot, winner, 'index.json'), 'utf8')) as {
-        line?: string;
-        difficulties?: Record<string, string>;
-      };
-      const expertOut = JSON.parse(
-        readFileSync(join(ROOT, `public/ai-models/${key}/expert.json`), 'utf8'),
-      ) as { bestLap: number; line?: string; weights: number[] };
-      expect(expertOut.bestLap, `${key} expert bestLap`).toBe(minBest);
-      const srcExpert = JSON.parse(
-        readFileSync(join(srcRoot, winner, winIdx.difficulties!.expert!), 'utf8'),
-      ) as { line?: string };
-      expect(expertOut.line ?? 'center', `${key} line`).toBe(srcExpert.line ?? winIdx.line ?? 'center');
-      for (const d of diffs) {
-        const srcFile = winIdx.difficulties?.[d];
-        expect(srcFile, `${winner} has ${d}`).toBeTruthy();
-        const src = JSON.parse(readFileSync(join(srcRoot, winner, srcFile!), 'utf8')) as {
+        const expertOut = JSON.parse(readFileSync(join(outDir, key, 'expert.json'), 'utf8')) as {
           bestLap: number;
-          nIn: number;
-          gen: number;
-          avgLap: number;
+          line?: string;
+          weights: number[];
         };
-        const out = JSON.parse(
-          readFileSync(join(ROOT, `public/ai-models/${key}/${d}.json`), 'utf8'),
-        ) as typeof src;
-        expect(out.bestLap, `${key}/${d} bestLap`).toBe(src.bestLap);
-        expect(out.nIn, `${key}/${d} nIn`).toBe(src.nIn);
-        expect(out.gen, `${key}/${d} gen`).toBe(src.gen);
-        expect(out.avgLap, `${key}/${d} avgLap`).toBe(src.avgLap);
+        expect(expertOut.bestLap, `${key} expert bestLap`).toBe(minBest);
+        const srcExpert = JSON.parse(
+          readFileSync(join(srcRoot, winner, winIdx.difficulties!.expert!), 'utf8'),
+        ) as { line?: string };
+        expect(expertOut.line ?? 'center', `${key} line`).toBe(srcExpert.line ?? winIdx.line ?? 'center');
+        expect(diffs, `${key} whole difficulty set`).toEqual(
+          ORDER.filter((d) => winIdx.difficulties?.[d]),
+        );
+        for (const d of diffs) {
+          const srcFile = winIdx.difficulties?.[d];
+          expect(srcFile, `${winner} has ${d}`).toBeTruthy();
+          const src = JSON.parse(readFileSync(join(srcRoot, winner, srcFile!), 'utf8')) as {
+            bestLap: number;
+            nIn: number;
+            gen: number;
+            avgLap: number;
+          };
+          const out = JSON.parse(readFileSync(join(outDir, key, `${d}.json`), 'utf8')) as typeof src;
+          expect(out.bestLap, `${key}/${d} bestLap`).toBe(src.bestLap);
+          expect(out.nIn, `${key}/${d} nIn`).toBe(src.nIn);
+          expect(out.gen, `${key}/${d} gen`).toBe(src.gen);
+          expect(out.avgLap, `${key}/${d} avgLap`).toBe(src.avgLap);
+        }
+        const wantMt = (expertOut.line ?? 'center') === 'mintime';
+        expect(existsSync(join(outDir, key, 'line-mintime.json')), `${key} mintime file`).toBe(wantMt);
       }
-      const wantMt = (expertOut.line ?? 'center') === 'mintime';
-      expect(existsSync(join(ROOT, `public/ai-models/${key}/line-mintime.json`)), `${key} mintime file`).toBe(
-        wantMt,
-      );
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   it('POST10: RaceGame neuralLine racing and mintime wire into the neural features (AI diverges from centerline)', async () => {
     const expert = parseNeuralModel(
