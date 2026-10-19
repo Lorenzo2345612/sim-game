@@ -47,3 +47,7 @@ npx vitest run tests/unit/acceptance/289- tests/unit/acceptance/130- tests/unit/
 
 - EDGE6 (planner-authorised, `tests/unit/edge/289-yellow-cap-edge.test.ts`): drop `&& !nanSeen` from the loop condition and extend the window from `steps(15)` to `steps(40)`, so the ticks where car 3 follows car 2 after it passes the stopped car are counted. Assertions unchanged.
 - Passing a stopped car under yellow is legal: the yellow-overtake booking (130) must not book when the passed car is out (stopped/retired/finished) or slower than `YELLOW_FOLLOW_MIN_MS`. 130 AT2 stays unchanged and must pass; 130 EDGE7 (overtaking a moving car under yellow) must still book. If EDGE7 uses a car slower than 5 m/s, stop and report its numbers.
+
+## Planner answers (round 2)
+
+The coder timed out (40 min). Work already in the worktree (`yellowCap.ts`, `raceGame.ts`, EDGE6 edit) is kept: continue from it, do not restart. Run only `npx vitest run tests/unit/acceptance/289- tests/unit/edge/289- tests/unit/acceptance/130-`, typecheck and lint, each once; no full suite (the reviewer runs it), no `sleep`, no probe scripts. If a test still fails after one fix attempt, report BLOCKED with the numbers.
