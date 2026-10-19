@@ -90,7 +90,8 @@ import { Minimap } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
-import { RaceHud, type RaceHudData } from './ui/raceHud';
+import { RaceHud, type RaceHudData, pushRaceControl, announcePenalty } from './ui/raceHud';
+import { raceControlMessage, penaltyAnnouncement } from './ui/raceControl';
 import { DamageHud } from './ui/damageHud';
 import { Results, type ResultsRow } from './ui/results';
 
@@ -192,8 +193,8 @@ declare global {
       debugDamage(patch: Partial<DamageState>): void;
       /** Race only: penalty book entries in insertion order (130). */
       raceEvents?(): readonly PenaltyEntry[];
-      /** Race only: books `count` track-limit strikes for the player (130). */
-      forceTrackLimits?(count: number): void;
+      /** Race only: books `count` track-limit strikes for a car (294). */
+      forceTrackLimits?(count: number, car?: number): void;
       qaCamera(view: QaCameraView): QaCameraInfo;
       /** 152: yaw the chase camera about world Y around its position; 0 restores the rig pose. */
       debugCameraYaw(rad: number): void;
@@ -1308,7 +1309,8 @@ async function startGame(trackId: string): Promise<void> {
   const damageHud = raceGame !== null ? new DamageHud(document.body, damageMode) : null;
   let toastGame: RaceGame | null = null;
   let toastCursor = 0;
-  // New player book entries become HUD toasts; a restart resets the cursor.
+  // New book entries become race-control messages; player penalties announce;
+  // player warnings keep toasting; a restart resets the cursor.
   const syncToasts = (game: RaceGame): void => {
     if (toastGame !== game) {
       toastGame = game;
@@ -1319,7 +1321,12 @@ async function startGame(trackId: string): Promise<void> {
     while (toastCursor < entries.length) {
       const i = toastCursor++;
       const e = entries[i];
-      if (e.car === 0) raceHud.pushToast(toastText(e, entries, i));
+      const msg = raceControlMessage(e);
+      if (msg !== null) pushRaceControl(msg);
+      if (e.car !== 0) continue;
+      const ann = penaltyAnnouncement(e);
+      if (ann !== null) announcePenalty(ann);
+      else raceHud.pushToast(toastText(e, entries, i));
     }
   };
 
@@ -2126,7 +2133,9 @@ async function startGame(trackId: string): Promise<void> {
     },
     raceEvents: raceGame !== null ? () => raceGame?.penalties.entries() ?? [] : undefined,
     forceTrackLimits:
-      raceGame !== null ? (count: number) => raceGame?.debugForceTrackLimits(0, count) : undefined,
+      raceGame !== null
+        ? (count: number, car = 0) => raceGame?.debugForceTrackLimits(car, count)
+        : undefined,
     qaCamera,
     debugCameraYaw: (rad: number) => {
       debugYaw = rad;

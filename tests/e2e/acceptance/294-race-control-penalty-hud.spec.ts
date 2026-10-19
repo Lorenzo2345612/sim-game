@@ -138,7 +138,9 @@ test.describe('294 race control penalty HUD', () => {
     await waitUntil(t0, 5000, page);
     await expect(page.locator('#penalty-announce')).toBeHidden();
     await waitUntil(t0, 7000, page);
-    await expect(page.locator('#race-control')).toBeHidden();
+    // The panel may keep showing unrelated messages (e.g. an AI's), so only the
+    // player's forced message must be gone by 7 s (planner relaxation, task 294).
+    await expect(page.locator('#race-control', { hasText: 'FOR YOU - TRACK LIMITS' })).toHaveCount(0);
     await expect(page.locator('.race-row.player .race-row-pen')).toHaveText('+5s');
     expect(errors).toEqual([]);
   });

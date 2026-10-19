@@ -2,6 +2,7 @@ import './raceHud.css';
 import type { Standing } from '../race/classification';
 import type { SectorFlag } from '../race/flags';
 import type { VscPhase } from '../race/vsc';
+import { penaltyTag, type PenaltyAnnouncement } from './raceControl';
 
 export interface RaceHudData {
   standings: readonly Standing[];
@@ -17,15 +18,103 @@ const TOWER_TOP = 10;
 const MAX_ROWS = TOWER_TOP + 1;
 const MAX_TOASTS = 5;
 const TOAST_MS = 4000;
+const RC_SHOW_MS = 6000;
+const ANNOUNCE_MS = 4000;
+const MAX_RC_QUEUE = 5;
+
+let rcEl: HTMLDivElement | null = null;
+let rcMsgEl: HTMLDivElement | null = null;
+let rcQueue: string[] = [];
+let rcTimer = 0;
+let announceEl: HTMLDivElement | null = null;
+let announceTimer = 0;
+
+function ensureRaceControl(doc: Document): void {
+  if (rcEl !== null && rcEl.ownerDocument === doc) return;
+  rcEl = doc.createElement('div');
+  rcEl.id = 'race-control';
+  const head = doc.createElement('div');
+  head.className = 'race-control-head';
+  head.textContent = 'RACE CONTROL';
+  rcMsgEl = doc.createElement('div');
+  rcMsgEl.className = 'race-control-msg';
+  rcEl.append(head, rcMsgEl);
+  rcEl.style.display = 'none';
+  doc.body.appendChild(rcEl);
+}
+
+function ensureAnnounce(doc: Document): void {
+  if (announceEl !== null && announceEl.ownerDocument === doc) return;
+  announceEl = doc.createElement('div');
+  announceEl.id = 'penalty-announce';
+  for (const line of ['pen-announce-title', 'pen-announce-value', 'pen-announce-reason']) {
+    const el = doc.createElement('div');
+    el.className = line;
+    announceEl.appendChild(el);
+  }
+  announceEl.style.display = 'none';
+  doc.body.appendChild(announceEl);
+}
+
+function showNextRc(): void {
+  const text = rcQueue.shift();
+  if (text === undefined || rcEl === null || rcMsgEl === null) {
+    if (rcEl !== null) rcEl.style.display = 'none';
+    return;
+  }
+  rcMsgEl.textContent = text;
+  rcEl.style.display = 'block';
+  rcTimer = window.setTimeout(() => showNextRc(), RC_SHOW_MS);
+}
+
+export function pushRaceControl(text: string): void {
+  ensureRaceControl(document);
+  if (rcEl === null) return;
+  const busy = rcQueue.length > 0 || rcEl.style.display !== 'none';
+  rcQueue.push(text);
+  while (rcQueue.length > MAX_RC_QUEUE) rcQueue.shift();
+  if (busy) return;
+  showNextRc();
+}
+
+export function announcePenalty(a: PenaltyAnnouncement): void {
+  ensureAnnounce(document);
+  if (announceEl === null) return;
+  const [title, value, reason] = announceEl.children as unknown as HTMLDivElement[];
+  title.textContent = a.title;
+  value.textContent = a.value;
+  reason.textContent = a.reason;
+  announceEl.style.display = 'block';
+  announceEl.classList.remove('pen-announce-in');
+  void announceEl.offsetWidth;
+  announceEl.classList.add('pen-announce-in');
+  clearTimeout(announceTimer);
+  announceTimer = window.setTimeout(() => {
+    if (announceEl !== null) announceEl.style.display = 'none';
+  }, ANNOUNCE_MS);
+}
+
+export function clearRaceControl(): void {
+  clearTimeout(rcTimer);
+  rcQueue = [];
+  if (rcEl !== null) rcEl.style.display = 'none';
+}
+
+export function clearPenaltyAnnounce(): void {
+  clearTimeout(announceTimer);
+  if (announceEl !== null) announceEl.style.display = 'none';
+}
 
 interface TowerRow {
   el: HTMLDivElement;
   pos: HTMLSpanElement;
   name: HTMLSpanElement;
   gap: HTMLSpanElement;
+  pen: HTMLSpanElement;
   posText: string;
   nameText: string;
   gapText: string;
+  penText: string;
   player: boolean;
 }
 
@@ -124,6 +213,8 @@ export class RaceHud {
 
   clearToasts(): void {
     this.toastsEl.replaceChildren();
+    clearRaceControl();
+    clearPenaltyAnnounce();
   }
 
   pushToast(text: string): void {
@@ -194,9 +285,11 @@ export class RaceHud {
     name.className = 'race-row-name';
     const gap = doc.createElement('span');
     gap.className = 'race-row-gap';
-    el.append(pos, name, gap);
+    const pen = doc.createElement('span');
+    pen.className = 'race-row-pen';
+    el.append(pos, name, gap, pen);
     this.tower.appendChild(el);
-    return { el, pos, name, gap, posText: '', nameText: '', gapText: '', player: false };
+    return { el, pos, name, gap, pen, posText: '', nameText: '', gapText: '', penText: '', player: false };
   }
 
   private fillRow(row: TowerRow, st: Standing, playerCar: number): void {
@@ -215,6 +308,12 @@ export class RaceHud {
       row.gapText = gap;
       row.gap.textContent = gap;
     }
+    const pen = penaltyTag(st.penalty);
+    if (row.penText !== pen) {
+      row.penText = pen;
+      row.pen.textContent = pen;
+    }
+    row.pen.style.display = pen === '' ? 'none' : '';
     if (row.player !== isPlayer) {
       row.player = isPlayer;
       row.el.className = isPlayer ? 'race-row player' : 'race-row';
