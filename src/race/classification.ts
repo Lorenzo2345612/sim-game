@@ -25,6 +25,8 @@ interface CarState {
   maxSinceCross: number;
   retired: boolean;
   retireSeq: number;
+  disq: boolean;
+  disqSeq: number;
   lastTime: number;
   nextMark: number;
   histDist: number[];
@@ -56,6 +58,7 @@ export class RaceClassification {
   private chequered = false;
   private finishedCount = 0;
   private retireCount = 0;
+  private disqCount = 0;
 
   constructor(carCount: number, laps: number, lapLength: number) {
     this.laps = laps;
@@ -87,6 +90,8 @@ export class RaceClassification {
         maxSinceCross: 0,
         retired: false,
         retireSeq: -1,
+        disq: false,
+        disqSeq: -1,
         lastTime: 0,
         nextMark: GAP_MARK,
         histDist: [],
@@ -97,7 +102,7 @@ export class RaceClassification {
   }
 
   get finished(): boolean {
-    return this.finishedCount + this.retireCount === this.cars.length;
+    return this.finishedCount + this.retireCount + this.disqCount === this.cars.length;
   }
 
   update(car: number, lapDistance: number, time: number): void {
@@ -107,7 +112,7 @@ export class RaceClassification {
       return;
     }
     const st = this.cars[car];
-    if (st.s.finished || st.retired) return;
+    if (st.s.finished || st.retired || st.disq) return;
     // A broken sample voids the pair: the next valid sample only re-seeds prev.
     if (st.stale) {
       st.stale = false;
@@ -180,9 +185,23 @@ export class RaceClassification {
   retire(car: number): void {
     this.check(car);
     const st = this.cars[car];
-    if (st.s.finished || st.retired) return;
+    if (st.s.finished || st.retired || st.disq) return;
     st.retired = true;
     st.retireSeq = this.retireCount++;
+  }
+
+  disqualify(car: number): void {
+    this.check(car);
+    const st = this.cars[car];
+    if (st.s.finished || st.disq) return;
+    if (st.retired) this.retireCount--; // retired car moves to the disqualified group
+    st.disq = true;
+    st.disqSeq = this.disqCount++;
+  }
+
+  isDisqualified(car: number): boolean {
+    this.check(car);
+    return this.cars[car].disq;
   }
 
   standings(): readonly Standing[] {
@@ -227,20 +246,26 @@ export class RaceClassification {
     st.prevRaceDist = dist;
   }
 
+  private group(c: CarState): number {
+    if (c.s.finished) return 0;
+    if (c.disq) return 3;
+    return c.retired ? 2 : 1;
+  }
+
   private compare(a: CarState, b: CarState): number {
-    const fa = a.s.finished;
-    const fb = b.s.finished;
-    if (fa !== fb) return fa ? -1 : 1;
-    if (fa) {
+    const ga = this.group(a);
+    const gb = this.group(b);
+    if (ga !== gb) return ga - gb;
+    if (ga === 0) {
       const ea = a.s.totalTime! + a.s.penalty;
       const eb = b.s.totalTime! + b.s.penalty;
       if (ea !== eb) return ea - eb;
-    } else if (!a.retired && !b.retired) {
+    } else if (ga === 1) {
       if (a.s.distance !== b.s.distance) return b.s.distance - a.s.distance;
-    } else if (a.retired !== b.retired) {
-      return a.retired ? 1 : -1;
-    } else {
+    } else if (ga === 2) {
       if (a.retireSeq !== b.retireSeq) return a.retireSeq - b.retireSeq;
+    } else if (a.disqSeq !== b.disqSeq) {
+      return a.disqSeq - b.disqSeq;
     }
     return a.s.car - b.s.car;
   }

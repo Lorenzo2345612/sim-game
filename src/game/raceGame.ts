@@ -322,7 +322,7 @@ export class RaceGame {
     this.wingSpawned = new Array<boolean>(this.count * 2).fill(false);
     this.carPos = new Array<Vec3>(this.count);
     for (let i = 0; i < this.count; i++) this.carPos[i] = { x: 0, y: 0, z: 0 };
-    this.penalties = new PenaltyBook(this.count);
+    this.penalties = new PenaltyBook(this.count, { maxPerReason: Infinity, maxTotal: Infinity });
     this.trackLimits = new TrackLimits(this.count);
     this.sectorB1 = this.lapLength / 3;
     this.sectorB2 = (this.lapLength * 2) / 3;
