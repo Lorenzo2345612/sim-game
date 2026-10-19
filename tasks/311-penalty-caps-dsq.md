@@ -21,6 +21,7 @@ Extends `src/race/penalties.ts` (task 130) and `src/race/classification.ts` (tas
 - `src/race/penalties.ts` — modify
 - `src/race/classification.ts` — modify
 - `tests/unit/acceptance/311-penalty-caps.test.ts` — create (from the table)
+- `src/game/raceGame.ts` — planner-authorised one-line edit only: `new PenaltyBook(this.count)` becomes `new PenaltyBook(this.count, { maxPerReason: Infinity, maxTotal: Infinity })` so race behaviour (and protected POST5) stays unchanged; task 312 switches it to the defaults.
 - Protected, must pass unchanged: `tests/unit/acceptance/130-penalty-book-and-rules-wiring.test.ts`, `tests/unit/edge/130-penalty-book-and-rules-wiring-edge.test.ts`, `tests/unit/edge/130-penalty-book-and-rules-wiring.post.test.ts`, `tests/unit/acceptance/092-race-classification.test.ts`, `tests/unit/edge/092-race-classification-edge.test.ts`, `tests/unit/edge/092-race-classification.post.test.ts`, `tests/unit/race/classification.test.ts`; also keep compiling/passing `tests/unit/acceptance/093-race-game.test.ts`, `tests/unit/edge/093-race-game-*.test.ts`, `tests/unit/edge/289-yellow-cap*.test.ts`, `153-simulation-cost`, `269-evolved-neural-driver`, `292-race-lap-times-hud`, `294-race-control` and the e2e specs 093/094/095/130/294.
 
 ## Steps
@@ -89,5 +90,5 @@ npm test
 
 ## Out of scope
 
-- `src/game/raceGame.ts`, UI, HUD, qualifying, `trackLimits.ts`: no wiring of outcomes or `disqualify` calls.
+- Any other `src/game/raceGame.ts` change, UI, HUD, qualifying, `trackLimits.ts`: no wiring of outcomes or `disqualify` calls.
 - Changing the `Standing` type or existing method signatures.

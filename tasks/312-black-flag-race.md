@@ -20,7 +20,8 @@ In races a car whose penalty outcome is `'black-flag'` is disqualified: it is cl
 
 ## Files
 
-- `src/game/raceGame.ts` — modify.
+- `src/game/raceGame.ts` — modify; the `PenaltyBook` constructor drops the Infinity limits added by 311 (use `DEFAULT_PENALTY_LIMITS`).
+- Planner-authorised test edit: `tests/unit/edge/130-penalty-book-and-rules-wiring.post.test.ts` POST5 uses `debugForceTrackLimits(1, 5)`, expects kinds 3 × `'warning'` + 2 × `'penalty'`, and totals 10 (book and standings). No other test edits.
 - `tests/unit/acceptance/312-black-flag-race.test.ts` — create (acceptance worker).
 
 ## Steps
