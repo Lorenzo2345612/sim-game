@@ -4,7 +4,7 @@ import type { AeroTelemetry, ErsTelemetry } from './hybridTypes';
 import { Gearbox, GearboxMode, REVERSE_MAX_SPEED_MS } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
 import { GRAVITY, SURFACE_GRIP } from '../core/constants';
-import { surfaceOf } from './trackColliders';
+import { BARRIER_GROUP, surfaceOf } from './trackColliders';
 import { rollingDrag } from './surfaceDrag';
 import { antiRoll, staticCompression, suspensionForce } from './suspension';
 import { relaxAlpha, V_LOW } from './tyre';
@@ -32,10 +32,11 @@ const ENGINE_BRAKE_RAMP_RPM = 1500;
 const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on a visible change
 // Collision groups (task 093): chassis colliders are members of group 1 only and
 // interact with everything; wheel rays filter that group out so no car drives on
-// another car's body, own included. The environment keeps the default (all groups).
+// another car's body, own included. Barriers are filtered out too (task 268) so a
+// wheel can never ride up an armco. The environment keeps the default (all groups).
 const CHASSIS_GROUP = 0x0002;
 const CHASSIS_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | 0xffff;
-const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~CHASSIS_GROUP);
+export const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~CHASSIS_GROUP & ~BARRIER_GROUP);
 // m/s; below this the chassis is numerically at rest for the wheel solver, but only
 // without brakes: the locked-wheel hold needs the real vx. The solver's tick clamp caps
 // an opposing force at massShare·|vx|/dt, so a mm/s gravity creep on an uphill spawn

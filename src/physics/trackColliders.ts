@@ -7,6 +7,10 @@ import { buildTrackSurfaces } from '../track/surfaces';
 const WALL_BOTTOM = -0.3;
 const WALL_TOP = 1.0;
 
+// Barrier trimesh membership group; wheel rays filter it out so no wheel can
+// ride up an armco, while the chassis still collides with it.
+export const BARRIER_GROUP = 0x0004;
+
 /** Half extents of the Phase 0 flat ground (physicsWorld creates it; addTrackColliders removes it). */
 export const PHASE0_GROUND_HALF_EXTENTS = { x: 5000, y: 0.5, z: 5000 } as const;
 
@@ -64,7 +68,12 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
   }
   if (indices.length > 0) {
     world.createCollider(
-      RAPIER.ColliderDesc.trimesh(new Float32Array(positions), new Uint32Array(indices)),
+      RAPIER.ColliderDesc.trimesh(
+        new Float32Array(positions),
+        new Uint32Array(indices),
+        RAPIER.TriMeshFlags.MERGE_DUPLICATE_VERTICES | RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES,
+      )
+        .setCollisionGroups((BARRIER_GROUP << 16) | 0xffff),
     );
   }
 }

@@ -82,6 +82,10 @@ export class AiDriver {
     this.reqOffset = m;
   }
 
+  setMaxSteerAngle(rad: number): void {
+    this.p.maxSteerAngle = rad;
+  }
+
   setSpeedCap(v: number | null): void {
     this.speedCap = v;
   }
