@@ -278,7 +278,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 274 | Weekend formats and points tables | done | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
 | 276 | RaceConfig gridOrder | done | - |
-| 277 | Qualifying classification | pending | - |
+| 277 | Qualifying classification | in progress | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | pending | 276, 277 |
 | 279 | Session result adapters | pending | 274, 275, 277 |
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
@@ -290,3 +290,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
+| 289 | Yellow-flag cap must not freeze the field behind a stopped car | pending | 130 |

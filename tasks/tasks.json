@@ -3755,7 +3755,7 @@
     {
       "num": "277",
       "title": "Qualifying classification",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
@@ -3910,6 +3910,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/288-residual-neural-ai.md"
+    },
+    {
+      "num": "289",
+      "title": "Yellow-flag cap must not freeze the field behind a stopped car",
+      "status": "pending",
+      "deps": [
+        "130"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/289-yellow-flag-freeze.md"
     }
   ]
 }
