@@ -4136,6 +4136,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/306-tower-views.md"
+    },
+    {
+      "num": "307",
+      "title": "Passing cars in trouble under yellow is legal",
+      "status": "pending",
+      "deps": [
+        "305"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/307-yellow-pass-cars-in-trouble.md"
     }
   ]
 }
