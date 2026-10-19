@@ -3538,7 +3538,7 @@
     {
       "num": "260",
       "title": "Racecraft intents (attack, defend, rejoin)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "258"
       ],
