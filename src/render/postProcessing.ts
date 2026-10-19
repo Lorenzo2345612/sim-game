@@ -77,6 +77,8 @@ export function parseCube(text: string): { size: number; data: Float32Array } {
 export interface PostProcessing {
   render(dt: number): void;
   resize(w: number, h: number): void;
+  /** Re-scales the render targets to a new device pixel ratio (154). */
+  setPixelRatio(r: number): void;
   passes: PassName[];
   /** Live pass instance so hooks read the real strength/threshold, null when bloom is off. */
   bloom: UnrealBloomPass | null;
@@ -113,6 +115,7 @@ export function createPostProcessing(
     return {
       render: () => renderer.render(scene, camera),
       resize: () => {},
+      setPixelRatio: () => {},
       passes: [],
       bloom: null,
       dispose: () => {},
@@ -166,6 +169,7 @@ export function createPostProcessing(
   return {
     render: (dt) => composer.render(dt),
     resize: (w, h) => composer.setSize(w, h),
+    setPixelRatio: (r) => composer.setPixelRatio(r),
     passes,
     bloom,
     dispose: () => {

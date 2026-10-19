@@ -14,7 +14,7 @@ import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
 import { surfaceFeedback, type Feedback } from './core/surfaceFeedback';
 import { FrameRing, type PerfStats } from './core/perfStats';
-import { loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type KeyValueStorage, type Preset } from './core/settings';
+import { loadAdaptive, loadCockpitSettings, loadDrivingLineSetting, loadGameOptions, loadMirrorSetting, loadPreset, loadVolumes, parseQuality, presetSettings, type DrivingLineMode, type KeyValueStorage, type Preset } from './core/settings';
 import type { CityEnv, DriverInput, EnvironmentType, LapEvent, Surface, TrackData, TrackDataV2, Vec3, VehicleState } from './core/types';
 import { Game, type LapInfo } from './game/game';
 import { RaceGame, type RaceConfig, type RaceGameOptions } from './game/raceGame';
@@ -32,6 +32,7 @@ import type { GearboxMode } from './physics/gearbox';
 import type { Telemetry } from './physics/vehicle';
 import type { Standing } from './race/classification';
 import { CameraRig, type CameraMode } from './render/cameraRig';
+import { DynamicResolution, autoPreset } from './render/dynamicResolution';
 import { HeadMotion } from './render/headMotion';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
 import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
@@ -793,6 +794,18 @@ async function startGame(trackId: string): Promise<void> {
     // the 081 splat terrain (10+ texture reads per fragment vs 3 before).
     handle.renderer.setPixelRatio(0.5);
   }
+  // Adaptive quality (154): off under software GL, whose 0.5 cap keeps CI frame times stable.
+  const adaptive = loadAdaptive(window.localStorage) && !softwareGl;
+  const maxRatio = (p: Preset): number => (p === 'medium' ? Math.min(window.devicePixelRatio, 1) : window.devicePixelRatio);
+  let dynRes = adaptive
+    ? new DynamicResolution({ initial: Math.min(settings.pixelRatio, maxRatio(preset)), max: maxRatio(preset) })
+    : null;
+  let dynResApplied = handle.renderer.getPixelRatio();
+  // First 5 s of frame times feed a single auto-preset evaluation (154).
+  const autoSamples = new Float64Array(1200);
+  let autoCount = 0;
+  let autoMs = 0;
+  let autoDone = !adaptive;
   const { scene, camera, ground, sun } = createScene();
 
   const disposables: { dispose(): void }[] = [];
@@ -1507,6 +1520,32 @@ async function startGame(trackId: string): Promise<void> {
     const frame = Math.min((now - last) / 1000, 2);
     last = now;
     if (frame > 0) frameRing.push(frame * 1000);
+    if (frame > 0 && dynRes !== null) {
+      const ratio = dynRes.update(frame * 1000);
+      if (ratio !== dynResApplied) {
+        dynResApplied = ratio;
+        handle.renderer.setPixelRatio(ratio);
+        post.setPixelRatio(ratio);
+      }
+    }
+    if (!autoDone && frame > 0) {
+      autoMs += frame * 1000;
+      if (autoCount < autoSamples.length) autoSamples[autoCount++] = frame * 1000;
+      if (autoMs >= 5000) {
+        autoDone = true;
+        const next = autoPreset(Array.from(autoSamples.subarray(0, autoCount)), preset);
+        const applied = presetSettings(next, window.devicePixelRatio);
+        handle.renderer.setPixelRatio(applied.pixelRatio);
+        post.setPixelRatio(applied.pixelRatio);
+        dynResApplied = applied.pixelRatio;
+        shadows?.setEnabled(handle.renderer, applied.shadows);
+        // Reseed so dynamic resolution steps from the applied ratio, not the stale one.
+        if (dynRes !== null) {
+          const max = maxRatio(next);
+          dynRes = new DynamicResolution({ initial: Math.min(applied.pixelRatio, max), max });
+        }
+      }
+    }
     if (!audioResumed && anyGamepadPressed()) resumeAudio();
     // Paused: only the render keeps going, the fixed-step simulation must not advance.
     if (!paused) {

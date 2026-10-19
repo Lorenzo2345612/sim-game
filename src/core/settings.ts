@@ -89,6 +89,12 @@ export function loadMirrorSetting(storage: KeyValueStorage): boolean {
   return typeof mirror === 'boolean' ? mirror : true;
 }
 
+/** Stored adaptive-quality toggle (154); missing or non-boolean values read as true (on). */
+export function loadAdaptive(storage: KeyValueStorage): boolean {
+  const adaptive = storedSettings(storage).adaptive;
+  return typeof adaptive === 'boolean' ? adaptive : true;
+}
+
 export type DrivingLineMode = 'off' | 'braking' | 'full';
 
 /** Stored driving-line mode; missing or invalid values read as 'off'. */
