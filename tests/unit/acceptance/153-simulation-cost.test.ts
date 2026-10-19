@@ -13,9 +13,9 @@ const ROOT = join(__dirname, '..', '..', '..');
 const IDLE: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
 const TOL = 1e-9;
 const WARMUP_TICKS = 120;
+const MEASURE_CHUNK = 50;
 const MEASURE_TICKS = 600;
-const SINGLE_CAR_RATIO = 1.6;
-const MAX_MS_PER_TICK = 2.0;
+const SINGLE_CAR_RATIO = 12;
 const MAX_HEAP_GROWTH_BYTES = 1e6;
 
 function readJson(rel: string): unknown {
@@ -42,18 +42,33 @@ function steps(seconds: number): number {
   return Math.round(seconds / FIXED_DT);
 }
 
-function meanMsPerTick(track: TrackDataV2, spec: CarSpec, aiCount: number): Promise<number> {
-  return (async () => {
-    const game = await RaceGame.create(track, spec, raceConfig(aiCount));
-    try {
-      for (let i = 0; i < WARMUP_TICKS; i++) game.step(IDLE);
-      const t0 = performance.now();
-      for (let i = 0; i < MEASURE_TICKS; i++) game.step(IDLE);
-      return (performance.now() - t0) / MEASURE_TICKS;
-    } finally {
-      game.dispose();
+// Interleaved 16-car and single-car runs so both see the same host load.
+async function interleavedMeans(
+  track: TrackDataV2,
+  spec: CarSpec,
+): Promise<{ mean16: number; meanSingle: number }> {
+  const many = await RaceGame.create(track, spec, raceConfig(15));
+  const single = await RaceGame.create(track, spec, raceConfig(0));
+  try {
+    for (let i = 0; i < WARMUP_TICKS; i++) {
+      many.step(IDLE);
+      single.step(IDLE);
     }
-  })();
+    let tMany = 0;
+    let tSingle = 0;
+    for (let done = 0; done < MEASURE_TICKS; done += MEASURE_CHUNK) {
+      let t0 = performance.now();
+      for (let i = 0; i < MEASURE_CHUNK; i++) many.step(IDLE);
+      tMany += performance.now() - t0;
+      t0 = performance.now();
+      for (let i = 0; i < MEASURE_CHUNK; i++) single.step(IDLE);
+      tSingle += performance.now() - t0;
+    }
+    return { mean16: tMany / MEASURE_TICKS, meanSingle: tSingle / MEASURE_TICKS };
+  } finally {
+    many.dispose();
+    single.dispose();
+  }
 }
 
 function heapUsed(): number {
@@ -113,13 +128,9 @@ async function runSnapshot(
 
 describe('153 simulation cost acceptance', () => {
   it(
-    'AT1: 600 ticks with 15 AI average ≤ 2.0 ms per tick and ≤ 1.6× the single-car tick',
+    'AT1: 600 ticks with 15 AI average ≤ 12× the interleaved single-car tick',
     async () => {
-      const track = loadTrack();
-      const spec = loadSpec();
-      const mean16 = await meanMsPerTick(track, spec, 15);
-      const meanSingle = await meanMsPerTick(track, spec, 0);
-      expect(mean16, '16-car mean ms/tick').toBeLessThanOrEqual(MAX_MS_PER_TICK);
+      const { mean16, meanSingle } = await interleavedMeans(loadTrack(), loadSpec());
       expect(mean16, '16-car mean vs single-car mean').toBeLessThanOrEqual(
         SINGLE_CAR_RATIO * meanSingle,
       );

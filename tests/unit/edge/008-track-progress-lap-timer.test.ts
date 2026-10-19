@@ -69,8 +69,9 @@ describe('008 track progress and lap timer edge cases', () => {
     }
     const after = tp.update(100 * Math.cos(0.01), 100 * Math.sin(0.01));
     within(after.distance, 1, 1);
-    const wrong = tp.update(-100, 0);
-    expect(Math.abs(wrong.distance - tp.length / 2)).toBeGreaterThan(50);
+    const recovered = tp.update(-100, 0);
+    within(recovered.distance, tp.length / 2, 1);
+    within(recovered.lateral, 0, 0.1);
     tp.reset();
     const right = tp.update(-100, 0);
     within(right.distance, tp.length / 2, 1);

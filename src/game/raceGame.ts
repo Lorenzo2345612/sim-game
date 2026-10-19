@@ -4,7 +4,13 @@ import type { DriverInput, SpawnPose, TrackDataV2, Vec3, VehicleState } from '..
 import { AiDriver, type AiObservation } from '../ai/aiDriver';
 import { computeRacingLine, mengerCurvature, type RacingLine } from '../ai/racingLine';
 import { carLimitsFromSpec, speedProfile } from '../ai/speedProfile';
-import { difficultyParams, trafficDecision, type CarTrafficState, type Difficulty } from '../ai/traffic';
+import {
+  difficultyParams,
+  trafficDecision,
+  type CarTrafficState,
+  type Difficulty,
+  type TrafficDecision,
+} from '../ai/traffic';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState, type NeuralLine } from '../ai/neuralFeatures';
 import { NeuralDriver } from '../ai/neuralDriver';
 import { halfWidthAt, hasKerb } from '../track/surfaces';
@@ -116,6 +122,7 @@ export class RaceGame {
   private readonly observations: AiObservation[];
   private readonly playerCmd: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
   private readonly aiCmd: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
+  private readonly decision: TrafficDecision = { offset: 0, speedCap: null };
   private readonly count: number;
   private readonly linePoints: number;
   private readonly aheadIdx: number;
@@ -215,6 +222,8 @@ export class RaceGame {
     if (order !== undefined) validateGridOrder(order, count);
     await initPhysics();
     const world = createPhysicsWorld(track);
+    // Race tick budget (153): 4 iterations; matches Rapier's default, pinned here.
+    world.integrationParameters.numSolverIterations = 4;
     const tune: GameTune | undefined =
       options?.compound !== undefined && options?.wear !== undefined && options?.fuel !== undefined
         ? { compound: options.compound, wear: options.wear, fuel: options.fuel }
@@ -438,6 +447,7 @@ export class RaceGame {
             this.halfWidth,
             offsets[ahead],
             curvatureAhead,
+            this.decision,
           );
           ai.driver.setLateralOffset(decision.offset);
           ai.driver.setSpeedCap(decision.speedCap);
@@ -598,10 +608,8 @@ export class RaceGame {
     s.position = car.position;
     s.rotation = car.rotation;
     s.forwardSpeed = car.forwardSpeed;
-    const lv = this.ais[k].vehicle.body.linvel();
-    const av = this.ais[k].vehicle.body.angvel();
-    s.linvel.x = lv.x; s.linvel.y = lv.y; s.linvel.z = lv.z;
-    s.angvel.x = av.x; s.angvel.y = av.y; s.angvel.z = av.z;
+    this.ais[k].vehicle.body.linvel(s.linvel);
+    this.ais[k].vehicle.body.angvel(s.angvel);
     s.progress = this.progresses[i].update(car.position.x, car.position.z);
     const t = this.ais[k].vehicle.getTelemetry(tel);
     s.fuelMassKg = t.fuelKg;
@@ -618,8 +626,7 @@ export class RaceGame {
       const other = s.others[oc++];
       const cj = this.current[j];
       other.position.x = cj.position.x; other.position.y = cj.position.y; other.position.z = cj.position.z;
-      const lvj = this.vehicles[j].body.linvel();
-      other.linvel.x = lvj.x; other.linvel.y = lvj.y; other.linvel.z = lvj.z;
+      this.vehicles[j].body.linvel(other.linvel);
     }
   }
 

@@ -50,6 +50,12 @@ const tmpRay = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
 const tmpImpulse: RAPIER.Vector = { x: 0, y: 0, z: 0 };
 const tmpPoint: RAPIER.Vector = { x: 0, y: 0, z: 0 };
 const rv: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+// Out-targets for Rapier body getters: the tick must not allocate per call.
+const bodyPos: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+const bodyRot: RAPIER.Rotation = { x: 0, y: 0, z: 0, w: 1 };
+const bodyLinvel: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+const bodyAngvel: RAPIER.Vector = { x: 0, y: 0, z: 0 };
+const splitOut: [number, number] = [0, 0];
 
 function rotVec(q: RAPIER.Rotation, x: number, y: number, z: number): void {
   const tx = 2 * (q.y * z - q.z * y);
@@ -345,8 +351,8 @@ export class VehicleModel {
   }
 
   private forwardSpeed(): number {
-    const v = this.body.linvel();
-    const q = this.body.rotation();
+    const v = this.body.linvel(bodyLinvel);
+    const q = this.body.rotation(bodyRot);
     rotVec(q, 0, 0, -1);
     return v.x * rv.x + v.y * rv.y + v.z * rv.z;
   }
@@ -410,10 +416,10 @@ export class VehicleModel {
     const body = this.body;
     const R = spec.wheels.radius;
     const wheels = this.wheels;
-    const p = body.translation();
-    const q = body.rotation();
-    const lv = body.linvel();
-    const av = body.angvel();
+    const p = body.translation(bodyPos);
+    const q = body.rotation(bodyRot);
+    const lv = body.linvel(bodyLinvel);
+    const av = body.angvel(bodyAngvel);
     const speed = Math.hypot(lv.x, lv.y, lv.z);
     // Chassis velocity as it will be after this tick's gravity: tyre slip uses it,
     // otherwise a steady creep of g·sin(slope)·dt remains on slopes.
@@ -623,7 +629,7 @@ export class VehicleModel {
       te += tK;
     }
     const tIn = te * ratioTot * spec.gearbox.efficiency;
-    const split = diffSplit(spec.diff, tIn, wheels[2].omega, wheels[3].omega, tIn >= 0);
+    const split = diffSplit(spec.diff, tIn, wheels[2].omega, wheels[3].omega, tIn >= 0, splitOut);
     // Reflected engine inertia, except while the clutch slips or the box shifts.
     const iRed =
       !driveActive || rpmVal > rpmRaw + 1
@@ -743,8 +749,8 @@ export class VehicleModel {
   }
 
   getWheelSurfaces(): Surface[] {
-    const p = this.body.translation();
-    const q = this.body.rotation();
+    const p = this.body.translation(bodyPos);
+    const q = this.body.rotation(bodyRot);
     rotVec(q, 0, 1, 0);
     tmpRay.dir.x = -rv.x;
     tmpRay.dir.y = -rv.y;
@@ -836,16 +842,9 @@ export class VehicleModel {
         })),
       };
 
-    const t = this.body.translation();
-    state.position.x = t.x;
-    state.position.y = t.y;
-    state.position.z = t.z;
-    const q = this.body.rotation();
-    state.rotation.x = q.x;
-    state.rotation.y = q.y;
-    state.rotation.z = q.z;
-    state.rotation.w = q.w;
-    const v = this.body.linvel();
+    const t = this.body.translation(state.position);
+    const q = this.body.rotation(state.rotation);
+    const v = this.body.linvel(bodyLinvel);
     rotVec(q, 0, 0, -1);
     state.forwardSpeed = v.x * rv.x + v.y * rv.y + v.z * rv.z;
 

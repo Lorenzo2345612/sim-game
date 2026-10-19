@@ -48,11 +48,19 @@ export function diffSplit(
   tIn: number,
   omegaL: number,
   omegaR: number,
-  onThrottle: boolean
+  onThrottle: boolean,
+  out?: [number, number]
 ): [number, number] {
-  if (diff.type === 'open') return [tIn / 2, tIn / 2];
+  const res = out ?? [0, 0];
+  if (diff.type === 'open') {
+    res[0] = tIn / 2;
+    res[1] = tIn / 2;
+    return res;
+  }
   const lock = diff.type === 'locked' ? 1 : onThrottle ? diff.lockPower : diff.lockCoast;
   const lim = diff.preload + lock * Math.abs(tIn);
   const coupling = Math.min(lim, Math.max(-lim, DIFF_K * (omegaL - omegaR)));
-  return [tIn / 2 - coupling, tIn / 2 + coupling];
+  res[0] = tIn / 2 - coupling;
+  res[1] = tIn / 2 + coupling;
+  return res;
 }

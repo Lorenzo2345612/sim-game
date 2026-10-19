@@ -37,19 +37,28 @@ function passDecision(
   halfWidth: number,
   lineOffsetAhead: number,
   curvatureAhead: number,
+  out: TrafficDecision,
 ): TrafficDecision {
   const limit = halfWidth - EDGE_MARGIN;
   const right = blocker.lateral + PASS_LATERAL;
   const left = blocker.lateral - PASS_LATERAL;
-  const fits = (v: number) => Math.abs(v) <= limit;
   const preferRight = curvatureAhead > 0;
   const preferred = preferRight ? right : left;
   const alternative = preferRight ? left : right;
-  if (fits(preferred)) return { offset: preferred - lineOffsetAhead, speedCap: null };
-  if (fits(alternative)) return { offset: alternative - lineOffsetAhead, speedCap: null };
-  return { offset: 0, speedCap: blocker.speed };
+  if (Math.abs(preferred) <= limit) {
+    out.offset = preferred - lineOffsetAhead;
+    out.speedCap = null;
+  } else if (Math.abs(alternative) <= limit) {
+    out.offset = alternative - lineOffsetAhead;
+    out.speedCap = null;
+  } else {
+    out.offset = 0;
+    out.speedCap = blocker.speed;
+  }
+  return out;
 }
 
+// `out` (optional) is filled and returned so per-tick callers can avoid allocating.
 export function trafficDecision(
   self: CarTrafficState,
   others: readonly CarTrafficState[],
@@ -57,6 +66,7 @@ export function trafficDecision(
   halfWidth: number,
   lineOffsetAhead: number,
   curvatureAhead: number,
+  out?: TrafficDecision,
 ): TrafficDecision {
   let blocker: CarTrafficState | null = null;
   let blockerGap = Infinity;
@@ -86,11 +96,16 @@ export function trafficDecision(
     }
   }
 
-  if (blocker) return passDecision(blocker, halfWidth, lineOffsetAhead, curvatureAhead);
+  const res = out ?? { offset: 0, speedCap: null };
+  if (blocker) return passDecision(blocker, halfWidth, lineOffsetAhead, curvatureAhead, res);
   if (alongside) {
-    return { offset: alongside.lateral >= self.lateral ? -1.0 : 1.0, speedCap: null };
+    res.offset = alongside.lateral >= self.lateral ? -1.0 : 1.0;
+    res.speedCap = null;
+  } else {
+    res.offset = 0;
+    res.speedCap = null;
   }
-  return { offset: 0, speedCap: null };
+  return res;
 }
 
 export function difficultyParams(d: Difficulty): { speedScale: number; mistakesPerLap: number } {
