@@ -2,9 +2,11 @@
 <html lang="es"><head><meta charset="utf-8"><title>Evolución IA</title>
 <style>
 body{margin:0;background:#111;color:#ddd;font:14px system-ui;display:flex;height:100vh}
-#map{flex:1;min-width:0;min-height:0}#side{width:clamp(160px,30%,320px);padding:8px;box-sizing:border-box;border-left:1px solid #333;overflow:auto;font-size:12px}
+#map{flex:1;min-width:0;min-height:0}#side{width:clamp(200px,34%,420px);padding:8px;box-sizing:border-box;border-left:1px solid #333;overflow:auto;font-size:12px}
 h2{margin:0 0 6px;font-size:14px}.k{color:#888;font-size:11px}canvas{display:block}
-#chart,#lchart{width:100%;background:#181818;margin-top:6px}
+#chart,#lchart,#rchart{width:100%;background:#181818;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:11px;margin-top:4px}td,th{padding:1px 3px;text-align:right;border-bottom:1px solid #262626}th{color:#888;font-weight:normal}
+.rec b{color:#ffcc33}
 @media (max-width:480px){body{flex-direction:column}#side{width:100%;max-height:42%;border-left:0;border-top:1px solid #333}}
 </style></head><body>
 <canvas id="map"></canvas>
@@ -13,12 +15,16 @@ h2{margin:0 0 6px;font-size:14px}.k{color:#888;font-size:11px}canvas{display:blo
 <canvas id="chart" width="316" height="200"></canvas>
 <div id="laps"></div>
 <canvas id="lchart" width="316" height="120"></canvas>
-<p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación.</p>
+<div id="recs" class="rec"></div>
+<canvas id="rchart" width="316" height="100"></canvas>
+<div id="models"></div>
+<div id="tbl"></div>
+<p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación. Carrera limpia = terminó sin faltas, choques ni vueltas inválidas (solo esas se guardan como modelo). Racecraft: verde adelantamientos limpios, naranja faltas, rojo choques provocados.</p>
 </div>
 <script>
 const map=document.getElementById('map'),ctx=map.getContext('2d'),ch=document.getElementById('chart'),cx=ch.getContext('2d');
 let init=null,pos=[],gen=0,t=0,hist=[],view=null;
-function fit(){map.width=map.clientWidth;map.height=map.clientHeight;const lc=document.getElementById('lchart');ch.width=lc.width=ch.clientWidth;ch.height=Math.min(140,Math.round(ch.width*0.5));lc.height=Math.min(90,Math.round(lc.width*0.32));if(hist.length)chart();if(!init)return;
+function fit(){map.width=map.clientWidth;map.height=map.clientHeight;const lc=document.getElementById('lchart'),rc=document.getElementById('rchart');ch.width=lc.width=rc.width=ch.clientWidth;ch.height=Math.min(140,Math.round(ch.width*0.5));lc.height=Math.min(90,Math.round(lc.width*0.32));if(hist.length)chart();if(!init)return;
  const pts=init.left.concat(init.right);let a=1e9,b=-1e9,c=1e9,d=-1e9;
  for(const[x,z]of pts){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,z);d=Math.max(d,z);}
  const s=Math.min((map.width-40)/(b-a),(map.height-40)/(d-c));view={s,ox:20-a*s+(map.width-40-(b-a)*s)/2,oz:20-c*s+(map.height-40-(d-c)*s)/2};}
@@ -46,14 +52,37 @@ function lapChart(){const c=document.getElementById('lchart'),g=c.getContext('2d
  const lo=Math.min(...L.map(p=>p[1])),hi=Math.max(...L.map(p=>p[1])),n=Math.max(hist.length-1,1);g.strokeStyle='#f6c';g.beginPath();
  L.forEach(([i,t],k)=>{const u=4+i/n*(c.width-8),v=8+(hi>lo?(t-lo)/(hi-lo):0.5)*(c.height-20);k?g.lineTo(u,v):g.moveTo(u,v)});g.stroke();
  g.fillStyle='#aaa';g.fillText(`mejor vuelta por generación (${fmt(lo)}–${fmt(hi)})`,4,c.height-3);}
-function chart(){lapChart();cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.height);if(!hist.length)return;
+const fmt=t=>t>0?`${Math.floor(t/60)}:${(t%60).toFixed(2).padStart(5,'0')}`:'–';
+let models={};
+function stats(){if(!hist.length)return;const H=hist,last=H[H.length-1];
+ const minBy=(f)=>{let b=null;for(const h of H){const v=f(h);if(v>0&&(!b||v<b[0]))b=[v,h.gen];}return b;};
+ const bl=minBy(h=>h.bestLap),rc=minBy(h=>h.raceAvg),ra=minBy(h=>h.raceAvgAny),ml=minBy(h=>h.medLap);
+ const rec=H.slice(-20),gph=rec.length?3600/(rec.reduce((a,h)=>a+(h.secs||0),0)/rec.length||1):0;
+ const totClean=H.reduce((a,h)=>a+(h.finished||0),0);
+ document.getElementById('recs').innerHTML=`<h2 style="margin-top:10px">Récords</h2>`+
+  `Mejor vuelta: <b>${bl?fmt(bl[0]):'–'}</b>${bl?` (gen ${bl[1]})`:''}<br>`+
+  `Mejor mediana de vuelta (población): <b>${ml?fmt(ml[0]):'–'}</b>${ml?` (gen ${ml[1]})`:''}<br>`+
+  `Mejor ritmo de carrera limpia: <b>${rc?fmt(rc[0]):'–'}</b>${rc?` (gen ${rc[1]})`:''}<br>`+
+  `Mejor ritmo de carrera (cualquiera): <b>${ra?fmt(ra[0]):'–'}</b>${ra?` (gen ${ra[1]})`:''}<br>`+
+  `Mejor generación (fitness): <b>${last.bestGen??'–'}</b> · carreras limpias totales <b>${totClean}</b><br>`+
+  `<span class="k">Ritmo: ${gph.toFixed(1)} gen/h · σ ${last.sigma!=null?last.sigma.toFixed(3):'–'}${last.speed?' · fase velocidad':''} · carrera ${last.raceLaps??'?'} vueltas</span>`;
+ const ms=Object.values(models).sort((a,b)=>a.avgLap-b.avgLap);
+ document.getElementById('models').innerHTML=`<h2 style="margin-top:10px">Modelos guardados (${ms.length})</h2>`+(ms.length?ms.slice(0,8).map(m=>`gen ${m.gen}: ritmo ${fmt(m.avgLap)}`).join('<br>'):'<span class="k">ninguno todavía</span>');
+ const rows=H.slice(-15).reverse().map(h=>`<tr><td>${h.gen}</td><td>${fmt(h.bestLap)}</td><td>${fmt(h.medLap)}</td><td>${h.lapsDone??'–'}</td><td>${h.finished??'–'}/${h.finishedAny??'–'}</td><td>${fmt(h.raceAvgAny)}</td><td>${h.passes??'–'}</td><td>${h.faults??'–'}</td><td>${h.crash??'–'}</td><td>${h.champ?`${h.champ.passes}/${h.champ.faults}`:'–'}</td><td>${h.secs?h.secs.toFixed(0):'–'}</td></tr>`).join('');
+ document.getElementById('tbl').innerHTML=`<h2 style="margin-top:10px">Últimas generaciones</h2><table><tr><th>gen</th><th>mejor</th><th>mediana</th><th>vueltas</th><th>limpias/fin</th><th>ritmo</th><th>adel.</th><th>faltas</th><th>choq.</th><th>camp a/f</th><th>s</th></tr>${rows}</table><p class="k">vueltas = total de vueltas completadas por la población; limpias/fin = carreras terminadas sin faltas / terminadas; ritmo = promedio por vuelta del primero en terminar; camp a/f = adelantamientos/faltas del campeón.</p>`;
+ const c=document.getElementById('rchart'),g=c.getContext('2d');g.fillStyle='#181818';g.fillRect(0,0,c.width,c.height);
+ const R=H.filter(h=>h.passes!=null);if(R.length<2)return;const m=Math.max(1,...R.map(h=>Math.max(h.passes,h.faults,h.crash))),n=R.length-1;
+ for(const[k,col]of[['passes','#5d5'],['faults','#fa3'],['crash','#e44']]){g.strokeStyle=col;g.beginPath();R.forEach((h,i)=>{const u=4+i/n*(c.width-8),v=c.height-6-h[k]/m*(c.height-18);i?g.lineTo(u,v):g.moveTo(u,v)});g.stroke();}
+ g.fillStyle='#aaa';g.fillText(`racecraft por generación (máx ${m})`,4,11);}
+function chart(){lapChart();stats();cx.fillStyle='#181818';cx.fillRect(0,0,ch.width,ch.height);if(!hist.length)return;
  const m=Math.max(...hist.map(h=>h.best),1),n=Math.max(hist.length-1,1);
  for(const[key,col]of[['mean','#888'],['best','#5d5']]){cx.strokeStyle=col;cx.beginPath();hist.forEach((h,i)=>{const u=4+i/n*(ch.width-8),v=ch.height-6-h[key]/m*(ch.height-20);i?cx.lineTo(u,v):cx.moveTo(u,v)});cx.stroke();}
  cx.fillStyle='#aaa';cx.fillText(`${m.toFixed(0)} m`,4,12);}
 // workers get contiguous slices; elites are pop indices 0..elite-1 → worker 0..; mapped by slice layout
 function eliteSet(){eliteIdx=new Set();for(let i=0;i<init.elite;i++)eliteIdx.add(i);}
 const es=new EventSource('/events');
-es.addEventListener('init',e=>{init=JSON.parse(e.data);hist=init.history;eliteSet();fit();chart();});
+es.addEventListener('models',e=>{models=JSON.parse(e.data);stats();});
+es.addEventListener('init',e=>{init=JSON.parse(e.data);hist=init.history;models=init.models||{};eliteSet();fit();chart();});
 es.addEventListener('pos',e=>{const d=JSON.parse(e.data);pos=d.p;gen=d.gen;t=d.t;if(d.e)eliteIdx=new Set(d.e);});
 es.addEventListener('gen',e=>{hist.push(JSON.parse(e.data));chart();});
 draw();

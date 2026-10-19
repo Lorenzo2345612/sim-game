@@ -89,7 +89,8 @@ function cross(a: Float64Array, b: Float64Array): Float64Array {
 // Viewer state + SSE
 let eliteSlots: number[] = [];
 const clients = new Set<ServerResponse>();
-const history: { gen: number; best: number; mean: number; bestLap: number; laps: number }[] = [];
+const history: any[] = []; // per-generation stats for the viewer, persisted to runDir/history.json
+let bestGen = -1;
 let sigma = 0.25, lapLength = 0, allTimeBest = 0, simT = 0;
 const per = Math.ceil(POP / W);
 const positions = new Float32Array(POP * 4);
@@ -98,7 +99,7 @@ createServer((req, res) => {
   if (req.url === '/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     clients.add(res);
-    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId: LINE === 'racing' ? `${trackId} (trazada ideal)` : LINE === 'mintime' ? `${trackId} (tiempo mínimo)` : trackId, carId, pop: POP, elite: ELITE, history })}\n\n`);
+    res.write(`event: init\ndata: ${JSON.stringify({ left, right, trackId: LINE === 'racing' ? `${trackId} (trazada ideal)` : LINE === 'mintime' ? `${trackId} (tiempo mínimo)` : trackId, carId, pop: POP, elite: ELITE, history, models: hof })}\n\n`);
     req.on('close', () => clients.delete(res));
     return;
   }
@@ -154,6 +155,7 @@ let episodes: { start: number; secs: number }[] = [];
 let gridSecs = Math.max(150, lapLength / 20), refLap = 0, topLaps = 0; // first grid episode fits ~1.5 laps at early pace
 let speedPhase = seeds.some((g) => g.phase === 'speed') || !!snap?.speedPhase;
 if (snap) ({ refLap, topLaps, sigma } = snap);
+if (snap) { const hf = join(dirname(resume), 'history.json'); if (existsSync(hf)) history.push(...JSON.parse(readFileSync(hf, 'utf8'))); }
 const meanLaps: number[] = [];
 mkdirSync(modelDir, { recursive: true });
 const hof: Record<string, any> = existsSync(join(modelDir, 'index.json')) ? JSON.parse(readFileSync(join(modelDir, 'index.json'), 'utf8')).models ?? {} : {};
@@ -169,6 +171,7 @@ function saveModel(i: number, finish: number) {
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
   const difficulties = { expert: all[0].file, hard: pick(1.03), medium: pick(1.07), easy: pick(1.12) };
   writeFileSync(join(modelDir, 'index.json'), JSON.stringify({ track: trackId, car: carId, line: LINE, difficulties, models: hof }, null, 1));
+  send('models', hof);
   console.log(`model saved ${file} (avg lap ${avg.toFixed(2)} s)`);
 }
 let lastR: any = null;
@@ -211,11 +214,22 @@ for (; gen < GENS; ) {
   const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
   const rcLine = RACECRAFT ? ` passes ${sum(r.passes)} faults ${sum(r.faults)} crash ${sum(r.crashFaults)} champ ${r.passes[bestI]}/${r.faults[bestI]}` : '';
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
-  history.push({ gen, best: r.best[bestI], mean, bestLap, laps: topLaps });
+  const anyFin = r.finishT.map((t, i) => [t, i]).filter(([t]) => t > 0).sort((a, b) => a[0] - b[0]);
+  const sortedLaps = [...laps].sort((a, b) => a - b);
+  if (r.fitness[bestI] >= allTimeBest) bestGen = gen;
+  history.push({
+    gen, best: r.best[bestI], mean, bestLap, laps: topLaps, medLap: sortedLaps.length ? sortedLaps[sortedLaps.length >> 1] : 0,
+    carsWithLap: laps.length, lapsDone: sum(r.laps), raceLaps: raceLaps(), finished: finishers.length, finishedAny: anyFin.length,
+    raceAvg: finishers.length ? finishers[0][0] / raceLaps() : 0, raceAvgAny: anyFin.length ? anyFin[0][0] / raceLaps() : 0,
+    passes: sum(r.passes), faults: sum(r.faults), crash: sum(r.crashFaults),
+    champ: { passes: r.passes[bestI], faults: r.faults[bestI], crash: r.crashFaults[bestI], laps: r.laps[bestI], lap: r.lapT[bestI] },
+    sigma, secs: (Date.now() - t0) / 1000, speed: speedPhase, bestGen,
+  });
   console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s${rcLine} sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   const champ = { gen, phase: speedPhase ? 'speed' : 'growth', nIn: N_IN, line: LINE, track: trackId, car: carId, distance: r.best[bestI], lapTime: r.lapT[bestI], laps: r.laps[bestI], fitness: r.fitness[bestI], weights: Array.from(pop[bestI]) };
   writeFileSync(join(runDir, `gen-${String(gen).padStart(4, '0')}.json`), JSON.stringify(champ));
   if (r.fitness[bestI] >= allTimeBest) { allTimeBest = r.fitness[bestI]; writeFileSync(join(runDir, 'best.json'), JSON.stringify(champ)); }
+  writeFileSync(join(runDir, 'history.json'), JSON.stringify(history));
   send('gen', history[history.length - 1]);
   // Next generation: elites unchanged (drawn first, gold in the viewer), rest from top parents
   const next: Float64Array[] = order.slice(0, ELITE).map((i) => pop[i]);
