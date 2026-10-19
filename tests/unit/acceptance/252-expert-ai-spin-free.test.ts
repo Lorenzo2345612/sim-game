@@ -146,8 +146,7 @@ describe('252 expert AI spin-free acceptance', () => {
     900000,
   );
 
-  // moved to task 273
-  it.skip(
+  it(
     'AT4: silverstone three expert AIs never spin in 60 s on seeds 1-3',
     async () => {
       const track = loadTrack('silverstone');

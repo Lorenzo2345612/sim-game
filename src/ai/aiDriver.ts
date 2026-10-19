@@ -38,6 +38,12 @@ const SPEED_PREVIEW_TIME = 0.3;
 const LOCAL_SEARCH = 50;
 const REAR_SLIP_LIMIT = (6 * Math.PI) / 180;
 const YAW_RATE_ERROR_LIMIT = 0.25;
+// Traffic caution (task 273): steer and throttle stay under these while a car
+// is alongside or close ahead, so the car cannot swerve into or power into it.
+// The steer limit only applies while the car is settled; in a slide the car
+// needs full authority to catch it.
+const TRAFFIC_STEER_LIMIT = 0.6;
+const TRAFFIC_THROTTLE_LIMIT = 0.4;
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
@@ -48,6 +54,8 @@ export class AiDriver {
   private reqOffset = 0;
   private offset = 0;
   private speedCap: number | null = null;
+  private followCap: number | null = null;
+  private trafficNear = false;
   private steerCurve: { low: number; high: number; fullSpeed: number } | null = null;
   private lastSteer = 0;
   private idx = 0;
@@ -76,6 +84,16 @@ export class AiDriver {
 
   setSpeedCap(v: number | null): void {
     this.speedCap = v;
+  }
+
+  // Hard speed limit behind the car ahead, not a difficulty-scaled target.
+  setFollowCap(v: number | null): void {
+    this.followCap = v;
+  }
+
+  // A car is alongside or close ahead; steer and throttle are limited while so.
+  setTrafficNear(near: boolean): void {
+    this.trafficNear = near;
   }
 
   setSpeedScale(v: number): void {
@@ -158,6 +176,7 @@ export class AiDriver {
     let vTarget = this.previewSpeed(n, obs.speed);
     if (this.speedCap !== null && vTarget > this.speedCap) vTarget = this.speedCap;
     vTarget *= this.p.speedScale;
+    if (this.followCap !== null && vTarget > this.followCap) vTarget = this.followCap;
     const err = vTarget - obs.speed;
     out.throttle = clamp(this.p.kp * err, 0, 1);
     out.brake = clamp(-this.p.kb * err, 0, 1);
@@ -172,6 +191,14 @@ export class AiDriver {
       const yawErr = this.yawError(obs);
       if (yawErr <= YAW_RATE_ERROR_LIMIT && Math.abs(out.steer) > Math.abs(this.lastSteer)) {
         out.steer = out.steer > 0 ? Math.abs(this.lastSteer) : -Math.abs(this.lastSteer);
+      }
+    }
+    if (this.trafficNear) {
+      if (out.throttle > TRAFFIC_THROTTLE_LIMIT) out.throttle = TRAFFIC_THROTTLE_LIMIT;
+      const slipping = obs.rearSlip !== undefined && Math.abs(obs.rearSlip) > REAR_SLIP_LIMIT;
+      if (!slipping) {
+        if (out.steer > TRAFFIC_STEER_LIMIT) out.steer = TRAFFIC_STEER_LIMIT;
+        else if (out.steer < -TRAFFIC_STEER_LIMIT) out.steer = -TRAFFIC_STEER_LIMIT;
       }
     }
     this.lastSteer = out.steer;

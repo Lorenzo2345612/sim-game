@@ -87,6 +87,12 @@ let contactHit = false;
 function probeContact(manifold: RAPIER.TempContactManifold): void {
   if (manifold.numSolverContacts() > 0) contactHit = true;
 }
+// A neighbour this close makes the driver ease off (task 273): car alongside or
+// close ahead, within a car's width sideways. Close-ahead also caps the target
+// speed to the car in front so the driver never closes on it.
+const NEAR_ALONGSIDE_M = 6;
+const NEAR_AHEAD_M = 20;
+const NEAR_LATERAL_M = 3;
 
 // Local copy (engineSynth has one too); the race never draws unseeded randoms.
 function mulberry32(seed: number): () => number {
@@ -231,6 +237,9 @@ export class RaceGame {
   private time = 0;
   private stepIndex = 0;
   private disposed = false;
+  // Traffic caution of the AI being wired this tick (task 273).
+  private nearTraffic = false;
+  private aheadSpeedCap: number | null = null;
 
   private constructor(
     track: TrackDataV2,
@@ -614,6 +623,9 @@ export class RaceGame {
             ai.driver.setLateralOffset(decision.offset);
             ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
           }
+          this.updateTrafficCaution(i);
+          ai.driver.setTrafficNear(this.nearTraffic);
+          ai.driver.setFollowCap(this.aheadSpeedCap);
           this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }
@@ -831,6 +843,30 @@ export class RaceGame {
           this.contactTotal++;
           this.lastContact[cell] = now;
         }
+      }
+    }
+  }
+
+  // Neighbour alongside or close ahead of car index i, and the target-speed cap
+  // of the closest car ahead so the driver never drives into it (task 273).
+  private updateTrafficCaution(i: number): void {
+    const self = this.traffic[i];
+    const others = this.othersByCar[i];
+    this.nearTraffic = false;
+    this.aheadSpeedCap = null;
+    let bestGap = Infinity;
+    for (let j = 0; j < others.length; j++) {
+      const other = others[j];
+      const gap = this.wrapGap(other.distance - self.distance);
+      if (Math.abs(other.lateral - self.lateral) > NEAR_LATERAL_M) continue;
+      if (gap > 0 && gap < NEAR_AHEAD_M) {
+        this.nearTraffic = true;
+        if (gap < bestGap) {
+          bestGap = gap;
+          this.aheadSpeedCap = other.speed;
+        }
+      } else if (Math.abs(gap) < NEAR_ALONGSIDE_M) {
+        this.nearTraffic = true;
       }
     }
   }

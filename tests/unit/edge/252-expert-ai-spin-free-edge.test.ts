@@ -149,7 +149,7 @@ describe('252 expert AI spin-free edge', () => {
     300000,
   );
 
-  // moved to task 273
+  // split from 273, follow-up task
   it.skip(
     'EDGE6: silverstone medium AIs in traffic never spin over the goal 60 s window',
     async () => {
@@ -189,7 +189,7 @@ describe('252 expert AI spin-free edge', () => {
     600000,
   );
 
-  // moved to task 273
+  // split from 273, follow-up task
   it.skip(
     'EDGE9: silverstone easy AIs in traffic never spin over the goal 60 s window',
     async () => {
