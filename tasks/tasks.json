@@ -2128,7 +2128,7 @@
     {
       "num": "154",
       "title": "Adaptive quality (dynamic resolution, auto preset)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "151"
       ],
