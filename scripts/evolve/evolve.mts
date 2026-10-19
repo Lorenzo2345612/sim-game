@@ -94,6 +94,9 @@ const clients = new Set<ServerResponse>();
 const history: any[] = []; // per-generation stats for the viewer, persisted to runDir/history.json
 let bestGen = -1;
 let sigma = Number(arg('sigma', '0.25')), lapLength = 0, allTimeBest = 0, simT = 0;
+// Stagnation kick: no better race avg lap for KICK_AFTER speed-phase gens -> sigma back to KICK_SIGMA.
+const KICK_AFTER = Number(arg('kick-after', '0')), KICK_SIGMA = Number(arg('kick-sigma', '0.2'));
+let bestAvg = Infinity, lastImprove = -1;
 const per = Math.ceil(POP / W);
 const positions = new Float32Array(POP * 4);
 const send = (ev: string, data: unknown) => { const s = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const c of clients) c.write(s); };
@@ -241,6 +244,9 @@ for (; gen < GENS; ) {
   }
   pop = next;
   sigma = Math.max(0.06, sigma * 0.985);
+  if (finishers.length && finishers[0][0] / raceLaps() < bestAvg - 0.2) { bestAvg = finishers[0][0] / raceLaps(); lastImprove = gen; }
+  if (lastImprove < 0 && speedPhase) lastImprove = gen;
+  if (KICK_AFTER > 0 && speedPhase && gen - lastImprove >= KICK_AFTER) { sigma = KICK_SIGMA; lastImprove = gen; console.log(`kick: sigma ${KICK_SIGMA} (no avg lap gain in ${KICK_AFTER} gens, best ${bestAvg.toFixed(2)} s)`); }
   writeFileSync(join(runDir, 'pop.json'), JSON.stringify({ gen, line: LINE, speedPhase, refLap, topLaps, sigma, pop: pop.map((g) => Array.from(g)) }));
   gen++;
 }

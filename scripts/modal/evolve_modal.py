@@ -36,7 +36,7 @@ vol = modal.Volume.from_name("simgame-evolve", create_if_missing=True)
 # Same settings as the Cleveland residual run that produced gen331 (task 288).
 BASE_ARGS = (
     "--pop 100 --gens 100000 --speed-laps 3 --evals 2 --speed-mut 0.15 --line mintime --racecraft --opponents 6 "
-    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.35"
+    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.35 --kick-after 40"
 ).split()
 
 
@@ -56,7 +56,11 @@ def train(track: str, hours: float, seed_name: str, seed_json: str, extra: list[
             p.symlink_to(vroot / d)
     args = ["npx", "tsx", "scripts/evolve/evolve.mts", "--track", track, "--workers", str(CPU - 1), *BASE_ARGS,
             "--model-dir", f"{track}-f4-residual", *extra]
-    if seed_json:
+    # Preemption restarts this function: continue from this track's newest population instead of the seed.
+    snaps = sorted((vroot / "runs").glob(f"{track}-f4-*/pop.json"), key=lambda f: f.stat().st_mtime)
+    if snaps:
+        args += ["--resume", str(snaps[-1])]
+    elif seed_json:
         seed = vroot / "seeds" / seed_name
         seed.write_text(seed_json)
         args += ["--resume", str(seed)]
