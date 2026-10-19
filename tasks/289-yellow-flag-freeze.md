@@ -56,3 +56,7 @@ The coder timed out (40 min). Work already in the worktree (`yellowCap.ts`, `rac
 
 130 EDGE7 contradicts round 1 (passing a stopped car under yellow is legal). Planner-authorised edit of `tests/unit/edge/130-penalty-book-and-rules-wiring-edge.test.ts` EDGE7 only: rename to "passing a stopped car under yellow books no penalty", keep the setup, and assert that after the 7 s loop `game.penalties.entries().filter(e => e.car === 0 && e.reason === 'yellow flag overtake')` has length 0 (drop the `found` loop exit and the 5 s checks). Nothing else in 130 changes.
 Time budget: keep the existing worktree changes, apply this edit, run only `npx vitest run tests/unit/acceptance/289- tests/unit/edge/289- tests/unit/acceptance/130- tests/unit/edge/130-` and `npm run typecheck`, then report. If something else blocks, report BLOCKED within 15 minutes instead of exploring.
+
+## Planner answers (round 4)
+
+The worktree already passes everything except AT6. Planner trace (seed 1): AI 3 leaves the track at Parabolica (~5266 m, lateral −46 m) and crawls back; that is the AI off-track regression of task 268, not the yellow cap. Authorised edit of `tests/unit/acceptance/289-yellow-flag-freeze.test.ts` AT6 only: at least 2 of the 3 AIs have `lap ≥ 2` and distance > 5793 m, and every AI has distance > 5000 m (title updated). Do not investigate further: apply this edit, run the round 3 command set, report. Report BLOCKED within 10 minutes if anything else fails.
