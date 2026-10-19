@@ -30,6 +30,8 @@ export interface RaceConfig {
   aiCount: number;
   difficulty: Difficulty;
   seed: number;
+  /** gridOrder[p] = car index at grid position p (default: player last). */
+  gridOrder?: number[];
 }
 
 // Tune fields stay optional so the neural driver can be selected without a tune.
@@ -62,6 +64,20 @@ function mulberry32(seed: number): () => number {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+function validateGridOrder(order: number[], count: number): void {
+  if (order.length !== count) {
+    throw new Error(`gridOrder length ${order.length} must equal car count ${count}`);
+  }
+  const seen = new Array<boolean>(count).fill(false);
+  for (const v of order) {
+    if (!Number.isInteger(v) || v < 0 || v >= count) {
+      throw new Error(`gridOrder entry ${v} out of range 0..${count - 1}`);
+    }
+    if (seen[v]) throw new Error(`gridOrder duplicate entry ${v}`);
+    seen[v] = true;
+  }
 }
 
 interface AiCar {
@@ -191,27 +207,31 @@ export class RaceGame {
     config: RaceConfig,
     options?: RaceGameOptions,
   ): Promise<RaceGame> {
+    const aiCount = Number.isFinite(config.aiCount)
+      ? Math.min(MAX_AI, Math.max(0, Math.floor(config.aiCount)))
+      : 0;
+    const count = aiCount + 1;
+    const order = config.gridOrder;
+    if (order !== undefined) validateGridOrder(order, count);
     await initPhysics();
     const world = createPhysicsWorld(track);
     const tune: GameTune | undefined =
       options?.compound !== undefined && options?.wear !== undefined && options?.fuel !== undefined
         ? { compound: options.compound, wear: options.wear, fuel: options.fuel }
         : undefined;
-    const aiCount = Number.isFinite(config.aiCount)
-      ? Math.min(MAX_AI, Math.max(0, Math.floor(config.aiCount)))
-      : 0;
-    const count = aiCount + 1;
     const grid = gridSlots(track, count);
     const neuralWeights =
       options?.aiDriver === 'neural' ? options.neuralModels?.[config.difficulty] : undefined;
     const aiSpec = neuralWeights
       ? neuralCarSpec(spec, { setup: options?.neuralSetups?.[config.difficulty] })
       : spec;
-    // Per-car spawn: the player (index 0) takes the last slot, AI k (index k+1) slot k.
+    // Per-car spawn: without gridOrder the player (index 0) takes the last slot and
+    // AI k (index k+1) slot k; with gridOrder, car i takes the slot listing it.
     const slots: SpawnPose[] = [];
     const vehicles: VehicleModel[] = [];
     for (let i = 0; i < count; i++) {
-      const slot = i === 0 ? grid[aiCount] : grid[i - 1];
+      const p = order ? order.indexOf(i) : i === 0 ? aiCount : i - 1;
+      const slot = grid[p];
       slots.push(slot);
       const vehicle = new VehicleModel(world, i === 0 ? spec : aiSpec, slot);
       configureVehicle(vehicle, track.id, tune);
