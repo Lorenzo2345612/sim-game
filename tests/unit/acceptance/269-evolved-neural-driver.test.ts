@@ -12,8 +12,11 @@ import {
   type RaceConfig,
   type RaceGameOptions,
 } from '../../../src/game/raceGame';
+import type { Setup } from '../../../src/physics/setup';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import type { Standing } from '../../../src/race/classification';
+import { parseResidualModel } from '../../../src/ai/residualPolicy';
+import type { Difficulty } from '../../../src/ai/traffic';
 import { parseTrackData } from '../../../src/track/parseTrackData';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -38,6 +41,31 @@ function modelPath(track: string, car: string, difficulty: string): string {
 
 function loadModelWeights(track: string, car: string, difficulty: string): Float64Array {
   return parseNeuralModel(readJson(modelPath(track, car, difficulty)));
+}
+
+// Builds the neural options exactly as src/main.ts loadNeuralModels does (plain or residual model).
+function loadGameOptions(
+  track: string,
+  car: string,
+  difficulty: Difficulty,
+): RaceGameOptions {
+  const json = readJson(modelPath(track, car, difficulty));
+  const neuralModels = { [difficulty]: parseNeuralModel(json) };
+  const setup = (json as { setup?: Partial<Setup> }).setup;
+  const neuralSetups = setup ? { [difficulty]: setup } : undefined;
+  const residual = parseResidualModel(json);
+  const neuralResidual = residual ? { [difficulty]: residual } : undefined;
+  const line = (json as { line?: string }).line;
+  const base = { aiDriver: 'neural' as const, neuralModels, neuralSetups, neuralResidual };
+  if (line === 'racing') return { ...base, neuralLine: { kind: 'racing' } };
+  if (line === 'mintime') {
+    const mt = readJson(`public/ai-models/${track}-${car}/line-mintime.json`) as {
+      pts: [number, number][];
+      v: number[];
+    };
+    return { ...base, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
+  }
+  return base;
 }
 
 function loadModelBestLap(track: string, car: string, difficulty: string): number {
@@ -256,7 +284,6 @@ describe('269 evolved neural driver acceptance', () => {
   it(
     'AT1: neural expert on monza finishes 3 laps, 0 resets, best lap <= 1.08x model bestLap',
     async () => {
-      const expert = loadModelWeights('monza', 'f4', 'expert');
       const modelBest = loadModelBestLap('monza', 'f4', 'expert');
       const config: RaceConfig = {
         trackId: 'monza',
@@ -270,7 +297,7 @@ describe('269 evolved neural driver acceptance', () => {
         'monza',
         config,
         600,
-        { aiDriver: 'neural', neuralModels: { expert } },
+        loadGameOptions('monza', 'f4', 'expert'),
         true,
       );
       const ai = aiStanding(run, 1);
@@ -342,21 +369,19 @@ describe('269 evolved neural driver acceptance', () => {
   it(
     'AT4: neural expert laps faster than neural easy on monza',
     async () => {
-      const expert = loadModelWeights('monza', 'f4', 'expert');
-      const easy = loadModelWeights('monza', 'f4', 'easy');
       const base = { trackId: 'monza', carId: 'f4', laps: 2, aiCount: 1, seed: 3 } as const;
       const expertRun = await runRace(
         'monza',
         { ...base, difficulty: 'expert' },
         600,
-        { aiDriver: 'neural', neuralModels: { expert } },
+        loadGameOptions('monza', 'f4', 'expert'),
         true,
       );
       const easyRun = await runRace(
         'monza',
         { ...base, difficulty: 'easy' },
         600,
-        { aiDriver: 'neural', neuralModels: { easy } },
+        loadGameOptions('monza', 'f4', 'easy'),
         true,
       );
       const expertBest = aiStanding(expertRun, 1).bestLap;
