@@ -85,3 +85,8 @@ npm test
 7. Pre-existing failures (249 AT3, 250 AT9, 269 POST9, 224 POST4) are not this task's; ignore them.
 
 Files added (authorised edits): `tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts`, `tests/unit/edge/254-weight-distribution-rear-grip-edge.test.ts`, `tests/unit/edge/254-weight-distribution-rear-grip.post.test.ts`, `tests/unit/edge/244-engine-voice-timbre-edge.test.ts`, `tests/unit/acceptance/076-gt3-d.test.ts`, `tests/unit/edge/255-per-car-weight-distribution-edge.test.ts`.
+
+## Planner answers (round 2)
+
+- 255 EDGE5: compare against the f32-rounded value, `toBeCloseTo(Math.fround(expected), 7)` (authorised; f32 CoM storage). Then run the rest (AT1–AT7, typecheck, lint, task tests).
+- ow26 rearMuScale stays 1.03; gt3-b 1.005 accepted; 076 AT3 handling accepted.
