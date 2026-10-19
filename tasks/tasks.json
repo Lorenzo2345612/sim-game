@@ -4110,6 +4110,32 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/304-race-results-penalty-and-running.md"
+    },
+    {
+      "num": "305",
+      "title": "Yellow overtake: 10 s to give the position back",
+      "status": "pending",
+      "deps": [
+        "304"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/305-yellow-overtake-give-back.md"
+    },
+    {
+      "num": "306",
+      "title": "Timing tower views: gap, tyres, laps",
+      "status": "pending",
+      "deps": [
+        "305"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/306-tower-views.md"
     }
   ]
 }

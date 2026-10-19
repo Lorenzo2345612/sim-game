@@ -306,3 +306,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 302 | Race minimap: all cars and sector flag colours | pending | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
 | 304 | Race results: penalties added, running cars not DNF | pending | 303 |
+| 305 | Yellow overtake: 10 s to give the position back | pending | 304 |
+| 306 | Timing tower views: gap, tyres, laps | pending | 305 |
