@@ -61,3 +61,7 @@ npx vitest run tests/unit/acceptance/298- tests/unit/acceptance/128- tests/unit/
 
 - 289 AT6 (`tests/unit/acceptance/289-yellow-flag-freeze.test.ts`): planner-authorised edit — change the per-AI threshold `toBeGreaterThan(5000)` to `toBeGreaterThan(4000)` (and the test title "all beyond 5000 m" → "all beyond 4000 m"). The ≥ 2 of 3 past-one-lap condition stays. The AI 1 shortfall is the known off-track issue of task 268, not a freeze.
 - Calling `startAt` every post-go tick (idempotent) is accepted; global grace in `FlagState.update` is accepted.
+
+## Planner answers (round 2)
+
+- 289 AT6: planner-authorised edit — also change `expect(pastLap, ...).toBeGreaterThanOrEqual(2)` to `toBeGreaterThanOrEqual(1)` and the title "2 of 3 AIs past one lap" → "1 of 3 AIs past one lap". The test guards against frozen AIs; the per-AI > 4000 m check (round 1) still does that. No other change to 289.
