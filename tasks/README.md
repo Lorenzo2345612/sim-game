@@ -269,12 +269,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
-| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
-| 273 | Expert AI spin-free in 3-car traffic (silverstone) | waiting decision | 252 |
+| 273 | Expert AI spin-free in 3-car traffic (silverstone) | in progress | 252 |
 | 274 | Weekend formats and points tables | done | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
 | 276 | RaceConfig gridOrder | done | - |
@@ -290,7 +290,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
-| 289 | Yellow-flag cap must not freeze the field behind a stopped car | in progress | 130 |
+| 289 | Yellow-flag cap must not freeze the field behind a stopped car | waiting decision | 130 |
 | 290 | Overtake log and grid positions in RaceGame | pending | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
