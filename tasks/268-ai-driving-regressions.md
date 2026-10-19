@@ -136,3 +136,10 @@ Planner-authorised typing fix in `tests/unit/edge/268-driver-barrier.post.test.t
 ## Merge note (planner)
 
 Task 273 (traffic follow cap, `setFollowCap`) landed on master first. The 268 diff was replayed onto master in the worktree; `src/ai/traffic.ts` and `src/game/raceGame.ts` contain conflict markers (`<<<<<<< ours` = master, `>>>>>>> theirs` = 268). Resolve them by keeping BOTH behaviours (273's follow cap / vTarget order and 268's per-index half widths, barrier, reset logic). Do not use git. Then run the 268 and 273 tests plus `npm run typecheck`.
+
+## Planner answers (round 8)
+
+1. `AI_GRIP_MARGIN = 0.75`. Authorised edit: `tests/unit/edge/252-expert-ai-spin-free-edge.test.ts` EDGE1 → expect `0.75` (title "stays frozen at 0.75").
+2. `LINE_MARGIN_M`: use the LARGEST value in {2.4, 2.2, 2.0, 1.8, 1.6, 1.4} that passes frozen 130 EDGE7 and AT3–AT5 (with AT3–AT5 setup from item 3). Do not edit 130 EDGE7. Report the value.
+3. Option (a). In AT3, AT4 and AT5 the player input is `{ throttle: 0, brake: 0.4, steer: 0, reset: false }` (brake < 0.5 never triggers auto-reverse; the player stays on its grid slot). Authorised edit of `tests/unit/acceptance/268-*.test.ts` for that input only; no other change to those tests.
+4. Authorised edit: `tests/unit/edge/268-ai-driving-regressions.test.ts` EDGE1 (~line 330) casts its control ray at a mid-run vertex of the first barrier run, as POST60 does.
