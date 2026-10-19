@@ -4001,7 +4001,7 @@
     {
       "num": "296",
       "title": "Driver names in the race UI",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "291",
         "294",
