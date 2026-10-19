@@ -72,7 +72,6 @@ Note: in rows, "Classification" means `RaceClassification` (constructor `(carCou
 | AT13 | `Classification` 2 cars, car 0 finished | `disqualify(0)` | `isDisqualified(0)` false; car 0 position 1 |
 | AT14 | `Classification` 2 cars | `retire(1)`, `disqualify(1)` | `isDisqualified(1)` true; `finished` false; after car 0 finishes `finished` true |
 | AT15 | car 1 disqualified at distance 100 m | `update(1, 500, t)` | car 1 standing distance still 100 m |
-| AT16 | — | run 130 and 092 unit tests and tests/unit/race/classification.test.ts | pass |
 
 ## Acceptance criteria
 
