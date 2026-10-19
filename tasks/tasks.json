@@ -3812,7 +3812,7 @@
     {
       "num": "281",
       "title": "Electric powertrain math",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
