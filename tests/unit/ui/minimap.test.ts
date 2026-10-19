@@ -80,6 +80,15 @@ class FakeCanvas extends FakeEl {
 
 class FakeDoc {
   created: string[] = [];
+  styleProps: [string, string][] = [];
+  documentElement = {
+    style: {
+      setProperty: (name: string, value: string): void => {
+        this.styleProps.push([name, value]);
+      },
+    },
+  };
+
   createElement(tag: string): FakeEl {
     this.created.push(tag);
     if (tag === 'canvas') return new FakeCanvas(this);
@@ -204,14 +213,12 @@ describe('toMinimap', () => {
 
 describe('Minimap canvas', () => {
   it('appends one canvas of the default size with the spec CSS', () => {
-    const { container, canvas } = setup();
+    const { container, canvas, doc } = setup();
     expect(container.children).toHaveLength(1);
     expect(canvas.width).toBe(160);
     expect(canvas.height).toBe(160);
-    expect(canvas.style.position).toBe('absolute');
-    expect(canvas.style.top).toBe('12px');
-    expect(canvas.style.right).toBe('12px');
-    expect(canvas.style.pointerEvents).toBe('none');
+    expect(canvas.className).toBe('minimap');
+    expect(doc.styleProps).toContainEqual(['--minimap-size', '160px']);
   });
 
   it('honours a custom size', () => {

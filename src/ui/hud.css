@@ -1,7 +1,16 @@
+:root {
+  /* .hud-panel/.hud2-timing font; also drives the column width below */
+  --hud-timing-font: clamp(13px, 1.5vmin + 3px, 20px);
+  /* column width = min-width rule, or content width (~13.5em) when larger */
+  --hud-col: max(clamp(150px, 15vw, 230px), 13.5 * var(--hud-timing-font));
+  --minimap-size: 160px;
+}
+
 #hud {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap);
+  width: var(--hud-col);
   max-width: calc(100vw - 24px);
   font-family: var(--ui-font);
   font-stretch: condensed;
@@ -28,7 +37,7 @@
 .hud2-timing {
   min-width: clamp(150px, 15vw, 230px);
   padding: 0.5em 0.9em 0.6em 1.1em;
-  font-size: clamp(13px, 1.5vmin + 3px, 20px);
+  font-size: var(--hud-timing-font);
   line-height: 1.35;
   overflow: hidden;
 }
@@ -92,8 +101,14 @@
 }
 
 canvas.minimap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: var(--minimap-size);
+  height: var(--minimap-size);
   box-sizing: border-box;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   z-index: 10;
+  pointer-events: none;
 }

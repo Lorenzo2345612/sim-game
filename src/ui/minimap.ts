@@ -78,12 +78,7 @@ export class Minimap {
     this.canvas.width = size;
     this.canvas.height = size;
     this.canvas.className = 'minimap';
-    this.canvas.style.position = 'absolute';
-    this.canvas.style.top = '12px';
-    this.canvas.style.right = '12px';
-    this.canvas.style.pointerEvents = 'none';
-    this.canvas.style.width = `${size}px`;
-    this.canvas.style.height = `${size}px`;
+    ownerDoc.documentElement?.style?.setProperty('--minimap-size', `${size}px`);
     container.appendChild(this.canvas);
 
     this.layer = ownerDoc.createElement('canvas');

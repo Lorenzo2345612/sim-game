@@ -1,6 +1,6 @@
 .damage-hud {
   position: fixed;
-  left: 12px;
+  left: calc(12px + var(--hud-col, 190px) + 8px);
   top: 12px;
   z-index: 10;
   padding: 0.4em;
