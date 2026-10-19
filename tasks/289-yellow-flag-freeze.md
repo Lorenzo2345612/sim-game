@@ -51,3 +51,8 @@ npx vitest run tests/unit/acceptance/289- tests/unit/acceptance/130- tests/unit/
 ## Planner answers (round 2)
 
 The coder timed out (40 min). Work already in the worktree (`yellowCap.ts`, `raceGame.ts`, EDGE6 edit) is kept: continue from it, do not restart. Run only `npx vitest run tests/unit/acceptance/289- tests/unit/edge/289- tests/unit/acceptance/130-`, typecheck and lint, each once; no full suite (the reviewer runs it), no `sleep`, no probe scripts. If a test still fails after one fix attempt, report BLOCKED with the numbers.
+
+## Planner answers (round 3)
+
+130 EDGE7 contradicts round 1 (passing a stopped car under yellow is legal). Planner-authorised edit of `tests/unit/edge/130-penalty-book-and-rules-wiring-edge.test.ts` EDGE7 only: rename to "passing a stopped car under yellow books no penalty", keep the setup, and assert that after the 7 s loop `game.penalties.entries().filter(e => e.car === 0 && e.reason === 'yellow flag overtake')` has length 0 (drop the `found` loop exit and the 5 s checks). Nothing else in 130 changes.
+Time budget: keep the existing worktree changes, apply this edit, run only `npx vitest run tests/unit/acceptance/289- tests/unit/edge/289- tests/unit/acceptance/130- tests/unit/edge/130-` and `npm run typecheck`, then report. If something else blocks, report BLOCKED within 15 minutes instead of exploring.
