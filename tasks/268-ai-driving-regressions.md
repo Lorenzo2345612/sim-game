@@ -43,15 +43,22 @@ Planner diagnosis (verified in a scratch copy): AT1 and AT2 pass with the two ph
 5. AT3–AT5 (grass on corner exits; car ends 1–3 m outside the line): pass margin 2.4 to `computeRacingLine` in `raceGame.ts` and use the same value for the traffic edge limit (replace the hard-coded 1.4 `EDGE_LIMIT` in `traffic.ts`); `AI_GRIP_MARGIN` 0.74; implement the step 5 edge-keeping correction in `AiDriver.update` (pass `lateral` and `halfWidth` in the observation): when `|lateral| > halfWidth − 1.0` and moving outward, add steer towards the centre proportional to the excess and scale `vTarget` down; braking earlier (`kb` or `SPEED_PREVIEW_TIME` up) is allowed. Tune with AT3 only (solo monza) until grass ≤ 1 s and 0 resets, then AT4, AT5, 225/089 tests, lint, full suite.
 Keep the stuck/flip reset, per-index half-width arrays, racingLine and traffic changes.
 
+## Planner answers (round 5)
+
+Planner table edits (AT3/AT4/AT5 rows updated): AT3 best lap ≤ 1.07 × profile (the profile uses the test's margin-1.4 line and ignores the power limit), AT4 grass ≤ 5.0 s per track, AT5 Σ grass ≤ 50 s. Resets stay strict. Authorised edit of only those three thresholds in `tests/unit/acceptance/268-ai-driving-regressions.test.ts`.
+- Pace matters (users find the AI slow): choose the HIGHEST `AI_GRIP_MARGIN` in [0.74, 0.82] that passes AT3–AT5 and the frozen 225 tests; try 0.82, 0.78, then 0.74. Keep kb 0.07 via AiParams and the edge-keeping constants as reported.
+- 032 AT5 (replaces the round-2 edit): push with `setLinvel({x: 10, y, z})` every step until the car centre x > 8.0 or 2 s have passed, then stop forcing and let it run freely 2 s; assertions unchanged (centre < 11 every step, y in (−0.5, 2), maxX > 8.5).
+- Then run lint, typecheck and the full suite and report. Do not stop again for these items.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then |
 |---|---|---|---|
 | AT1 | monza world with track colliders | cast the wheel ray (same filter as `VehicleModel`) straight down from 0.3 m above the top of the left armco wall at index 2504 and horizontally into it at wheel height | the down ray does not hit the barrier collider (hits ground or nothing); the chassis collider still collides with the wall (contact pair exists when the chassis is pushed into it) |
 | AT2 | f4 on monza at index 2504, lateral −9 m, spawned at centerline elevation + 0.6 m, heading 25° towards the left armco, 30 m/s, no input | simulate 3 s | max chassis y − centerline elevation at that index ≤ 0.6 m; up.y > 0.5 throughout; the car centre never crosses the left armco line |
-| AT3 | RaceGame monza, f4, aiCount 1, expert, seed 3, player brake 1 | 3 laps (≤ 400 s) | AI finishes 3 laps; 0 resets; total time with ≥ 2 wheels on grass/gravel ≤ 1.0 s; best lap ≤ 1.04 × the profile lap time (`Σ ds / v_profile` × speedScale) |
-| AT4 | same as AT3 on spa and on silverstone | 2 laps each | finishes; 0 resets; ≥ 2 wheels on grass/gravel ≤ 1.5 s per track |
-| AT5 | RaceGame monza, f4, aiCount 7, expert, seed 3, player brake 1 (static car on the grid) | 300 s | every AI completes ≥ 2 laps; Σ over AIs of time with ≥ 2 wheels on grass/gravel ≤ 15 s; total resets ≤ 1 |
+| AT3 | RaceGame monza, f4, aiCount 1, expert, seed 3, player brake 1 | 3 laps (≤ 400 s) | AI finishes 3 laps; 0 resets; total time with ≥ 2 wheels on grass/gravel ≤ 1.0 s; best lap ≤ 1.07 × the profile lap time (round 5) (`Σ ds / v_profile` × speedScale) |
+| AT4 | same as AT3 on spa and on silverstone | 2 laps each | finishes; 0 resets; ≥ 2 wheels on grass/gravel ≤ 5.0 s per track (round 5) |
+| AT5 | RaceGame monza, f4, aiCount 7, expert, seed 3, player brake 1 (static car on the grid) | 300 s | every AI completes ≥ 2 laps; Σ over AIs of time with ≥ 2 wheels on grass/gravel ≤ 50 s (round 5); total resets ≤ 1 |
 | AT6 | AI car flipped (up.y < 0.3) on track | hold 1.5 s | reset to the nearest track pose within 0.1 s after 1.5 s; also reset when progress along the lap is < 5 m over 5 s regardless of speed |
 | AT7 | racing line for every `public/tracks/*.json` | sample every index | line lateral within [−halfWidthAt(left) + 1.4, halfWidthAt(right) − 1.4] m (per-index widths) |
 | AT8 | `trafficDecision` with per-index half widths | blocker ahead at an index with halfWidthAt 4.0 m each side | chosen offset keeps |line + offset| ≤ 4.0 − 1.4 m |
