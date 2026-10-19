@@ -1704,7 +1704,7 @@
     {
       "num": "125",
       "title": "Assist presets and braking assist",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "054",
         "057",
@@ -1779,7 +1779,7 @@
     {
       "num": "130",
       "title": "Penalty book, HUD messages and wiring of rules",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "089",
         "092",
@@ -2115,7 +2115,7 @@
     {
       "num": "153",
       "title": "Simulation cost with 16 cars",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "151"
       ],
@@ -3538,7 +3538,7 @@
     {
       "num": "260",
       "title": "Racecraft intents (attack, defend, rejoin)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "258"
       ],
@@ -3551,7 +3551,7 @@
     {
       "num": "261",
       "title": "RaceGame scenario starts and contact counter",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -3720,7 +3720,7 @@
     {
       "num": "274",
       "title": "Weekend formats and points tables",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -3744,7 +3744,7 @@
     {
       "num": "276",
       "title": "RaceConfig gridOrder",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",

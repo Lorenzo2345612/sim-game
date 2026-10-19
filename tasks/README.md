@@ -126,12 +126,12 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 121 | Race number decals | done | 120 |
 | 122 | Livery editor screen | done | 044, 073, 074, 106, 114, 120, 121 |
 | 123 | Driving line overlay coloured by action | done | 088, 093, 118 |
-| 125 | Assist presets and braking assist | in progress | 054, 057, 070, 088, 089, 122, 123 |
+| 125 | Assist presets and braking assist | waiting decision | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
 | 128 | Yellow and blue flags | done | 092 |
 | 129 | Virtual safety car | done | 088, 092 |
-| 130 | Penalty book, HUD messages and wiring of rules | in progress | 089, 092, 093, 094, 095, 127, 128, 129 |
+| 130 | Penalty book, HUD messages and wiring of rules | waiting decision | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
@@ -154,7 +154,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
 | 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
-| 153 | Simulation cost with 16 cars | in progress | 151 |
+| 153 | Simulation cost with 16 cars | waiting decision | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | done | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |
@@ -261,8 +261,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
 | 259 | Sampling lane planner | done | 258 |
-| 260 | Racecraft intents (attack, defend, rejoin) | pending | 258 |
-| 261 | RaceGame scenario starts and contact counter | pending | - |
+| 260 | Racecraft intents (attack, defend, rejoin) | in progress | 258 |
+| 261 | RaceGame scenario starts and contact counter | in progress | - |
 | 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
@@ -275,9 +275,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
 | 273 | Expert AI spin-free in 3-car traffic (silverstone) | pending | 252 |
-| 274 | Weekend formats and points tables | pending | - |
+| 274 | Weekend formats and points tables | in progress | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
-| 276 | RaceConfig gridOrder | pending | - |
+| 276 | RaceConfig gridOrder | in progress | - |
 | 277 | Qualifying classification | pending | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | pending | 276, 277 |
 | 279 | Session result adapters | pending | 274, 275, 277 |
