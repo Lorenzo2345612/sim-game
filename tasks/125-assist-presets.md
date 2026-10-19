@@ -35,7 +35,7 @@ export function brakeAssist(speed: number, targetSpeed: number, distanceToTarget
 export function steerAssist(input: number, yawRateError: number, k: number): number;
 export interface AssistContext { speed: number; targetSpeed: number; distanceToTarget: number; decel: number; yawRateError: number }
 export function applyAssists(preset: AssistPreset, input: DriverInput, ctx: AssistContext): DriverInput;
-export function lookaheadTarget(speeds: Float64Array, dist: Float64Array, length: number, distance: number, horizon?: number /* 150 */): { targetSpeed: number; distance: number };
+export function lookaheadTarget(speeds: Float64Array, dist: Float64Array, length: number, distance: number, horizon?: number /* 150 */): { targetSpeed: number; distance: number }; // length = lap length (m); returned distance = the target sample's position along the line (m), not the gap
 ```
 
 1. Presets: beginner {abs true, tc true, autoGear true, brakeAssist true, steerAssist 0.5, drivingLine 'full'}; intermediate {true, true, true, false, 0.2, 'braking'}; pro {false, false, false, false, 0, 'off'}. Returns a fresh object each call.
@@ -56,7 +56,7 @@ Conventions: clamps inclusive; `decel ≤ 0` throws; speeds in m/s; inputs not m
 | AT2 | brakeAssist(60, 30, 100, 30) | call | (3600 − 900)/200/30 = 0.45 ± 1e-9 |
 | AT3 | brakeAssist(30.5, 30, 50, 30) / (80, 20, 10, 30) | call | 0 / 1 |
 | AT4 | steerAssist(0.2, 0.5, 0.5) / (0.9, −2, 0.5) | call | −0.05 / 1 |
-| AT5 | Node: monza with the 070 vehicle, beginner preset, scripted full throttle with steering from 089 AiDriver at speedScale 1.15 (too fast) | 1 lap | no lap invalidation by all-4-wheels-off; with pro preset the same run leaves the track at least once |
+| AT5 | Node: monza with the 070 vehicle, automatic gearbox in both legs (harness forces auto so gears are not part of the test), scripted full throttle with steering from 089 AiDriver at speedScale 1.15 (too fast), 120 s from standstill | beginner preset vs pro preset | time of the first all-4-wheels-off: beginner ≥ pro + 3 s (or beginner never leaves); count of all-4-wheels-off episodes: beginner ≤ pro; pro leaves at least once |
 
 ## Acceptance criteria
 
@@ -73,3 +73,9 @@ npm test
 ## Out of scope
 
 - Driving line rendering (123), lessons (126), ABS/TC algorithm changes, per-car assist tuning, gamepad mapping.
+
+## Planner answers (round 1)
+
+- AT5 rewritten (planner table fix, see the table): both legs use the automatic gearbox; compare first-off time and off count over 120 s. Update `tests/unit/acceptance/125-assist-presets.test.ts` AT5 to the new row (planner-authorised edit).
+- `tests/unit/edge/125-assist-presets-edge.test.ts` (planner-authorised edits): EDGE2 expected value `61.062001 / 3000`; EDGE9 pass `length` 300 (lap length in metres) in all three calls, expected values unchanged.
+- `lookaheadTarget` returns the target's absolute position along the line (as implemented); `length` is the lap length in metres.
