@@ -4149,6 +4149,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/307-yellow-pass-cars-in-trouble.md"
+    },
+    {
+      "num": "308",
+      "title": "Yellow flags: minimum duration and continuous spin cause",
+      "status": "pending",
+      "deps": [
+        "307"
+      ],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/308-yellow-min-duration.md"
     }
   ]
 }
