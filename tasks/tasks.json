@@ -3707,7 +3707,7 @@
     {
       "num": "273",
       "title": "Expert AI spin-free in 3-car traffic (silverstone)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "252"
       ],
