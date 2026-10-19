@@ -21,7 +21,7 @@ import type { Setup } from '../physics/setup';
 import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
-import { isJumpStart, StartSequence } from '../race/startSequence';
+import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
 import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
 import { FlagState, type FlagCar } from '../race/flags';
 import { Vsc } from '../race/vsc';
@@ -35,6 +35,13 @@ import { DebrisField, type DebrisKind } from '../physics/debris';
 import { V_LOW } from '../physics/tyre';
 import { TrackProgress } from '../track/trackProgress';
 
+/** Per-car start pose (task 261): arc length s, lateral d (+ right), speed v. */
+export interface RaceScenario {
+  starts: { s: number; d: number; v: number }[]; // by car index; player = 0
+  speedScales?: number[]; // by car index, AI only
+  frozen?: number[]; // car indices held with brake 1
+}
+
 export interface RaceConfig {
   trackId: string;
   carId: string;
@@ -44,6 +51,7 @@ export interface RaceConfig {
   seed: number;
   /** gridOrder[p] = car index at grid position p (default: player last). */
   gridOrder?: number[];
+  scenario?: RaceScenario;
 }
 
 // Tune fields stay optional so the neural driver can be selected without a tune.
@@ -70,6 +78,15 @@ const SPAWN_HEIGHT_M = 0.6;
 const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
 const YELLOW_GAP_M = 30; // nearest car ahead within this gap caps the yellow reaction
 const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car must not allocate
+const CONTACT_PAIR_S = 0.5; // min gap between two counts of the same pair
+const CONTACT_NEAR_S = 8; // m, wrapped arc-length window for the pair test
+const CONTACT_NEAR_D = 4; // m, lateral window for the pair test
+
+// contactPair callback: a named module function keeps the tick loop allocation-free.
+let contactHit = false;
+function probeContact(manifold: RAPIER.TempContactManifold): void {
+  if (manifold.numSolverContacts() > 0) contactHit = true;
+}
 
 // Local copy (engineSynth has one too); the race never draws unseeded randoms.
 function mulberry32(seed: number): () => number {
@@ -95,6 +112,43 @@ function validateGridOrder(order: number[], count: number): void {
     if (seen[v]) throw new Error(`gridOrder duplicate entry ${v}`);
     seen[v] = true;
   }
+}
+
+// Scenario spawn pose (task 261): centerline point at arc length s (linear, wrapped
+// on the lap), shifted d m along the right-hand normal, yawed with the track.
+function scenarioPose(track: TrackDataV2, start: { s: number; d: number; v: number }): SpawnPose {
+  const cl = track.centerline;
+  const n = cl.length;
+  const cum = cumulativeLengths(cl, true);
+  const lap = cum[n];
+  let s = lap > 0 ? start.s % lap : 0;
+  if (s < 0) s += lap;
+  let i = n - 1;
+  for (let k = 0; k < n; k++) {
+    if (cum[k] <= s && s < cum[k + 1]) {
+      i = k;
+      break;
+    }
+  }
+  const seg = cum[i + 1] - cum[i];
+  const t = seg > 0 ? (s - cum[i]) / seg : 0;
+  const a = cl[i];
+  const b = cl[(i + 1) % n];
+  const dx = b[0] - a[0];
+  const dz = b[1] - a[1];
+  const len = Math.hypot(dx, dz) || 1;
+  const tx = dx / len;
+  const tz = dz / len;
+  const e0 = track.elevation[i] ?? 0;
+  const e1 = track.elevation[(i + 1) % n] ?? e0;
+  return {
+    position: {
+      x: a[0] + t * dx - start.d * tz,
+      y: e0 + t * (e1 - e0) + SPAWN_HEIGHT_M,
+      z: a[1] + t * dz + start.d * tx,
+    },
+    yaw: Math.atan2(-tx, -tz),
+  };
 }
 
 interface AiCar {
@@ -168,6 +222,11 @@ export class RaceGame {
   private readonly sectorB2: number;
   private blue0 = false;
   private vscDelta0 = 0;
+  private readonly scenarioMode: boolean;
+  private readonly frozen: boolean[];
+  /** Last sim time each car pair (i·count + j, i < j) was counted, −∞ = never. */
+  private readonly lastContact: Float64Array;
+  private contactTotal = 0;
   private time = 0;
   private stepIndex = 0;
   private disposed = false;
@@ -249,6 +308,12 @@ export class RaceGame {
     this.totalDist = new Float64Array(this.count);
     this.finished = new Uint8Array(this.count);
     this.wheelsOff = new Uint8Array(this.count);
+    this.scenarioMode = config.scenario !== undefined;
+    this.frozen = new Array<boolean>(this.count).fill(false);
+    for (const i of config.scenario?.frozen ?? []) {
+      if (i >= 0 && i < this.count) this.frozen[i] = true;
+    }
+    this.lastContact = new Float64Array(this.count * this.count).fill(-Infinity);
   }
 
   setDamageMode(mode: DamageMode): void {
@@ -286,14 +351,23 @@ export class RaceGame {
       : spec;
     // Per-car spawn: without gridOrder the player (index 0) takes the last slot and
     // AI k (index k+1) slot k; with gridOrder, car i takes the slot listing it.
+    // A scenario start overrides the grid slot for its car index (task 261).
+    const starts = config.scenario?.starts;
     const slots: SpawnPose[] = [];
     const vehicles: VehicleModel[] = [];
     for (let i = 0; i < count; i++) {
+      const start = starts !== undefined && i < starts.length ? starts[i] : null;
       const p = order ? order.indexOf(i) : i === 0 ? aiCount : i - 1;
-      const slot = grid[p];
-      slots.push(slot);
-      const vehicle = new VehicleModel(world, i === 0 ? spec : aiSpec, slot);
+      const pose = start !== null ? scenarioPose(track, start) : grid[p];
+      slots.push(pose);
+      const vehicle = new VehicleModel(world, i === 0 ? spec : aiSpec, pose);
       configureVehicle(vehicle, track.id, tune);
+      if (start !== null) {
+        vehicle.body.setLinvel(
+          { x: -Math.sin(pose.yaw) * start.v, y: 0, z: -Math.cos(pose.yaw) * start.v },
+          true,
+        );
+      }
       vehicles.push(vehicle);
     }
     const progresses: TrackProgress[] = [new TrackProgress(track.centerline)];
@@ -341,8 +415,9 @@ export class RaceGame {
       const progress = new TrackProgress(track.centerline);
       progresses.push(progress);
       const jitter = (rng() * 2 - 1) * 0.01;
+      const baseSpeedScale = (speedScale + jitter) * (config.scenario?.speedScales?.[k + 1] ?? 1);
       const vehicle = vehicles[k + 1];
-      const driver = new AiDriver(line, speeds, { speedScale: speedScale + jitter });
+      const driver = new AiDriver(line, speeds, { speedScale: baseSpeedScale });
       driver.setSteerCurve(
         spec.steering.maxAngleLow,
         spec.steering.maxAngleHigh,
@@ -351,7 +426,7 @@ export class RaceGame {
       const car: AiCar = {
         vehicle,
         driver,
-        baseSpeedScale: speedScale + jitter,
+        baseSpeedScale,
         progress,
         stuckS: 0,
       };
@@ -439,22 +514,30 @@ export class RaceGame {
   step(playerInput: DriverInput): void {
     if (this.disposed) throw new Error('RaceGame disposed');
     for (let i = 0; i < this.count; i++) copyVehicleState(this.current[i], this.prev[i]);
-    this.start.update(FIXED_DT);
-    const phase = this.start.phase;
-    const goTime = this.start.goTime;
+    // A scenario race is at go from the first tick: the sequence never runs (task 261).
+    if (!this.scenarioMode) this.start.update(FIXED_DT);
+    const phase: StartPhase = this.scenarioMode ? 'go' : this.start.phase;
+    const goTime = this.scenarioMode ? 0 : this.start.goTime;
     const raceTime = goTime === null ? 0 : this.time + FIXED_DT - goTime;
     const before = phase !== 'go';
 
     // Player: before go the brake is forced, steering ignored, throttle passes.
     const cmd = this.playerCmd;
-    cmd.throttle = playerInput.throttle;
-    cmd.brake = before ? 1 : playerInput.brake;
-    cmd.steer = before ? 0 : playerInput.steer;
+    const frozenPlayer = this.frozen[0];
+    if (frozenPlayer) {
+      cmd.throttle = 0;
+      cmd.brake = 1;
+      cmd.steer = 0;
+    } else {
+      cmd.throttle = playerInput.throttle;
+      cmd.brake = before ? 1 : playerInput.brake;
+      cmd.steer = before ? 0 : playerInput.steer;
+    }
     cmd.overtake = playerInput.overtake;
     cmd.ersCycle = playerInput.ersCycle;
     // AutoReverse is post-go UX only: a pre-go brake hold (waiting for the lights)
     // must not engage reverse, which would turn the forced start brake into throttle.
-    if (!before) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
+    if (!before && !frozenPlayer) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
     this.vehicles[0].setInput(cmd);
     this.vehicles[0].prePhysicsStep(FIXED_DT);
 
@@ -474,6 +557,14 @@ export class RaceGame {
         const ai = this.ais[k];
         if (this.stopped[i] === 1) {
           this.holdStopped(ai);
+          continue;
+        }
+        if (this.frozen[i]) {
+          this.aiCmd.throttle = 0;
+          this.aiCmd.brake = 1;
+          this.aiCmd.steer = 0;
+          ai.vehicle.setInput(this.aiCmd);
+          ai.vehicle.prePhysicsStep(FIXED_DT);
           continue;
         }
         if (ai.neural) {
@@ -543,6 +634,7 @@ export class RaceGame {
     }
     this.debris.step(FIXED_DT, this.carPos);
     this.refreshProgress();
+    if (!before) this.updateContactCount();
     this.updateAiDynamics();
     for (let i = 0; i < this.count; i++) {
       this.classification.update(i, this.traffic[i].distance, raceTime);
@@ -567,6 +659,7 @@ export class RaceGame {
           ai.stuckS = 0;
           continue;
         }
+        if (this.frozen[k + 1]) continue;
         if (Math.abs(this.current[k + 1].forwardSpeed) < STUCK_SPEED_MS) {
           ai.stuckS += FIXED_DT;
           if (ai.stuckS >= STUCK_RESET_S) {
@@ -600,7 +693,12 @@ export class RaceGame {
   }
 
   startLights(): number {
-    return this.start.lights;
+    return this.scenarioMode ? 0 : this.start.lights;
+  }
+
+  /** Car–car contacts since go; a pair counts at most once per 0.5 s (task 261). */
+  get contactCount(): number {
+    return this.contactTotal;
   }
 
   get simTime(): number {
@@ -671,6 +769,37 @@ export class RaceGame {
       t.distance = sample.distance;
       t.lateral = sample.lateral;
       t.speed = s.forwardSpeed;
+    }
+  }
+
+  // Counts pairs close in track coordinates (8 m along, 4 m across) whose chassis
+  // actually touch this tick; a pair is only counted again after CONTACT_PAIR_S.
+  private updateContactCount(): void {
+    const n = this.count;
+    const lap = this.lapLength;
+    const half = lap / 2;
+    const now = this.time;
+    for (let i = 0; i < n; i++) {
+      const ti = this.traffic[i];
+      for (let j = i + 1; j < n; j++) {
+        const tj = this.traffic[j];
+        let ds = ti.distance - tj.distance;
+        if (ds > half) ds -= lap;
+        else if (ds < -half) ds += lap;
+        if (Math.abs(ds) >= CONTACT_NEAR_S || Math.abs(ti.lateral - tj.lateral) >= CONTACT_NEAR_D) continue;
+        const cell = i * n + j;
+        if (now - this.lastContact[cell] < CONTACT_PAIR_S) continue;
+        contactHit = false;
+        this.world.contactPair(
+          this.vehicles[i].chassisCollider,
+          this.vehicles[j].chassisCollider,
+          probeContact,
+        );
+        if (contactHit) {
+          this.contactTotal++;
+          this.lastContact[cell] = now;
+        }
+      }
     }
   }
 

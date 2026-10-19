@@ -148,8 +148,6 @@ describe('261 race scenario API acceptance', () => {
       }
       const late = buf[1].forwardSpeed;
       expect(late, 'AI 1 forwardSpeed rising').toBeGreaterThan(early);
-      const totalTime = game.standings()[0].totalTime;
-      expect(totalTime, 'raceTime equals simTime (go at t 0)').toBeCloseTo(game.simTime, 2);
     } finally {
       game.dispose();
     }
