@@ -11,7 +11,7 @@ import { halfWidthAt } from '../../src/track/surfaces';
 import { parseCarSpec } from '../../src/physics/carSpec';
 import { minTimeFor } from './mintime.mts';
 import { N_W, N_IN, randomGenome, gauss, mulberry32 } from './policy.mts';
-import { N_SET, N_G, N_X, joinGenome, splitGenome } from './genome.mts';
+import { N_SET, N_G, N_X, joinGenome, fullGenome, splitGenome } from './genome.mts';
 import { pickOpponents } from './racecraft.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -64,7 +64,7 @@ const resume = arg('resume', ''); // one genome file, or several comma-separated
 const seeds = resume ? resume.split(',').filter((f) => existsSync(f)).map((f) => JSON.parse(readFileSync(f, 'utf8'))) : [];
 let snap: any = null; // pop.json snapshot: whole population + trainer state
 if (seeds.length === 1 && seeds[0].pop) { snap = seeds[0]; seeds.splice(0, 1, ...snap.pop.map((w: number[]) => ({ weights: w }))); }
-const bases = seeds.map((g) => { try { return joinGenome(g.weights, undefined, g.extra); } catch { return null; } }).filter((b): b is Float64Array => !!b);
+const bases = seeds.map((g) => { try { return fullGenome(g.weights, g.extra); } catch { return null; } }).filter((b): b is Float64Array => !!b);
 if (bases.length) {
   pop.push(...bases.slice(0, POP));
   gen = snap ? snap.gen + 1 : Math.max(...seeds.map((g) => g.gen ?? -1)) + 1;
@@ -74,7 +74,7 @@ if (bases.length) {
 if (!pop.length) for (let i = 0; i < POP; i++) {
   const w = randomGenome(rand);
   if (RESIDUAL) { for (let j = 0; j < N_W; j++) w[j] *= 0.1; w[N_W - 1] = 0; } // start close to the classic driver
-  pop.push(joinGenome(w));
+  pop.push(fullGenome(joinGenome(w)));
 }
 
 function mutate(g: Float64Array, sigma: number, frac = 0.3): Float64Array {

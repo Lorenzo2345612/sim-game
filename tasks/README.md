@@ -289,3 +289,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 285 | Electric voice | pending | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
+| 288 | Residual neural AI in the game | done | 269, 270 |

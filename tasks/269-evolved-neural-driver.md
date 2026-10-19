@@ -114,3 +114,7 @@ npx playwright test 269-
 ## Out of scope
 
 - Replacing the classic AI by default, difficulty gating (task 267), RL tasks 263–266, training changes, new models.
+
+
+## Note (2026-10-19)
+Residual mode (classic driver + net offset/pace, 8 extra inputs) lives in `src/ai/residualPolicy.ts`; see `tasks/288-residual-neural-ai.md`. Models with `residual: true` are not driven by `NeuralDriver`. The trainer genome has `N_XW` extra genes after the setup genes (`fullGenome`); `joinGenome` keeps `N_W + N_SET`.

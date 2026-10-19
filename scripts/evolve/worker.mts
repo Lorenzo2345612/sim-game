@@ -16,6 +16,7 @@ import { N_IN, forward } from './policy.mts';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../src/ai/neuralFeatures';
 import { minTimeFor } from './mintime.mts';
 import { splitGenome, X_LOOK, N_X, N_XW } from './genome.mts';
+import { aheadIndices } from '../../src/ai/residualPolicy';
 import { N_HID } from '../../src/ai/neuralPolicy';
 import { trackLimits } from './limits.mts';
 import { applySetup, defaultSetup } from '../../src/physics/setup';
@@ -51,7 +52,7 @@ const cLim = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
 const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * AI_GRIP_MARGIN, muLong: cLim.muLong * AI_GRIP_MARGIN });
 const drivers: AiDriver[] = [];
 // Extra residual inputs: centerline index X_LOOK metres ahead of each index.
-const ahead = X_LOOK.map((d) => { const a = new Int32Array(n); for (let i = 0, j = 0; i < n; i++) { if (j < i) j = i; while (cum[j] - cum[i] < d && j < i + n) j++; a[i] = j % n; } return a; });
+const ahead = X_LOOK.map((d) => aheadIndices(cum, n, d));
 const xe = new Float64Array(N_X), lastOut = new Float64Array(slots * 2), BIAS = N_IN * N_HID;
 // forward() reads N_IN inputs only: extra contributions are folded into the hidden biases of a per-car copy.
 function foldExtra(wk: Float64Array, w: Float64Array, ex: Float64Array): void {

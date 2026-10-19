@@ -1,24 +1,30 @@
 // Evolution genome = network weights followed by N_SET setup genes in [-1, 1] (0 = default, ±1 = range ends).
-import { N_HID, N_W, padGenome } from '../../src/ai/neuralPolicy';
+import { N_W, padGenome } from '../../src/ai/neuralPolicy';
 import type { CarSpec } from '../../src/physics/carSpec';
 import { clampSetup, defaultSetup, type Setup } from '../../src/physics/setup';
 
 export const N_SET = 8;
 // Trainer-only extra inputs (residual mode): edge room at +30/60/100 m (right, left) and the previous offset/pace command.
-export const X_LOOK = [30, 60, 100];
-export const N_X = 2 * X_LOOK.length + 2;
-export const N_XW = N_X * N_HID; // input -> hidden weights, appended after the setup genes (zero = no effect)
-export const N_G = N_W + N_SET + N_XW;
+export { X_LOOK, N_X, N_XW } from '../../src/ai/residualPolicy';
+import { N_XW } from '../../src/ai/residualPolicy';
+export const N_G = N_W + N_SET + N_XW; // extra-input weights appended after the setup genes (zero = no effect)
 
 const KEYS: readonly (keyof Setup)[] = ['frontWing', 'rearWing', 'brakeBias', 'finalDrive', 'arbFront', 'arbRear', 'rideHeight', 'tyrePressureKpa'];
 
-export function joinGenome(weights: ArrayLike<number>, setupGenes?: ArrayLike<number>, extra?: ArrayLike<number>): Float64Array {
-  const g = new Float64Array(N_G);
-  if (weights.length === N_W + N_SET || weights.length === N_G) { g.set(weights); return g; }
+export function joinGenome(weights: ArrayLike<number>, setupGenes?: ArrayLike<number>): Float64Array {
   const w = padGenome(weights);
   if (!w) throw new Error(`Invalid genome: weights length ${weights.length}`);
+  const g = new Float64Array(N_W + N_SET);
   g.set(w);
   if (setupGenes) for (let k = 0; k < N_SET; k++) g[N_W + k] = setupGenes[k] ?? 0;
+  return g;
+}
+
+// Trainer genome with the residual extra-input genes: accepts N_G, N_W + N_SET or model weights (+ extra).
+export function fullGenome(weights: ArrayLike<number>, extra?: ArrayLike<number>): Float64Array {
+  const g = new Float64Array(N_G);
+  if (weights.length === N_G || weights.length === N_W + N_SET) { g.set(weights); return g; }
+  g.set(joinGenome(weights));
   if (extra) for (let k = 0; k < N_XW; k++) g[N_W + N_SET + k] = extra[k] ?? 0;
   return g;
 }

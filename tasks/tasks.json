@@ -3896,6 +3896,20 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/287-post9-decouple-published-models.md"
+    },
+    {
+      "num": "288",
+      "title": "Residual neural AI in the game",
+      "status": "done",
+      "deps": [
+        "269",
+        "270"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/288-residual-neural-ai.md"
     }
   ]
 }

@@ -104,3 +104,7 @@ New tracks/cars, retraining, the classic AI, difficulty gating, rewards other th
 - (a) Authorised: in `tests/unit/edge/087-racing-line.post.test.ts` POST9, also strip value imports from `../physics/setup` before the checks, the same way type imports are stripped. `src/physics/setup.ts` is pure: it has no Rapier and only type imports. No other change to POST9. `neuralCarSpec` stays in `src/ai/neuralPolicy.ts`.
 - (b) Authorised: update 269 post POST3 to the new 0.6 m margin. Use distance ≤ 9.4, and for the hw = 1 case distance ≤ 0.4 instead of on the centreline.
 - (c) Confirmed: 249 AT3, 250 AT9 and 224 POST4 already fail on master. They are known, out of scope, and do not block this task.
+
+
+## Note (2026-10-19)
+Residual mode (classic driver + net offset/pace, 8 extra inputs) lives in `src/ai/residualPolicy.ts`; see `tasks/288-residual-neural-ai.md`. Models with `residual: true` are not driven by `NeuralDriver`. The trainer genome has `N_XW` extra genes after the setup genes (`fullGenome`); `joinGenome` keeps `N_W + N_SET`.

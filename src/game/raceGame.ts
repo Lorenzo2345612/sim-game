@@ -15,6 +15,8 @@ import { NeuralFeatures, racingTargetPoints, type NeuralCarState, type NeuralLin
 import { NeuralDriver } from '../ai/neuralDriver';
 import { halfWidthAt, hasKerb } from '../track/surfaces';
 import { neuralCarSpec } from '../ai/neuralPolicy';
+import { ResidualNet, type ResidualModel } from '../ai/residualPolicy';
+import { cumulativeLengths } from '../track/centerline';
 import type { Setup } from '../physics/setup';
 import { AutoReverse, configureVehicle, type GameTune } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
@@ -51,6 +53,8 @@ export interface RaceGameOptions extends Partial<GameTune> {
   neuralSetups?: Partial<Record<Difficulty, Partial<Setup>>>;
   /** Target line the models were trained on (default: centerline). */
   neuralLine?: { kind: 'racing' } | { kind: 'mintime'; pts: [number, number][]; v: number[] };
+  /** Residual models: the classic driver drives, the net sets its offset and pace. */
+  neuralResidual?: Partial<Record<Difficulty, ResidualModel>>;
 }
 
 type World = ReturnType<typeof createPhysicsWorld>;
@@ -100,6 +104,8 @@ interface AiCar {
   baseSpeedScale: number;
   /** Present when the AI runs the evolved neural policy instead of the classic driver. */
   neural?: { driver: NeuralDriver; state: NeuralCarState; tel: Telemetry };
+  /** Residual neural AI: classic driver with net lateral offset and pace (neural stays unset). */
+  residual?: { net: ResidualNet; state: NeuralCarState; tel: Telemetry };
   progress: TrackProgress;
   stuckS: number;
 }
@@ -302,6 +308,8 @@ export class RaceGame {
     });
     // Neural AI (opt-in): one feature extractor per track, one driver per car; missing model falls back to classic.
     let neuralFeatures: NeuralFeatures | null = null;
+    let residualNet: ((w: Float64Array) => ResidualNet) | null = null;
+    const residualModel = neuralWeights ? options?.neuralResidual?.[config.difficulty] : undefined;
     let compoundGrip = 0;
     if (neuralWeights) {
       const n = track.centerline.length;
@@ -319,6 +327,11 @@ export class RaceGame {
         lineArg = { points: racingTargetPoints(track.centerline, halfLeft, halfRight, kerbLeft, kerbRight) };
       }
       neuralFeatures = new NeuralFeatures(track.centerline, halfLeft, halfRight, lineArg);
+      if (residualModel) {
+        const nf = neuralFeatures;
+        const cum = cumulativeLengths(track.centerline, true);
+        residualNet = (w) => new ResidualNet(w, residualModel, nf, cum, halfLeft, halfRight);
+      }
       const muMedium = spec.tyres.compounds.medium.mu0;
       compoundGrip = spec.tyres.compounds[tune?.compound ?? 'medium'].mu0 / muMedium - 1;
     }
@@ -351,27 +364,26 @@ export class RaceGame {
             linvel: { x: 0, y: 0, z: 0 },
           });
         }
-        car.neural = {
-          driver: new NeuralDriver(neuralWeights, neuralFeatures),
-          state: {
-            position: { x: 0, y: 0, z: 0 },
-            rotation: { x: 0, y: 0, z: 0, w: 1 },
-            forwardSpeed: 0,
-            linvel: { x: 0, y: 0, z: 0 },
-            angvel: { x: 0, y: 0, z: 0 },
-            progress: { index: 0, distance: 0, lateral: 0 },
-            fuelMassKg: 0,
-            tempFrontC: 0,
-            tempRearC: 0,
-            optTempC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].optTempC,
-            tempWindowC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].tempWindowC,
-            wearMean: 0,
-            offWheels: 0,
-            compoundGrip,
-            others,
-          },
-          tel: vehicle.getTelemetry(),
+        const state: NeuralCarState = {
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0, w: 1 },
+          forwardSpeed: 0,
+          linvel: { x: 0, y: 0, z: 0 },
+          angvel: { x: 0, y: 0, z: 0 },
+          progress: { index: 0, distance: 0, lateral: 0 },
+          fuelMassKg: 0,
+          tempFrontC: 0,
+          tempRearC: 0,
+          optTempC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].optTempC,
+          tempWindowC: aiSpec.tyres.compounds[tune?.compound ?? 'medium'].tempWindowC,
+          wearMean: 0,
+          offWheels: 0,
+          compoundGrip,
+          others,
         };
+        const tel = vehicle.getTelemetry();
+        if (residualNet) car.residual = { net: residualNet(neuralWeights), state, tel };
+        else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures), state, tel };
       }
       ais.push(car);
       observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
@@ -497,11 +509,19 @@ export class RaceGame {
             curvatureAhead,
             this.decision,
           );
-          ai.driver.setLateralOffset(decision.offset);
           // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
           const dmgScale =
             ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
-          ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
+          if (ai.residual) {
+            // The net replaces the traffic offset and scales pace (no difficulty jitter, as trained).
+            this.fillNeuralState(k, ai.residual.state, ai.residual.tel);
+            const r = ai.residual.net.decide(ai.residual.state);
+            ai.driver.setLateralOffset(r.offset);
+            ai.driver.setSpeedScale(r.scale * dmgScale);
+          } else {
+            ai.driver.setLateralOffset(decision.offset);
+            ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
+          }
           this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }

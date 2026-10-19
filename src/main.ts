@@ -9,6 +9,7 @@ import { EngineAudio, type EngineAudioStats } from './audio/engineAudio';
 import { Mixer } from './audio/mixer';
 import type { Difficulty } from './ai/traffic';
 import { parseNeuralModel } from './ai/neuralPolicy';
+import { parseResidualModel } from './ai/residualPolicy';
 import { FIXED_DT, MS_TO_KMH } from './core/constants';
 import { FixedStepLoop } from './core/fixedStepLoop';
 import { createVehicleState, interpolateVehicleState } from './core/interpolation';
@@ -281,7 +282,7 @@ async function loadNeuralModels(
   trackId: string,
   carId: string,
   difficulty: Difficulty,
-): Promise<Pick<RaceGameOptions, 'neuralModels' | 'neuralLine' | 'neuralSetups'>> {
+): Promise<Pick<RaceGameOptions, 'neuralModels' | 'neuralLine' | 'neuralSetups' | 'neuralResidual'>> {
   try {
     const base = `/ai-models/${trackId}-${carId}`;
     const res = await fetch(`${base}/${difficulty}.json`);
@@ -290,13 +291,15 @@ async function loadNeuralModels(
     const neuralModels = { [difficulty]: parseNeuralModel(json) };
     const setup = (json as { setup?: Partial<Setup> }).setup;
     const neuralSetups = setup ? { [difficulty]: setup } : undefined;
+    const residual = parseResidualModel(json);
+    const neuralResidual = residual ? { [difficulty]: residual } : undefined;
     const line = (json as { line?: string }).line;
-    if (line === 'racing') return { neuralModels, neuralSetups, neuralLine: { kind: 'racing' } };
+    if (line === 'racing') return { neuralModels, neuralSetups, neuralResidual, neuralLine: { kind: 'racing' } };
     if (line === 'mintime') {
       const mt = await (await fetch(`${base}/line-mintime.json`)).json();
-      return { neuralModels, neuralSetups, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
+      return { neuralModels, neuralSetups, neuralResidual, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } };
     }
-    return { neuralModels, neuralSetups };
+    return { neuralModels, neuralSetups, neuralResidual };
   } catch {
     return { neuralModels: {} };
   }

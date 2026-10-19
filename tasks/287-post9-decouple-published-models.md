@@ -35,3 +35,7 @@ npx vitest run tests/unit/edge/269-evolved-neural-driver.post.test.ts
 
 ## Out of scope
 - Other 269 tests, model training, the game's model loading.
+
+
+## Note (2026-10-19)
+The published Cleveland expert model is residual (`residual: true`, task 288); POST9 must not assume `NeuralDriver` models only.

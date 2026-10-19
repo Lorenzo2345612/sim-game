@@ -78,3 +78,7 @@ npm test
 ## Out of scope
 
 Game-side or `src/` changes, new inputs/network size, retraining runs, exporting models, new tracks/cars, rewards other than listed, viewer changes.
+
+
+## Note (2026-10-19)
+Residual mode (classic driver + net offset/pace, 8 extra inputs) lives in `src/ai/residualPolicy.ts`; see `tasks/288-residual-neural-ai.md`. Models with `residual: true` are not driven by `NeuralDriver`. The trainer genome has `N_XW` extra genes after the setup genes (`fullGenome`); `joinGenome` keeps `N_W + N_SET`.
