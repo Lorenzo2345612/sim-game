@@ -48,3 +48,10 @@ npx vitest run tests/unit/acceptance/300- tests/unit/acceptance/031- tests/unit/
 ## Out of scope
 
 - Track JSON, the track-builder, terrain heightfield, barriers, sausages (task 299).
+
+## Planner answers (round 1)
+
+The worktree started from an older revision of this spec; this file (band `+ 2` m with the height condition, probe with `sausages: []`, the AT table above) is authoritative.
+1. Authorised: rewrite `tests/unit/acceptance/300-verge-fold-inner-kerb.test.ts` to the current AT1–AT4 table and probe definition exactly (AT4 = triangle counts per surface). In `tests/unit/edge/300-*.test.ts` set the band margin to 2 m and add the height condition of Files (drop only when higher than row j's kerb outer edge + 0.05 m). No other test edits.
+2. Inner-corner gap (coder finding b) is in scope: where `INNER_CURVE_CLAMP` thins or drops the kerb, the verge/runoff inner edge of that row must start at the kerb strip's actual (clamped) outer edge, or at the asphalt edge if the kerb is dropped, so there is no lateral gap to the terrain. Asphalt and kerb strips stay unchanged (AT4).
+3. Sausages are excluded by the probe (`sausages: []`); task 299 handles them.
