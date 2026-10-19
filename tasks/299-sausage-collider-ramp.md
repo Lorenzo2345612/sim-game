@@ -58,3 +58,7 @@ Planner-authorised edit of `tests/unit/acceptance/150-sausage-render.test.ts` AT
 
 1. AT6 is missing from the acceptance file: the coder is authorised to add it to `tests/unit/acceptance/299-sausage-collider-ramp.test.ts` exactly as the AT6 row says (mexico, monza, cleveland; compare `createPhysicsWorld(track)` with the same track and `sausages: []`; |piece collider y − strip ray hit y in the second world| ≤ 0.03 m). Acceptance criteria: AT1–AT6 pass.
 2. Option (a). The old direct neural `medium` model was evolved on the old hulls; keep the 0.7 m base and seating. Authorised edit: `tests/unit/acceptance/269-evolved-neural-driver.test.ts` AT3 total AI resets ≤ 6 (was 2; title updated). The per-car "≥ 1 lap" check stays. No other 269 change.
+
+## Planner answers (round 3)
+
+AT6 stands. Seating change (authorised `src/physics/trackColliders.ts` edit): the downward ray from the piece centre hits any existing fixed collider (surface strips AND the terrain heightfield), excluding other sausage pieces; the piece base y is set to the first (topmost) hit. Only if nothing is hit keep the piece y. No other change.
