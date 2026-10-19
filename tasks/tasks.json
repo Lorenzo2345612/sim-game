@@ -3966,7 +3966,7 @@
     {
       "num": "293",
       "title": "Remove race HUD overlaps (damage panel, flags, toasts)",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
