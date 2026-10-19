@@ -1779,7 +1779,7 @@
     {
       "num": "130",
       "title": "Penalty book, HUD messages and wiring of rules",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "089",
         "092",
@@ -2102,7 +2102,7 @@
     {
       "num": "152",
       "title": "Render cost: draw calls, culling, shadows",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "151"
       ],
@@ -2115,7 +2115,7 @@
     {
       "num": "153",
       "title": "Simulation cost with 16 cars",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "151"
       ],
@@ -3883,6 +3883,19 @@
       "models": "standard",
       "phase": 7,
       "spec": "tasks/286-eow-car-data-hud-ai.md"
+    },
+    {
+      "num": "287",
+      "title": "Decouple 269 POST9 from published models",
+      "status": "pending",
+      "deps": [
+        "269"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/287-post9-decouple-published-models.md"
     }
   ]
 }
