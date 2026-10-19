@@ -92,6 +92,8 @@ import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
 import { RaceHud, type RaceHudData, pushRaceControl, announcePenalty } from './ui/raceHud';
 import { raceControlMessage, penaltyAnnouncement } from './ui/raceControl';
+import { generateGrid, seriesForTrack, shortName } from './race/drivers';
+import type { Driver, GridsFile, NameList } from './race/drivers';
 import { DamageHud } from './ui/damageHud';
 import { Results, type ResultsRow } from './ui/results';
 
@@ -185,6 +187,8 @@ declare global {
       audioPaused(): boolean;
       setLivery(l: Partial<Livery>): void;
       raceStandings(): readonly Standing[];
+      /** Race only: generated AI drivers (296); empty when the name data is missing. */
+      raceDrivers(): { car: number; first: string; last: string; code: string; nat: string }[];
       carCount(): number;
       startLights(): number;
       /** Race only: ends the race immediately and shows the results overlay (095). */
@@ -324,8 +328,43 @@ function penaltyReasons(book: PenaltyBook, car: number): string[] {
   return out;
 }
 
+// Generated AI drivers for the current race (296); null when the data could not load.
+let raceDriverList: Driver[] | null = null;
+
+function driverOf(car: number): Driver | null {
+  return raceDriverList !== null && car >= 1 ? raceDriverList[car - 1] ?? null : null;
+}
+
 function carName(car: number): string {
-  return car === 0 ? 'You' : `AI ${car}`;
+  if (car === 0) return 'You';
+  const d = driverOf(car);
+  return d !== null ? `${d.first} ${d.last}` : `AI ${car}`;
+}
+
+function raceControlName(car: number): string {
+  if (car === 0) return 'You';
+  const d = driverOf(car);
+  return d !== null ? shortName(d) : `AI ${car}`;
+}
+
+// Any fetch or generation failure returns null so the race falls back to 'AI n' names.
+async function loadRaceDrivers(cfg: RaceConfig): Promise<Driver[] | null> {
+  try {
+    const res = await fetch('/career/grids.json');
+    if (!res.ok) return null;
+    const grids = (await res.json()) as GridsFile;
+    const mix = grids.series[seriesForTrack(grids, cfg.trackId)]?.mix;
+    if (mix === undefined) return null;
+    const names: Record<string, NameList> = {};
+    for (const nat of Object.keys(mix)) {
+      const r = await fetch(`/career/names/${nat}.json`);
+      if (!r.ok) return null;
+      names[nat] = (await r.json()) as NameList;
+    }
+    return generateGrid(cfg.aiCount, cfg.seed, mix, names);
+  } catch {
+    return null;
+  }
 }
 
 function resultRows(standings: readonly Standing[], book: PenaltyBook, game: RaceGame): ResultsRow[] {
@@ -749,6 +788,7 @@ async function startGame(trackId: string): Promise<void> {
   let bollardRenderer: BollardRenderer | null = null;
   const bollardCars: BollardCar[] = [];
   const damageMode = damageModeFromQuery(params, window.localStorage);
+  raceDriverList = raceCfg !== null ? await loadRaceDrivers(raceCfg) : null;
   if (raceCfg !== null) {
     // raceCfg is only built when raceTrack is non-null.
     raceGame = await RaceGame.create(raceTrack!, gameSpec, raceCfg, raceAiOptions);
@@ -1315,6 +1355,10 @@ async function startGame(trackId: string): Promise<void> {
     blue: false,
     vscPhase: 'off',
     vscDelta: 0,
+    names:
+      raceDriverList !== null
+        ? ['You', ...raceDriverList.map((d) => d.code)]
+        : undefined,
   };
   const damageHud = raceGame !== null ? new DamageHud(document.body, damageMode) : null;
   let toastGame: RaceGame | null = null;
@@ -1331,7 +1375,7 @@ async function startGame(trackId: string): Promise<void> {
     while (toastCursor < entries.length) {
       const i = toastCursor++;
       const e = entries[i];
-      const msg = raceControlMessage(e);
+      const msg = raceControlMessage(e, raceControlName);
       if (msg !== null) pushRaceControl(msg);
       if (e.car !== 0) continue;
       const ann = penaltyAnnouncement(e);
@@ -2149,6 +2193,14 @@ async function startGame(trackId: string): Promise<void> {
       engineAudio?.getStats() ?? { running: false, engine: 'oscillator', firingHz: 0 },
     audioPaused: () => engineAudio?.paused ?? false,
     raceStandings: () => (raceGame !== null ? raceGame.standings() : []),
+    raceDrivers: () =>
+      (raceDriverList ?? []).map((d, i) => ({
+        car: i + 1,
+        first: d.first,
+        last: d.last,
+        code: d.code,
+        nat: d.nat,
+      })),
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
     finishRaceNow: raceGame !== null ? () => showResults() : undefined,

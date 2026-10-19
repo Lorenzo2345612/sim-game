@@ -12,6 +12,8 @@ export interface RaceHudData {
   blue: boolean;
   vscPhase: VscPhase;
   vscDelta: number;
+  /** Tower name per car index (296); missing entries fall back to 'You' / 'AI n'. */
+  names?: readonly string[];
 }
 
 const TOWER_TOP = 10;
@@ -203,7 +205,7 @@ export class RaceHud {
     this.ensureRows(count);
     for (let i = 0; i < count; i++) {
       const st = i < topN ? standings[i] : player!;
-      this.fillRow(this.rows[i], st, data.playerCar);
+      this.fillRow(this.rows[i], st, data.playerCar, data.names);
     }
   }
 
@@ -292,13 +294,18 @@ export class RaceHud {
     return { el, pos, name, gap, pen, posText: '', nameText: '', gapText: '', penText: '', player: false };
   }
 
-  private fillRow(row: TowerRow, st: Standing, playerCar: number): void {
+  private fillRow(
+    row: TowerRow,
+    st: Standing,
+    playerCar: number,
+    names?: readonly string[],
+  ): void {
     const isPlayer = st.car === playerCar;
     if (row.posText !== String(st.position)) {
       row.posText = String(st.position);
       row.pos.textContent = row.posText;
     }
-    const name = isPlayer ? 'You' : `AI ${st.car}`;
+    const name = names?.[st.car] ?? (isPlayer ? 'You' : `AI ${st.car}`);
     if (row.nameText !== name) {
       row.nameText = name;
       row.name.textContent = name;

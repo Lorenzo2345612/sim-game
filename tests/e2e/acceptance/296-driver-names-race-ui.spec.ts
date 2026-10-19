@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { generateGrid, seriesForTrack } from '../../../src/race/drivers';
 import type { GridsFile, NameList } from '../../../src/race/drivers';
@@ -7,7 +8,7 @@ import type { GridsFile, NameList } from '../../../src/race/drivers';
 test.use({ viewport: { width: 1366, height: 768 } });
 test.describe.configure({ timeout: 180_000 });
 
-const ROOT = join(__dirname, '..', '..', '..');
+const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const NAMES_DIR = join(ROOT, 'public', 'career', 'names');
 
 const raceUrl = (track: string): string => `/?race=1&track=${track}&ai=5&laps=3&seed=1`;

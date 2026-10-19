@@ -4,8 +4,11 @@ const RACE = '/?race=1&track=cleveland&ai=5&laps=3';
 const HUD_SELECTOR =
   '#hud, .damage-hud, .minimap, #flags, #toasts, .hud2-panel, .tyres, .race-hud-top, #race-tower';
 
+type Driver294 = { car: number; first: string; last: string; code: string; nat: string };
+
 type Debug294 = {
   forceTrackLimits(count: number, car: number): void;
+  raceDrivers(): Driver294[];
 };
 
 test.use({ viewport: { width: 1366, height: 768 } });
@@ -151,15 +154,21 @@ test.describe('294 race control penalty HUD', () => {
     const errors = watchErrors(page);
     await loadGame(page);
     await raceStarted6s(page);
+    const list = await page.evaluate(
+      () => (window.__SIMGAME__ as unknown as Debug294).raceDrivers(),
+    );
+    const d2 = list.find((d) => d.car === 2);
+    expect(d2).toBeDefined();
+    const short = `${d2!.first.charAt(0)}. ${d2!.last}`.toUpperCase();
     await callForce(page, 4, 2);
-    await page.waitForFunction(() => {
+    await page.waitForFunction((expected) => {
       const rc = document.querySelector('#race-control');
       if (rc === null) return false;
       const cs = getComputedStyle(rc);
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
       const r = rc.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0) return false;
-      if (!(rc.textContent ?? '').includes('FOR AI 2 - TRACK LIMITS')) return false;
+      if (!(rc.textContent ?? '').includes(`FOR ${expected}`)) return false;
       const a = document.querySelector('#penalty-announce');
       return (
         a === null ||
@@ -168,11 +177,11 @@ test.describe('294 race control penalty HUD', () => {
         a.getBoundingClientRect().width <= 0 ||
         a.getBoundingClientRect().height <= 0
       );
-    }, undefined, { timeout: 1000 });
+    }, short, { timeout: 1000 });
     expect(await page.locator('#penalty-announce').isVisible()).toBe(false);
     const ai2 = page
       .locator('.race-row')
-      .filter({ has: page.locator('.race-row-name', { hasText: /^AI 2$/ }) });
+      .filter({ has: page.locator('.race-row-name', { hasText: new RegExp(`^${d2!.code}$`) }) });
     if ((await ai2.count()) > 0) {
       await expect(ai2.first().locator('.race-row-pen')).toHaveText('+5s');
     }

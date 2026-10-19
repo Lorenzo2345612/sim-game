@@ -4,9 +4,12 @@ export function carName(car: number): string {
   return car === 0 ? 'You' : `AI ${car}`;
 }
 
-export function raceControlMessage(e: PenaltyEntry): string | null {
+export function raceControlMessage(
+  e: PenaltyEntry,
+  name: (car: number) => string = carName,
+): string | null {
   if (e.kind !== 'penalty') return null;
-  return `${e.seconds} SECOND TIME PENALTY FOR ${carName(e.car).toUpperCase()} - ${e.reason.toUpperCase()}`;
+  return `${e.seconds} SECOND TIME PENALTY FOR ${name(e.car).toUpperCase()} - ${e.reason.toUpperCase()}`;
 }
 
 export interface PenaltyAnnouncement {
