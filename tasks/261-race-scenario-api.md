@@ -74,3 +74,9 @@ npm test
 ## Out of scope
 
 - AI behaviour changes (262), edits to `processContactEvents` or the physics, UI exposure of the scenario, RL env.
+
+## Planner answers (round 1)
+
+- AT3 (planner-authorised edit of `tests/unit/acceptance/261-race-scenario-api.test.ts` ~L151-152): remove the `standings()[0].totalTime` ≈ `simTime` probe (not in the table; totalTime is null until finish). Keep the phase 'go' from t 0 and rising forwardSpeed checks; optionally assert `startLights()` is 0.
+- 249-AT3, 250-AT9, 224-POST4, 269-POST9 are pre-existing: ignore.
+- Implementation choices in the report accepted.
