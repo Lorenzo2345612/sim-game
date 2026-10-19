@@ -26,7 +26,7 @@ import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { AI_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 } } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -45,7 +45,6 @@ const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
   : line === 'racing' ? { points: racingTargetPoints(cl, hwL, hwR, kL, kR) } : undefined;
 const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
 // Residual mode: the classic AiDriver drives (as in RaceGame); the network only sets its lateral offset and pace.
-export const RES_OFFSET_M = 3.5, RES_PACE = 0.06;
 const cLine = computeRacingLine(cl, track.widthMeters / 2);
 const cLim = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
 const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * AI_GRIP_MARGIN, muLong: cLim.muLong * AI_GRIP_MARGIN });
@@ -223,8 +222,8 @@ function episode(genomes: Float64Array[], setups: any[], start: number, secs: nu
         forward(genomes[k], x, out);
         const inp = inputs[k];
         if (residual) {
-          drivers[k].setLateralOffset(out[0] * RES_OFFSET_M);
-          drivers[k].setSpeedScale(1 + RES_PACE * out[1]);
+          drivers[k].setLateralOffset(out[0] * res.offset);
+          drivers[k].setSpeedScale(1 + (out[1] > 0 ? res.up : res.down) * out[1]);
         } else {
           inp.steer = out[0];
           inp.throttle = out[1] > 0 ? out[1] : 0;
