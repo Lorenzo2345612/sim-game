@@ -147,3 +147,11 @@ Task 273 (traffic follow cap, `setFollowCap`) landed on master first. The 268 di
 ## Planner answers (round 8, addendum)
 
 5. Neural models were trained against the 0.82 profile; they must keep it. In `src/game/raceGame.ts` add `export const NEURAL_GRIP_MARGIN = 0.82`; AI cars with a residual net (`car.residual`) drive a speed profile built with `NEURAL_GRIP_MARGIN` (same line); classic AIs use `AI_GRIP_MARGIN = 0.75`. Without neural options, behaviour is unchanged from item 1. No new test required; do not touch `scripts/`.
+
+## Planner answers (round 9)
+
+1. Yes. The 5 s progress-window reset (step 4) is skipped, and its window restarted, on any step where the AI is held: `ruleCap` non-null, `aheadSpeedCap` non-null, `stopped[i]` set, or a penalty stop in force. The flipped reset (up.y < 0.3 for 1.5 s) always applies.
+2. Confirmed: AT3–AT5 player input is `{ throttle: 0, brake: 0.4, steer: 0, reset: false }`. Re-apply it and never revert it; if AT3–AT5 fail at 0.4, report the exact failing assertion and values for each.
+3. Authorised: `tests/unit/edge/268-racegame-ai.post.test.ts` POST26 expects the chosen `LINE_MARGIN_M` (2.2).
+4. Traffic `EDGE_LIMIT` stays 1.4 (AT8).
+5. After this, 130 AT2 and 269 AT3 must pass; 269 AT1/AT4 fail on master and are out of scope.
