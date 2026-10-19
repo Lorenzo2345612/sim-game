@@ -165,6 +165,12 @@ export class RaceClassification {
     st.lastTime = time;
   }
 
+  /** Crossing time that started the car's current lap; null before the first crossing. */
+  lapStartTime(car: number): number | null {
+    this.check(car);
+    return this.cars[car].lapStart;
+  }
+
   addPenalty(car: number, seconds: number): void {
     this.check(car);
     if (!Number.isFinite(seconds)) return;

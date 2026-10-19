@@ -18,7 +18,7 @@ import { neuralCarSpec } from '../ai/neuralPolicy';
 import { ResidualNet, type ResidualModel } from '../ai/residualPolicy';
 import { cumulativeLengths } from '../track/centerline';
 import type { Setup } from '../physics/setup';
-import { AutoReverse, configureVehicle, type GameTune } from './game';
+import { AutoReverse, configureVehicle, type GameTune, type LapInfo } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
@@ -190,6 +190,7 @@ export class RaceGame {
   private readonly playerCmd: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
   private readonly aiCmd: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
   private readonly decision: TrafficDecision = { offset: 0, speedCap: null };
+  private readonly lapInfo: LapInfo = { lap: 0, currentLapTime: null, lastLapTime: null, bestLapTime: null, valid: true };
   private readonly count: number;
   private readonly linePoints: number;
   private readonly aheadIdx: number;
@@ -688,6 +689,31 @@ export class RaceGame {
     return this.classification.standings();
   }
 
+  /** HUD lap boxes for one car; the same object is reused and overwritten per call. */
+  getLapInfo(car = 0): LapInfo {
+    if (!Number.isInteger(car) || car < 0 || car >= this.count) {
+      throw new RangeError(`car ${car} out of range`);
+    }
+    const rows = this.classification.standings();
+    let row: Standing | null = null;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].car === car) {
+        row = rows[i];
+        break;
+      }
+    }
+    if (row === null) throw new RangeError(`car ${car} out of range`);
+    // lapStart lives on the classification clock (time since go), so the elapsed lap uses it too.
+    const t0 = this.classification.lapStartTime(car);
+    const info = this.lapInfo;
+    info.lap = row.lap;
+    info.currentLapTime = t0 === null || row.finished ? null : this.raceClock - t0;
+    info.lastLapTime = row.lastLap;
+    info.bestLapTime = row.bestLap;
+    info.valid = true;
+    return info;
+  }
+
   get raceFinished(): boolean {
     return this.classification.finished;
   }
@@ -703,6 +729,12 @@ export class RaceGame {
 
   get simTime(): number {
     return this.time;
+  }
+
+  /** Classification clock: seconds since the lights went out (0 before the start). */
+  private get raceClock(): number {
+    const go = this.start.goTime;
+    return go === null ? 0 : this.time - go;
   }
 
   get carCount(): number {

@@ -335,14 +335,6 @@ function toastText(e: PenaltyEntry, entries: readonly PenaltyEntry[], index: num
   return `Track limits ${n}/3`;
 }
 
-const emptyLapInfo = (): LapInfo => ({
-  lap: 0,
-  currentLapTime: null,
-  lastLapTime: null,
-  bestLapTime: null,
-  valid: true,
-});
-
 let menu: Menu | null = null;
 let results: Results | null = null;
 let liveryEditor: LiveryEditor | null = null;
@@ -786,7 +778,7 @@ async function startGame(trackId: string): Promise<void> {
       return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.x * q.x + q.y * q.y));
     },
     meanLapFuel: () => (raceGame !== null ? null : game!.meanLapFuel()),
-    getLapInfo: () => (raceGame !== null ? emptyLapInfo() : game!.getLapInfo()),
+    getLapInfo: () => (raceGame !== null ? raceGame.getLapInfo(0) : game!.getLapInfo()),
     drainEvents: () => (raceGame !== null ? NO_EVENTS : game!.drainEvents()),
     shiftUp: () => {
       if (raceGame === null) game?.shiftUp();
@@ -1708,7 +1700,8 @@ async function startGame(trackId: string): Promise<void> {
       hudData.lastLapTime = info.lastLapTime;
       hudData.bestLapTime = info.bestLapTime;
       hudData.lapValid = info.valid;
-      hudData.deltaSeconds = ghostDelta(info.currentLapTime);
+      // Ghost delta is practice-only: off in race mode (task 292).
+      hudData.deltaSeconds = raceGame !== null ? null : ghostDelta(info.currentLapTime);
       hud.update(hudData);
 
       for (let i = 0; i < 4; i++) {
@@ -1728,7 +1721,7 @@ async function startGame(trackId: string): Promise<void> {
         hudErs.update(null);
       }
 
-      updateGhostCar(info.currentLapTime);
+      updateGhostCar(raceGame !== null ? null : info.currentLapTime);
       const rpmNow = sim.rpm();
       const fullTq = engineTorque(baseSpec.engine, rpmNow, 1);
       const load = fullTq > 0 ? Math.min(1, Math.max(0, engineTorque(baseSpec.engine, rpmNow, simInput.throttle) / fullTq)) : 0;
