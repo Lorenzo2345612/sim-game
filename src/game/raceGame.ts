@@ -24,6 +24,7 @@ import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
 import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
 import { FlagState, type FlagCar } from '../race/flags';
+import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
@@ -76,7 +77,6 @@ const STUCK_RESET_S = 5;
 const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision inputs
 const SPAWN_HEIGHT_M = 0.6;
 const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
-const YELLOW_GAP_M = 30; // nearest car ahead within this gap caps the yellow reaction
 const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car must not allocate
 const CONTACT_PAIR_S = 0.5; // min gap between two counts of the same pair
 const CONTACT_NEAR_S = 8; // m, wrapped arc-length window for the pair test
@@ -222,6 +222,10 @@ export class RaceGame {
   private readonly ruleOffset: Float64Array;
   private readonly ruleCap: Float64Array;
   private readonly yellow: Uint8Array;
+  private readonly yellowHold: Uint8Array;
+  private readonly yellowLapDist: Float64Array;
+  private readonly yellowSpeed: Float64Array;
+  private readonly yellowOut: Uint8Array;
   private readonly totalDist: Float64Array;
   private readonly finished: Uint8Array;
   private readonly wheelsOff: Uint8Array;
@@ -315,6 +319,10 @@ export class RaceGame {
     this.ruleOffset = new Float64Array(this.count);
     this.ruleCap = new Float64Array(this.count).fill(Number.NaN);
     this.yellow = new Uint8Array(this.count);
+    this.yellowHold = new Uint8Array(this.count);
+    this.yellowLapDist = new Float64Array(this.count);
+    this.yellowSpeed = new Float64Array(this.count);
+    this.yellowOut = new Uint8Array(this.count);
     this.totalDist = new Float64Array(this.count);
     this.finished = new Uint8Array(this.count);
     this.wheelsOff = new Uint8Array(this.count);
@@ -1027,6 +1035,10 @@ export class RaceGame {
     this.flags.update(this.flagCars, t);
     const overtakes = this.flags.overtakeUnderYellow();
     for (let k = 0; k < overtakes.length; k++) {
+      const p = overtakes[k].passed;
+      // Passing a stationary or retired car under yellow is legal (289).
+      if (this.stopped[p] === 1 || this.finished[p] === 1) continue;
+      if (!(this.traffic[p].speed >= YELLOW_FOLLOW_MIN_MS)) continue;
       this.book(overtakes[k].car, 'penalty', 5, 'yellow flag overtake');
     }
     let maxStopped = 0;
@@ -1056,25 +1068,22 @@ export class RaceGame {
     const n = this.count;
     const t = this.time;
     const vscOn = this.vsc.phase === 'deployed' || this.vsc.phase === 'ending';
+    for (let j = 0; j < n; j++) {
+      this.yellowLapDist[j] = this.traffic[j].distance;
+      this.yellowSpeed[j] = this.traffic[j].speed;
+      this.yellowOut[j] = this.stopped[j] === 1 || this.finished[j] === 1 ? 1 : 0;
+    }
     for (let i = 0; i < n; i++) {
       this.yellow[i] = 0;
+      this.yellowHold[i] = 0;
       const idx = this.indices[i];
       const flag = this.flags.sectorFlag(this.sectorOf(this.traffic[i].distance) + 1);
       let cap = vscOn ? 0.6 * this.speeds[idx] : Number.NaN;
       if (flag !== 'green') {
         this.yellow[i] = 1;
-        let best = -1;
-        let bestGap = Number.POSITIVE_INFINITY;
-        for (let j = 0; j < n; j++) {
-          if (j === i) continue;
-          const gap = this.wrapGap(this.traffic[j].distance - this.traffic[i].distance);
-          if (gap > 0 && gap < bestGap) {
-            bestGap = gap;
-            best = j;
-          }
-        }
-        if (best >= 0 && bestGap <= YELLOW_GAP_M) {
-          const ahead = this.traffic[best].speed;
+        const ahead = yellowCap(i, this.yellowLapDist, this.yellowSpeed, this.yellowOut, this.lapLength);
+        if (Number.isFinite(ahead)) {
+          this.yellowHold[i] = 1;
           cap = Number.isNaN(cap) ? ahead : Math.min(cap, ahead);
         }
       }
@@ -1093,7 +1102,9 @@ export class RaceGame {
   }
 
   private applyRulesReaction(i: number, driver: AiDriver, trafficCap: number | null): void {
-    if (this.yellow[i] === 1) driver.setLateralOffset(0); // no overtaking line under yellow
+    // A numeric yellow cap means moving traffic ahead: hold the line. With no cap
+    // the car must be free to steer around a stationary one.
+    if (this.yellow[i] === 1 && this.yellowHold[i] === 1) driver.setLateralOffset(0);
     else if (this.time <= this.blueUntil[i]) driver.setLateralOffset(this.ruleOffset[i]);
     const ruleCap = this.ruleCap[i];
     // Several caps (traffic, blue, yellow, VSC) combine as the minimum.

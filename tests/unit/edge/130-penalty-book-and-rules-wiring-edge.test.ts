@@ -218,28 +218,17 @@ describe('130 penalty book and rules wiring edge', () => {
     }
   }, 120000);
 
-  it('EDGE7: passing a stopped car under yellow books one 5 s yellow flag overtake penalty', async () => {
+  it('EDGE7: passing a stopped car under yellow books no penalty', async () => {
     const game = await RaceGame.create(loadTrack(), loadSpec(), raceConfig(1));
     try {
       expect(stepUntilGo(game, IDLE), 'go reached').toBe(true);
       for (let i = 0; i < steps(3.5); i++) game.step(IDLE);
       game.debugStopCar(1);
       for (let i = 0; i < steps(1.5); i++) game.step(IDLE);
-      let found = false;
-      for (let i = 0; i < steps(7) && !found; i++) {
-        game.step(FULL);
-        found = game.penalties.entries().some(
-          (e) => e.car === 0 && e.reason === 'yellow flag overtake',
-        );
-      }
-      expect(found, 'the pass under yellow is booked').toBe(true);
-      const entries = game.penalties.entries().filter((e) => e.car === 0);
-      expect(entries).toHaveLength(1);
-      expect(entries[0].kind).toBe('penalty');
-      expect(entries[0].seconds).toBe(5);
-      expect(entries[0].reason).toBe('yellow flag overtake');
-      expect(game.penalties.total(0)).toBe(5);
-      expect(penaltyOf(game, 0), 'the book feeds classification').toBe(5);
+      for (let i = 0; i < steps(7); i++) game.step(FULL);
+      expect(
+        game.penalties.entries().filter((e) => e.car === 0 && e.reason === 'yellow flag overtake'),
+      ).toHaveLength(0);
     } finally {
       game.dispose();
     }
