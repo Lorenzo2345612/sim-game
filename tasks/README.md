@@ -286,7 +286,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 282 | Attack mode rules | done | - |
 | 283 | CarSpec awd + electric block | pending | 281 |
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
-| 285 | Electric voice | in progress | - |
+| 285 | Electric voice | waiting decision | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
@@ -296,5 +296,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | done | - |
 | 294 | Race control messages, penalty announcement and tower tag in the race HUD | in progress | 293 |
-| 295 | Per-nationality name lists and seeded grid generator | pending | - |
+| 295 | Per-nationality name lists and seeded grid generator | in progress | - |
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
