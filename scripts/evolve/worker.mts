@@ -15,7 +15,8 @@ import { halfWidthAt, hasKerb } from '../../src/track/surfaces';
 import { N_IN, forward } from './policy.mts';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../src/ai/neuralFeatures';
 import { minTimeFor } from './mintime.mts';
-import { splitGenome } from './genome.mts';
+import { splitGenome, X_LOOK, N_X, N_XW } from './genome.mts';
+import { N_HID } from '../../src/ai/neuralPolicy';
 import { trackLimits } from './limits.mts';
 import { applySetup, defaultSetup } from '../../src/physics/setup';
 import { padGenome } from '../../src/ai/neuralPolicy';
@@ -49,6 +50,13 @@ const cLine = computeRacingLine(cl, track.widthMeters / 2);
 const cLim = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
 const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * AI_GRIP_MARGIN, muLong: cLim.muLong * AI_GRIP_MARGIN });
 const drivers: AiDriver[] = [];
+// Extra residual inputs: centerline index X_LOOK metres ahead of each index.
+const ahead = X_LOOK.map((d) => { const a = new Int32Array(n); for (let i = 0, j = 0; i < n; i++) { if (j < i) j = i; while (cum[j] - cum[i] < d && j < i + n) j++; a[i] = j % n; } return a; });
+const xe = new Float64Array(N_X), lastOut = new Float64Array(slots * 2), BIAS = N_IN * N_HID;
+// forward() reads N_IN inputs only: extra contributions are folded into the hidden biases of a per-car copy.
+function foldExtra(wk: Float64Array, w: Float64Array, ex: Float64Array): void {
+  for (let h = 0; h < N_HID; h++) { let s = w[BIAS + h]; for (let j = 0; j < N_X; j++) s += ex[h * N_X + j] * xe[j]; wk[BIAS + h] = s; }
+}
 const obs: AiObservation = { x: 0, z: 0, yaw: 0, speed: 0 };
 function newDriver(): AiDriver {
   const d = new AiDriver(cLine, cSpeeds, { speedScale: 1 });
@@ -157,9 +165,11 @@ const carState: NeuralCarState = {
   others,
 };
 
-function episode(genomes: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number, rc: RacecraftTracker | null) {
+function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number, rc: RacecraftTracker | null) {
   const poses = startPoses(start);
   const m = genomes.length;
+  const wk = genomes.map((g) => Float64Array.from(g));
+  lastOut.fill(0);
   const alive = new Array(m).fill(true);
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
   const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), over = new Float64Array(m), invalidLaps = new Float64Array(m);
@@ -219,7 +229,14 @@ function episode(genomes: Float64Array[], setups: any[], start: number, secs: nu
         }
         others.length = oc;
         features.fill(x, carState);
-        forward(genomes[k], x, out);
+        if (residual) {
+          const i = p.index;
+          X_LOOK.forEach((_, a) => { const j = ahead[a][i]; xe[2 * a] = (hwR[j] - p.lateral) / 10; xe[2 * a + 1] = (hwL[j] + p.lateral) / 10; });
+          xe[N_X - 2] = lastOut[2 * k]; xe[N_X - 1] = lastOut[2 * k + 1];
+          foldExtra(wk[k], genomes[k], extras[k]);
+        }
+        forward(wk[k], x, out);
+        lastOut[2 * k] = out[0]; lastOut[2 * k + 1] = out[1];
         const inp = inputs[k];
         if (residual) {
           drivers[k].setLateralOffset(out[0] * res.offset);
@@ -317,8 +334,9 @@ parentPort!.on('message', (msg: any) => {
   const split = msg.genomes.map((g: number[]) => splitGenome(g, spec));
   const nT = split.length; // trainees first, then frozen opponents (racecraft)
   nShow = nT;
-  const opp = (msg.opponents ?? []).slice(0, slots - nT) as { weights: number[]; setup?: any }[];
+  const opp = (msg.opponents ?? []).slice(0, slots - nT) as { weights: number[]; setup?: any; extra?: number[] }[];
   const genomes: Float64Array[] = [...split.map((s: any) => s.weights), ...opp.map((o) => padGenome(o.weights)!)];
+  const extras: Float64Array[] = [...split.map((s: any) => s.extra), ...opp.map((o) => { const e = new Float64Array(N_XW); if (o.extra) e.set(o.extra.slice(0, N_XW)); return e; })];
   const setups = [...split.map((s: any) => s.setup), ...opp.map((o) => o.setup ?? defaultSetup(spec))];
   const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0) };
   let invalidLaps: number[] = [];
@@ -327,7 +345,7 @@ parentPort!.on('message', (msg: any) => {
   const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
     const rc = racecraft ? new RacecraftTracker(genomes.length) : null;
-    const r = episode(genomes, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc);
+    const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc);
     for (let k = 0; k < nT; k++) {
       const base = r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
       fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k]) : base;

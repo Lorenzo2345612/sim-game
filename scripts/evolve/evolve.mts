@@ -11,7 +11,7 @@ import { halfWidthAt } from '../../src/track/surfaces';
 import { parseCarSpec } from '../../src/physics/carSpec';
 import { minTimeFor } from './mintime.mts';
 import { N_W, N_IN, randomGenome, gauss, mulberry32 } from './policy.mts';
-import { N_SET, joinGenome, splitGenome } from './genome.mts';
+import { N_SET, N_G, N_X, joinGenome, splitGenome } from './genome.mts';
 import { pickOpponents } from './racecraft.mts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -64,12 +64,12 @@ const resume = arg('resume', ''); // one genome file, or several comma-separated
 const seeds = resume ? resume.split(',').filter((f) => existsSync(f)).map((f) => JSON.parse(readFileSync(f, 'utf8'))) : [];
 let snap: any = null; // pop.json snapshot: whole population + trainer state
 if (seeds.length === 1 && seeds[0].pop) { snap = seeds[0]; seeds.splice(0, 1, ...snap.pop.map((w: number[]) => ({ weights: w }))); }
-const bases = seeds.map((g) => { try { return g.weights.length === N_W + N_SET ? Float64Array.from(g.weights) : joinGenome(g.weights); } catch { return null; } }).filter((b): b is Float64Array => !!b);
+const bases = seeds.map((g) => { try { return joinGenome(g.weights, undefined, g.extra); } catch { return null; } }).filter((b): b is Float64Array => !!b);
 if (bases.length) {
   pop.push(...bases.slice(0, POP));
   gen = snap ? snap.gen + 1 : Math.max(...seeds.map((g) => g.gen ?? -1)) + 1;
   for (let i = 0; pop.length < POP; i++) pop.push(mutate(bases[i % bases.length], 0.1));
-  console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_W + N_SET} genes`);
+  console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_G} genes`);
 } else if (resume) console.log('resume skipped: no usable genome');
 if (!pop.length) for (let i = 0; i < POP; i++) {
   const w = randomGenome(rand);
@@ -79,12 +79,12 @@ if (!pop.length) for (let i = 0; i < POP; i++) {
 
 function mutate(g: Float64Array, sigma: number, frac = 0.3): Float64Array {
   const c = Float64Array.from(g);
-  for (let i = 0; i < N_W + N_SET; i++) if (rand() < frac) c[i] += (i >= N_W ? 3 : 1) * sigma * gauss(rand);
+  for (let i = 0; i < (RESIDUAL ? N_G : N_W + N_SET); i++) if (rand() < frac) c[i] += (i >= N_W && i < N_W + N_SET ? 3 : 1) * sigma * gauss(rand);
   return c;
 }
 function cross(a: Float64Array, b: Float64Array): Float64Array {
-  const c = new Float64Array(N_W + N_SET);
-  for (let i = 0; i < N_W + N_SET; i++) c[i] = rand() < 0.5 ? a[i] : b[i];
+  const c = new Float64Array(N_G);
+  for (let i = 0; i < N_G; i++) c[i] = rand() < 0.5 ? a[i] : b[i];
   return c;
 }
 
@@ -123,14 +123,14 @@ await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => 
 })));
 console.log(`${W} workers ready, pop ${POP}, ${N_W} weights + ${N_SET} setup genes, lap ${lapLength.toFixed(0)} m, line ${LINE}${RACECRAFT ? `, racecraft (${OPP} opponents per world)` : ''}`);
 
-const oppCache = new Map<string, { weights: number[]; setup?: unknown }>();
-function opponents(): { weights: number[]; setup?: unknown }[] { // frozen hall-of-fame models within 3 s of the fastest
+const oppCache = new Map<string, { weights: number[]; setup?: unknown; extra?: number[] }>();
+function opponents(): { weights: number[]; setup?: unknown; extra?: number[] }[] { // frozen hall-of-fame models within 3 s of the fastest
   if (!OPP) return [];
   const all = Object.values(hof) as any[];
   if (!all.length) return RESIDUAL ? Array.from({ length: OPP }, () => ({ weights: new Array(N_W).fill(0) })) : []; // plain classic drivers
   const bestAvg = Math.min(...all.map((m) => m.avgLap));
   return pickOpponents(all, bestAvg, OPP, rand).map((m) => {
-    if (!oppCache.has(m.file)) { const j = JSON.parse(readFileSync(join(modelDir, m.file), 'utf8')); oppCache.set(m.file, { weights: j.weights, setup: j.setup }); }
+    if (!oppCache.has(m.file)) { const j = JSON.parse(readFileSync(join(modelDir, m.file), 'utf8')); oppCache.set(m.file, { weights: j.weights, setup: j.setup, extra: j.extra }); }
     return oppCache.get(m.file)!;
   });
 }
@@ -167,7 +167,7 @@ function saveModel(i: number, finish: number) {
   if (hof[key] && (hof[key].rc || !RACECRAFT)) return; // racecraft models replace plain ones in their bucket
   const sp = splitGenome(pop[i], carSpec);
   const file = `race-${key}s-gen${gen}.json`;
-  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], ...(RESIDUAL ? { residual: true, res: RES } : {}), weights: Array.from(sp.weights), setup: sp.setup }));
+  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], ...(RESIDUAL ? { residual: true, res: RES, nX: N_X, extra: Array.from(sp.extra) } : {}), weights: Array.from(sp.weights), setup: sp.setup }));
   hof[key] = { file, avgLap: avg, gen, ...(RACECRAFT ? { rc: true } : {}) };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;
