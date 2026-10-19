@@ -277,7 +277,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 273 | Expert AI spin-free in 3-car traffic (silverstone) | in progress | 252 |
 | 274 | Weekend formats and points tables | done | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
-| 276 | RaceConfig gridOrder | in progress | - |
+| 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | pending | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | pending | 276, 277 |
 | 279 | Session result adapters | pending | 274, 275, 277 |
