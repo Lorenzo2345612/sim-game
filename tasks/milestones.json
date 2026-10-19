@@ -454,7 +454,7 @@
     {
       "id": "M2.3o",
       "title": "Neural driver v2 (kerbs, track limits, tyre inputs, setup)",
-      "status": "built",
+      "status": "approved",
       "tasks": [
         "270"
       ],
@@ -537,7 +537,9 @@
         "255",
         "273",
         "287",
-        "289"
+        "289",
+        "290",
+        "291"
       ],
       "status": "open",
       "prefetch": [

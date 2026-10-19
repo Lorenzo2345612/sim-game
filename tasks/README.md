@@ -274,7 +274,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
-| 273 | Expert AI spin-free in 3-car traffic (silverstone) | waiting decision | 252 |
+| 273 | Expert AI spin-free in 3-car traffic (silverstone) | in progress | 252 |
 | 274 | Weekend formats and points tables | done | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
 | 276 | RaceConfig gridOrder | done | - |
@@ -290,4 +290,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
-| 289 | Yellow-flag cap must not freeze the field behind a stopped car | pending | 130 |
+| 289 | Yellow-flag cap must not freeze the field behind a stopped car | in progress | 130 |
+| 290 | Overtake log and grid positions in RaceGame | pending | 289 |
+| 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |

@@ -3707,7 +3707,7 @@
     {
       "num": "273",
       "title": "Expert AI spin-free in 3-car traffic (silverstone)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "252"
       ],
@@ -3914,7 +3914,7 @@
     {
       "num": "289",
       "title": "Yellow-flag cap must not freeze the field behind a stopped car",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "130"
       ],
@@ -3923,6 +3923,32 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/289-yellow-flag-freeze.md"
+    },
+    {
+      "num": "290",
+      "title": "Overtake log and grid positions in RaceGame",
+      "status": "pending",
+      "deps": [
+        "289"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/290-overtake-log.md"
+    },
+    {
+      "num": "291",
+      "title": "Results screen: grid, places gained, overtakes and race recap",
+      "status": "pending",
+      "deps": [
+        "290"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/291-results-overtake-recap.md"
     }
   ]
 }
