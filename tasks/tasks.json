@@ -3476,7 +3476,7 @@
     {
       "num": "255",
       "title": "Per-car weight distribution and tyre widths",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "254",
         "252"
@@ -3551,7 +3551,7 @@
     {
       "num": "261",
       "title": "RaceGame scenario starts and contact counter",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -3707,7 +3707,7 @@
     {
       "num": "273",
       "title": "Expert AI spin-free in 3-car traffic (silverstone)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "252"
       ],

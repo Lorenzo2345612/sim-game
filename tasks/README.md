@@ -256,13 +256,13 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 252 | Expert AI drives spin-free on monza and spa | done | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
-| 255 | Per-car weight distribution and tyre widths | pending | 254, 252 |
+| 255 | Per-car weight distribution and tyre widths | in progress | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | in progress | 258 |
-| 261 | RaceGame scenario starts and contact counter | in progress | - |
+| 261 | RaceGame scenario starts and contact counter | waiting decision | - |
 | 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
@@ -274,7 +274,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
-| 273 | Expert AI spin-free in 3-car traffic (silverstone) | pending | 252 |
+| 273 | Expert AI spin-free in 3-car traffic (silverstone) | in progress | 252 |
 | 274 | Weekend formats and points tables | in progress | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
 | 276 | RaceConfig gridOrder | in progress | - |
