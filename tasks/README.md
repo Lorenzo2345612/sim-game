@@ -153,7 +153,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
-| 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
+| 152 | Render cost: draw calls, culling, shadows | waiting decision | 151 |
 | 153 | Simulation cost with 16 cars | done | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | done | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
@@ -274,7 +274,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
-| 273 | Expert AI spin-free in 3-car traffic (silverstone) | in progress | 252 |
+| 273 | Expert AI spin-free in 3-car traffic (silverstone) | waiting decision | 252 |
 | 274 | Weekend formats and points tables | done | - |
 | 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
 | 276 | RaceConfig gridOrder | done | - |
@@ -294,4 +294,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 290 | Overtake log and grid positions in RaceGame | pending | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | in progress | 093 |
-| 293 | Remove race HUD overlaps (damage panel, flags, toasts) | pending | - |
+| 293 | Remove race HUD overlaps (damage panel, flags, toasts) | in progress | - |

@@ -2102,7 +2102,7 @@
     {
       "num": "152",
       "title": "Render cost: draw calls, culling, shadows",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "151"
       ],
@@ -3707,7 +3707,7 @@
     {
       "num": "273",
       "title": "Expert AI spin-free in 3-car traffic (silverstone)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "252"
       ],
@@ -3966,7 +3966,7 @@
     {
       "num": "293",
       "title": "Remove race HUD overlaps (damage panel, flags, toasts)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
