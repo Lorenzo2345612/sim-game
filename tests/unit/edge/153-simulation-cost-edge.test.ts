@@ -114,10 +114,16 @@ async function positionsAfter(track: TrackDataV2, spec: CarSpec, ticks: number):
   }
 }
 
-function flaggedHandles(world: World): number[] {
+// Flagged colliders must all belong to a car body (chassis, body box, wheel cylinders);
+// returns the chassis-equivalent list: flagged handles that are some car's chassis collider.
+function flaggedHandles(world: World, vehicles: VehicleModel[]): number[] {
+  const bodies = new Set(vehicles.map((v) => v.chassisCollider.parent()?.handle));
+  const chassis = new Set(vehicles.map((v) => v.chassisCollider.handle));
   const out: number[] = [];
   world.colliders.forEach((c) => {
-    if ((c.activeEvents() & RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS) !== 0) out.push(c.handle);
+    if ((c.activeEvents() & RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS) === 0) return;
+    expect(bodies.has(c.parent()?.handle)).toBe(true);
+    if (chassis.has(c.handle)) out.push(c.handle);
   });
   return out.sort((a, b) => a - b);
 }
@@ -186,13 +192,13 @@ describe('153 simulation cost edge cases', () => {
       expect(g.vehicles.length).toBe(game.carCount);
       const chassis = [...g.vehicles.map((v) => v.chassisCollider.handle)].sort((a, b) => a - b);
       expect(chassis.length).toBeGreaterThan(0);
-      expect(flaggedHandles(g.world)).toEqual(chassis);
+      expect(flaggedHandles(g.world, g.vehicles)).toEqual(chassis);
       const v = g.vehicles[0];
       v.damageMode = 'full';
       v.damage.detached[0] = true;
       v.setInput(IDLE);
       v.prePhysicsStep(FIXED_DT);
-      expect(flaggedHandles(g.world)).toEqual(chassis);
+      expect(flaggedHandles(g.world, g.vehicles)).toEqual(chassis);
     } finally {
       game.dispose();
     }

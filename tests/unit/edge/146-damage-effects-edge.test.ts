@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
+import { initPhysics, createPhysicsWorld, RAPIER } from '../../../src/physics/physicsWorld';
+import { CAR_CONTACT_COLLISION_GROUPS } from '../../../src/physics/vehicleModel';
 import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { aeroForces } from '../../../src/physics/aero';
@@ -28,6 +29,15 @@ const VehicleCtor = Vehicle as unknown as new (
   spec: CarSpec,
   spawn: SpawnPose,
 ) => DamageVehicle;
+
+function bodyCols(body: RAPIER.RigidBody): RAPIER.Collider[] {
+  const out: RAPIER.Collider[] = [];
+  for (let i = 0; i < body.numColliders(); i++) {
+    const c = body.collider(i);
+    if (c.collisionGroups() !== CAR_CONTACT_COLLISION_GROUPS) out.push(c);
+  }
+  return out;
+}
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -182,7 +192,7 @@ describe('146 damage effects edge', () => {
       expectRel(out.front, aeroForces(SPEC, 60, 0).front, 0.01);
       expect(vehicle.damage.frontWing).toBe(1);
       expect(vehicle.damage.suspension[0]).toBe(1);
-      expect(vehicle.body.numColliders()).toBe(1);
+      expect(bodyCols(vehicle.body).length).toBe(1);
       world.free();
     }
     const { vehicle, world } = makeVehicle();
@@ -218,12 +228,13 @@ describe('146 damage effects edge', () => {
     vehicle.damage.detached[0] = true;
     vehicle.damage.detached[3] = true;
     run(vehicle, world, 2, IDLE);
-    expect(vehicle.body.numColliders()).toBe(3);
+    expect(bodyCols(vehicle.body).length).toBe(3);
     run(vehicle, world, 1, IDLE);
-    expect(vehicle.body.numColliders()).toBe(3);
+    expect(bodyCols(vehicle.body).length).toBe(3);
     const seen: boolean[] = [false, false];
-    for (let i = 1; i < vehicle.body.numColliders(); i++) {
-      const c = vehicle.body.collider(i);
+    const cs = bodyCols(vehicle.body);
+    for (let i = 1; i < cs.length; i++) {
+      const c = cs[i];
       expect(c.radius()).toBeCloseTo(0.12, 6);
       expect(c.friction()).toBeCloseTo(0.8, 6);
       expect(c.density()).toBeCloseTo(0, 6);
@@ -253,14 +264,14 @@ describe('146 damage effects edge', () => {
     vehicle.damage.puncture[2] = true;
     vehicle.damage.detached[1] = true;
     run(vehicle, world, 2, IDLE);
-    expect(vehicle.body.numColliders()).toBe(2);
+    expect(bodyCols(vehicle.body).length).toBe(2);
     vehicle.reset(spawn(STATIC_Y));
     expect(vehicle.damage).toBe(ref);
     expect(vehicle.damage.frontWing).toBe(0);
     expect(vehicle.damage.suspension[0]).toBe(0);
     expect(vehicle.damage.puncture[2]).toBe(false);
     expect(vehicle.damage.detached[1]).toBe(false);
-    expect(vehicle.body.numColliders()).toBe(1);
+    expect(bodyCols(vehicle.body).length).toBe(1);
     world.free();
   }, 30000);
 

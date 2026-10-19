@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { FIXED_DT, GRAVITY } from '../core/constants';
 import type { TrackDataV2 } from '../core/types';
-import { addTrackColliders, PHASE0_GROUND_HALF_EXTENTS } from './trackColliders';
+import { addTrackColliders, PHASE0_GROUND_HALF_EXTENTS, SURFACE_COLLISION_GROUPS } from './trackColliders';
 
 let initPromise: Promise<void> | null = null;
 
@@ -21,7 +21,8 @@ export function createPhysicsWorld(track?: TrackDataV2): RAPIER.World {
         PHASE0_GROUND_HALF_EXTENTS.x,
         PHASE0_GROUND_HALF_EXTENTS.y,
         PHASE0_GROUND_HALF_EXTENTS.z,
-      ).setTranslation(0, -PHASE0_GROUND_HALF_EXTENTS.y, 0),
+      ).setTranslation(0, -PHASE0_GROUND_HALF_EXTENTS.y, 0)
+        .setCollisionGroups(SURFACE_COLLISION_GROUPS),
     );
   } else {
     addTrackColliders(world, track);

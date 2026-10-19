@@ -35,7 +35,16 @@ const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on 
 // another car's body, own included. The environment keeps the default (all groups).
 const CHASSIS_GROUP = 0x0002;
 const CHASSIS_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | 0xffff;
-const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~CHASSIS_GROUP);
+// Car-car colliders (wheel cylinders, body box): members of group 2 only, they touch
+// chassis and each other but never the environment, and wheel rays skip them.
+const CARCAR_GROUP = 0x0004;
+export const CAR_CONTACT_COLLISION_GROUPS = (CARCAR_GROUP << 16) | CHASSIS_GROUP | CARCAR_GROUP;
+const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | CARCAR_GROUP));
+// Body/nose box for car-car contact: bottom stays at the chassis slab bottom.
+const BODY_EXTRA_HALF_HEIGHT = 0.25;
+// Wheel cylinders are skipped when the body slab already covers the tyre's outer edge.
+const WHEEL_COVERED_MARGIN = 1.1;
+const SQRT_HALF = Math.SQRT1_2;
 // m/s; below this the chassis is numerically at rest for the wheel solver, but only
 // without brakes: the locked-wheel hold needs the real vx. The solver's tick clamp caps
 // an opposing force at massShare·|vx|/dt, so a mm/s gravity creep on an uphill spawn
@@ -173,6 +182,8 @@ function spawnRotation(spawn: SpawnPose): RAPIER.Rotation {
 export class VehicleModel {
   readonly body: RAPIER.RigidBody;
   readonly chassisCollider: RAPIER.Collider;
+  /** Car-car colliders (body box, wheel cylinders); map to the same car in contact events. */
+  readonly carColliders: RAPIER.Collider[] = [];
   readonly zones: CarZones;
   readonly damage: DamageState = createDamageState();
   damageMode: DamageMode = 'full';
@@ -245,6 +256,34 @@ export class VehicleModel {
       this.body,
     );
     const wp = spec.wheels.positions;
+    const bodyHalfH = he.y + BODY_EXTRA_HALF_HEIGHT;
+    this.carColliders.push(
+      world.createCollider(
+        RAPIER.ColliderDesc.cuboid(he.x, bodyHalfH, he.z)
+          .setTranslation(0, bodyHalfH - he.y, 0)
+          .setDensity(0)
+          .setCollisionGroups(CAR_CONTACT_COLLISION_GROUPS)
+          .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+          .setContactForceEventThreshold(1000),
+        this.body,
+      ),
+    );
+    for (let i = 0; i < 4; i++) {
+      const w = i < 2 ? spec.wheels.width : spec.wheels.widthRear;
+      if (Math.abs(wp[i][0]) + w / 2 <= he.x * WHEEL_COVERED_MARGIN) continue;
+      this.carColliders.push(
+        world.createCollider(
+          RAPIER.ColliderDesc.cylinder(w / 2, spec.wheels.radius)
+            .setTranslation(wp[i][0], wp[i][1], wp[i][2])
+            .setRotation({ x: 0, y: 0, z: SQRT_HALF, w: SQRT_HALF })
+            .setDensity(0)
+            .setCollisionGroups(CAR_CONTACT_COLLISION_GROUPS)
+            .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+            .setContactForceEventThreshold(1000),
+          this.body,
+        ),
+      );
+    }
     this.zones = {
       halfLength: he.z,
       halfWidth: he.x,

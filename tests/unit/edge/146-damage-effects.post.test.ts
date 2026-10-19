@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initPhysics, createPhysicsWorld } from '../../../src/physics/physicsWorld';
+import { initPhysics, createPhysicsWorld, RAPIER } from '../../../src/physics/physicsWorld';
+import { CAR_CONTACT_COLLISION_GROUPS } from '../../../src/physics/vehicleModel';
 import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { aeroForces } from '../../../src/physics/aero';
@@ -32,6 +33,15 @@ const VehicleCtor = Vehicle as unknown as new (
   spec: CarSpec,
   spawn: SpawnPose,
 ) => DamageVehicle;
+
+function bodyCols(body: RAPIER.RigidBody): RAPIER.Collider[] {
+  const out: RAPIER.Collider[] = [];
+  for (let i = 0; i < body.numColliders(); i++) {
+    const c = body.collider(i);
+    if (c.collisionGroups() !== CAR_CONTACT_COLLISION_GROUPS) out.push(c);
+  }
+  return out;
+}
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -110,7 +120,7 @@ describe('146 damage effects post gaps', () => {
     const tel = vehicle.getTelemetry();
     expect(tel.wheels[1].fz).toBeGreaterThan(100);
     expect(vehicle.getState().wheels[1].inContact).toBe(true);
-    expect(vehicle.body.numColliders()).toBe(1);
+    expect(bodyCols(vehicle.body).length).toBe(1);
     world.free();
   }, 30000);
 
@@ -119,12 +129,12 @@ describe('146 damage effects post gaps', () => {
     vehicle.damageMode = 'off';
     vehicle.damage.detached[2] = true;
     run(vehicle, world, 1, IDLE);
-    expect(vehicle.body.numColliders()).toBe(1);
+    expect(bodyCols(vehicle.body).length).toBe(1);
     vehicle.damageMode = 'full';
     step(vehicle, world, IDLE);
-    expect(vehicle.body.numColliders()).toBe(2);
+    expect(bodyCols(vehicle.body).length).toBe(2);
     run(vehicle, world, 1, IDLE);
-    expect(vehicle.body.numColliders()).toBe(2);
+    expect(bodyCols(vehicle.body).length).toBe(2);
     world.free();
   }, 30000);
 
@@ -181,10 +191,10 @@ describe('146 damage effects post gaps', () => {
     for (const dt of [0, -1, NaN, Infinity]) {
       vehicle.prePhysicsStep(dt);
     }
-    expect(vehicle.body.numColliders()).toBe(1);
+    expect(bodyCols(vehicle.body).length).toBe(1);
     expect(finiteState(vehicle.getState())).toBe(true);
     step(vehicle, world, input(0.3));
-    expect(vehicle.body.numColliders()).toBe(5);
+    expect(bodyCols(vehicle.body).length).toBe(5);
     expect(finiteState(vehicle.getState())).toBe(true);
     world.free();
   }, 30000);

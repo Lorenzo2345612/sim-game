@@ -75,7 +75,9 @@ function surfWorld(surface: Surface): World {
   world.timestep = FIXED_DT;
   world.createCollider(RAPIER.ColliderDesc.cuboid(1, 1, 1).setTranslation(0, -100, 0));
   const ground = world.createCollider(
-    RAPIER.ColliderDesc.cuboid(5000, 0.5, 5000).setTranslation(0, -0.5, 0),
+    RAPIER.ColliderDesc.cuboid(5000, 0.5, 5000)
+      .setTranslation(0, -0.5, 0)
+      .setCollisionGroups(trackColliders.SURFACE_COLLISION_GROUPS),
   );
   registerSurface(ground, surface);
   return world;

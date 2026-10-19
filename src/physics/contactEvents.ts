@@ -27,12 +27,16 @@ const impact: Impact = { impulse: 0, point: localPoint, otherCar: false };
 // Handle→car map, rebuilt only when the cars array identity changes (no per-tick rebuild).
 let cachedCars: readonly DamageCar[] | null = null;
 let handleToCar = new Map<number, DamageCar>();
+// Body handle→car: car-car colliders (wheel cylinders, body box) resolve to their car through the parent body.
+let bodyToCar = new Map<number, DamageCar>();
 
 function carsByHandle(cars: readonly DamageCar[]): Map<number, DamageCar> {
   if (cachedCars !== cars) {
     handleToCar = new Map<number, DamageCar>();
+    bodyToCar = new Map<number, DamageCar>();
     for (let i = 0; i < cars.length; i++) {
       handleToCar.set(cars[i].chassis.handle, cars[i]);
+      bodyToCar.set(cars[i].body.handle, cars[i]);
     }
     cachedCars = cars;
   }
@@ -68,6 +72,13 @@ let drainByHandle: Map<number, DamageCar> | null = null;
 let drainDt = 0;
 let drainRng: (() => number) | null = null;
 
+function carOf(world: RAPIER.World, byHandle: Map<number, DamageCar>, h: number): DamageCar | null {
+  const direct = byHandle.get(h);
+  if (direct !== undefined) return direct;
+  const parent = world.getCollider(h)?.parent();
+  return parent ? (bodyToCar.get(parent.handle) ?? null) : null;
+}
+
 function onContactForceEvent(event: RAPIER.TempContactForceEvent): void {
   const world = drainWorld!;
   const byHandle = drainByHandle!;
@@ -75,8 +86,8 @@ function onContactForceEvent(event: RAPIER.TempContactForceEvent): void {
   const rng = drainRng!;
   const h1 = event.collider1();
   const h2 = event.collider2();
-  const car1 = byHandle.get(h1) ?? null;
-  const car2 = byHandle.get(h2) ?? null;
+  const car1 = carOf(world, byHandle, h1);
+  const car2 = carOf(world, byHandle, h2);
   if (car1 === null && car2 === null) return;
   const jRaw = event.totalForceMagnitude() * dt;
   if (!(jRaw > 0)) return;

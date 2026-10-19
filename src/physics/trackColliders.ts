@@ -69,6 +69,10 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
   }
 }
 
+// Driving surfaces are not members of the chassis (2) or car-car (4) groups, so car-car
+// colliders (wheel cylinders, body box) pass through them; barriers keep the default groups.
+export const SURFACE_COLLISION_GROUPS = (0xfff9 << 16) | 0xffff;
+
 const SEAT_RAY_ABOVE = 5;
 // Ray time-of-impact is float32; keep the analytic piece y when the ray agrees within that noise.
 const SEAT_SNAP = 1e-5;
@@ -102,6 +106,7 @@ function addSausageColliders(world: RAPIER.World, track: TrackDataV2): void {
       const desc = RAPIER.ColliderDesc.convexHull(sausageColliderPoints(piece.length));
       if (desc === null) continue;
       desc
+        .setCollisionGroups(SURFACE_COLLISION_GROUPS)
         .setTranslation(piece.position.x, seatOnStrips(world, piece), piece.position.z)
         .setRotation({ x: 0, y: Math.sin(piece.yaw / 2), z: 0, w: Math.cos(piece.yaw / 2) });
       registerSurface(world.createCollider(desc), 'kerb');
@@ -122,13 +127,15 @@ export function addTrackColliders(
       x: t.sizeX,
       y: 1,
       z: t.sizeZ,
-    }).setTranslation(t.originX, 0, t.originZ),
+    }).setTranslation(t.originX, 0, t.originZ).setCollisionGroups(SURFACE_COLLISION_GROUPS),
   );
   registerSurface(terrain, 'grass');
   for (const strip of strips) {
     if (strip.indices.length === 0) continue;
     const collider = world.createCollider(
-      RAPIER.ColliderDesc.trimesh(strip.positions, strip.indices),
+      RAPIER.ColliderDesc.trimesh(strip.positions, strip.indices).setCollisionGroups(
+        SURFACE_COLLISION_GROUPS,
+      ),
     );
     registerSurface(collider, strip.surface);
   }
