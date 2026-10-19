@@ -74,8 +74,11 @@ export const NEURAL_GRIP_MARGIN = 0.82; // residual nets were trained against th
 
 const AI_THROTTLE_KP = 1.5;
 const AI_BRAKE_KB = 0.07;
+const RULE_BRAKE_KB = 0.25; // firm braking while a rule cap (VSC/yellow/blue) applies
 const LINE_MARGIN_M = 2.2;
 const EDGE_BAND_M = 1.0; // edge keeping starts this far inside the track limit
+const NEURAL_EDGE_BAND_M = 2.5;
+const NEURAL_FOLLOW_KB = 0.1;
 const EDGE_STEER_GAIN = 0.4;
 const MAX_AI = 15;
 const STUCK_SPEED_MS = 1; // yellow/VSC stopped-car detection
@@ -722,16 +725,11 @@ export class RaceGame {
           );
           this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
-          const here = this.indices[i];
-          const lat = this.traffic[i].lateral;
-          const excess = Math.abs(lat) - ((lat >= 0 ? this.halfRight[here] : this.halfLeft[here]) - EDGE_BAND_M);
-          if (excess > 0) {
-            const pull = Math.min(1, excess * EDGE_STEER_GAIN) * (lat >= 0 ? -1 : 1);
-            const cmd = this.aiCmd;
-            cmd.steer = Math.max(-1, Math.min(1, cmd.steer + pull));
-            cmd.throttle *= Math.max(0, 1 - excess * EDGE_STEER_GAIN);
-          }
         }
+        if (ai.neural) {
+          this.keepOnTrack(i, NEURAL_EDGE_BAND_M);
+          this.followForNeural(i);
+        } else this.keepOnTrack(i);
         ai.vehicle.setInput(this.aiCmd);
         ai.vehicle.prePhysicsStep(FIXED_DT);
       }
@@ -1189,6 +1187,30 @@ export class RaceGame {
     );
   }
 
+  // Edge-keeping: steer back towards the centre and lift when near the verge.
+  private keepOnTrack(i: number, band = EDGE_BAND_M): void {
+    const here = this.indices[i];
+    const lat = this.traffic[i].lateral;
+    const excess = Math.abs(lat) - ((lat >= 0 ? this.halfRight[here] : this.halfLeft[here]) - band);
+    if (excess <= 0) return;
+    const pull = Math.min(1, excess * EDGE_STEER_GAIN) * (lat >= 0 ? -1 : 1);
+    const cmd = this.aiCmd;
+    cmd.steer = Math.max(-1, Math.min(1, cmd.steer + pull));
+    cmd.throttle *= Math.max(0, 1 - excess * EDGE_STEER_GAIN);
+  }
+
+  // Learned drivers have no traffic awareness: brake to the speed of a car right ahead.
+  private followForNeural(i: number): void {
+    this.updateTrafficCaution(i);
+    const cap = this.aheadSpeedCap;
+    if (cap === null) return;
+    const over = this.current[i].forwardSpeed - cap;
+    if (over <= 0) return;
+    const cmd = this.aiCmd;
+    cmd.throttle = 0;
+    cmd.brake = Math.max(cmd.brake, Math.min(1, NEURAL_FOLLOW_KB * over));
+  }
+
   // A car is being slowed by a rule cap (VSC/yellow/blue) or by the car ahead,
   // so a lack of progress is not stuck behaviour and must not trigger a reset.
   private isHeld(i: number): boolean {
@@ -1310,6 +1332,7 @@ export class RaceGame {
     if (this.yellow[i] === 1 && this.yellowHold[i] === 1) driver.setLateralOffset(0);
     else if (this.time <= this.blueUntil[i]) driver.setLateralOffset(this.ruleOffset[i]);
     const ruleCap = this.ruleCap[i];
+    driver.setBrakeGain(Number.isNaN(ruleCap) ? AI_BRAKE_KB : RULE_BRAKE_KB);
     // Several caps (traffic, blue, yellow, VSC) combine as the minimum.
     if (Number.isNaN(ruleCap)) driver.setSpeedCap(trafficCap);
     else driver.setSpeedCap(trafficCap === null ? ruleCap : Math.min(trafficCap, ruleCap));

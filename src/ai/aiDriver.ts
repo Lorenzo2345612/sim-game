@@ -86,6 +86,10 @@ export class AiDriver {
     this.p.maxSteerAngle = rad;
   }
 
+  setBrakeGain(kb: number): void {
+    this.p.kb = kb;
+  }
+
   setSpeedCap(v: number | null): void {
     this.speedCap = v;
   }
