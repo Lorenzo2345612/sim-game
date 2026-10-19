@@ -3949,6 +3949,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/291-results-overtake-recap.md"
+    },
+    {
+      "num": "292",
+      "title": "Current, last and best lap times in the race HUD",
+      "status": "pending",
+      "deps": [
+        "093"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/292-race-lap-times-hud.md"
     }
   ]
 }
