@@ -17,6 +17,7 @@ Cars are named 'You' / `AI ${car}` today (`carName` in `src/ui/raceControl.ts`, 
 - `src/ui/raceControl.ts`, `src/ui/raceHud.ts` — modify.
 - `src/main.ts` — modify — grid loading, names wiring, debug hook.
 - `tests/unit/acceptance/296-driver-names-race-ui.test.ts`, `tests/e2e/acceptance/296-driver-names-race-ui.spec.ts` — create (acceptance worker).
+- Planner-authorised edit: in `tests/e2e/acceptance/296-driver-names-race-ui.spec.ts` replace `join(__dirname, '..', '..', '..')` with `fileURLToPath(new URL('../../../', import.meta.url))` (import `fileURLToPath` from `node:url`; `__dirname` is undefined under ESM). No other test edits.
 
 ## Steps
 ```ts
