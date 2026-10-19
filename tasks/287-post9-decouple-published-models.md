@@ -16,7 +16,7 @@ Roles: coder, reviewer
 
 ## Steps
 1. POST9 runs the export into a temp dir (`mkdtempSync(os.tmpdir())`) and asserts the same selection rules against that output (fastest expert across `-racing`/`-mintime` dirs, whole difficulty set and `line` field from the winner). Remove the temp dir afterwards.
-2. POST9 must not read `public/ai-models/*/expert.json`.
+2. POST9 must not read anything under `public/ai-models/` (published models and difficulty sets are hand-curated; e.g. cleveland-f4 lists only expert).
 3. Default behaviour of `export-models.mts` (no flag) unchanged.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
