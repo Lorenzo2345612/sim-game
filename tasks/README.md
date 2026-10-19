@@ -153,7 +153,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
-| 152 | Render cost: draw calls, culling, shadows | waiting decision | 151 |
+| 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
 | 153 | Simulation cost with 16 cars | done | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | done | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |

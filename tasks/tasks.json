@@ -2102,7 +2102,7 @@
     {
       "num": "152",
       "title": "Render cost: draw calls, culling, shadows",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "151"
       ],
