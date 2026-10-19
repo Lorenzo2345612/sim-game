@@ -9,6 +9,7 @@
   "chassis": {
     "massKg": 1300,
     "cgHeight": 0.4,
+    "weightFront": 0.4,
     "inertia": {
       "x": 2300,
       "y": 2200,
@@ -45,6 +46,7 @@
     ],
     "radius": 0.342992,
     "width": 0.3,
+    "widthRear": 0.31,
     "inertia": 1.8
   },
   "suspension": {
@@ -76,6 +78,7 @@
   "tyres": {
     "optPressureKpa": 180,
     "pressureKpa": 180,
+    "rearMuScale": 1.005,
     "compounds": {
       "soft": {
         "mu0": 1.643,

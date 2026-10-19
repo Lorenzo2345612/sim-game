@@ -45,8 +45,8 @@
       ]
     ],
     "radius": 0.357711,
-    "width": 0.305,
-    "widthRear": 0.405,
+    "width": 0.275,
+    "widthRear": 0.375,
     "inertia": 1.8
   },
   "suspension": {

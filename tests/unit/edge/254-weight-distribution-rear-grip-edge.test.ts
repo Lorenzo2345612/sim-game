@@ -242,13 +242,13 @@ describe('254 weight distribution and rear grip edge cases', () => {
     }
   }, 30000);
 
-  it('EDGE8: ow26.json carries weightFront 0.455, rearMuScale 1.00–1.10, width 0.305, widthRear 0.405', () => {
+  it('EDGE8: ow26.json carries weightFront 0.455, rearMuScale 1.00–1.10, width 0.275, widthRear 0.375', () => {
     const spec = parse(readCar('ow26'));
     expect(spec.chassis.weightFront).toBeCloseTo(0.455, 10);
     expect(spec.tyres.rearMuScale).toBeGreaterThanOrEqual(1.0);
     expect(spec.tyres.rearMuScale).toBeLessThanOrEqual(1.1);
-    expect(spec.wheels.width).toBeCloseTo(0.305, 10);
-    expect(spec.wheels.widthRear).toBeCloseTo(0.405, 10);
+    expect(spec.wheels.width).toBeCloseTo(0.275, 10);
+    expect(spec.wheels.widthRear).toBeCloseTo(0.375, 10);
   });
 
   it('EDGE10: body mass stays massKg + fuel mass when the new fields are set', () => {

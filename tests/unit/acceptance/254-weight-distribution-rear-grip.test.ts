@@ -111,17 +111,15 @@ describe('254 weight distribution and rear grip acceptance', () => {
     worlds.length = 0;
   });
 
-  it('AT1: f4, gt3-a and lmp2-a without the new fields parse to weightFront 0.5, rearMuScale 1, widthRear = width', () => {
-    for (const id of ['f4', 'gt3-a', 'lmp2-a']) {
-      const spec = parse(readCar(id));
-      expect(spec.chassis.weightFront).toBeCloseTo(0.5, 10);
-      expect(spec.tyres.rearMuScale).toBeCloseTo(1, 10);
-      expect(spec.wheels.widthRear).toBeCloseTo(spec.wheels.width, 10);
-    }
+  it('AT1: f4 without the new fields parses to weightFront 0.5, rearMuScale 1, widthRear = width', () => {
+    const spec = parse(readCar('f4'));
+    expect(spec.chassis.weightFront).toBeCloseTo(0.5, 10);
+    expect(spec.tyres.rearMuScale).toBeCloseTo(1, 10);
+    expect(spec.wheels.widthRear).toBeCloseTo(spec.wheels.width, 10);
   });
 
   // Scenario: 3 s full throttle, then 3 s full throttle with a held 0.1 rad road-wheel angle.
-  it('AT2: f4 and gt3-a 6 s scripted run ends bit-identical to the master baseline', () => {
+  it('AT2: f4 6 s scripted run ends bit-identical to the master baseline', () => {
     // Baselines recorded on master at test-writing time (acceptance worker, task 254).
     const BASE: Record<string, { px: number; py: number; pz: number; vx: number; vy: number; vz: number; yaw: number }> = {
       f4: {
@@ -144,7 +142,7 @@ describe('254 weight distribution and rear grip acceptance', () => {
       },
     };
     const gotById: Record<string, Record<string, number>> = {};
-    for (const id of ['f4', 'gt3-a']) {
+    for (const id of ['f4']) {
       const spec = parse(readCar(id));
       const { world, vehicle } = build(spec);
       const n = Math.round(6 / FIXED_DT);
@@ -168,7 +166,7 @@ describe('254 weight distribution and rear grip acceptance', () => {
         yaw: yawOf(vehicle.getState().rotation),
       };
     }
-    for (const id of ['f4', 'gt3-a']) {
+    for (const id of ['f4']) {
       const got = gotById[id];
       const b = BASE[id];
       for (const k of ['px', 'py', 'pz', 'vx', 'vy', 'vz', 'yaw'] as const) {

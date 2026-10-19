@@ -43,8 +43,14 @@ describe('076 gt3-d acceptance', () => {
   it('AT3: dynamics sections deep-equal gt3-a.json', () => {
     const d = readJson<Record<string, unknown>>('public', 'cars', 'gt3-d.json');
     const a = readJson<Record<string, unknown>>('public', 'cars', 'gt3-a.json');
+    // 255 gives each car its own weightFront / rearMuScale / widths.
+    const strip = (section: string, v: unknown): unknown => {
+      const o = { ...(v as Record<string, unknown>) };
+      if (section === 'tyres') delete o.rearMuScale;
+      return o;
+    };
     for (const section of DYNAMICS_SECTIONS) {
-      expect(d[section], section).toEqual(a[section]);
+      expect(strip(section, d[section]), section).toEqual(strip(section, a[section]));
     }
   });
 });

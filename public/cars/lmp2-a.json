@@ -7,6 +7,7 @@
   "chassis": {
     "massKg": 950,
     "cgHeight": 0.32,
+    "weightFront": 0.44,
     "inertia": { "x": 1500, "y": 1700, "z": 450 },
     "halfExtents": { "x": 0.9, "y": 0.1, "z": 2.3 }
   },
@@ -14,6 +15,7 @@
     "positions": [[-0.788786, 0.031999, -1.480496], [0.788786, 0.031999, -1.480496], [-0.774315, 0.031999, 1.480496], [0.774315, 0.031999, 1.480496]],
     "radius": 0.351999,
     "width": 0.3,
+    "widthRear": 0.31,
     "inertia": 1.5
   },
   "suspension": {
@@ -24,6 +26,7 @@
   "tyres": {
     "optPressureKpa": 180,
     "pressureKpa": 180,
+    "rearMuScale": 1.03,
     "compounds": {
       "soft": {
         "mu0": 1.908, "Fz0": 3800, "loadSens": 0.1,

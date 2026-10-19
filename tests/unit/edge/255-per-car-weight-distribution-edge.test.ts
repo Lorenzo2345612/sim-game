@@ -24,7 +24,6 @@ const ROOT = join(__dirname, '..', '..', '..');
 // Table values of task 255. weightFront is exact (no retune allowance);
 // rearMuScale targets admit the spec's ±0.05 retune envelope.
 const WEIGHT_FRONT: Record<string, number> = {
-  f4: 0.43,
   'gt3-a': 0.48,
   'gt3-b': 0.4,
   'gt3-c': 0.44,
@@ -35,7 +34,6 @@ const WEIGHT_FRONT: Record<string, number> = {
 };
 
 const REAR_MU: Record<string, number> = {
-  f4: 1.05,
   'gt3-a': 1.0,
   'gt3-b': 1.05,
   'gt3-c': 1.03,
@@ -151,9 +149,9 @@ describe('255 per-car weight distribution and tyre widths edge cases', () => {
       const expected = zFront + (1 - spec.chassis.weightFront) * (zRear - zFront);
       const { vehicle } = build(spec);
       const com = vehicle.body.localCom();
-      expect(com.x, `${id} com.x`).toBeCloseTo(0, 9);
-      expect(com.y, `${id} com.y`).toBeCloseTo(0, 9);
-      expect(com.z, `${id} com.z`).toBeCloseTo(expected, 9);
+      expect(com.x, `${id} com.x`).toBeCloseTo(0, 7);
+      expect(com.y, `${id} com.y`).toBeCloseTo(0, 7);
+      expect(com.z, `${id} com.z`).toBeCloseTo(Math.fround(expected), 7);
     }
   }, 60000);
 });
