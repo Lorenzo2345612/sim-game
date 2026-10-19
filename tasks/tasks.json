@@ -4040,7 +4040,7 @@
     {
       "num": "299",
       "title": "Low-ramp sausage kerb collider",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
@@ -4051,13 +4051,26 @@
     {
       "num": "300",
       "title": "Verge and runoff strips must not fold over the inner kerb",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
       "models": "standard",
       "phase": 2,
       "spec": "tasks/300-verge-fold-inner-kerb.md"
+    },
+    {
+      "num": "301",
+      "title": "No kerb-zone steps on any track",
+      "status": "pending",
+      "deps": [
+        "300"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/301-kerb-zone-steps-all-tracks.md"
     }
   ]
 }
