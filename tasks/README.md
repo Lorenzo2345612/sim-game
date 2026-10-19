@@ -291,7 +291,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
 | 289 | Yellow-flag cap must not freeze the field behind a stopped car | done | 130 |
-| 290 | Overtake log and grid positions in RaceGame | in progress | 289 |
+| 290 | Overtake log and grid positions in RaceGame | done | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | done | - |
