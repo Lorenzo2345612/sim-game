@@ -4071,6 +4071,32 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/301-kerb-zone-steps-all-tracks.md"
+    },
+    {
+      "num": "302",
+      "title": "Race minimap: all cars and sector flag colours",
+      "status": "pending",
+      "deps": [
+        "298"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/302-race-minimap.md"
+    },
+    {
+      "num": "303",
+      "title": "Yellow-flag alert: flashing lights, banner, sector-clear notice",
+      "status": "pending",
+      "deps": [
+        "302"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/303-yellow-alert.md"
     }
   ]
 }
