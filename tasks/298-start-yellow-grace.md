@@ -56,3 +56,8 @@ npx vitest run tests/unit/acceptance/298- tests/unit/acceptance/128- tests/unit/
 
 - Changing CAUSE_SPEED, YELLOW_AFTER, DECAY, jump-start or track-limits rules.
 - HUD changes (task 294).
+
+## Planner answers (round 1)
+
+- 289 AT6 (`tests/unit/acceptance/289-yellow-flag-freeze.test.ts`): planner-authorised edit — change the per-AI threshold `toBeGreaterThan(5000)` to `toBeGreaterThan(4000)` (and the test title "all beyond 5000 m" → "all beyond 4000 m"). The ≥ 2 of 3 past-one-lap condition stays. The AI 1 shortfall is the known off-track issue of task 268, not a freeze.
+- Calling `startAt` every post-go tick (idempotent) is accepted; global grace in `FlagState.update` is accepted.
