@@ -61,3 +61,7 @@ npm test
 ## Out of scope
 
 - `eow.json` voice data (286), regen/brake sounds, tyre sounds, Doppler/spatialisation, UI.
+
+## Planner answers (round 1)
+
+Planner-authorised edit: in `tests/unit/acceptance/226-engine-sound-spec.test.ts` add `kind: 'combustion'` and `electric: null` to `FULL_RAW` (lines 15–37) so AT3's `toEqual` matches the parsed spec. Nothing else in 226. Keep `kind`/`electric` as own enumerable fields (structured clone in `engineAudio.ts`).

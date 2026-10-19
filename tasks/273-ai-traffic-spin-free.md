@@ -62,3 +62,7 @@ Planner-verified on your worktree: AT4 (expert) passes; only 252 EDGE6 and EDGE9
 - `AiDriver`: restore `vTarget = min(previewSpeed, profileCap) * speedScale`; apply the traffic follow cap afterwards as a separate hard limit (not scaled). Frozen 089 EDGE6 must pass.
 - Fix `tests/unit/ai/trafficCaution.test.ts` 'a follow cap is a speed limit…' to that order (authorised).
 - Run only `npx vitest run tests/unit/acceptance/273- tests/unit/edge/273- tests/unit/edge/089- tests/unit/ai/`, typecheck, lint; then report.
+
+## Planner answers (round 3)
+
+Planner-authorised: in `tests/unit/edge/273-ai-traffic-spin-free.post.test.ts` POST32, spy on `AiDriver.prototype.setFollowCap` instead of `setSpeedCap` and keep the same expected value (follow cap from the car ahead). Nothing else in that file. The rest of the coder's report is accepted.

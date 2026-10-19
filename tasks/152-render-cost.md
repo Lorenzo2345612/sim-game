@@ -79,3 +79,8 @@ npx playwright test 152-   # this task's e2e files only; never the full e2e suit
 
 - Test scope (timeouts): run only `npx vitest run tests/unit/acceptance/152- tests/unit/edge/152-`, `npx playwright test 152-`, typecheck and lint. Do not run `npm test`/full vitest/full Playwright (the reviewer does) and do not write probe specs; no `sleep` waits.
 - AT1/AT2 count draw calls, which do not depend on software GL speed; they stay. Measure once with `npx playwright test 152-`. If AT1 or AT2 still fails after the cell merge, stop and report BLOCKED with the measured value and a draw-call breakdown by category (track, terrain, scenery cells, cars, shadows); do not keep tuning.
+
+## Planner answers (round 3)
+
+- AT1 relaxed to ≤ 200 draw calls (measured 194; was ~300). AT2 is removed from this task (barrier-cell culling becomes a follow-up); mark it `it.skip` with `// split from 152, follow-up task` (planner-authorised). No more tuning.
+- The baseline PNG `152-baseline-monza-start.png` belongs to this task's diff: leave it in the working tree, the pipeline commits it. The `import.meta.url` path change is accepted.
