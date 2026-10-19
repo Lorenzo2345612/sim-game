@@ -27,6 +27,7 @@ import { FlagState, type FlagCar } from '../race/flags';
 import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
+import { OvertakeLog, type OvertakeCar } from '../race/overtakeLog';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
 import type { CarSpec } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
@@ -81,11 +82,23 @@ const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car mu
 const CONTACT_PAIR_S = 0.5; // min gap between two counts of the same pair
 const CONTACT_NEAR_S = 8; // m, wrapped arc-length window for the pair test
 const CONTACT_NEAR_D = 4; // m, lateral window for the pair test
+const OVERTAKE_CONTACT_M = 6; // m, Euclidean chassis proximity for the overtake contact time
+const OVERTAKE_CONTACT_GAP_M = 0.01; // m, contact distance below which a pair counts as touching
 
 // contactPair callback: a named module function keeps the tick loop allocation-free.
 let contactHit = false;
 function probeContact(manifold: RAPIER.TempContactManifold): void {
   if (manifold.numSolverContacts() > 0) contactHit = true;
+}
+let contactNear = false;
+function probeContactNear(manifold: RAPIER.TempContactManifold): void {
+  const n = manifold.numSolverContacts();
+  for (let i = 0; i < n; i++) {
+    if (manifold.solverContactDist(i) < OVERTAKE_CONTACT_GAP_M) {
+      contactNear = true;
+      return;
+    }
+  }
 }
 // A neighbour this close makes the driver ease off (task 273): car alongside or
 // close ahead, within a car's width sideways. Close-ahead also caps the target
@@ -215,6 +228,7 @@ export class RaceGame {
   readonly trackLimits: TrackLimits;
   readonly flags: FlagState;
   readonly vsc: Vsc;
+  readonly overtakes: OvertakeLog;
   private readonly flagCars: FlagCar[];
   private readonly stopped: Uint8Array;
   private readonly stoppedSec: Float64Array;
@@ -237,6 +251,11 @@ export class RaceGame {
   private readonly frozen: boolean[];
   /** Last sim time each car pair (i·count + j, i < j) was counted, −∞ = never. */
   private readonly lastContact: Float64Array;
+  /** Last chassis touch of each car with any car, −∞ = never (task 290). */
+  private readonly lastCarContact: Float64Array;
+  /** Reused per-tick overtake classification input (no allocation in the loop). */
+  private readonly overtakeCars: OvertakeCar[];
+  private readonly gridPos: Int32Array;
   private contactTotal = 0;
   private time = 0;
   private stepIndex = 0;
@@ -332,6 +351,13 @@ export class RaceGame {
       if (i >= 0 && i < this.count) this.frozen[i] = true;
     }
     this.lastContact = new Float64Array(this.count * this.count).fill(-Infinity);
+    this.lastCarContact = new Float64Array(this.count).fill(-Infinity);
+    this.overtakes = new OvertakeLog(this.count);
+    this.overtakeCars = [];
+    this.gridPos = new Int32Array(this.count);
+    for (let i = 0; i < this.count; i++) {
+      this.overtakeCars.push({ dist: 0, lapDist: 0, lap: 0, speed: 0, running: true, position: i + 1, lastContact: -Infinity });
+    }
   }
 
   setDamageMode(mode: DamageMode): void {
@@ -373,9 +399,11 @@ export class RaceGame {
     const starts = config.scenario?.starts;
     const slots: SpawnPose[] = [];
     const vehicles: VehicleModel[] = [];
+    const gridPos: number[] = [];
     for (let i = 0; i < count; i++) {
       const start = starts !== undefined && i < starts.length ? starts[i] : null;
       const p = order ? order.indexOf(i) : i === 0 ? aiCount : i - 1;
+      gridPos.push(p + 1);
       const pose = start !== null ? scenarioPose(track, start) : grid[p];
       slots.push(pose);
       const vehicle = new VehicleModel(world, i === 0 ? spec : aiSpec, pose);
@@ -526,6 +554,7 @@ export class RaceGame {
       spec.wheels.radius,
     );
     game.refreshProgress();
+    game.gridPos.set(gridPos);
     return game;
   }
 
@@ -655,12 +684,18 @@ export class RaceGame {
     }
     this.debris.step(FIXED_DT, this.carPos);
     this.refreshProgress();
-    if (!before) this.updateContactCount();
+    if (!before) {
+      this.updateContactCount();
+      this.updateCarContacts();
+    }
     this.updateAiDynamics();
     for (let i = 0; i < this.count; i++) {
       this.classification.update(i, this.traffic[i].distance, raceTime);
     }
-    if (!before) this.applyRules();
+    if (!before) {
+      this.applyRules();
+      this.stepOvertakes();
+    }
 
     if (before) {
       for (let i = 0; i < this.count; i++) {
@@ -707,6 +742,14 @@ export class RaceGame {
 
   standings(): readonly Standing[] {
     return this.classification.standings();
+  }
+
+  /** 1-based grid slot the car started from (task 290). */
+  gridPosition(car: number): number {
+    if (!Number.isInteger(car) || car < 0 || car >= this.count) {
+      throw new RangeError(`car ${car} out of range`);
+    }
+    return this.gridPos[car];
   }
 
   /** HUD lap boxes for one car; the same object is reused and overwritten per call. */
@@ -853,6 +896,56 @@ export class RaceGame {
         }
       }
     }
+  }
+
+  // Per-car chassis touch time for the overtake log (task 290): pairs within 6 m
+  // whose contact distance is under 1 cm this tick.
+  private updateCarContacts(): void {
+    const n = this.count;
+    const now = this.time;
+    const sq = OVERTAKE_CONTACT_M * OVERTAKE_CONTACT_M;
+    for (let i = 0; i < n; i++) {
+      const pi = this.current[i].position;
+      for (let j = i + 1; j < n; j++) {
+        const pj = this.current[j].position;
+        const dx = pi.x - pj.x;
+        const dy = pi.y - pj.y;
+        const dz = pi.z - pj.z;
+        if (dx * dx + dy * dy + dz * dz > sq) continue;
+        contactNear = false;
+        this.world.contactPair(
+          this.vehicles[i].chassisCollider,
+          this.vehicles[j].chassisCollider,
+          probeContactNear,
+        );
+        if (contactNear) {
+          this.lastCarContact[i] = now;
+          this.lastCarContact[j] = now;
+        }
+      }
+    }
+  }
+
+  // Feeds the overtake log after go with each car's classification data (task 290).
+  // Finished, stopped and detached-wheel cars count as not running.
+  private stepOvertakes(): void {
+    const rows = this.classification.standings();
+    for (let k = 0; k < rows.length; k++) {
+      const i = rows[k].car;
+      const c = this.overtakeCars[i];
+      c.dist = rows[k].distance;
+      c.lapDist = this.traffic[i].distance;
+      c.lap = rows[k].lap;
+      c.speed = this.current[i].forwardSpeed;
+      const dmg = this.vehicles[i].damage;
+      c.running =
+        this.stopped[i] !== 1 &&
+        this.finished[i] !== 1 &&
+        !(dmg.detached[0] || dmg.detached[1] || dmg.detached[2] || dmg.detached[3]);
+      c.position = rows[k].position;
+      c.lastContact = this.lastCarContact[i];
+    }
+    this.overtakes.step(this.time, this.overtakeCars);
   }
 
   // Neighbour alongside or close ahead of car index i, and the target-speed cap
