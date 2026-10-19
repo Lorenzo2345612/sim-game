@@ -3644,7 +3644,7 @@
     {
       "num": "268",
       "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
