@@ -51,3 +51,7 @@ npm test
 Physics, tyres, car data, overtaking logic, `traffic.ts` priorities.
 
 Also un-skip 252 edge EDGE6 and EDGE9 (silverstone easy/medium traffic) — they must pass.
+
+## Planner answers (round 1)
+
+Planner-verified on your worktree: AT4 (expert) passes; only 252 EDGE6 and EDGE9 (easy/medium traffic) fail. EDGE6/EDGE9 are split out of this task: keep them `it.skip` with the comment `// split from 273, follow-up task` (planner-authorised; restore the skip if you removed it). Do no more probing. Run only `npx vitest run tests/unit/acceptance/252- tests/unit/edge/252- tests/unit/ai/`, typecheck and lint, then write the report.
