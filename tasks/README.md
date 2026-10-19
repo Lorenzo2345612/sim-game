@@ -286,7 +286,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 282 | Attack mode rules | done | - |
 | 283 | CarSpec awd + electric block | pending | 281 |
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
-| 285 | Electric voice | in progress | - |
+| 285 | Electric voice | done | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
