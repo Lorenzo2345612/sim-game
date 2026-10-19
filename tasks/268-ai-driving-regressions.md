@@ -128,3 +128,7 @@ Planner-authorised, apply exactly:
 - 032 AT5 (replaces round 2): `setLinvel({x: 10})` each step until centre x > 8 or 2 s elapsed, then run freely 2 s; assertions unchanged.
 - `AI_GRIP_MARGIN`: highest of 0.82, 0.78, 0.75 that passes AT3–AT5 and frozen 225 (needs ≥ 0.75). Range is now [0.75, 0.82].
 - Spawn settling stays in `raceGame.ts`, not `vehicleModel`.
+
+## Planner answers (round 7)
+
+Planner-authorised typing fix in `tests/unit/edge/268-driver-barrier.post.test.ts`: `function loadTrack(id: string): TrackDataV2` returning `parseTrackData(...) as TrackDataV2`, plus `import type { TrackDataV2 } from '../../../src/core/types'`. Nothing else in that file. Then typecheck, lint and the full suite once.
