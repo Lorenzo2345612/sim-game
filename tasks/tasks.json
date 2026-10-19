@@ -4016,13 +4016,26 @@
     {
       "num": "297",
       "title": "Master red: 250 AT9 baseline and baku barrier fold (249 AT3)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
       "models": "standard",
       "phase": 2,
       "spec": "tasks/297-master-red-249-250.md"
+    },
+    {
+      "num": "298",
+      "title": "No yellow flags from the standing start",
+      "status": "pending",
+      "deps": [
+        "289"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/298-start-yellow-grace.md"
     }
   ]
 }

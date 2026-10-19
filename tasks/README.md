@@ -298,4 +298,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 294 | Race control messages, penalty announcement and tower tag in the race HUD | in progress | 293 |
 | 295 | Per-nationality name lists and seeded grid generator | done | - |
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
-| 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | in progress | - |
+| 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | waiting decision | - |
+| 298 | No yellow flags from the standing start | pending | 289 |
