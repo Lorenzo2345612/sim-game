@@ -3887,7 +3887,7 @@
     {
       "num": "287",
       "title": "Decouple 269 POST9 from published models",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "269"
       ],
