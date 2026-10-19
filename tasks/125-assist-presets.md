@@ -79,3 +79,7 @@ npm test
 - AT5 rewritten (planner table fix, see the table): both legs use the automatic gearbox; compare first-off time and off count over 120 s. Update `tests/unit/acceptance/125-assist-presets.test.ts` AT5 to the new row (planner-authorised edit).
 - `tests/unit/edge/125-assist-presets-edge.test.ts` (planner-authorised edits): EDGE2 expected value `61.062001 / 3000`; EDGE9 pass `length` 300 (lap length in metres) in all three calls, expected values unchanged.
 - `lookaheadTarget` returns the target's absolute position along the line (as implemented); `length` is the lap length in metres.
+
+## Planner answers (round 2)
+
+Your uncommitted work in the worktree already passes: 125 acceptance + edge + post tests (17/17), `tsc --noEmit` and eslint on the changed files are clean (planner-verified). Do not re-probe AT5 and do not create scratch tests or run the full `npm test`. Delete `tests/unit/scratch-125-probe.test.ts` if present, run only `npx vitest run tests/unit/acceptance/125- tests/unit/edge/125-`, then write your report.
