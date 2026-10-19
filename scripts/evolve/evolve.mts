@@ -93,7 +93,7 @@ let eliteSlots: number[] = [];
 const clients = new Set<ServerResponse>();
 const history: any[] = []; // per-generation stats for the viewer, persisted to runDir/history.json
 let bestGen = -1;
-let sigma = 0.25, lapLength = 0, allTimeBest = 0, simT = 0;
+let sigma = Number(arg('sigma', '0.25')), lapLength = 0, allTimeBest = 0, simT = 0;
 const per = Math.ceil(POP / W);
 const positions = new Float32Array(POP * 4);
 const send = (ev: string, data: unknown) => { const s = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const c of clients) c.write(s); };
