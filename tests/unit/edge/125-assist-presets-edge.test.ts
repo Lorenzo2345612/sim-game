@@ -32,8 +32,8 @@ describe('125 assist presets edge cases', () => {
 
   it('EDGE2: brakeAssist returns 0 exactly at speed = targetSpeed + 1 and positive just above', () => {
     expect(brakeAssist(31, 30, 50, 30)).toBe(0);
-    // (31.001² − 30²)/(2·50)/30 = 61.062001/300
-    expect(brakeAssist(31.001, 30, 50, 30)).toBeCloseTo(61.062001 / 300, 12);
+    // (31.001² − 30²)/(2·50)/30 = 61.062001/3000
+    expect(brakeAssist(31.001, 30, 50, 30)).toBeCloseTo(61.062001 / 3000, 12);
     expect(brakeAssist(20, 30, 100, 30)).toBe(0);
     expect(brakeAssist(-5, 0, 100, 30)).toBe(0);
   });
@@ -119,15 +119,15 @@ describe('125 assist presets edge cases', () => {
   it('EDGE9: lookaheadTarget returns the minimum speed within the horizon and wraps around', () => {
     const speeds = Float64Array.from([40, 20, 35, 25, 45, 30]);
     const dist = Float64Array.from([0, 50, 100, 150, 200, 250]);
-    const ahead = lookaheadTarget(speeds, dist, 6, 10, 90);
+    const ahead = lookaheadTarget(speeds, dist, 300, 10, 90);
     expect(ahead.targetSpeed).toBe(20);
     expect(ahead.distance).toBe(50);
 
-    const around = lookaheadTarget(speeds, dist, 6, 200, 120);
+    const around = lookaheadTarget(speeds, dist, 300, 200, 120);
     expect(around.targetSpeed).toBe(30);
     expect(around.distance).toBe(250);
 
-    const defHorizon = lookaheadTarget(speeds, dist, 6, 10);
+    const defHorizon = lookaheadTarget(speeds, dist, 300, 10);
     expect(defHorizon.targetSpeed).toBe(20);
     expect(defHorizon.distance).toBe(50);
   });

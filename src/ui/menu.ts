@@ -2,6 +2,7 @@ import './menu.css';
 import type { TrackIndexEntry } from '../../tools/track-builder/buildTrackIndex';
 import type { CreditEntry } from '../../tools/assets/buildCredits';
 import type { Difficulty } from '../ai/traffic';
+import { loadAssistLevel, saveAssistLevel, type AssistLevel } from '../core/settings';
 
 export interface TrackChoice {
   id: string;
@@ -53,6 +54,8 @@ export interface QuickRaceOptions {
 
 const QUICK_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
 const DEFAULT_DIFFICULTY: Difficulty = 'medium';
+
+const ASSIST_LEVELS: readonly AssistLevel[] = ['beginner', 'intermediate', 'pro'];
 
 // Empty or non-finite input falls back; a finite value outside the range is clamped.
 function clampInt(raw: string, min: number, max: number, fallback: number): number {
@@ -342,6 +345,21 @@ export class Menu {
       diff.appendChild(option);
     }
     panel.appendChild(this.fieldRow('Difficulty', diff));
+    const assist = this.doc.createElement('select');
+    assist.id = 'assist-level';
+    const savedAssist = loadAssistLevel(this.storage);
+    for (const level of ASSIST_LEVELS) {
+      const option = this.doc.createElement('option');
+      option.value = level;
+      option.textContent = level;
+      if (level === savedAssist) option.selected = true;
+      assist.appendChild(option);
+    }
+    assist.addEventListener('change', () => {
+      const level = assist.value as AssistLevel;
+      if ((ASSIST_LEVELS as readonly string[]).includes(level)) saveAssistLevel(this.storage, level);
+    });
+    panel.appendChild(this.fieldRow('Assists', assist));
     // Neural AI toggle: only for track+car pairs with an exported model (task 269).
     const aiDriver = this.doc.createElement('select');
     aiDriver.id = 'qr-ai-driver';

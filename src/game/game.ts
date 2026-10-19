@@ -13,6 +13,9 @@ import { REVERSE_HOLD_S, STOP_SPEED_MS } from '../physics/gearbox';
 import { surfaceOf } from '../physics/trackColliders';
 import { Vehicle, type Telemetry } from '../physics/vehicle';
 import { parseCarSpec, type CarSpec, type TyreName } from '../physics/carSpec';
+import { computeRacingLine, mengerCurvature, type RacingLine } from '../ai/racingLine';
+import { carLimitsFromSpec, speedProfile } from '../ai/speedProfile';
+import { applyAssists, assistPreset, lookaheadTarget, type AssistLevel, type AssistPreset } from './assists';
 import f4Json from '../../public/cars/f4.json';
 
 type World = ReturnType<typeof createPhysicsWorld>;
@@ -79,6 +82,33 @@ export class AutoReverse {
   }
 }
 
+/** Racing line, speed profile and decel capacity backing the runtime assists (task 125). */
+interface AssistRuntime {
+  preset: AssistPreset;
+  line: RacingLine;
+  speeds: Float64Array;
+  decel: number;
+}
+
+const LINE_MARGIN_M = 1;
+const KAPPA_STENCIL = 3;
+// Assist targets sit well below the at-limit profile so the braking assist can
+// hold the car with grip to spare (a real beginner is not on the limit).
+const ASSIST_GRIP_MARGIN = 0.4;
+
+function buildAssists(track: TrackData | TrackDataV2, spec: CarSpec, level: AssistLevel): AssistRuntime {
+  const preset = assistPreset(level);
+  const line = computeRacingLine(track.centerline, track.widthMeters / 2, LINE_MARGIN_M);
+  const fuelKg = spec.fuel.startL * spec.fuel.densityKgL;
+  const limits = carLimitsFromSpec(spec, fuelKg);
+  const speeds = speedProfile(line, {
+    ...limits,
+    muLat: limits.muLat * ASSIST_GRIP_MARGIN,
+    muLong: limits.muLong * ASSIST_GRIP_MARGIN,
+  });
+  return { preset, line, speeds, decel: 0.8 * limits.muLong * 9.81 };
+}
+
 export function spawnFromTrack(track: TrackData | TrackDataV2): SpawnPose {
   const n = track.centerline.length;
   if (n < 5) throw new Error('Track too short');
@@ -114,6 +144,13 @@ export class Game {
   private readonly zones: AeroZone[];
   private lastDistance = 0;
   private readonly autoReverse = new AutoReverse();
+  private readonly assists: AssistPreset | null;
+  private readonly assistLine: RacingLine | null;
+  private readonly assistSpeeds: Float64Array | null;
+  private readonly assistDecel: number;
+  private lastIndex = 0;
+  private lastHeading = 0;
+  private yawRate = 0;
 
   private constructor(
     world: World,
@@ -124,6 +161,7 @@ export class Game {
     lapTimer: LapTimer,
     prev: VehicleState,
     current: VehicleState,
+    assists: AssistRuntime | null,
   ) {
     this.world = world;
     this.vehicle = vehicle;
@@ -135,6 +173,10 @@ export class Game {
     this.current = current;
     this.fuelLapStartKg = vehicle.getTelemetry().fuelKg;
     this.zones = deriveAeroZones(track.centerline);
+    this.assists = assists?.preset ?? null;
+    this.assistLine = assists?.line ?? null;
+    this.assistSpeeds = assists?.speeds ?? null;
+    this.assistDecel = assists?.decel ?? 0;
   }
 
   aeroZones(): readonly AeroZone[] {
@@ -145,11 +187,24 @@ export class Game {
     track: TrackData | TrackDataV2,
     spec: CarSpec = parseCarSpec(f4Json),
     tune?: GameTune,
+    assists?: AssistLevel,
   ): Promise<Game> {
     await initPhysics();
+    const runtime = assists === undefined ? null : buildAssists(track, spec, assists);
+    const applied =
+      runtime === null
+        ? spec
+        : {
+            ...spec,
+            aids: {
+              abs: { ...spec.aids.abs, enabled: runtime.preset.abs },
+              tc: { ...spec.aids.tc, enabled: runtime.preset.tc },
+            },
+          };
     const world = 'version' in track ? createPhysicsWorld(track) : createPhysicsWorld();
     const spawn = spawnFromTrack(track);
-    const vehicle = new Vehicle(world, spec, spawn);
+    const vehicle = new Vehicle(world, applied, spawn);
+    if (runtime !== null) vehicle.setGearMode(runtime.preset.autoGear ? 'auto' : 'manual');
     const conditions = configureVehicle(vehicle, track.id, tune);
     const progress = new TrackProgress(track.centerline);
     const cum = cumulativeLengths(track.centerline, true);
@@ -162,8 +217,9 @@ export class Game {
     vehicle.getState(current);
     const prev = createVehicleState(4);
     copyVehicleState(current, prev);
-    const game = new Game(world, vehicle, spawn, track, progress, lapTimer, prev, current);
+    const game = new Game(world, vehicle, spawn, track, progress, lapTimer, prev, current, runtime);
     game.conditions = conditions;
+    if (runtime !== null) game.lastHeading = game.heading();
     return game;
   }
 
@@ -183,10 +239,16 @@ export class Game {
       this.progress.reset();
       this.lapTimer.reset();
       this.lastDistance = 0;
+      this.lastIndex = 0;
+      if (this.assists !== null) {
+        this.vehicle.getState(this.current);
+        this.lastHeading = this.heading();
+        this.yawRate = 0;
+      }
     }
     // Auto-mode reverse UX (task 178): the rule lives here, not in VehicleModel.
     this.autoReverse.update(this.vehicle, input, this.current.forwardSpeed);
-    this.vehicle.setInput(input);
+    this.vehicle.setInput(this.assists === null ? input : this.applyAssistInput(input));
     this.vehicle.setAeroZone(inAeroZone(this.zones, this.lastDistance, this.progress.length));
     this.vehicle.prePhysicsStep(FIXED_DT);
     this.world.step();
@@ -198,6 +260,8 @@ export class Game {
     }
     const sample = this.progress.update(this.current.position.x, this.current.position.z);
     this.lastDistance = sample.distance;
+    this.lastIndex = sample.index;
+    if (this.assists !== null) this.updateYawRate();
     const lapEvents = this.lapTimer.update(sample.distance, this.time);
     for (const ev of lapEvents) {
       if (ev.type === 'lapStarted') {
@@ -207,6 +271,46 @@ export class Game {
       else if (ev.type === 'lapCompleted') this.closeLapFuel();
     }
     this.events.push(...lapEvents);
+  }
+
+  /** Braking and steering assist over a copy of the driver input (task 125). */
+  private applyAssistInput(input: DriverInput): DriverInput {
+    const line = this.assistLine;
+    const speeds = this.assistSpeeds;
+    const preset = this.assists;
+    if (preset === null || line === null || speeds === null) return input;
+    const speed = this.current.forwardSpeed;
+    const n = line.points.length / 2;
+    const i = ((this.lastIndex % n) + n) % n;
+    // Racing-line arc position of the car: `lastDistance` is a centerline arc
+    // and must not be mixed with `line.dist` (they diverge through corners).
+    const carDist = line.dist[i];
+    const look = lookaheadTarget(speeds, line.dist, line.length, carDist);
+    const length = line.length;
+    const distanceToTarget = ((look.distance - carDist) % length + length) % length;
+    const ia = (((i - KAPPA_STENCIL) % n) + n) % n;
+    const ic = (i + KAPPA_STENCIL) % n;
+    const kappa = mengerCurvature(
+      line.points[2 * ia], line.points[2 * ia + 1],
+      line.points[2 * i], line.points[2 * i + 1],
+      line.points[2 * ic], line.points[2 * ic + 1],
+    );
+    return applyAssists(preset, input, {
+      speed,
+      targetSpeed: look.targetSpeed,
+      distanceToTarget,
+      decel: this.assistDecel,
+      yawRateError: -speed * kappa - this.yawRate,
+    });
+  }
+
+  private updateYawRate(): void {
+    const h = this.heading();
+    let dh = h - this.lastHeading;
+    if (dh > Math.PI) dh -= 2 * Math.PI;
+    else if (dh < -Math.PI) dh += 2 * Math.PI;
+    this.yawRate = dh / FIXED_DT;
+    this.lastHeading = h;
   }
 
   private closeLapFuel(): void {

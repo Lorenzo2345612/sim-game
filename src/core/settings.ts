@@ -103,6 +103,19 @@ export function loadDrivingLineSetting(storage: KeyValueStorage): DrivingLineMod
   return mode === 'braking' || mode === 'full' ? mode : 'off';
 }
 
+export type AssistLevel = 'beginner' | 'intermediate' | 'pro';
+
+/** Stored assist level; missing or invalid values read as 'intermediate'. */
+export function loadAssistLevel(storage: KeyValueStorage): AssistLevel {
+  const level = storedSettings(storage).assistLevel;
+  return level === 'beginner' || level === 'intermediate' || level === 'pro' ? level : 'intermediate';
+}
+
+/** Writes the assist level into settings, keeping every other stored key. */
+export function saveAssistLevel(storage: KeyValueStorage, level: AssistLevel): void {
+  storage.setItem(SETTINGS_KEY, JSON.stringify({ ...storedSettings(storage), assistLevel: level }));
+}
+
 export interface CockpitSettings {
   cockpitFov: number;
   headMotion: boolean;

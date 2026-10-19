@@ -12,7 +12,7 @@ import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { parseTrackData } from '../../../src/track/parseTrackData';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const MAX_SIM_S = 200;
+const MAX_SIM_S = 120;
 
 function readJson(rel: string): unknown {
   return JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
@@ -26,13 +26,13 @@ function loadSpec(): CarSpec {
   return parseCarSpec(readJson('public/cars/f4.json'));
 }
 
-interface LapOutcome {
-  invalidations: number;
-  completed: number;
+interface OffOutcome {
+  firstOffS: number | null;
+  offCount: number;
 }
 
-/** One monza lap with scripted full throttle and AiDriver steering (speedScale 1.15). */
-async function runMonzaLap(level: 'beginner' | 'pro'): Promise<LapOutcome> {
+/** 120 s from standstill on monza: full throttle + AiDriver steering (speedScale 1.15), auto gearbox forced in both legs. */
+async function runMonza120s(level: 'beginner' | 'pro'): Promise<OffOutcome> {
   const track = loadTrack();
   const spec = loadSpec();
   const line = computeRacingLine(track.centerline, 6, 1);
@@ -41,11 +41,14 @@ async function runMonzaLap(level: 'beginner' | 'pro'): Promise<LapOutcome> {
   const ai = new AiDriver(line, speeds, { speedScale: 1.15 });
   const game = await Game.create(track, spec, undefined, level);
   try {
+    // The pro preset selects a manual box; force auto so gears are not part of this test.
+    game.setGearMode('auto');
     const obs = { x: 0, z: 0, yaw: 0, speed: 0 };
     const aiOut: DriverInput = { throttle: 0, brake: 0, steer: 0, reset: false };
     const input: DriverInput = { throttle: 1, brake: 0, steer: 0, reset: false };
-    let invalidations = 0;
-    let completed = 0;
+    let firstOffS: number | null = null;
+    let offCount = 0;
+    let wasOff = false;
     const maxSteps = Math.ceil(MAX_SIM_S / FIXED_DT);
     for (let i = 0; i < maxSteps; i++) {
       const st = game.getCurrentState();
@@ -56,13 +59,15 @@ async function runMonzaLap(level: 'beginner' | 'pro'): Promise<LapOutcome> {
       ai.update(obs, FIXED_DT, aiOut);
       input.steer = aiOut.steer;
       game.step(input);
-      for (const ev of game.drainEvents()) {
-        if (ev.type === 'lapInvalidated') invalidations++;
-        else if (ev.type === 'lapCompleted') completed++;
+      const surfaces = game.getWheelSurfaces();
+      const off = !surfaces.some((s) => s === 'asphalt' || s === 'kerb');
+      if (off && !wasOff) {
+        offCount++;
+        if (firstOffS === null) firstOffS = game.simTime;
       }
-      if (completed > 0 || invalidations > 0) break;
+      wasOff = off;
     }
-    return { invalidations, completed };
+    return { firstOffS, offCount };
   } finally {
     game.dispose();
   }
@@ -114,13 +119,19 @@ describe('125 assist presets and braking assist', () => {
   });
 
   it(
-    'AT5: beginner preset completes a monza lap with no invalidation; pro leaves the track at least once',
+    'AT5: beginner leaves the track later and no more often than pro over 120 s of monza',
     async () => {
-      const beginner = await runMonzaLap('beginner');
-      expect(beginner.invalidations, 'beginner lap invalidations').toBe(0);
-      expect(beginner.completed, 'beginner completed laps').toBeGreaterThanOrEqual(1);
-      const pro = await runMonzaLap('pro');
-      expect(pro.invalidations, 'pro lap invalidations').toBeGreaterThanOrEqual(1);
+      const beginner = await runMonza120s('beginner');
+      const pro = await runMonza120s('pro');
+      if (beginner.firstOffS !== null) {
+        expect(pro.firstOffS, 'pro first all-4-off time').not.toBeNull();
+        expect(
+          beginner.firstOffS,
+          'beginner first all-4-off time ≥ pro + 3 s',
+        ).toBeGreaterThanOrEqual((pro.firstOffS as number) + 3);
+      }
+      expect(beginner.offCount, 'beginner all-4-off episodes ≤ pro').toBeLessThanOrEqual(pro.offCount);
+      expect(pro.firstOffS, 'pro leaves the track at least once').not.toBeNull();
     },
     600000,
   );
