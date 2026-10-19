@@ -65,3 +65,8 @@ npm test
 ## Planner answers (round 1)
 
 Planner-authorised edit: in `tests/unit/acceptance/226-engine-sound-spec.test.ts` add `kind: 'combustion'` and `electric: null` to `FULL_RAW` (lines 15–37) so AT3's `toEqual` matches the parsed spec. Nothing else in 226. Keep `kind`/`electric` as own enumerable fields (structured clone in `engineAudio.ts`).
+
+## Planner answers (round 2)
+
+- Planner-authorised: in `tests/unit/edge/285-electric-voice-edge.test.ts` EDGE10 change the expected `bandRms(9900, 10100)` from `0.05/√2` to `0.05/2` (0.025; the helper measures A/2 for a pure sine), same relative tolerance. Nothing else in that file; the carrier stays a sine of amplitude `carrierGain`.
+- 249/250 failures: not this task's concern if they fail on master too (`git stash`-free check: run them in the main repo). Do not touch track code.
