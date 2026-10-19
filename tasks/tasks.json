@@ -3914,7 +3914,7 @@
     {
       "num": "289",
       "title": "Yellow-flag cap must not freeze the field behind a stopped car",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "130"
       ],
@@ -3973,6 +3973,45 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/293-race-hud-overlaps.md"
+    },
+    {
+      "num": "294",
+      "title": "Race control messages, penalty announcement and tower tag in the race HUD",
+      "status": "pending",
+      "deps": [
+        "293"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/294-race-control-penalty-hud.md"
+    },
+    {
+      "num": "295",
+      "title": "Per-nationality name lists and seeded grid generator",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/295-career-names-grid-generator.md"
+    },
+    {
+      "num": "296",
+      "title": "Driver names in the race UI",
+      "status": "pending",
+      "deps": [
+        "291",
+        "294",
+        "295"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/296-driver-names-race-ui.md"
     }
   ]
 }
