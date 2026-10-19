@@ -126,7 +126,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 121 | Race number decals | done | 120 |
 | 122 | Livery editor screen | done | 044, 073, 074, 106, 114, 120, 121 |
 | 123 | Driving line overlay coloured by action | done | 088, 093, 118 |
-| 125 | Assist presets and braking assist | in progress | 054, 057, 070, 088, 089, 122, 123 |
+| 125 | Assist presets and braking assist | waiting decision | 054, 057, 070, 088, 089, 122, 123 |
 | 126 | Driving school lessons | pending | 123, 125, 044, 143 |
 | 127 | Track limits strikes | done | 092 |
 | 128 | Yellow and blue flags | done | 092 |
@@ -256,7 +256,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 252 | Expert AI drives spin-free on monza and spa | done | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
-| 255 | Per-car weight distribution and tyre widths | waiting decision | 254, 252 |
+| 255 | Per-car weight distribution and tyre widths | in progress | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
@@ -288,4 +288,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
 | 285 | Electric voice | pending | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
-| 287 | Decouple 269 POST9 from published models | pending | 269 |
+| 287 | Decouple 269 POST9 from published models | in progress | 269 |
