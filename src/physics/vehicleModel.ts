@@ -4,7 +4,7 @@ import type { AeroTelemetry, ErsTelemetry } from './hybridTypes';
 import { Gearbox, GearboxMode, REVERSE_MAX_SPEED_MS } from './gearbox';
 import { DriverInput, SpawnPose, Surface, VehicleState } from '../core/types';
 import { GRAVITY, SURFACE_GRIP } from '../core/constants';
-import { surfaceOf } from './trackColliders';
+import { BARRIER_GROUP, surfaceOf } from './trackColliders';
 import { rollingDrag } from './surfaceDrag';
 import { antiRoll, staticCompression, suspensionForce } from './suspension';
 import { relaxAlpha, V_LOW } from './tyre';
@@ -32,14 +32,15 @@ const ENGINE_BRAKE_RAMP_RPM = 1500;
 const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on a visible change
 // Collision groups (task 093): chassis colliders are members of group 1 only and
 // interact with everything; wheel rays filter that group out so no car drives on
-// another car's body, own included. The environment keeps the default (all groups).
+// another car's body, own included. Barriers are filtered out too (task 268) so a
+// wheel can never ride up an armco. The environment keeps the default (all groups).
 const CHASSIS_GROUP = 0x0002;
 const CHASSIS_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | 0xffff;
 // Car-car colliders (wheel cylinders, body box): members of group 2 only, they touch
 // chassis and each other but never the environment, and wheel rays skip them.
-const CARCAR_GROUP = 0x0004;
+const CARCAR_GROUP = BARRIER_GROUP; // shared bit: barriers also touch car-car colliders, rays skip both
 export const CAR_CONTACT_COLLISION_GROUPS = (CARCAR_GROUP << 16) | CHASSIS_GROUP | CARCAR_GROUP;
-const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | CARCAR_GROUP));
+export const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | CARCAR_GROUP));
 // Body/nose box for car-car contact: bottom stays at the chassis slab bottom.
 const BODY_EXTRA_HALF_HEIGHT = 0.25;
 // Wheel cylinders are skipped when the body slab already covers the tyre's outer edge.

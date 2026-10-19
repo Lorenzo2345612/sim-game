@@ -16,6 +16,7 @@ const BLOCK_LATERAL = 2.5;
 const BLOCK_SPEED_MARGIN = 0.5;
 const PASS_LATERAL = 3.0;
 const EDGE_MARGIN = 1.0;
+const EDGE_LIMIT = 1.4;
 const ALONGSIDE_GAP = 5;
 const ALONGSIDE_LATERAL = 2.2;
 
@@ -34,21 +35,22 @@ function wrapGap(raw: number, lapLength: number): number {
 
 function passDecision(
   blocker: CarTrafficState,
-  halfWidth: number,
+  lower: number,
+  upper: number,
   lineOffsetAhead: number,
   curvatureAhead: number,
   out: TrafficDecision,
 ): TrafficDecision {
-  const limit = halfWidth - EDGE_MARGIN;
   const right = blocker.lateral + PASS_LATERAL;
   const left = blocker.lateral - PASS_LATERAL;
+  const fits = (v: number) => v >= lower && v <= upper;
   const preferRight = curvatureAhead > 0;
   const preferred = preferRight ? right : left;
   const alternative = preferRight ? left : right;
-  if (Math.abs(preferred) <= limit) {
+  if (fits(preferred)) {
     out.offset = preferred - lineOffsetAhead;
     out.speedCap = null;
-  } else if (Math.abs(alternative) <= limit) {
+  } else if (fits(alternative)) {
     out.offset = alternative - lineOffsetAhead;
     out.speedCap = null;
   } else {
@@ -66,8 +68,28 @@ export function trafficDecision(
   halfWidth: number,
   lineOffsetAhead: number,
   curvatureAhead: number,
-  out?: TrafficDecision,
+  halfWidthLeftOrOut?: number | TrafficDecision,
+  halfWidthRight?: number,
+  outArg?: TrafficDecision,
 ): TrafficDecision {
+  // 7th arg is the reusable `out` when no per-side widths are given (task 153 call shape)
+  const halfWidthLeft = typeof halfWidthLeftOrOut === 'number' ? halfWidthLeftOrOut : undefined;
+  const out = typeof halfWidthLeftOrOut === 'object' ? halfWidthLeftOrOut : outArg;
+  // Per-index widths: the chosen lateral stays inside the half width of its own
+  // side minus the 1.4 m edge limit; otherwise the historical symmetric band.
+  const perSide =
+    halfWidthLeft !== undefined &&
+    halfWidthRight !== undefined &&
+    Number.isFinite(halfWidthLeft) &&
+    Number.isFinite(halfWidthRight);
+  let lower = perSide ? -(halfWidthLeft - EDGE_LIMIT) : -(halfWidth - EDGE_MARGIN);
+  let upper = perSide ? halfWidthRight - EDGE_LIMIT : halfWidth - EDGE_MARGIN;
+  if (lower > upper) {
+    lower = 0;
+    upper = 0;
+  }
+  const clampLat = (v: number): number => (v < lower ? lower : v > upper ? upper : v);
+
   let blocker: CarTrafficState | null = null;
   let blockerGap = Infinity;
   let alongside: CarTrafficState | null = null;
@@ -97,13 +119,13 @@ export function trafficDecision(
   }
 
   const res = out ?? { offset: 0, speedCap: null };
-  if (blocker) return passDecision(blocker, halfWidth, lineOffsetAhead, curvatureAhead, res);
+  if (blocker) return passDecision(blocker, lower, upper, lineOffsetAhead, curvatureAhead, res);
+  res.speedCap = null;
   if (alongside) {
-    res.offset = alongside.lateral >= self.lateral ? -1.0 : 1.0;
-    res.speedCap = null;
+    const step = alongside.lateral >= self.lateral ? -1.0 : 1.0;
+    res.offset = perSide ? clampLat(lineOffsetAhead + step) - lineOffsetAhead : step;
   } else {
-    res.offset = 0;
-    res.speedCap = null;
+    res.offset = perSide ? clampLat(lineOffsetAhead) - lineOffsetAhead : 0;
   }
   return res;
 }

@@ -69,12 +69,21 @@ export interface RaceGameOptions extends Partial<GameTune> {
 
 type World = ReturnType<typeof createPhysicsWorld>;
 
-export const AI_GRIP_MARGIN: number = 0.82;
+export const AI_GRIP_MARGIN: number = 0.75;
+export const NEURAL_GRIP_MARGIN = 0.82; // residual nets were trained against this profile
 
+const AI_THROTTLE_KP = 1.5;
+const AI_BRAKE_KB = 0.07;
+const LINE_MARGIN_M = 2.2;
+const EDGE_BAND_M = 1.0; // edge keeping starts this far inside the track limit
+const EDGE_STEER_GAIN = 0.4;
 const MAX_AI = 15;
+const STUCK_SPEED_MS = 1; // yellow/VSC stopped-car detection
 const JUMP_PENALTY_S = 5;
-const STUCK_SPEED_MS = 1;
-const STUCK_RESET_S = 5;
+const FLIP_UP_Y = 0.3;
+const FLIP_RESET_S = 1.5;
+const PROGRESS_WINDOW_S = 5;
+const PROGRESS_MIN_M = 5;
 const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision inputs
 const SPAWN_HEIGHT_M = 0.6;
 /** Offsets each AI decision step by car index % 4. Off: 269 AT3 (resets <= 6) fails with it on. */
@@ -104,6 +113,12 @@ function probeContact(manifold: RAPIER.TempContactManifold): void {
 const NEAR_ALONGSIDE_M = 6;
 const NEAR_AHEAD_M = 20;
 const NEAR_LATERAL_M = 3;
+
+// Wrapped, signed advance along the lap into (-L/2, L/2]
+function wrapDelta(raw: number, lapLength: number): number {
+  const g = ((raw % lapLength) + lapLength) % lapLength;
+  return g > lapLength / 2 ? g - lapLength : g;
+}
 
 // Local copy (engineSynth has one too); the race never draws unseeded randoms.
 function mulberry32(seed: number): () => number {
@@ -178,7 +193,10 @@ interface AiCar {
   /** Residual neural AI: classic driver with net lateral offset and pace (neural stays unset). */
   residual?: { net: ResidualNet; state: NeuralCarState; tel: Telemetry };
   progress: TrackProgress;
-  stuckS: number;
+  steering: CarSpec['steering'];
+  flipS: number;
+  windowS: number;
+  markDist: number;
 }
 
 // One Rapier world with a car per grid slot (task 093). The player is index 0 and
@@ -200,6 +218,8 @@ export class RaceGame {
   private readonly penalised: boolean[];
   private readonly line: RacingLine;
   private readonly speeds: Float64Array;
+  private readonly halfLeft: number[];
+  private readonly halfRight: number[];
   private readonly traffic: CarTrafficState[];
   private readonly othersByCar: CarTrafficState[][];
   private readonly indices: Int32Array;
@@ -276,6 +296,8 @@ export class RaceGame {
     slots: SpawnPose[],
     line: RacingLine,
     speeds: Float64Array,
+    halfLeft: number[],
+    halfRight: number[],
     traffic: CarTrafficState[],
     othersByCar: CarTrafficState[][],
     observations: AiObservation[],
@@ -296,6 +318,8 @@ export class RaceGame {
     this.slots = slots;
     this.line = line;
     this.speeds = speeds;
+    this.halfLeft = halfLeft;
+    this.halfRight = halfRight;
     this.traffic = traffic;
     this.othersByCar = othersByCar;
     this.observations = observations;
@@ -417,7 +441,21 @@ export class RaceGame {
     const progresses: TrackProgress[] = [new TrackProgress(track.centerline)];
     const rng = mulberry32(config.seed);
     const { speedScale } = difficultyParams(config.difficulty);
-    const line = computeRacingLine(track.centerline, track.widthMeters / 2);
+    const nPts = track.centerline.length;
+    const halfLeft = new Array<number>(nPts);
+    const halfRight = new Array<number>(nPts);
+    for (let i = 0; i < nPts; i++) {
+      halfLeft[i] = halfWidthAt(track, 'left', i);
+      halfRight[i] = halfWidthAt(track, 'right', i);
+    }
+    const line = computeRacingLine(
+      track.centerline,
+      track.widthMeters / 2,
+      LINE_MARGIN_M,
+      undefined,
+      halfLeft,
+      halfRight,
+    );
     const limits = carLimitsFromSpec(spec, vehicles[0].getTelemetry().fuelKg);
     const speeds = speedProfile(line, {
       ...limits,
@@ -429,6 +467,13 @@ export class RaceGame {
     let residualNet: ((w: Float64Array, phase: number) => ResidualNet) | null = null;
     const residualModel = neuralWeights ? options?.neuralResidual?.[config.difficulty] : undefined;
     let compoundGrip = 0;
+    const neuralSpeeds = residualModel
+      ? speedProfile(line, {
+          ...limits,
+          muLat: limits.muLat * NEURAL_GRIP_MARGIN,
+          muLong: limits.muLong * NEURAL_GRIP_MARGIN,
+        })
+      : speeds;
     if (neuralWeights) {
       const n = track.centerline.length;
       const halfLeft: number[] = [], halfRight: number[] = [], kerbLeft: boolean[] = [], kerbRight: boolean[] = [];
@@ -461,7 +506,7 @@ export class RaceGame {
       const jitter = (rng() * 2 - 1) * 0.01;
       const baseSpeedScale = (speedScale + jitter) * (config.scenario?.speedScales?.[k + 1] ?? 1);
       const vehicle = vehicles[k + 1];
-      const driver = new AiDriver(line, speeds, { speedScale: baseSpeedScale });
+      const driver = new AiDriver(line, neuralSpeeds, { speedScale: baseSpeedScale, kp: AI_THROTTLE_KP, kb: AI_BRAKE_KB });
       driver.setSteerCurve(
         spec.steering.maxAngleLow,
         spec.steering.maxAngleHigh,
@@ -472,7 +517,10 @@ export class RaceGame {
         driver,
         baseSpeedScale,
         progress,
-        stuckS: 0,
+        steering: spec.steering,
+        flipS: 0,
+        windowS: -1,
+        markDist: 0,
       };
       if (neuralFeatures && neuralWeights) {
         const others: NeuralCarState['others'][number][] = [];
@@ -544,6 +592,8 @@ export class RaceGame {
       slots,
       line,
       speeds,
+      halfLeft,
+      halfRight,
       traffic,
       othersByCar,
       observations,
@@ -646,6 +696,8 @@ export class RaceGame {
             this.halfWidth,
             offsets[ahead],
             curvatureAhead,
+            this.halfLeft[ahead],
+            this.halfRight[ahead],
             this.decision,
           );
           // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
@@ -664,8 +716,21 @@ export class RaceGame {
           this.updateTrafficCaution(i);
           ai.driver.setTrafficNear(this.nearTraffic);
           ai.driver.setFollowCap(this.aheadSpeedCap);
+          const st = ai.steering;
+          ai.driver.setMaxSteerAngle(
+            st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / st.fullSpeed),
+          );
           this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
+          const here = this.indices[i];
+          const lat = this.traffic[i].lateral;
+          const excess = Math.abs(lat) - ((lat >= 0 ? this.halfRight[here] : this.halfLeft[here]) - EDGE_BAND_M);
+          if (excess > 0) {
+            const pull = Math.min(1, excess * EDGE_STEER_GAIN) * (lat >= 0 ? -1 : 1);
+            const cmd = this.aiCmd;
+            cmd.steer = Math.max(-1, Math.min(1, cmd.steer + pull));
+            cmd.throttle *= Math.max(0, 1 - excess * EDGE_STEER_GAIN);
+          }
         }
         ai.vehicle.setInput(this.aiCmd);
         ai.vehicle.prePhysicsStep(FIXED_DT);
@@ -711,19 +776,43 @@ export class RaceGame {
     } else {
       for (let k = 0; k < this.ais.length; k++) {
         const ai = this.ais[k];
-        if (this.stopped[k + 1] === 1) {
-          ai.stuckS = 0;
+        if (this.stopped[k + 1] === 1 || this.frozen[k + 1]) {
+          ai.flipS = 0;
+          ai.windowS = -1;
           continue;
         }
-        if (this.frozen[k + 1]) continue;
-        if (Math.abs(this.current[k + 1].forwardSpeed) < STUCK_SPEED_MS) {
-          ai.stuckS += FIXED_DT;
-          if (ai.stuckS >= STUCK_RESET_S) {
-            this.respawnOnLine(k);
-            ai.stuckS = 0;
-          }
+        const q = this.current[k + 1].rotation;
+        const up = 1 - 2 * (q.x * q.x + q.z * q.z);
+        if (up < FLIP_UP_Y) ai.flipS += FIXED_DT;
+        else ai.flipS = 0;
+        const rolling = Math.abs(this.current[k + 1].forwardSpeed) >= STUCK_SPEED_MS;
+        if (rolling && this.isHeld(k + 1)) {
+          // Held by the follow cap or a rule cap while still rolling: the lack of
+          // progress is deliberate, so the window restarts instead of expiring.
+          // A car that is itself stopped stays stuck and is reset as usual.
+          ai.windowS = 0;
+          ai.markDist = this.traffic[k + 1].distance;
+        } else if (ai.windowS < 0) {
+          ai.windowS = 0;
+          ai.markDist = this.traffic[k + 1].distance;
         } else {
-          ai.stuckS = 0;
+          ai.windowS += FIXED_DT;
+          if (ai.windowS >= PROGRESS_WINDOW_S) {
+            if (
+              wrapDelta(this.traffic[k + 1].distance - ai.markDist, this.lapLength) < PROGRESS_MIN_M
+            ) {
+              this.respawnOnLine(k);
+              ai.flipS = 0;
+            }
+            ai.windowS = 0;
+            ai.markDist = this.traffic[k + 1].distance;
+          }
+        }
+        if (ai.flipS >= FLIP_RESET_S) {
+          this.respawnOnLine(k);
+          ai.flipS = 0;
+          ai.windowS = 0;
+          ai.markDist = this.traffic[k + 1].distance;
         }
       }
     }
@@ -956,6 +1045,7 @@ export class RaceGame {
     const others = this.othersByCar[i];
     this.nearTraffic = false;
     this.aheadSpeedCap = null;
+    const yellow = this.yellow?.[i] === 1;
     let bestGap = Infinity;
     for (let j = 0; j < others.length; j++) {
       const other = others[j];
@@ -963,7 +1053,11 @@ export class RaceGame {
       if (Math.abs(other.lateral - self.lateral) > NEAR_LATERAL_M) continue;
       if (gap > 0 && gap < NEAR_AHEAD_M) {
         this.nearTraffic = true;
-        if (gap < bestGap) {
+        // Under yellow a stopped or finished car ahead is an incident, not a
+        // queue to join: the yellow cap governs and the field must roll on (289).
+        const t = this.traffic.indexOf(other);
+        const incident = yellow && t >= 0 && (this.stopped[t] === 1 || this.finished[t] === 1);
+        if (!incident && gap < bestGap) {
           bestGap = gap;
           this.aheadSpeedCap = other.speed;
         }
@@ -1093,6 +1187,21 @@ export class RaceGame {
       ev.type === 'warning' ? 0 : ev.seconds,
       'track limits',
     );
+  }
+
+  // A car is being slowed by a rule cap (VSC/yellow/blue) or by the car ahead,
+  // so a lack of progress is not stuck behaviour and must not trigger a reset.
+  private isHeld(i: number): boolean {
+    if (Number.isFinite(this.ruleCap[i])) return true;
+    const self = this.traffic[i];
+    const others = this.othersByCar[i];
+    for (let j = 0; j < others.length; j++) {
+      const other = others[j];
+      const gap = this.wrapGap(other.distance - self.distance);
+      if (Math.abs(other.lateral - self.lateral) > NEAR_LATERAL_M) continue;
+      if (gap > 0 && gap < NEAR_AHEAD_M) return true;
+    }
+    return false;
   }
 
   private holdStopped(ai: AiCar): void {

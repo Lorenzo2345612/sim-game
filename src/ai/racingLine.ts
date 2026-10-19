@@ -43,17 +43,54 @@ function curvatureAt(pts: Float64Array, n: number, i: number, s: number): number
   );
 }
 
+// Per-index lateral bound is [-(left - margin), right - margin]; an inverted
+// interval collapses to 0. Absent arrays the bound is the uniform halfWidth.
+function clampTo(i: number, lo: Float64Array, hi: Float64Array, o: number): number {
+  return o < lo[i] ? lo[i] : o > hi[i] ? hi[i] : o;
+}
+
 // K1999 (Coulom, TORCS): multi-resolution Newton steps on lateral offsets
 // driving each sampled point's curvature toward its neighbours' average.
 export function computeRacingLine(
   centerline: [number, number][],
   halfWidth: number,
-  margin = 1.0,
+  margin?: number,
   iterations = 25,
+  halfWidthLeft?: readonly number[],
+  halfWidthRight?: readonly number[],
 ): RacingLine {
   const n = centerline.length;
   if (n < 3) throw new Error('centerline needs at least 3 points');
-  const bound = Math.max(0, halfWidth - margin);
+  const perIndex =
+    halfWidthLeft !== undefined &&
+    halfWidthRight !== undefined &&
+    halfWidthLeft.length === n &&
+    halfWidthRight.length === n;
+  // 1.4 m edge margin on the per-index bound; the uniform bound keeps the
+  // historical 1.0 m default so absent-array callers are unchanged.
+  const m = margin ?? (perIndex ? 1.4 : 1.0);
+  const lo = new Float64Array(n);
+  const hi = new Float64Array(n);
+  let anyBound = false;
+  for (let i = 0; i < n; i++) {
+    let a: number;
+    let b: number;
+    if (perIndex) {
+      a = -(halfWidthLeft[i] - m);
+      b = halfWidthRight[i] - m;
+      if (a > b) {
+        a = 0;
+        b = 0;
+      }
+    } else {
+      const bound = Math.max(0, halfWidth - m);
+      a = -bound;
+      b = bound;
+    }
+    lo[i] = a;
+    hi[i] = b;
+    if (a < 0 || b > 0) anyBound = true;
+  }
 
   const nrmX = new Float64Array(n);
   const nrmZ = new Float64Array(n);
@@ -81,7 +118,7 @@ export function computeRacingLine(
   };
   for (let i = 0; i < n; i++) applyPoint(i);
 
-  if (bound > 0 && iterations > 0) {
+  if (anyBound && iterations > 0) {
     for (const s of STEPS) {
       // s > n/4 would wrap the ±s stencil past half the ring and break its symmetry
       if (s > n / 4) continue;
@@ -99,10 +136,7 @@ export function computeRacingLine(
           points[2 * i] = px;
           points[2 * i + 1] = pz;
           if (Math.abs(dk) < MIN_DK) continue;
-          let o = offsets[i] + (target - k) / dk;
-          if (o < -bound) o = -bound;
-          else if (o > bound) o = bound;
-          offsets[i] = o;
+          offsets[i] = clampTo(i, lo, hi, offsets[i] + (target - k) / dk);
           applyPoint(i);
         }
       }
@@ -116,7 +150,7 @@ export function computeRacingLine(
           seg = n - p;
         }
         const t = (j - p) / seg;
-        offsets[j] = offsets[p] * (1 - t) + offsets[q] * t;
+        offsets[j] = clampTo(j, lo, hi, offsets[p] * (1 - t) + offsets[q] * t);
         applyPoint(j);
       }
     }

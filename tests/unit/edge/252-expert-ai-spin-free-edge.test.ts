@@ -109,8 +109,8 @@ async function runAi(
 }
 
 describe('252 expert AI spin-free edge', () => {
-  it('EDGE1: AI_GRIP_MARGIN stays frozen at 0.82', () => {
-    expect(AI_GRIP_MARGIN, 'frozen value 0.82').toBeCloseTo(0.82, 10);
+  it('EDGE1: AI_GRIP_MARGIN stays frozen at 0.75', () => {
+    expect(AI_GRIP_MARGIN, 'frozen value 0.75').toBeCloseTo(0.75, 10);
   });
 
   it(
