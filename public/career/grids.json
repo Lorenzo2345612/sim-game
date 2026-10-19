@@ -1,0 +1,71 @@
+{
+  "series": {
+    "f4-latam": {
+      "name": "Latin F4 Cup",
+      "mix": {
+        "MEX": 0.45, "ARG": 0.12, "BRA": 0.12, "COL": 0.12,
+        "ESP": 0.07, "USA": 0.07, "FRA": 0.01, "ITA": 0.01,
+        "GBR": 0.01, "DEU": 0.01, "CAN": 0.01
+      }
+    },
+    "f4-na": {
+      "name": "North American F4",
+      "mix": {
+        "USA": 0.5, "CAN": 0.2, "MEX": 0.15,
+        "GBR": 0.05, "AUS": 0.05, "BRA": 0.05
+      }
+    },
+    "f4-europe": {
+      "name": "European F4 Trophy",
+      "mix": {
+        "GBR": 0.12, "FRA": 0.12, "ITA": 0.12, "ESP": 0.12,
+        "DEU": 0.12, "NLD": 0.12, "BEL": 0.12, "BRA": 0.04,
+        "AUS": 0.03, "JPN": 0.03, "CHN": 0.03, "USA": 0.03
+      }
+    },
+    "f4-asia": {
+      "name": "Asia-Pacific F4",
+      "mix": {
+        "JPN": 0.3, "CHN": 0.3, "AUS": 0.2, "GBR": 0.05,
+        "USA": 0.05, "CAN": 0.05, "FRA": 0.05
+      }
+    },
+    "f4-international": {
+      "name": "International F4",
+      "mix": {
+        "MEX": 0.0625, "ARG": 0.0625, "BRA": 0.0625, "COL": 0.0625,
+        "USA": 0.0625, "GBR": 0.0625, "FRA": 0.0625, "ITA": 0.0625,
+        "ESP": 0.0625, "DEU": 0.0625, "NLD": 0.0625, "BEL": 0.0625,
+        "JPN": 0.0625, "CHN": 0.0625, "AUS": 0.0625, "CAN": 0.0625
+      }
+    }
+  },
+  "trackSeries": {
+    "mexico": "f4-latam",
+    "ermita-centro": "f4-latam",
+    "ermita-federal": "f4-latam",
+    "ermita-norte": "f4-latam",
+    "ermita-mixto": "f4-latam",
+    "ermita-poniente": "f4-latam",
+    "ermita-veloz": "f4-latam",
+    "daytona": "f4-na",
+    "braselton": "f4-na",
+    "elkhart": "f4-na",
+    "lasvegas": "f4-na",
+    "fontana": "f4-na",
+    "fontana-roval": "f4-na",
+    "cleveland": "f4-na",
+    "detroit": "f4-na",
+    "monza": "f4-europe",
+    "spa": "f4-europe",
+    "silverstone": "f4-europe",
+    "baku": "f4-europe",
+    "budapest": "f4-europe",
+    "spielberg": "f4-europe",
+    "lusail": "f4-asia",
+    "bahrain": "f4-asia",
+    "sepang": "f4-asia",
+    "singapore": "f4-asia"
+  },
+  "default": "f4-international"
+}

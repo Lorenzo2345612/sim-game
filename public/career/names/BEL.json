@@ -1,0 +1,17 @@
+{
+  "nat": "BEL",
+  "first": [
+    "Arthur", "Axel", "Bram", "Brent", "Dylan", "Emile",
+    "Gilles", "Hugo", "Jef", "Kobe", "Lars", "Matz",
+    "Nicolas", "Robin", "Senne", "Stan", "Thibault", "Thomas",
+    "Tijs", "Wout", "Yassin", "Yente", "Zeno", "Adrien",
+    "Clement", "David", "Frédéric", "Gregory", "Jeroen", "Pieter"
+  ],
+  "last": [
+    "Claes", "Goossens", "Maes", "Peeters", "Willems", "Wouters",
+    "Baert", "Beckers", "Bogaerts", "Boon", "Ceulemans", "Declercq",
+    "Demeyer", "Desmet", "Delvaux", "Dierckx", "Gielen", "Hendrickx",
+    "Hermans", "Hoornaert", "Janssens", "Knapen", "Lauwers", "Martens",
+    "Michiels", "Mertens", "Nuyens", "Pauwels", "Segers", "Smets"
+  ]
+}

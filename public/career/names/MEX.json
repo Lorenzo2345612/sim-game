@@ -1,0 +1,17 @@
+{
+  "nat": "MEX",
+  "first": [
+    "Diego", "Carlos", "Alejandro", "Miguel", "Javier", "Andrés",
+    "Ricardo", "Óscar", "Emiliano", "Rodrigo", "Héctor", "Ignacio",
+    "Raúl", "Eduardo", "Sergio", "Arturo", "Iván", "Tomás",
+    "Gerardo", "Omar", "Alan", "Néstor", "Julián", "Mateo",
+    "Santiago", "Emilio", "Rubén", "Agustín", "Pablo", "Benjamín"
+  ],
+  "last": [
+    "Ruiz", "Hernández", "García", "Martínez", "González", "López",
+    "Díaz", "Morales", "Vargas", "Castillo", "Herrera", "Jiménez",
+    "Mendoza", "Aguilar", "Cruz", "Flores", "Sandoval", "Navarro",
+    "Salazar", "Rosales", "Estrada", "Delgado", "Contreras", "Peña",
+    "Ríos", "Cárdenas", "Vega", "Campos", "Bautista", "Lozano"
+  ]
+}

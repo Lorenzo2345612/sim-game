@@ -1,0 +1,17 @@
+{
+  "nat": "DEU",
+  "first": [
+    "Alexander", "Andreas", "Benjamin", "Christian", "Daniel", "David",
+    "Felix", "Florian", "Frank", "Jan", "Jonas", "Jürgen",
+    "Kevin", "Lars", "Leander", "Leon", "Lukas", "Manuel",
+    "Marco", "Matthias", "Maximilian", "Michael", "Moritz", "Niklas",
+    "Oliver", "Patrick", "Paul", "Philipp", "Sebastian", "Stefan"
+  ],
+  "last": [
+    "Bauer", "Becker", "Bergmann", "Braun", "Busch", "Dietrich",
+    "Ebert", "Fischer", "Fricke", "Friedrich", "Gerber", "Grimm",
+    "Haas", "Hahn", "Hartmann", "Heinrich", "Herrmann", "Hoffmann",
+    "Horn", "Huber", "Jansen", "Kaiser", "Klein", "Koch",
+    "Köhler", "Krüger", "Lange", "Lehmann", "Lorenz", "Ludwig"
+  ]
+}

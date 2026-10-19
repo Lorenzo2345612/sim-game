@@ -1,0 +1,17 @@
+{
+  "nat": "ESP",
+  "first": [
+    "Adrián", "Álvaro", "Carlos", "Daniel", "David", "Diego",
+    "Eduardo", "Enrique", "Francisco", "Guillermo", "Hugo", "Iker",
+    "Ismael", "Javier", "Jesús", "Joaquín", "Jorge", "José",
+    "Juan", "Luis", "Manuel", "Mario", "Mateo", "Óscar",
+    "Pablo", "Pedro", "Raúl", "Rubén", "Sergio", "Víctor"
+  ],
+  "last": [
+    "Aranda", "Aznar", "Benito", "Blanco", "Calderón", "Cano",
+    "Cordero", "Crespo", "Duero", "Escudero", "Fabra", "Galán",
+    "Grau", "Guerrero", "Herrero", "Ibáñez", "Iglesias", "Lara",
+    "León", "Lorenzo", "Maldonado", "Marín", "Montes", "Mora",
+    "Moreno", "Muñoz", "Nieto", "Noguera", "Oliva", "Pardo"
+  ]
+}

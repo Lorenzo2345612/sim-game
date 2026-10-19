@@ -1,0 +1,17 @@
+{
+  "nat": "ARG",
+  "first": [
+    "Mateo", "Santiago", "Nicolás", "Juan", "Facundo", "Agustín",
+    "Franco", "Lucas", "Tomás", "Ignacio", "Gonzalo", "Ezequiel",
+    "Matías", "Leandro", "Maximiliano", "Federico", "Ariel", "Hernán",
+    "Martín", "Sebastián", "Valentín", "Bautista", "Joaquín", "Lautaro",
+    "Bruno", "Ramiro", "Gastón", "Pablo", "Damián", "Iván"
+  ],
+  "last": [
+    "Fernández", "Álvarez", "Benítez", "Acosta", "Cabrera", "Domínguez",
+    "Ferreyra", "Giménez", "Godoy", "Juárez", "Keller", "Ledesma",
+    "Molina", "Núñez", "Ocampo", "Quiroga", "Ramírez", "Sosa",
+    "Torres", "Vidal", "Aguirre", "Bustos", "Correa", "Duarte",
+    "Farías", "Gallardo", "Ibarra", "Luna", "Maidana", "Peralta"
+  ]
+}

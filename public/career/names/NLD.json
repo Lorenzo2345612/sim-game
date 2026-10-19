@@ -1,0 +1,17 @@
+{
+  "nat": "NLD",
+  "first": [
+    "Daan", "Sem", "Milan", "Lucas", "Finn", "Jesse",
+    "Luuk", "Bram", "Ruben", "Thijs", "Koen", "Joost",
+    "Sander", "Willem", "Joris", "Stijn", "Bart", "Bas",
+    "Dirk", "Erik", "Geert", "Hendrik", "Huib", "Jaap",
+    "Karel", "Maarten", "Marcel", "Pieter", "Teun", "Tim"
+  ],
+  "last": [
+    "Bakker", "Bos", "Brouwer", "Dekker", "Driessen", "Evers",
+    "Gerritsen", "Hendriks", "Hoekstra", "Huisman", "Jacobs", "Jansen",
+    "Klaassen", "Kok", "Koning", "Kramer", "Kuipers", "Leenders",
+    "Meijer", "Molenaar", "Mulder", "Prins", "Roos", "Schouten",
+    "Smeets", "Snijders", "Timmer", "Vermeulen", "Visser", "Vos"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "nat": "JPN",
+  "first": [
+    "Haruto", "Yuto", "Sota", "Ren", "Riku", "Kaito",
+    "Yamato", "Sora", "Aoi", "Hinata", "Ryo", "Takeru",
+    "Shota", "Daiki", "Kenta", "Yuma", "Kenji", "Tsubasa",
+    "Takumi", "Ryota", "Satoshi", "Hiroshi", "Yuta", "Koki",
+    "Masato", "Shinji", "Tatsuya", "Wataru", "Yusuke", "Kazuki"
+  ],
+  "last": [
+    "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito",
+    "Yamamoto", "Nakamura", "Kobayashi", "Kato", "Yoshida", "Yamada",
+    "Sasaki", "Yamaguchi", "Matsumoto", "Inoue", "Kimura", "Hayashi",
+    "Shimizu", "Mori", "Abe", "Ikeda", "Hashimoto", "Ishikawa",
+    "Yamashita", "Ogawa", "Ishii", "Hasegawa", "Kondo", "Nomura"
+  ]
+}
