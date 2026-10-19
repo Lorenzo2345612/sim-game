@@ -3644,7 +3644,7 @@
     {
       "num": "268",
       "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
@@ -3953,7 +3953,7 @@
     {
       "num": "292",
       "title": "Current, last and best lap times in the race HUD",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "093"
       ],
@@ -3962,6 +3962,17 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/292-race-lap-times-hud.md"
+    },
+    {
+      "num": "293",
+      "title": "Remove race HUD overlaps (damage panel, flags, toasts)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/293-race-hud-overlaps.md"
     }
   ]
 }

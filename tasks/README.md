@@ -269,7 +269,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
-| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
@@ -293,4 +293,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 289 | Yellow-flag cap must not freeze the field behind a stopped car | in progress | 130 |
 | 290 | Overtake log and grid positions in RaceGame | pending | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
-| 292 | Current, last and best lap times in the race HUD | pending | 093 |
+| 292 | Current, last and best lap times in the race HUD | in progress | 093 |
+| 293 | Remove race HUD overlaps (damage panel, flags, toasts) | pending | - |

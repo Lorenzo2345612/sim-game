@@ -1,5 +1,5 @@
 // Headless RaceGame race through the game's residual neural mode (classic AiDriver + net lateral offset/pace).
-// Usage: npx tsx scripts/evolve/race-residual.mts <model.json> [--mix all|half|none] [--laps 5] [--ai 11] [--seed 1] [--compound hard]
+// Usage: npx tsx scripts/evolve/race-residual.mts <model.json> [--track id] [--mix all|half|none] [--laps 5] [--ai 11] [--seed 1] [--compound hard]
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RaceGame } from '../../src/game/raceGame';
@@ -13,6 +13,7 @@ import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { AI_GRIP_MARGIN } from '../../src/game/raceGame';
 import { RacecraftTracker, type RaceCar } from './racecraft.mts';
+import { minTimeFor } from './mintime.mts';
 
 const argv = process.argv.slice(2);
 const arg = (k: string, d: string) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
@@ -20,10 +21,10 @@ const root = join(import.meta.dirname, '../..');
 const j = (p: string) => JSON.parse(readFileSync(join(root, p), 'utf8'));
 const model = JSON.parse(readFileSync(argv[0], 'utf8'));
 const MIX = arg('mix', 'half'), LAPS = Number(arg('laps', '5')), AI = Number(arg('ai', '11')), SEED = Number(arg('seed', '1')), COMPOUND = arg('compound', 'hard');
-const trackId = model.track ?? 'cleveland', carId = model.car ?? 'f4';
-const mt = j(`public/ai-models/${trackId}-${carId}/line-mintime.json`);
+const trackId = arg('track', model.track ?? 'cleveland'), carId = model.car ?? 'f4';
 const track = parseTrackData(j(`public/tracks/${trackId}.json`));
 const spec = parseCarSpec(j(`public/cars/${carId}.json`));
+const mt = await minTimeFor(root, track, (spec as any).spec ?? spec, carId); // cached in scripts/evolve/lines (same line the trainer uses)
 const w = padGenome(model.weights)!;
 const residual = parseResidualModel(model);
 if (!residual) throw new Error('not a residual model');
@@ -95,4 +96,4 @@ const rows = g.standings().filter((r: any) => r.car > 0).map((r: any) => {
   return { pos: r.position, car: r.car, type: isRes(k) ? 'RES' : 'cls', lap: r.lap, fin: r.finished, time: r.totalTime && +r.totalTime.toFixed(1), best: r.bestLap && +r.bestLap.toFixed(2),
     touch: touches[k], passes: rc.passes[k], lost: rc.lost[k], faults: rc.faults[k], crashF: rc.crashFaults[k], out: !!out_[k], wings: +(dm.frontWing + dm.rearWing).toFixed(2) };
 });
-console.log(JSON.stringify({ model: argv[0].split('/').pop(), mix: MIX, seed: SEED, laps: LAPS, simT: +g.simTime.toFixed(0), rows }));
+console.log(JSON.stringify({ model: argv[0].split('/').pop(), track: trackId, mix: MIX, seed: SEED, laps: LAPS, simT: +g.simTime.toFixed(0), rows }));
