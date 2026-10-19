@@ -13,6 +13,7 @@ const ROOT = join(__dirname, '..', '..', '..');
 const LEGACY = { cylinders: 4, exhaustLengthM: 1.2, intakeMix: 0.3, crackle: 0.2 };
 
 const FULL_RAW = {
+  kind: 'combustion' as const,
   firingDeg: [0, 90, 180, 270],
   bank: [1, 0, 1, 0],
   pipeM: [1.5, 2.5],
@@ -28,6 +29,7 @@ const FULL_RAW = {
   drive: 2.5,
   turbo: { centerHz: 4000, spanHz: 2000, gain: 0.1, lagS: 0.5 },
   whine: { order: 20, gain: 0.1, source: 'rpm', minSpeedMs: 5 },
+  electric: null,
   crackle: 0.7,
   limiterHz: 30,
   gainDb: -6,

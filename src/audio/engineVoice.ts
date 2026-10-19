@@ -222,6 +222,15 @@ export class EngineVoice {
   private readonly whineOrder: number;
   private readonly whineWheel: boolean;
   private readonly whineMin: number;
+  private readonly electric: boolean;
+  private readonly eLayerN: number;
+  private readonly eOrder: Float64Array;
+  private readonly eGain: Float64Array;
+  private readonly eWheel: Uint8Array;
+  private readonly ePhases: Float64Array;
+  private readonly eCarrierHz: number;
+  private readonly eCarrierGain: number;
+  private carrierPhase = 0;
   private readonly limiterHz: number;
   private readonly crackle: number;
   private readonly maxFc: number;
@@ -378,6 +387,27 @@ export class EngineVoice {
     this.whineOrder = spec.whine ? spec.whine.order : 0;
     this.whineWheel = !!spec.whine && spec.whine.source === 'wheel';
     this.whineMin = spec.whine ? spec.whine.minSpeedMs : 0;
+    this.electric = spec.kind === 'electric';
+    const elec = this.electric ? spec.electric ?? null : null;
+    const eN = elec ? elec.layers.length : 0;
+    this.eLayerN = eN;
+    this.eOrder = new Float64Array(eN);
+    this.eGain = new Float64Array(eN);
+    this.eWheel = new Uint8Array(eN);
+    this.ePhases = new Float64Array(eN);
+    if (elec) {
+      for (let i = 0; i < eN; i++) {
+        const L = elec.layers[i];
+        this.eOrder[i] = L.order;
+        this.eGain[i] = L.gain;
+        this.eWheel[i] = L.source === 'wheel' ? 1 : 0;
+      }
+      this.eCarrierHz = elec.carrierHz;
+      this.eCarrierGain = elec.carrierGain;
+    } else {
+      this.eCarrierHz = 0;
+      this.eCarrierGain = 0;
+    }
     this.limiterHz = spec.limiterHz;
     this.crackle = spec.crackle > 0 ? spec.crackle : 0;
     this.maxFc = MAX_FC_FRAC * sampleRate;
@@ -491,6 +521,8 @@ export class EngineVoice {
     this.wSpeed = 0;
     this.boost = 0;
     this.whinePhase = 0;
+    this.ePhases.fill(0);
+    this.carrierPhase = 0;
     this.limPhase = 0;
     this.cutNow = false;
     this.angle = 0;
@@ -652,6 +684,16 @@ export class EngineVoice {
 
   render(out: Float32Array): void {
     const n = out.length;
+    if (this.electric) {
+      for (let s = 0; s < n; s++) {
+        this.rpm += (this.tRpm - this.rpm) * this.aRpm;
+        this.wSpeed += (this.tWheel - this.wSpeed) * this.aRpm;
+        out[s] = this.electricStep() * this.gain;
+        this.ticks++;
+      }
+      this.sinceCtl += n;
+      return;
+    }
     const fs = this.fs;
     const tubeMask = this.tubeMask;
     const injMask = this.injMask;
@@ -785,6 +827,28 @@ export class EngineVoice {
       this.ticks++;
     }
     this.sinceCtl += n;
+  }
+
+  private electricStep(): number {
+    let acc = 0;
+    const maxFc = this.maxFc;
+    for (let i = 0; i < this.eLayerN; i++) {
+      let f = this.eWheel[i]
+        ? (this.eOrder[i] * this.wSpeed) / (TWO_PI * WHEEL_RADIUS_M)
+        : (this.eOrder[i] * this.rpm) / 60;
+      if (f < 1) continue;
+      if (f > maxFc) f = maxFc;
+      const p = this.ePhases[i] + (TWO_PI * f) / this.fs;
+      this.ePhases[i] = p >= TWO_PI ? p - TWO_PI : p;
+      acc += Math.sin(this.ePhases[i]) * this.eGain[i];
+    }
+    if (this.eCarrierGain > 0) {
+      const cf = this.eCarrierHz > maxFc ? maxFc : this.eCarrierHz;
+      const p = this.carrierPhase + (TWO_PI * cf) / this.fs;
+      this.carrierPhase = p >= TWO_PI ? p - TWO_PI : p;
+      acc += Math.sin(this.carrierPhase) * this.eCarrierGain;
+    }
+    return acc;
   }
 
   private transientStep(pulse: number, v0: number): number {

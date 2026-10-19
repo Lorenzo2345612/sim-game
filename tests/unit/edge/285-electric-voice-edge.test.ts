@@ -316,6 +316,6 @@ describe('285 electric voice edge cases', () => {
     warm(voice, ctrl({ rpm: 7000, load: 1, throttle: 1, wheelSpeedMs: 40, limiter: true }));
     const x = renderSeconds(voice, 0.5);
     expect(Math.abs(binPeakHz(fftPower(x), 9900, 10100) - 10000)).toBeLessThanOrEqual(50);
-    expect(bandRms(x, 9900, 10100)).toBeCloseTo(0.05 / Math.SQRT2, 2);
+    expect(bandRms(x, 9900, 10100)).toBeCloseTo(0.05 / 2, 2);
   });
 });

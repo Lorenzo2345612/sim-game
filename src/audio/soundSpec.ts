@@ -23,7 +23,20 @@ export interface WhineLayer {
   minSpeedMs: number;
 }
 
+export interface ElectricLayer {
+  order: number;
+  gain: number;
+  source: 'wheel' | 'rpm';
+}
+
+export interface ElectricVoice {
+  layers: ElectricLayer[];
+  carrierHz: number;
+  carrierGain: number;
+}
+
 export interface EngineSynthSpec {
+  kind: 'combustion' | 'electric';
   firingDeg: number[];
   bank: number[];
   pipeM: [number, number];
@@ -39,6 +52,7 @@ export interface EngineSynthSpec {
   drive: number;
   turbo: TurboLayer | null;
   whine: WhineLayer | null;
+  electric: ElectricVoice | null;
   crackle: number;
   limiterHz: number;
   gainDb: number;
@@ -51,6 +65,7 @@ export const SYNTH_DEFAULTS: Omit<
   EngineSynthSpec,
   'firingDeg' | 'bank' | 'pipeM' | 'tailM' | 'intakeMix' | 'crackle'
 > = {
+  kind: 'combustion',
   gasSpeedMs: 480,
   pulseDeg: 110,
   jitterDeg: 0.2,
@@ -61,6 +76,7 @@ export const SYNTH_DEFAULTS: Omit<
   drive: 1.2,
   turbo: null,
   whine: null,
+  electric: null,
   limiterHz: 15,
   gainDb: 0,
   cylVar: 0.28,
@@ -83,6 +99,7 @@ export function legacySynthSpec(s: {
   const firingDeg = evenFiring(s.cylinders);
   const half = s.exhaustLengthM / 2;
   return {
+    kind: 'combustion',
     firingDeg,
     bank: firingDeg.map((_, i) => i % 2),
     pipeM: [half, half],
@@ -98,6 +115,7 @@ export function legacySynthSpec(s: {
     drive: SYNTH_DEFAULTS.drive,
     turbo: null,
     whine: null,
+    electric: null,
     crackle: s.crackle,
     limiterHz: SYNTH_DEFAULTS.limiterHz,
     gainDb: SYNTH_DEFAULTS.gainDb,
@@ -292,6 +310,72 @@ function parseWhine(v: unknown, errors: string[]): WhineLayer | null {
   return { order, gain, source, minSpeedMs };
 }
 
+function electricNum(
+  v: Record<string, unknown>,
+  key: string,
+  lo: number,
+  hi: number,
+  errors: string[],
+  prefix: string,
+  loInclusive = true,
+): number | null {
+  const x = v[key];
+  if (!inRange(x, lo, hi, loInclusive)) {
+    errors.push(`${prefix}${key} must be a finite number in range`);
+    return null;
+  }
+  return x as number;
+}
+
+function parseElectric(v: unknown, errors: string[]): ElectricVoice | null {
+  if (v === undefined || v === null) return null;
+  if (!isObj(v)) {
+    errors.push('synth.electric must be an object');
+    return null;
+  }
+  let ok = true;
+  const layers: ElectricLayer[] = [];
+  const raw = v.layers;
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 4) {
+    errors.push('synth.electric.layers must have 1..4 entries');
+    ok = false;
+  }
+  if (Array.isArray(raw)) {
+    for (let i = 0; i < raw.length; i++) {
+      const e = raw[i];
+      const p = `synth.electric.layers[${i}].`;
+      if (!isObj(e)) {
+        errors.push(`${p}must be an object`);
+        ok = false;
+        continue;
+      }
+      const order = electricNum(e, 'order', 0, 400, errors, p, false);
+      const gain = electricNum(e, 'gain', 0, 0.3, errors, p);
+      const source = e.source;
+      if (source !== 'wheel' && source !== 'rpm') {
+        errors.push(`${p}source must be 'wheel' or 'rpm'`);
+        ok = false;
+      }
+      if (order === null || gain === null || (source !== 'wheel' && source !== 'rpm')) {
+        ok = false;
+        continue;
+      }
+      layers.push({ order, gain, source });
+    }
+  }
+  const carrierHz = electricNum(v, 'carrierHz', 4000, 16000, errors, 'synth.electric.');
+  const carrierGain = electricNum(v, 'carrierGain', 0, 0.1, errors, 'synth.electric.');
+  if (!ok || carrierHz === null || carrierGain === null) return null;
+  return { layers, carrierHz, carrierGain };
+}
+
+function parseKind(v: unknown, errors: string[]): 'combustion' | 'electric' {
+  if (v === undefined) return 'combustion';
+  if (v === 'combustion' || v === 'electric') return v;
+  errors.push("synth.kind must be 'combustion' or 'electric'");
+  return 'combustion';
+}
+
 export function parseEngineSynth(
   raw: unknown,
   legacy: { cylinders: number; exhaustLengthM: number; intakeMix: number; crackle: number },
@@ -300,6 +384,7 @@ export function parseEngineSynth(
   if (!isObj(raw)) return { spec: base, errors: [] };
   const r = raw;
   const errors: string[] = [];
+  const kind = parseKind(r.kind, errors);
   const firingDeg = parseFiring(r.firingDeg, base.firingDeg, errors);
   const bank = parseBank(r.bank, firingDeg, errors);
   const pipeM = parsePipeM(r.pipeM, base.pipeM, errors);
@@ -315,6 +400,10 @@ export function parseEngineSynth(
   const drive = numField(r, 'drive', 0.5, 4, SYNTH_DEFAULTS.drive, errors);
   const turbo = parseTurbo(r.turbo, errors);
   const whine = parseWhine(r.whine, errors);
+  const electric = parseElectric(r.electric, errors);
+  if (kind === 'electric' && electric === null && (r.electric === undefined || r.electric === null)) {
+    errors.push('synth.electric is required when kind is electric');
+  }
   const crackle = numField(r, 'crackle', 0, 1, legacy.crackle, errors);
   const limiterHz = numField(r, 'limiterHz', 5, 40, SYNTH_DEFAULTS.limiterHz, errors);
   const gainDb = numField(r, 'gainDb', -12, 12, SYNTH_DEFAULTS.gainDb, errors);
@@ -323,6 +412,7 @@ export function parseEngineSynth(
   const exhaustGain = numField(r, 'exhaustGain', 0, 2, SYNTH_DEFAULTS.exhaustGain, errors, false);
   return {
     spec: {
+      kind,
       firingDeg,
       bank,
       pipeM,
@@ -338,6 +428,7 @@ export function parseEngineSynth(
       drive,
       turbo,
       whine,
+      electric,
       crackle,
       limiterHz,
       gainDb,
