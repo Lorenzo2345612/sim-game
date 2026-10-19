@@ -47,13 +47,16 @@ Conventions: ratio rounded to 1e-9 not required; comparisons strict (`> 18`, `< 
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | 120 frames at 25 ms from ratio 1.0 | update | ratio 0.8 ± 1e-9 |
-| AT2 | 600 frames at 10 ms from 0.6, max 1.0 | update | ratio 1.0 (capped) |
-| AT3 | 300 samples at 30 ms / 20 ms / 12 ms | autoPreset | low / medium / unchanged |
+| AT1 | 25 ms frames from ratio 1.0, max 1.0 | update 120 / 240 / 1200 frames | ratio 0.9 / 0.8 / 0.75 (floor) ± 1e-9 |
+| AT2 | 600 frames at 16 ms from 0.75, max 1.0 | update | ratio 1.0 (capped) |
+| AT3 | 600 frames at 16.7 ms, then 600 at 19 ms, from 1.0 | update | ratio stays 1.0 (no 60 Hz ratchet) |
+| AT4 | 300 samples at 30 / 20 / 12 ms; 300 at 30 ms with current `'medium'`; 300 at 150 ms | autoPreset | medium / high / high; low; high (all ignored) |
+
+Amended 2026-10-19 (perf batch): hysteresis controller (period-relative thresholds, 2 s cooldown, floor 0.75) and one-level auto-preset.
 
 ## Acceptance criteria
 
-- [ ] AT1–AT3 pass (AT3 with `current` omitted = `'high'`; "unchanged" = `'high'`).
+- [ ] AT1–AT4 pass (AT3 with `current` omitted = `'high'`; "unchanged" = `'high'`).
 - [ ] `adaptive` false in storage → pixel ratio never changes at runtime.
 
 ## Verification

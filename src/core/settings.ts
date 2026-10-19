@@ -27,7 +27,7 @@ export function presetSettings(preset: Preset, devicePixelRatio: number): Preset
       };
     case 'high':
       return {
-        pixelRatio: Math.min(devicePixelRatio, 2),
+        pixelRatio: Math.min(devicePixelRatio, 1.5),
         shadows: true,
         treeFarDistance: 1500,
         antialias: true,

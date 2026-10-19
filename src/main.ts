@@ -838,12 +838,15 @@ async function startGame(trackId: string): Promise<void> {
   }
   // Adaptive quality (154): off under software GL, whose 0.5 cap keeps CI frame times stable.
   const adaptive = loadAdaptive(window.localStorage) && !softwareGl;
-  const maxRatio = (p: Preset): number => (p === 'medium' ? Math.min(window.devicePixelRatio, 1) : window.devicePixelRatio);
+  const maxRatio = (p: Preset): number =>
+    p === 'medium' ? Math.min(window.devicePixelRatio, 1) : presetSettings(p, window.devicePixelRatio).pixelRatio;
   let dynRes = adaptive
     ? new DynamicResolution({ initial: Math.min(settings.pixelRatio, maxRatio(preset)), max: maxRatio(preset) })
     : null;
   let dynResApplied = handle.renderer.getPixelRatio();
-  // First 5 s of frame times feed a single auto-preset evaluation (154).
+  // 5 s of frame times, sampled after race green + 3 s (or 3 s free-running), feed one auto-preset evaluation (154).
+  const AUTO_DELAY_S = 3;
+  let autoWaitMs = 0;
   const autoSamples = new Float64Array(1200);
   let autoCount = 0;
   let autoMs = 0;
@@ -1489,9 +1492,11 @@ async function startGame(trackId: string): Promise<void> {
   let resultsShown = false;
   let running = true;
   let last = -1;
+  // Renderer submit time of the previous frame (ms), fed to the dynamic-resolution controller.
+  let lastRenderMs = 0;
+  // HUD tower/standings refresh at 10 Hz.
+  let hudNextMs = 0;
   let rafId = 0;
-  // Counts visible frames so the mirror renders on every other one.
-  let mirrorTick = 0;
   let fpsAvg = 0;
   const frameStats = { fps: 0, drawCalls: 0 };
   // Perf harness (151): rings and the single output object are reused, nothing allocates per frame.
@@ -1668,28 +1673,39 @@ async function startGame(trackId: string): Promise<void> {
     last = now;
     if (frame > 0) frameRing.push(frame * 1000);
     if (frame > 0 && dynRes !== null) {
-      const ratio = dynRes.update(frame * 1000);
+      const ratio = dynRes.update(frame * 1000, lastRenderMs);
       if (ratio !== dynResApplied) {
         dynResApplied = ratio;
         handle.renderer.setPixelRatio(ratio);
         post.setPixelRatio(ratio);
       }
     }
-    if (!autoDone && frame > 0) {
-      autoMs += frame * 1000;
-      if (autoCount < autoSamples.length) autoSamples[autoCount++] = frame * 1000;
+    if (!autoDone && frame > 0 && !paused) {
+      let ready: boolean;
+      if (raceGame !== null) ready = raceGame.raceElapsed >= AUTO_DELAY_S;
+      else {
+        autoWaitMs += frame * 1000;
+        ready = autoWaitMs >= AUTO_DELAY_S * 1000;
+      }
+      if (ready) {
+        autoMs += frame * 1000;
+        if (autoCount < autoSamples.length) autoSamples[autoCount++] = frame * 1000;
+      }
       if (autoMs >= 5000) {
         autoDone = true;
         const next = autoPreset(Array.from(autoSamples.subarray(0, autoCount)), preset);
-        const applied = presetSettings(next, window.devicePixelRatio);
-        handle.renderer.setPixelRatio(applied.pixelRatio);
-        post.setPixelRatio(applied.pixelRatio);
-        dynResApplied = applied.pixelRatio;
-        shadows?.setEnabled(handle.renderer, applied.shadows);
-        // Reseed so dynamic resolution steps from the applied ratio, not the stale one.
-        if (dynRes !== null) {
-          const max = maxRatio(next);
-          dynRes = new DynamicResolution({ initial: Math.min(applied.pixelRatio, max), max });
+        if (next !== preset) {
+          const applied = presetSettings(next, window.devicePixelRatio);
+          handle.renderer.setPixelRatio(applied.pixelRatio);
+          post.setPixelRatio(applied.pixelRatio);
+          dynResApplied = applied.pixelRatio;
+          shadows?.setEnabled(handle.renderer, applied.shadows);
+          if (next === 'low') post.setBypass(true);
+          // Reseed so dynamic resolution steps from the applied ratio, not the stale one.
+          if (dynRes !== null) {
+            const max = maxRatio(next);
+            dynRes = new DynamicResolution({ initial: Math.min(applied.pixelRatio, max), max });
+          }
         }
       }
     }
@@ -1731,7 +1747,9 @@ async function startGame(trackId: string): Promise<void> {
         const lit = raceGame.startLights();
         startLightsCtl?.setLights(lit);
         stats.startLightsOn = Math.min(5, Math.max(0, lit));
-        raceHudData.standings = raceGame.standings();
+        const hudDue = now >= hudNextMs;
+        if (hudDue) hudNextMs = now + 100;
+        if (hudDue) raceHudData.standings = raceGame.standings();
         raceHudData.laps = raceGame.config.laps;
         raceFlags[0] = raceGame.flags.sectorFlag(1);
         raceFlags[1] = raceGame.flags.sectorFlag(2);
@@ -1739,7 +1757,7 @@ async function startGame(trackId: string): Promise<void> {
         raceHudData.blue = raceGame.playerBlueFlag;
         raceHudData.vscPhase = raceGame.vsc.phase;
         raceHudData.vscDelta = raceGame.playerVscDelta;
-        raceHud.update(raceHudData);
+        if (hudDue) raceHud.update(raceHudData);
         damageHud?.update(raceGame.playerDamage);
         syncToasts(raceGame);
         if (!resultsShown) {
@@ -1854,8 +1872,8 @@ async function startGame(trackId: string): Promise<void> {
     cockpitWheel.visible = qaCam === null && cameraRig.mode === 'cockpit';
     const mirrorVisible = qaCam === null && mirrorEnabled && cameraRig.mode !== 'chase';
     mirror.setVisible(mirrorVisible);
-    if (mirrorVisible && mirrorTick++ % 2 === 0) {
-      mirror.render(handle.renderer, scene, interp.position, interp.rotation);
+    if (mirrorVisible && mirror.due(now)) {
+      mirror.render(handle.renderer, scene, interp.position, interp.rotation, now);
     }
     if (frame > 0) fpsAvg += (1 / frame - fpsAvg) * 0.1;
     frameStats.fps = fpsAvg;
@@ -1864,7 +1882,8 @@ async function startGame(trackId: string): Promise<void> {
     // QA views render flat: no post-processing chain, no mirror pass.
     if (qaCam !== null) handle.renderer.render(scene, qaCam);
     else post.render(frame);
-    renderRing.push(performance.now() - renderStart);
+    lastRenderMs = performance.now() - renderStart;
+    renderRing.push(lastRenderMs);
     rafId = requestAnimationFrame(frameFn);
   };
 

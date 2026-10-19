@@ -76,7 +76,7 @@ describe('052 graphics presets acceptance', () => {
     expect(medium.antialias).toBe(true);
 
     const high = presetSettings('high', 3);
-    expect(high.pixelRatio).toBeCloseTo(2, 6);
+    expect(high.pixelRatio).toBeCloseTo(1.5, 6);
     expect(high.shadows).toBe(true);
     expect(high.treeFarDistance).toBe(1500);
     expect(high.antialias).toBe(true);

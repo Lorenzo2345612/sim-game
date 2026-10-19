@@ -794,6 +794,13 @@ export class RaceGame {
     return this.time;
   }
 
+  /** Seconds since the lights went out; -1 before the start (scenarios count from 0). */
+  get raceElapsed(): number {
+    if (this.scenarioMode) return this.time;
+    const go = this.start.goTime;
+    return go === null ? -1 : this.time - go;
+  }
+
   /** Classification clock: seconds since the lights went out (0 before the start). */
   private get raceClock(): number {
     const go = this.start.goTime;

@@ -79,6 +79,8 @@ export interface PostProcessing {
   resize(w: number, h: number): void;
   /** Re-scales the render targets to a new device pixel ratio (154). */
   setPixelRatio(r: number): void;
+  /** Skips the composer and renders straight to the canvas (auto-preset downgrade to low). */
+  setBypass(bypass: boolean): void;
   passes: PassName[];
   /** Live pass instance so hooks read the real strength/threshold, null when bloom is off. */
   bloom: UnrealBloomPass | null;
@@ -116,6 +118,7 @@ export function createPostProcessing(
       render: () => renderer.render(scene, camera),
       resize: () => {},
       setPixelRatio: () => {},
+      setBypass: () => {},
       passes: [],
       bloom: null,
       dispose: () => {},
@@ -166,8 +169,15 @@ export function createPostProcessing(
     }
   }
 
+  let bypass = false;
   return {
-    render: (dt) => composer.render(dt),
+    render: (dt) => {
+      if (bypass) renderer.render(scene, camera);
+      else composer.render(dt);
+    },
+    setBypass: (b) => {
+      bypass = b;
+    },
     resize: (w, h) => composer.setSize(w, h),
     setPixelRatio: (r) => composer.setPixelRatio(r),
     passes,

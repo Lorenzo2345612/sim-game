@@ -5,6 +5,8 @@ export const MIRROR_FOV = 50;
 export const MIRROR_WIDTH = 512;
 export const MIRROR_HEIGHT = 128;
 const MIRROR_NEAR = 0.3;
+/** Mirror refresh interval: 20 Hz max. */
+export const MIRROR_INTERVAL_MS = 50;
 
 const poseQuat = new THREE.Quaternion();
 const poseOffset = new THREE.Vector3();
@@ -37,6 +39,9 @@ export class VirtualMirror {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly pixels: Uint8Array;
   private readonly image: ImageData;
+  private pending = false;
+  private disposed = false;
+  private lastRenderMs = -Infinity;
   private readonly pose = { position: new THREE.Vector3(), forward: new THREE.Vector3() };
 
   constructor(parent: HTMLElement, far: number) {
@@ -70,16 +75,35 @@ export class VirtualMirror {
     this.element.style.display = visible ? 'block' : 'none';
   }
 
-  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, carPos: Vec3, carQuat: Quat): void {
+  /** True when 50 ms have passed since the last mirror pass and no readback is in flight. */
+  due(nowMs: number): boolean {
+    return !this.pending && nowMs - this.lastRenderMs >= MIRROR_INTERVAL_MS;
+  }
+
+  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, carPos: Vec3, carQuat: Quat, nowMs = performance.now()): void {
+    this.lastRenderMs = nowMs;
     mirrorCameraPose(carPos, carQuat, this.pose);
     this.camera.position.copy(this.pose.position);
     this.camera.lookAt(lookTarget.copy(this.pose.position).add(this.pose.forward));
     const prev = renderer.getRenderTarget();
+    // Reuse the shadow maps rendered for the main view; the mirror pass must not re-render them.
+    const autoUpdate = renderer.shadowMap.autoUpdate;
+    renderer.shadowMap.autoUpdate = false;
     renderer.setRenderTarget(this.target);
     renderer.render(scene, this.camera);
     renderer.setRenderTarget(prev);
-    renderer.readRenderTargetPixels(this.target, 0, 0, MIRROR_WIDTH, MIRROR_HEIGHT, this.pixels);
-    this.blit();
+    renderer.shadowMap.autoUpdate = autoUpdate;
+    this.pending = true;
+    // Async readback: a synchronous readPixels would stall the GPU pipeline every pass.
+    renderer
+      .readRenderTargetPixelsAsync(this.target, 0, 0, MIRROR_WIDTH, MIRROR_HEIGHT, this.pixels)
+      .then(() => {
+        if (!this.disposed) this.blit();
+      })
+      .catch(() => {})
+      .finally(() => {
+        this.pending = false;
+      });
     this.renders++;
   }
 
@@ -103,6 +127,7 @@ export class VirtualMirror {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.target.dispose();
     this.element.remove();
     this.element.width = 0;
