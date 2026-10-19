@@ -143,3 +143,7 @@ Task 273 (traffic follow cap, `setFollowCap`) landed on master first. The 268 di
 2. `LINE_MARGIN_M`: use the LARGEST value in {2.4, 2.2, 2.0, 1.8, 1.6, 1.4} that passes frozen 130 EDGE7 and AT3–AT5 (with AT3–AT5 setup from item 3). Do not edit 130 EDGE7. Report the value.
 3. Option (a). In AT3, AT4 and AT5 the player input is `{ throttle: 0, brake: 0.4, steer: 0, reset: false }` (brake < 0.5 never triggers auto-reverse; the player stays on its grid slot). Authorised edit of `tests/unit/acceptance/268-*.test.ts` for that input only; no other change to those tests.
 4. Authorised edit: `tests/unit/edge/268-ai-driving-regressions.test.ts` EDGE1 (~line 330) casts its control ray at a mid-run vertex of the first barrier run, as POST60 does.
+
+## Planner answers (round 8, addendum)
+
+5. Neural models were trained against the 0.82 profile; they must keep it. In `src/game/raceGame.ts` add `export const NEURAL_GRIP_MARGIN = 0.82`; AI cars with a residual net (`car.residual`) drive a speed profile built with `NEURAL_GRIP_MARGIN` (same line); classic AIs use `AI_GRIP_MARGIN = 0.75`. Without neural options, behaviour is unchanged from item 1. No new test required; do not touch `scripts/`.
