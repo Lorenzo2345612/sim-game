@@ -3525,7 +3525,7 @@
     {
       "num": "259",
       "title": "Sampling lane planner",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "258"
       ],

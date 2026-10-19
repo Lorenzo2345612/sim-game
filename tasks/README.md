@@ -260,7 +260,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
-| 259 | Sampling lane planner | in progress | 258 |
+| 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | pending | 258 |
 | 261 | RaceGame scenario starts and contact counter | pending | - |
 | 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
