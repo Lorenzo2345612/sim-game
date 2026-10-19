@@ -3940,7 +3940,7 @@
     {
       "num": "291",
       "title": "Results screen: grid, places gained, overtakes and race recap",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "290"
       ],
@@ -4188,6 +4188,49 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/310-yellow-countdown-hud.md"
+    },
+    {
+      "num": "311",
+      "title": "Penalty caps and disqualification in PenaltyBook and RaceClassification",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/311-penalty-caps-dsq.md"
+    },
+    {
+      "num": "312",
+      "title": "Race: black-flagged cars are disqualified and leave the track",
+      "status": "pending",
+      "deps": [
+        "311",
+        "304",
+        "305",
+        "306",
+        "309"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 2,
+      "spec": "tasks/312-black-flag-race.md"
+    },
+    {
+      "num": "313",
+      "title": "Black flag in race control, announcements and results",
+      "status": "pending",
+      "deps": [
+        "312",
+        "296",
+        "304"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/313-black-flag-ui.md"
     }
   ]
 }
