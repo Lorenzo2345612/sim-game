@@ -132,3 +132,7 @@ Planner-authorised, apply exactly:
 ## Planner answers (round 7)
 
 Planner-authorised typing fix in `tests/unit/edge/268-driver-barrier.post.test.ts`: `function loadTrack(id: string): TrackDataV2` returning `parseTrackData(...) as TrackDataV2`, plus `import type { TrackDataV2 } from '../../../src/core/types'`. Nothing else in that file. Then typecheck, lint and the full suite once.
+
+## Merge note (planner)
+
+Task 273 (traffic follow cap, `setFollowCap`) landed on master first. The 268 diff was replayed onto master in the worktree; `src/ai/traffic.ts` and `src/game/raceGame.ts` contain conflict markers (`<<<<<<< ours` = master, `>>>>>>> theirs` = 268). Resolve them by keeping BOTH behaviours (273's follow cap / vTarget order and 268's per-index half widths, barrier, reset logic). Do not use git. Then run the 268 and 273 tests plus `npm run typecheck`.
