@@ -3720,7 +3720,7 @@
     {
       "num": "274",
       "title": "Weekend formats and points tables",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
