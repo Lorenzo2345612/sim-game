@@ -120,3 +120,11 @@ npm test
 ## Out of scope
 
 - Racecraft/lane planner (258–262), RL work, new tracks or barrier geometry changes, tyre/suspension model changes, player-car reset behaviour, changes to `ai/guides/architecture.md`.
+
+## Planner answers (round 6)
+
+Planner-authorised, apply exactly:
+- 268 acceptance test: AT3 lap time ≤ 1.07 × speed-profile time; AT4 grass ≤ 5.0 s; AT5 Σ grass ≤ 50 s. Remove the unused `groundHeightAt` import. Nothing else in that file.
+- 032 AT5 (replaces round 2): `setLinvel({x: 10})` each step until centre x > 8 or 2 s elapsed, then run freely 2 s; assertions unchanged.
+- `AI_GRIP_MARGIN`: highest of 0.82, 0.78, 0.75 that passes AT3–AT5 and frozen 225 (needs ≥ 0.75). Range is now [0.75, 0.82].
+- Spawn settling stays in `raceGame.ts`, not `vehicleModel`.

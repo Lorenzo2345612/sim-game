@@ -74,3 +74,8 @@ npx playwright test 152-   # this task's e2e files only; never the full e2e suit
 - EDGE7 is wrong: under the floor-cell convention the three boxes fall in cells (0,0), (0,-1), (-1,0), so 3 meshes is correct. Authorised edit: `tests/unit/edge/152-render-cost-edge.test.ts:163` expects 3 merged meshes (one per cell). No other edge-test changes.
 - Accepted as designed: `renderer.info.autoReset=false` with one manual reset per frame, persistent `debugCameraYaw` offset, far cascade as a second directional light skipped under software GL.
 - Generate the AT4 baseline with `UPDATE_BASELINE=1` and include the PNG in the diff (listed file).
+
+## Planner answers (round 2)
+
+- Test scope (timeouts): run only `npx vitest run tests/unit/acceptance/152- tests/unit/edge/152-`, `npx playwright test 152-`, typecheck and lint. Do not run `npm test`/full vitest/full Playwright (the reviewer does) and do not write probe specs; no `sleep` waits.
+- AT1/AT2 count draw calls, which do not depend on software GL speed; they stay. Measure once with `npx playwright test 152-`. If AT1 or AT2 still fails after the cell merge, stop and report BLOCKED with the measured value and a draw-call breakdown by category (track, terrain, scenery cells, cars, shadows); do not keep tuning.

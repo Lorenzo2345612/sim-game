@@ -55,3 +55,10 @@ Also un-skip 252 edge EDGE6 and EDGE9 (silverstone easy/medium traffic) — they
 ## Planner answers (round 1)
 
 Planner-verified on your worktree: AT4 (expert) passes; only 252 EDGE6 and EDGE9 (easy/medium traffic) fail. EDGE6/EDGE9 are split out of this task: keep them `it.skip` with the comment `// split from 273, follow-up task` (planner-authorised; restore the skip if you removed it). Do no more probing. Run only `npx vitest run tests/unit/acceptance/252- tests/unit/edge/252- tests/unit/ai/`, typecheck and lint, then write the report.
+
+## Planner answers (round 2)
+
+- Planner-authorised: in `tests/unit/edge/273-ai-traffic-spin-free-edge.test.ts` mark EDGE1 and EDGE2 (easy/medium) `it.skip` with `// split from 273, follow-up task`. Nothing else in that file.
+- `AiDriver`: restore `vTarget = min(previewSpeed, profileCap) * speedScale`; apply the traffic follow cap afterwards as a separate hard limit (not scaled). Frozen 089 EDGE6 must pass.
+- Fix `tests/unit/ai/trafficCaution.test.ts` 'a follow cap is a speed limit…' to that order (authorised).
+- Run only `npx vitest run tests/unit/acceptance/273- tests/unit/edge/273- tests/unit/edge/089- tests/unit/ai/`, typecheck, lint; then report.
