@@ -53,3 +53,8 @@ npx vitest run tests/unit/acceptance/299- tests/unit/acceptance/149- tests/unit/
 ## Planner answers (round 1)
 
 Planner-authorised edit of `tests/unit/acceptance/150-sausage-render.test.ts` AT2 only: the "with sausage" bound becomes `toBeGreaterThan(0.5)` (measured 0.71 with the 0.08 m collider) and the title "peaks above 0.5 m/s"; the "without" bound (< 0.3) is unchanged. Nothing else in 150 changes.
+
+## Planner answers (round 2)
+
+1. AT6 is missing from the acceptance file: the coder is authorised to add it to `tests/unit/acceptance/299-sausage-collider-ramp.test.ts` exactly as the AT6 row says (mexico, monza, cleveland; compare `createPhysicsWorld(track)` with the same track and `sausages: []`; |piece collider y − strip ray hit y in the second world| ≤ 0.03 m). Acceptance criteria: AT1–AT6 pass.
+2. Option (a). The old direct neural `medium` model was evolved on the old hulls; keep the 0.7 m base and seating. Authorised edit: `tests/unit/acceptance/269-evolved-neural-driver.test.ts` AT3 total AI resets ≤ 6 (was 2; title updated). The per-car "≥ 1 lap" check stays. No other 269 change.
