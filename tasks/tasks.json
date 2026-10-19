@@ -4192,7 +4192,7 @@
     {
       "num": "311",
       "title": "Penalty caps and disqualification in PenaltyBook and RaceClassification",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
