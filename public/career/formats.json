@@ -1,0 +1,31 @@
+{
+  "formats": [
+    {
+      "id": "short",
+      "name": "Short",
+      "sessions": [
+        { "kind": "qualifying", "minutes": 10 },
+        { "kind": "race", "laps": 5, "points": "standard10" }
+      ]
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "sessions": [
+        { "kind": "practice", "minutes": 20 },
+        { "kind": "qualifying", "minutes": 15 },
+        { "kind": "race", "laps": 10, "points": "standard10" }
+      ]
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint",
+      "sessions": [
+        { "kind": "practice", "minutes": 20 },
+        { "kind": "qualifying", "minutes": 15, "polePoints": 2 },
+        { "kind": "sprint", "laps": 6, "points": "sprint8", "grid": "reverse-top8" },
+        { "kind": "race", "laps": 10, "points": "standard10", "grid": "qualifying" }
+      ]
+    }
+  ]
+}

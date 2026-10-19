@@ -1,0 +1,13 @@
+{
+  "tables": [
+    {
+      "id": "standard10",
+      "positions": [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
+      "fastestLap": { "points": 1, "maxPosition": 10 }
+    },
+    {
+      "id": "sprint8",
+      "positions": [8, 7, 6, 5, 4, 3, 2, 1]
+    }
+  ]
+}
