@@ -4097,6 +4097,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/303-yellow-alert.md"
+    },
+    {
+      "num": "304",
+      "title": "Race results: penalties added, running cars not DNF",
+      "status": "pending",
+      "deps": [
+        "303"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/304-race-results-penalty-and-running.md"
     }
   ]
 }

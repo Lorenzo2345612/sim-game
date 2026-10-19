@@ -305,3 +305,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 301 | No kerb-zone steps on any track | pending | 300 |
 | 302 | Race minimap: all cars and sector flag colours | pending | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
+| 304 | Race results: penalties added, running cars not DNF | pending | 303 |
