@@ -172,13 +172,9 @@ describe('032 physics track colliders acceptance', () => {
       world.step();
     }
     let maxX = car.body.translation().x;
-    let pushing = true;
-    for (let i = 0; i < Math.round(4 / FIXED_DT); i++) {
-      if (i >= Math.round(2 / FIXED_DT) || car.body.translation().x > 8.0) pushing = false;
-      if (pushing) {
-        const lv = car.body.linvel();
-        car.body.setLinvel({ x: 10, y: lv.y, z: lv.z }, true);
-      }
+    for (let i = 0; i < Math.round(2 / FIXED_DT); i++) {
+      const lv = car.body.linvel();
+      car.body.setLinvel({ x: 10, y: lv.y, z: lv.z }, true);
       car.setInput(IDLE);
       car.prePhysicsStep(FIXED_DT);
       world.step();

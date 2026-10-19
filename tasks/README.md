@@ -269,7 +269,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
-| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | done | - |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |

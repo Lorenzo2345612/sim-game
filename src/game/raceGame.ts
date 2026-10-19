@@ -34,7 +34,6 @@ import { processContactEvents, type DamageCar, type DamageMode } from '../physic
 import { DebrisField, type DebrisKind } from '../physics/debris';
 import { V_LOW } from '../physics/tyre';
 import { TrackProgress } from '../track/trackProgress';
-import { halfWidthAt } from '../track/surfaces';
 
 /** Per-car start pose (task 261): arc length s, lateral d (+ right), speed v. */
 export interface RaceScenario {
@@ -68,20 +67,12 @@ export interface RaceGameOptions extends Partial<GameTune> {
 
 type World = ReturnType<typeof createPhysicsWorld>;
 
-export const AI_GRIP_MARGIN: number = 0.75;
+export const AI_GRIP_MARGIN: number = 0.82;
 
-const AI_PACE_BOOST = 1;
-const AI_THROTTLE_KP = 1.5;
-const AI_BRAKE_KB = 0.07;
-const LINE_MARGIN_M = 2.4;
-const EDGE_BAND_M = 1.0; // edge keeping starts this far inside the track limit
-const EDGE_STEER_GAIN = 0.4;
 const MAX_AI = 15;
 const JUMP_PENALTY_S = 5;
-const FLIP_UP_Y = 0.3;
-const FLIP_RESET_S = 1.5;
-const PROGRESS_WINDOW_S = 5;
-const PROGRESS_MIN_M = 5;
+const STUCK_SPEED_MS = 1;
+const STUCK_RESET_S = 5;
 const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision inputs
 const SPAWN_HEIGHT_M = 0.6;
 const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
@@ -102,12 +93,6 @@ function probeContact(manifold: RAPIER.TempContactManifold): void {
 const NEAR_ALONGSIDE_M = 6;
 const NEAR_AHEAD_M = 20;
 const NEAR_LATERAL_M = 3;
-
-// Wrapped, signed advance along the lap into (-L/2, L/2]
-function wrapDelta(raw: number, lapLength: number): number {
-  const g = ((raw % lapLength) + lapLength) % lapLength;
-  return g > lapLength / 2 ? g - lapLength : g;
-}
 
 // Local copy (engineSynth has one too); the race never draws unseeded randoms.
 function mulberry32(seed: number): () => number {
@@ -182,10 +167,7 @@ interface AiCar {
   /** Residual neural AI: classic driver with net lateral offset and pace (neural stays unset). */
   residual?: { net: ResidualNet; state: NeuralCarState; tel: Telemetry };
   progress: TrackProgress;
-  steering: CarSpec['steering'];
-  flipS: number;
-  windowS: number;
-  markDist: number;
+  stuckS: number;
 }
 
 // One Rapier world with a car per grid slot (task 093). The player is index 0 and
@@ -207,8 +189,6 @@ export class RaceGame {
   private readonly penalised: boolean[];
   private readonly line: RacingLine;
   private readonly speeds: Float64Array;
-  private readonly halfLeft: number[];
-  private readonly halfRight: number[];
   private readonly traffic: CarTrafficState[];
   private readonly othersByCar: CarTrafficState[][];
   private readonly indices: Int32Array;
@@ -275,8 +255,6 @@ export class RaceGame {
     slots: SpawnPose[],
     line: RacingLine,
     speeds: Float64Array,
-    halfLeft: number[],
-    halfRight: number[],
     traffic: CarTrafficState[],
     othersByCar: CarTrafficState[][],
     observations: AiObservation[],
@@ -297,8 +275,6 @@ export class RaceGame {
     this.slots = slots;
     this.line = line;
     this.speeds = speeds;
-    this.halfLeft = halfLeft;
-    this.halfRight = halfRight;
     this.traffic = traffic;
     this.othersByCar = othersByCar;
     this.observations = observations;
@@ -407,21 +383,7 @@ export class RaceGame {
     const progresses: TrackProgress[] = [new TrackProgress(track.centerline)];
     const rng = mulberry32(config.seed);
     const { speedScale } = difficultyParams(config.difficulty);
-    const nPts = track.centerline.length;
-    const halfLeft = new Array<number>(nPts);
-    const halfRight = new Array<number>(nPts);
-    for (let i = 0; i < nPts; i++) {
-      halfLeft[i] = halfWidthAt(track, 'left', i);
-      halfRight[i] = halfWidthAt(track, 'right', i);
-    }
-    const line = computeRacingLine(
-      track.centerline,
-      track.widthMeters / 2,
-      LINE_MARGIN_M,
-      undefined,
-      halfLeft,
-      halfRight,
-    );
+    const line = computeRacingLine(track.centerline, track.widthMeters / 2);
     const limits = carLimitsFromSpec(spec, vehicles[0].getTelemetry().fuelKg);
     const speeds = speedProfile(line, {
       ...limits,
@@ -463,7 +425,6 @@ export class RaceGame {
       const progress = new TrackProgress(track.centerline);
       progresses.push(progress);
       const jitter = (rng() * 2 - 1) * 0.01;
-<<<<<<< ours
       const baseSpeedScale = (speedScale + jitter) * (config.scenario?.speedScales?.[k + 1] ?? 1);
       const vehicle = vehicles[k + 1];
       const driver = new AiDriver(line, speeds, { speedScale: baseSpeedScale });
@@ -510,17 +471,6 @@ export class RaceGame {
         else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures), state, tel };
       }
       ais.push(car);
-=======
-      ais.push({
-        vehicle: vehicles[k + 1],
-        driver: new AiDriver(line, speeds, { speedScale: speedScale * AI_PACE_BOOST + jitter, kp: AI_THROTTLE_KP, kb: AI_BRAKE_KB }),
-        progress,
-        steering: spec.steering,
-        flipS: 0,
-        windowS: -1,
-        markDist: 0,
-      });
->>>>>>> theirs
       observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
     }
     const traffic: CarTrafficState[] = [];
@@ -560,8 +510,6 @@ export class RaceGame {
       slots,
       line,
       speeds,
-      halfLeft,
-      halfRight,
       traffic,
       othersByCar,
       observations,
@@ -617,7 +565,6 @@ export class RaceGame {
       for (let k = 0; k < this.ais.length; k++) {
         const i = k + 1;
         const ai = this.ais[k];
-<<<<<<< ours
         if (this.stopped[i] === 1) {
           this.holdStopped(ai);
           continue;
@@ -681,50 +628,6 @@ export class RaceGame {
           ai.driver.setFollowCap(this.aheadSpeedCap);
           this.applyRulesReaction(i, ai.driver, decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
-=======
-        const s = this.current[i];
-        const q = s.rotation;
-        const obs = this.observations[k];
-        const fx = -2 * (q.w * q.y + q.x * q.z);
-        const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
-        obs.x = s.position.x;
-        obs.z = s.position.z;
-        obs.yaw = Math.atan2(-fx, -fz);
-        obs.speed = s.forwardSpeed;
-        const n = this.linePoints;
-        const ahead = (this.indices[i] + this.aheadIdx) % n;
-        const behind = (ahead + n - 1) % n;
-        const curvatureAhead = mengerCurvature(
-          pts[2 * behind], pts[2 * behind + 1],
-          pts[2 * ahead], pts[2 * ahead + 1],
-          pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
-        );
-        const decision = trafficDecision(
-          this.traffic[i],
-          this.othersByCar[i],
-          this.lapLength,
-          this.halfWidth,
-          offsets[ahead],
-          curvatureAhead,
-          this.halfLeft[ahead],
-          this.halfRight[ahead],
-        );
-        ai.driver.setLateralOffset(decision.offset);
-        ai.driver.setSpeedCap(decision.speedCap);
-        const st = ai.steering;
-        ai.driver.setMaxSteerAngle(
-          st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / st.fullSpeed),
-        );
-        ai.driver.update(obs, FIXED_DT, this.aiCmd);
-        const here = this.indices[i];
-        const lat = this.traffic[i].lateral;
-        const excess = Math.abs(lat) - ((lat >= 0 ? this.halfRight[here] : this.halfLeft[here]) - EDGE_BAND_M);
-        if (excess > 0) {
-          const pull = Math.min(1, excess * EDGE_STEER_GAIN) * (lat >= 0 ? -1 : 1);
-          const cmd = this.aiCmd;
-          cmd.steer = Math.max(-1, Math.min(1, cmd.steer + pull));
-          cmd.throttle *= Math.max(0, 1 - excess * EDGE_STEER_GAIN);
->>>>>>> theirs
         }
         ai.vehicle.setInput(this.aiCmd);
         ai.vehicle.prePhysicsStep(FIXED_DT);
@@ -765,7 +668,6 @@ export class RaceGame {
     } else {
       for (let k = 0; k < this.ais.length; k++) {
         const ai = this.ais[k];
-<<<<<<< ours
         if (this.stopped[k + 1] === 1) {
           ai.stuckS = 0;
           continue;
@@ -777,34 +679,8 @@ export class RaceGame {
             this.respawnOnLine(k);
             ai.stuckS = 0;
           }
-=======
-        const q = this.current[k + 1].rotation;
-        const up = 1 - 2 * (q.x * q.x + q.z * q.z);
-        if (up < FLIP_UP_Y) ai.flipS += FIXED_DT;
-        else ai.flipS = 0;
-        if (ai.windowS < 0) {
-          // the go step opens the 5 s progress window on the mark sample
-          ai.windowS = 0;
-          ai.markDist = this.traffic[k + 1].distance;
->>>>>>> theirs
         } else {
-          ai.windowS += FIXED_DT;
-          if (ai.windowS >= PROGRESS_WINDOW_S) {
-            if (
-              wrapDelta(this.traffic[k + 1].distance - ai.markDist, this.lapLength) < PROGRESS_MIN_M
-            ) {
-              this.respawnOnLine(k);
-              ai.flipS = 0;
-            }
-            ai.windowS = 0;
-            ai.markDist = this.traffic[k + 1].distance;
-          }
-        }
-        if (ai.flipS >= FLIP_RESET_S) {
-          this.respawnOnLine(k);
-          ai.flipS = 0;
-          ai.windowS = 0;
-          ai.markDist = this.traffic[k + 1].distance;
+          ai.stuckS = 0;
         }
       }
     }
