@@ -300,3 +300,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
 | 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | in progress | - |
 | 298 | No yellow flags from the standing start | pending | 289 |
+| 299 | Low-ramp sausage kerb collider | pending | - |
+| 300 | Verge and runoff strips must not fold over the inner kerb | pending | - |

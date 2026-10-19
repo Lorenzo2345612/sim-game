@@ -4036,6 +4036,28 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/298-start-yellow-grace.md"
+    },
+    {
+      "num": "299",
+      "title": "Low-ramp sausage kerb collider",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/299-sausage-collider-ramp.md"
+    },
+    {
+      "num": "300",
+      "title": "Verge and runoff strips must not fold over the inner kerb",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/300-verge-fold-inner-kerb.md"
     }
   ]
 }
