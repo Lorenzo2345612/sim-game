@@ -49,3 +49,7 @@ npx vitest run tests/unit/acceptance/299- tests/unit/acceptance/149- tests/unit/
 ## Out of scope
 
 - Sausage visuals (a floating visual mesh is a separate task), placement (`sausagePose`, offsets in track JSON), vehicle suspension model.
+
+## Planner answers (round 1)
+
+Planner-authorised edit of `tests/unit/acceptance/150-sausage-render.test.ts` AT2 only: the "with sausage" bound becomes `toBeGreaterThan(0.5)` (measured 0.71 with the 0.08 m collider) and the title "peaks above 0.5 m/s"; the "without" bound (< 0.3) is unchanged. Nothing else in 150 changes.
