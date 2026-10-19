@@ -324,10 +324,17 @@ function penaltyReasons(book: PenaltyBook, car: number): string[] {
   return out;
 }
 
-function resultRows(standings: readonly Standing[], book: PenaltyBook): ResultsRow[] {
+function carName(car: number): string {
+  return car === 0 ? 'You' : `AI ${car}`;
+}
+
+function resultRows(standings: readonly Standing[], book: PenaltyBook, game: RaceGame): ResultsRow[] {
   return standings.map((s) => ({
+    car: s.car,
+    grid: game.gridPosition(s.car),
+    summary: game.overtakes.summary(s.car),
     position: s.position,
-    name: s.car === 0 ? 'You' : `AI ${s.car}`,
+    name: carName(s.car),
     totalTime: s.totalTime,
     bestLap: s.bestLap,
     penalty: s.penalty,
@@ -1922,22 +1929,26 @@ async function startGame(trackId: string): Promise<void> {
     paused = true;
     engineAudio?.setPaused(true);
     mixer?.setPaused(true);
-    results?.show(resultRows(raceGame.standings(), raceGame.penalties), {
-      onRestart: () => {
-        results?.hide();
-        resultsShown = false;
-        restart()
-          .then(() => {
-            if (running) resume();
-          })
-          .catch(onError);
+    results?.show(
+      resultRows(raceGame.standings(), raceGame.penalties, raceGame),
+      {
+        onRestart: () => {
+          results?.hide();
+          resultsShown = false;
+          restart()
+            .then(() => {
+              if (running) resume();
+            })
+            .catch(onError);
+        },
+        onMenu: () => {
+          results?.hide();
+          resultsShown = false;
+          changeTrack();
+        },
       },
-      onMenu: () => {
-        results?.hide();
-        resultsShown = false;
-        changeTrack();
-      },
-    });
+      { events: raceGame.overtakes.events, name: carName },
+    );
   };
 
   const showPauseMenu = (): void => {
