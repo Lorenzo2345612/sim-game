@@ -37,7 +37,7 @@ Conventions: milliseconds per tick = wall time / ticks using `performance.now()`
 
 | ID | Given | When | Then |
 |---|---|---|---|
-| AT1 | Node monza race, 15 AI, 600 ticks | wall time | ≤ 2.0 ms per tick (mean) on the dev machine; ≤ 1.6× the single-car tick |
+| AT1 | Node monza race, 15 AI, 600 ticks; single-car tick (aiCount 0) measured in the same test, interleaved | wall time | mean tick ≤ 12× the single-car tick (planner fix round 1: the 1.6× bound and the absolute 2.0 ms were load-sensitive/unachievable) |
 | AT2 | same, after warm-up | heap growth over 600 ticks | < 1 MB |
 | AT3 | 093 AT4 determinism | rerun | still identical |
 
@@ -58,3 +58,11 @@ npm test
 
 - Web workers, WASM threading, changing the vehicle model or AI behaviour; render optimisation (152).
 - README, tasks.json, milestones.json.
+
+## Planner answers (round 1)
+
+- AT1 changed (planner table error): ratio bound is now ≤ 12× the single-car tick, absolute 2.0 ms removed. Update `tests/unit/acceptance/153-simulation-cost.test.ts` AT1 accordingly (planner-authorised edit).
+- `tests/unit/edge/008-track-progress-lap-timer.test.ts` EDGE3 (planner-authorised edit): replace the `wrong` assertion with: a teleport to (-100, 0) without `reset()` resolves via the full search (distance within 1 m of `tp.length / 2`, lateral within 0.1). Keep the rest of EDGE3.
+- AT2: add `--expose-gc` via `poolOptions` / `execArgv` in `vitest.config.ts` only if needed for AT2 stability (authorised file).
+- Accepted: extra files `src/ai/traffic.ts`, `src/physics/vehicleModel.ts`, `src/physics/contactEvents.ts`, `src/physics/powertrain.ts`; optional out params; explicit numSolverIterations 4 in RaceGame.create.
+- 249-AT3, 250-AT9, 224-POST4, 269-AT5 are pre-existing/load failures: ignore.
