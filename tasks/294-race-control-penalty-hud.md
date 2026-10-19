@@ -73,3 +73,7 @@ npx playwright test 294-
 
 ## Out of scope
 - Penalty serving in pits, stop-go/drive-through, investigations/"noted" messages, black-and-white flag, sounds, results screen changes, AI behaviour.
+
+## Planner answers (round 1)
+
+Option (b). AT7 is relaxed (planner-authorised edit of the 294 acceptance test, AT7 only): 7 s after the call, `#race-control` no longer contains the entry produced by the forced call (no element whose text contains the player's track-limits message); the panel itself may stay visible because of unrelated messages (e.g. a VSC delta on an AI). The `#penalty-announce` hidden at 5 s and `.race-row-pen` `+5s` checks are unchanged. Apply the independent coder fix you mentioned too.
