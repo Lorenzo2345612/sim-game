@@ -12,7 +12,8 @@ import time
 
 import modal
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+_HERE = pathlib.Path(__file__).resolve()
+ROOT = _HERE.parents[2] if len(_HERE.parents) > 2 else _HERE.parent  # inside the container the module sits at /root
 CPU = 16  # physical cores per track; ~0.8 USD/h with 8 GiB
 VOL = "/vol"
 
