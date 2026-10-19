@@ -296,6 +296,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | done | - |
 | 294 | Race control messages, penalty announcement and tower tag in the race HUD | in progress | 293 |
-| 295 | Per-nationality name lists and seeded grid generator | in progress | - |
+| 295 | Per-nationality name lists and seeded grid generator | done | - |
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
 | 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | in progress | - |
