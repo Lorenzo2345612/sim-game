@@ -293,5 +293,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 289 | Yellow-flag cap must not freeze the field behind a stopped car | in progress | 130 |
 | 290 | Overtake log and grid positions in RaceGame | pending | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
-| 292 | Current, last and best lap times in the race HUD | in progress | 093 |
+| 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | in progress | - |
