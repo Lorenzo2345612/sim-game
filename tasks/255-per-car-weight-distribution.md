@@ -29,7 +29,7 @@ Set these values in each car's JSON:
 
 | car | weightFront | wheels.width | wheels.widthRear | tyres.rearMuScale |
 |---|---|---|---|---|
-| f4 | 0.43 | 0.200 | 0.250 | 1.05 |
+| f4 | unchanged (round 1) | unchanged | unchanged | unchanged |
 | gt3-a (front-engine V8) | 0.48 | 0.300 | 0.310 | 1.00 |
 | gt3-b (rear-engine flat-six) | 0.40 | 0.300 | 0.310 | 1.05 |
 | gt3-c (mid-engine V8) | 0.44 | 0.300 | 0.310 | 1.03 |
@@ -53,7 +53,7 @@ Executable contract. The `acceptance` worker turns each row into `tests/unit/acc
 | AT3 | each car, flat plane, 2nd gear at 15 m/s, steer 0.08 rad held | full-throttle step 3 s | no spin: \|body sideslip\| < 30° throughout |
 | AT4 | each car, 50 m constant-radius circle at the limit (lateral accel ramp until slide) | run | front slip-angle peak reached first or within 0.1 s of the rear (no limit oversteer) |
 | AT5 | each car, same circle | max steady lateral accel | within ±8 % of its master baseline B |
-| AT6 | each car, flat straight, full throttle from 0 | time to 200 km/h (time to 150 km/h for f4) | within ±3 % of master baseline B |
+| AT6 | each car except f4, flat straight, full throttle from 0 | time to 200 km/h | within ±10 % of master baseline B (round 1) |
 | AT7 | f4, ow26 | `tests/unit/calibration/f4.test.ts`, `ow26.test.ts` | pass |
 
 ## Acceptance criteria
@@ -73,3 +73,15 @@ npm test
 ## Out of scope
 
 - `src/` changes, AI tuning, rendering the rear width, BoP, engine changes.
+
+## Planner answers (round 1)
+
+1. **f4 is out of this task**: `public/cars/f4.json` stays bit-identical to master (no weightFront, widths or rearMuScale added). Revert any f4 change. The f4 calibration, lab mirror, neural AI models and tests 058 AT4, 215 AT1, 066, f4.test.ts, 252 EDGE7, 269 AT3 are therefore unaffected. AT1, AT2 and AT3–AT6 rows skip f4 (7 cars); AT7 still runs f4.test.ts and must pass unchanged. The acceptance and edge tests for 255 may be edited to drop f4 (planner-authorised).
+2. **AT6 tolerance is ±10 %** (was ±3 %): moving weight rearward on RWD cars legitimately improves launch traction. gt3-b may keep table rearMuScale 1.05 or the reported 1.005; report which. Make the AT6 loop check all cars before failing (collect errors, one assertion).
+3. **255 EDGE5**: use `toBeCloseTo(expected, 8)` (Rapier stores CoM as f32). Authorised.
+4. **244 EDGE8 PINNED hashes**: authorised update for every car JSON this task changes (recompute with the test's own hash function); f4 hash unchanged.
+5. **254 tests**: authorised edits — AT1: keep only the f4 parse expectation (weightFront default) and drop gt3-a/lmp2-a 0.5; AT2: keep only f4 bit-identical; EDGE8: ow26 width 0.275, widthRear 0.375; post test L215: replace `widthRear == width` with `widthRear >= width`.
+6. **076 AT3** (gt3-d dynamics deep-equal gt3-a): authorised to exclude `chassis.weightFront`, `tyres.rearMuScale`, `wheels.width`, `wheels.widthRear` from the comparison.
+7. Pre-existing failures (249 AT3, 250 AT9, 269 POST9, 224 POST4) are not this task's; ignore them.
+
+Files added (authorised edits): `tests/unit/acceptance/254-weight-distribution-rear-grip.test.ts`, `tests/unit/edge/254-weight-distribution-rear-grip-edge.test.ts`, `tests/unit/edge/254-weight-distribution-rear-grip.post.test.ts`, `tests/unit/edge/244-engine-voice-timbre-edge.test.ts`, `tests/unit/acceptance/076-gt3-d.test.ts`, `tests/unit/edge/255-per-car-weight-distribution-edge.test.ts`.
