@@ -283,7 +283,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 279 | Session result adapters | pending | 274, 275, 277 |
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | in progress | - |
-| 282 | Attack mode rules | pending | - |
+| 282 | Attack mode rules | in progress | - |
 | 283 | CarSpec awd + electric block | pending | 281 |
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
 | 285 | Electric voice | pending | - |

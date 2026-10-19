@@ -3823,7 +3823,7 @@
     {
       "num": "282",
       "title": "Attack mode rules",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
