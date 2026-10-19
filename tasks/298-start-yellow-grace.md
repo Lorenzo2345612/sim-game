@@ -21,6 +21,7 @@ Cars launching from the grid (speed < 5 m/s right after go) no longer raise a ye
 - `src/race/flags.ts` — modify — start grace.
 - `src/game/raceGame.ts` — modify — call `startAt` once at go.
 - `tests/unit/acceptance/298-start-yellow-grace.test.ts` — create (acceptance worker).
+- Planner-authorised edit: `tests/unit/edge/289-yellow-cap-edge.test.ts` EDGE6/EDGE7 only — retime the scenario (when `debugStopCar` is called, steps before it, observation window up to 60 s sim) so a car is wedged behind the stall under yellow despite the green launch. Assertions, oracle and counters unchanged.
 
 ## Steps
 
