@@ -3977,7 +3977,7 @@
     {
       "num": "294",
       "title": "Race control messages, penalty announcement and tower tag in the race HUD",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "293"
       ],

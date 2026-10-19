@@ -295,6 +295,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | done | - |
-| 294 | Race control messages, penalty announcement and tower tag in the race HUD | pending | 293 |
+| 294 | Race control messages, penalty announcement and tower tag in the race HUD | in progress | 293 |
 | 295 | Per-nationality name lists and seeded grid generator | pending | - |
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
