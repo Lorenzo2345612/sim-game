@@ -3927,7 +3927,7 @@
     {
       "num": "290",
       "title": "Overtake log and grid positions in RaceGame",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "289"
       ],
@@ -4027,7 +4027,7 @@
     {
       "num": "298",
       "title": "No yellow flags from the standing start",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "289"
       ],

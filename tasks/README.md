@@ -291,7 +291,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
 | 289 | Yellow-flag cap must not freeze the field behind a stopped car | done | 130 |
-| 290 | Overtake log and grid positions in RaceGame | pending | 289 |
+| 290 | Overtake log and grid positions in RaceGame | in progress | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | done | 093 |
 | 293 | Remove race HUD overlaps (damage panel, flags, toasts) | done | - |
@@ -299,7 +299,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 295 | Per-nationality name lists and seeded grid generator | done | - |
 | 296 | Driver names in the race UI | pending | 291, 294, 295 |
 | 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | done | - |
-| 298 | No yellow flags from the standing start | pending | 289 |
+| 298 | No yellow flags from the standing start | in progress | 289 |
 | 299 | Low-ramp sausage kerb collider | in progress | - |
 | 300 | Verge and runoff strips must not fold over the inner kerb | in progress | - |
 | 301 | No kerb-zone steps on any track | pending | 300 |
