@@ -19,7 +19,7 @@ table{border-collapse:collapse;width:100%;font-size:11px;margin-top:4px}td,th{pa
 <canvas id="rchart" width="316" height="100"></canvas>
 <div id="models"></div>
 <div id="tbl"></div>
-<p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación. Carrera limpia = terminó sin faltas, choques ni vueltas inválidas (solo esas se guardan como modelo). Racecraft: verde adelantamientos limpios, naranja faltas, rojo choques provocados.</p>
+<p class="k">Corren 10 por mundo y chocan entre sí (tráfico); gasolina y neumáticos al azar en cada carrera. Dorado: los mejores de la generación anterior (sin cambios). Azul: hijos mutados. Rojo tenue: eliminados (fuera de pista, volcado o parados).<br>Gráfica: verde = mejor distancia, gris = promedio, por generación. Carrera limpia = terminó con ≤ 5 faltas por carrera, sin choques provocados ni vueltas inválidas (solo esas se guardan como modelo). Racecraft: verde adelantamientos limpios, naranja faltas, rojo choques provocados.</p>
 </div>
 <script>
 const map=document.getElementById('map'),ctx=map.getContext('2d'),ch=document.getElementById('chart'),cx=ch.getContext('2d');

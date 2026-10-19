@@ -30,6 +30,7 @@ const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', arg('model-dir', tag)); // e.g. scratch/<tag> keeps a fork out of export-models
 const PORT = Number(arg('port', '8770'));
 const RESIDUAL = process.argv.includes('--residual'); // classic AiDriver drives, the net sets offset + pace
+const MAX_FAULTS = Number(arg('max-faults', '5')); // light at-fault touches allowed per race for a saved model (no caused crashes)
 const RES = { offset: Number(arg('res-offset', '3.5')), up: Number(arg('res-up', '0.06')), down: Number(arg('res-down', '0.06')) }; // residual authority: lateral offset (m), pace above/below the classic profile
 const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
@@ -211,7 +212,7 @@ for (; gen < GENS; ) {
   meanLaps.push(mean / lapLength);
   const avg5 = meanLaps.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, meanLaps.length);
   if (!speedPhase && meanLaps.length >= 5 && avg5 >= SPEED_AT) { speedPhase = true; allTimeBest = -Infinity; console.log(`speed phase from gen ${gen + 1} (mean ${avg5.toFixed(1)} laps)`); }
-  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0 && r.faults[i] === 0 && r.crashFaults[i] === 0).sort((a, b) => a[0] - b[0]);
+  const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0 && r.faults[i] <= MAX_FAULTS * EVALS && r.crashFaults[i] === 0).sort((a, b) => a[0] - b[0]);
   const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
   const rcLine = RACECRAFT ? ` passes ${sum(r.passes)} faults ${sum(r.faults)} crash ${sum(r.crashFaults)} champ ${r.passes[bestI]}/${r.faults[bestI]}` : '';
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
