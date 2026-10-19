@@ -181,4 +181,48 @@ describe('299 sausage collider ramp acceptance', () => {
     }
     expect(Math.abs(maxY - 0.13), 'max y').toBeLessThanOrEqual(1e-6);
   });
+
+  it('AT6: every sausage piece in mexico, monza and cleveland sits within 0.03 m of the surface below it in the same track without sausages', () => {
+    for (const name of ['mexico', 'monza', 'cleveland']) {
+      const track = JSON.parse(
+        readFileSync(join(ROOT, 'public', 'tracks', `${name}.json`), 'utf8'),
+      ) as TrackDataV2;
+      let a: World | null = null;
+      let b: World | null = null;
+      try {
+        a = createPhysicsWorld(track);
+        a.step();
+        a.step();
+        // surfaceOf only knows the latest world: collect A's pieces before B is built.
+        const pieces: RAPIER.Collider[] = [];
+        a.forEachCollider((c) => {
+          if (surfaceOf(c) === 'kerb' && c.shape.type === RAPIER.ShapeType.ConvexPolyhedron) {
+            pieces.push(c);
+          }
+        });
+        expect(pieces.length, `${name} sausage piece colliders`).toBeGreaterThanOrEqual(1);
+        b = createPhysicsWorld({ ...track, sausages: [] });
+        b.step();
+        b.step();
+        for (const piece of pieces) {
+          const t = piece.translation();
+          const originY = t.y + 5;
+          const hit = b.castRay(
+            new RAPIER.Ray({ x: t.x, y: originY, z: t.z }, { x: 0, y: -1, z: 0 }),
+            100,
+            true,
+          );
+          expect(hit, `${name} piece at ${t.x.toFixed(1)},${t.z.toFixed(1)} has a surface below`).not.toBeNull();
+          if (hit === null) continue;
+          expect(
+            Math.abs(t.y - (originY - hit.timeOfImpact)),
+            `${name} piece at ${t.x.toFixed(1)},${t.z.toFixed(1)} seated on the surface below`,
+          ).toBeLessThanOrEqual(0.03);
+        }
+      } finally {
+        a?.free();
+        b?.free();
+      }
+    }
+  }, 300000);
 });

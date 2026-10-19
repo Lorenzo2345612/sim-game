@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { Surface, SurfaceStrip, TrackDataV2 } from '../core/types';
 import { barrierRuns } from '../track/barrierPath';
-import { sausageHullPoints, sausagePieces } from '../track/sausages';
+import { sausageColliderPoints, sausagePieces, type SausagePiece } from '../track/sausages';
 import { buildTrackSurfaces } from '../track/surfaces';
 
 const WALL_BOTTOM = -0.3;
@@ -69,14 +69,40 @@ function addBarrierWalls(world: RAPIER.World, track: TrackDataV2): void {
   }
 }
 
+const SEAT_RAY_ABOVE = 5;
+// Ray time-of-impact is float32; keep the analytic piece y when the ray agrees within that noise.
+const SEAT_SNAP = 1e-5;
+
+/** Base y of the topmost fixed surface under the piece centre (strips or terrain); piece y when nothing is under it. */
+function seatOnStrips(world: RAPIER.World, piece: SausagePiece): number {
+  const oy = piece.position.y + SEAT_RAY_ABOVE;
+  const hit = world.castRay(
+    new RAPIER.Ray({ x: piece.position.x, y: oy, z: piece.position.z }, { x: 0, y: -1, z: 0 }),
+    2 * SEAT_RAY_ABOVE,
+    true,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    (c) => surfaceOf(c) !== 'kerb' || c.shape.type !== RAPIER.ShapeType.ConvexPolyhedron,
+  );
+  if (hit === null) return piece.position.y;
+  const y = oy - hit.timeOfImpact;
+  return Math.abs(y - piece.position.y) < SEAT_SNAP ? piece.position.y : y;
+}
+
 /** One convex hull per sausage piece, kerb surface and default friction like the kerb strips. */
 function addSausageColliders(world: RAPIER.World, track: TrackDataV2): void {
-  for (const s of track.sausages ?? []) {
+  const sausages = track.sausages ?? [];
+  if (sausages.length === 0) return;
+  // Fresh colliders are invisible to castRay until a step refreshes the queries.
+  world.step();
+  for (const s of sausages) {
     for (const piece of sausagePieces(track, s)) {
-      const desc = RAPIER.ColliderDesc.convexHull(sausageHullPoints(piece.length));
+      const desc = RAPIER.ColliderDesc.convexHull(sausageColliderPoints(piece.length));
       if (desc === null) continue;
       desc
-        .setTranslation(piece.position.x, piece.position.y, piece.position.z)
+        .setTranslation(piece.position.x, seatOnStrips(world, piece), piece.position.z)
         .setRotation({ x: 0, y: Math.sin(piece.yaw / 2), z: 0, w: Math.cos(piece.yaw / 2) });
       registerSurface(world.createCollider(desc), 'kerb');
     }

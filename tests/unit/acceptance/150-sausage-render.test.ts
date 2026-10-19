@@ -99,7 +99,7 @@ describe('150 sausage kerb render and colliders acceptance', () => {
     geometry.dispose();
   });
 
-  it('AT2: f4 crossing a sausage perpendicular at 25 m/s peaks above 1.0 m/s vertical velocity; without it below 0.3 m/s', async () => {
+  it('AT2: f4 crossing a sausage perpendicular at 25 m/s peaks above 0.5 m/s vertical velocity; without it below 0.3 m/s', async () => {
     const sausage: Sausage = { index: 15, side: 'right', offset: 7.8, length: 6 };
     world = createPhysicsWorld(straightTrack([sausage]));
     world.step();
@@ -108,7 +108,7 @@ describe('150 sausage kerb render and colliders acceptance', () => {
     world = createPhysicsWorld(straightTrack());
     world.step();
     const withoutSausage = await peakVerticalVelocity(world);
-    expect(withSausage, 'peak |vy| with sausage').toBeGreaterThan(1.0);
+    expect(withSausage, 'peak |vy| with sausage').toBeGreaterThan(0.5);
     expect(withoutSausage, 'peak |vy| without sausage').toBeLessThan(0.3);
   }, 30000);
 });

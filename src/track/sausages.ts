@@ -8,12 +8,28 @@ export const SAUSAGE_TOP_WIDTH = 0.25;
 export const SAUSAGE_HEIGHT = 0.13;
 export const SAUSAGE_CAP_LENGTH = 0.4;
 
+export const SAUSAGE_COLLIDER_HEIGHT = 0.08;
+export const SAUSAGE_COLLIDER_BASE_WIDTH = 0.7;
+export const SAUSAGE_COLLIDER_TOP_WIDTH = 0.2;
+
 /** Eight corners (xyz) of the trapezoid prism: base at y 0, top at y SAUSAGE_HEIGHT. */
 export function sausageHullPoints(length: number): Float32Array {
   const half = length / 2;
   const bw = SAUSAGE_BASE_WIDTH / 2;
   const tw = SAUSAGE_TOP_WIDTH / 2;
   const h = SAUSAGE_HEIGHT;
+  return new Float32Array([
+    -bw, 0, -half, bw, 0, -half, bw, 0, half, -bw, 0, half,
+    -tw, h, -half, tw, h, -half, tw, h, half, -tw, h, half,
+  ]);
+}
+
+/** Lower, wider ramp hull for physics: keeps the wheel off the bump stop on a flank hit. */
+export function sausageColliderPoints(length: number): Float32Array {
+  const half = length / 2;
+  const bw = SAUSAGE_COLLIDER_BASE_WIDTH / 2;
+  const tw = SAUSAGE_COLLIDER_TOP_WIDTH / 2;
+  const h = SAUSAGE_COLLIDER_HEIGHT;
   return new Float32Array([
     -bw, 0, -half, bw, 0, -half, bw, 0, half, -bw, 0, half,
     -tw, h, -half, tw, h, -half, tw, h, half, -tw, h, half,

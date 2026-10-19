@@ -437,7 +437,7 @@ describe('247 sausage fit corner edge', () => {
       expect(hit, `downward ray at z ${z}`).not.toBeNull();
       if (hit === null) continue;
       expect(surfaceOf(hit.collider), `z ${z} kerb surface`).toBe('kerb');
-      expect(hit.timeOfImpact, `z ${z} top 0.13`).toBeCloseTo(4.87, 3);
+      expect(Math.abs(hit.timeOfImpact - 4.92), `z ${z} top 0.08`).toBeLessThanOrEqual(0.02);
     }
     const beyond = world.castRay(
       new RAPIER.Ray({ x: 7.8, y: 5, z: -28.3 }, { x: 0, y: -1, z: 0 }),

@@ -236,7 +236,7 @@ describe('150 sausage kerb render and colliders edge', () => {
     );
     expect(hit, 'downward ray hits the sausage').not.toBeNull();
     if (hit === null) return;
-    expect(hit.timeOfImpact, 'sausage top 0.13 above ground').toBeCloseTo(4.87, 3);
+    expect(Math.abs(hit.timeOfImpact - 4.92), 'sausage top 0.08 above ground').toBeLessThanOrEqual(0.02);
     expect(surfaceOf(hit.collider)).toBe('kerb');
     let stripFriction: number | null = null;
     world.forEachCollider((c) => {

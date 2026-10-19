@@ -236,7 +236,7 @@ describe('150 sausage kerb render and colliders post-code gaps', () => {
       expect(hit, `ray at sausage index ${s.index}`).not.toBeNull();
       if (hit === null) continue;
       expect(surfaceOf(hit.collider), 'kerb surface').toBe('kerb');
-      expect(hit.timeOfImpact, 'top 0.13 above ground after steps').toBeCloseTo(4.87, 3);
+      expect(Math.abs(hit.timeOfImpact - 4.92), 'top 0.08 above ground after steps').toBeLessThanOrEqual(0.02);
     }
   });
 
