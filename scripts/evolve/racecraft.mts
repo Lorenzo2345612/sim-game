@@ -1,6 +1,6 @@
 // Racecraft scoring for the trainer (task 271): committed position changes, at-fault contacts, crash faults.
 export const POS_W = 60, PASS_W = 40, CONTACT_W = 80, CRASH_W = 200;
-const PASS_GAP = 20, PASS_MIN_V = 2, PASS_HOLD = 1.0;
+const PASS_GAP = 20, PASS_MIN_V = 2, PASS_HOLD = 1.0, PASS_REL_V = 0.8, PASS_CLEAN_S = 3.0; // no credit for passing a slow, crashed or just-hit car
 const FAULT_CLOSING = 3.0, EPISODE_GAP = 0.5, CRASH_WINDOW = 3.0;
 
 export interface ContactInfo { fwdGap: number; latGap: number; closing: number }
@@ -20,6 +20,7 @@ export class RacecraftTracker {
   private readonly faultedEp: Uint8Array; // pair episode already gave a fault to k (ordered)
   private readonly lastFaultBy: Int32Array; // per victim: car at fault in its latest episode
   private readonly lastFaultT: Float64Array;
+  private readonly lastHit: Float64Array; // per car: last contact with any car
 
   constructor(n: number) {
     this.n = n;
@@ -29,6 +30,7 @@ export class RacecraftTracker {
     this.lastTouch = new Float64Array(n * n).fill(-1e9);
     this.faultedEp = new Uint8Array(n * n);
     this.lastFaultBy = new Int32Array(n).fill(-1); this.lastFaultT = new Float64Array(n).fill(-1e9);
+    this.lastHit = new Float64Array(n).fill(-1e9);
   }
 
   step(dt: number, cars: ReadonlyArray<RaceCar>): void {
@@ -40,7 +42,9 @@ export class RacecraftTracker {
         const a = cars[k], b = cars[j], kj = k * n + j;
         const kAhead = a.dist > b.dist ? 1 : 0;
         if (kAhead === this.ahead[kj]) { this.flipT[kj] = -1; continue; }
-        const ok = a.running && b.running && a.speed >= PASS_MIN_V && b.speed >= PASS_MIN_V;
+        const ok = a.running && b.running && a.speed >= PASS_MIN_V && b.speed >= PASS_MIN_V
+          && Math.min(a.speed, b.speed) >= PASS_REL_V * Math.max(a.speed, b.speed)
+          && this.t - this.lastHit[k] > PASS_CLEAN_S && this.t - this.lastHit[j] > PASS_CLEAN_S;
         if (this.flipT[kj] < 0) {
           if (!ok || Math.abs(a.dist - b.dist) > PASS_GAP) { this.ahead[kj] = kAhead; this.ahead[j * n + k] = 1 - kAhead; continue; } // silent re-order
           this.flipT[kj] = this.t;
@@ -58,6 +62,7 @@ export class RacecraftTracker {
     const u = Math.min(k, j) * this.n + Math.max(k, j);
     if (this.t - this.lastTouch[u] > EPISODE_GAP) { this.faultedEp[k * this.n + j] = 0; this.faultedEp[j * this.n + k] = 0; }
     this.lastTouch[u] = this.t;
+    this.lastHit[k] = this.t; this.lastHit[j] = this.t;
     const kj = k * this.n + j;
     if (this.faultedEp[kj]) return;
     if (info.fwdGap > 1.0 && Math.abs(info.latGap) < 1.2 && info.closing > FAULT_CLOSING) {

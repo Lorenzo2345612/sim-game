@@ -29,6 +29,7 @@ const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
 const modelDir = join(here, 'models', arg('model-dir', tag)); // e.g. scratch/<tag> keeps a fork out of export-models
 const PORT = Number(arg('port', '8770'));
+const RESIDUAL = process.argv.includes('--residual'); // classic AiDriver drives, the net sets offset + pace
 const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
@@ -68,7 +69,11 @@ if (bases.length) {
   for (let i = 0; pop.length < POP; i++) pop.push(mutate(bases[i % bases.length], 0.1));
   console.log(`seeded from ${bases.length} genome(s), ${seeds[0].weights.length} -> ${N_W + N_SET} genes`);
 } else if (resume) console.log('resume skipped: no usable genome');
-if (!pop.length) for (let i = 0; i < POP; i++) pop.push(joinGenome(randomGenome(rand)));
+if (!pop.length) for (let i = 0; i < POP; i++) {
+  const w = randomGenome(rand);
+  if (RESIDUAL) { for (let j = 0; j < N_W; j++) w[j] *= 0.1; w[N_W - 1] = 0; } // start close to the classic driver
+  pop.push(joinGenome(w));
+}
 
 function mutate(g: Float64Array, sigma: number, frac = 0.3): Float64Array {
   const c = Float64Array.from(g);
@@ -105,7 +110,7 @@ setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(posit
 // Workers
 const workers: Worker[] = [];
 await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => {
-  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT } });
+  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT, residual: RESIDUAL } });
   wk.on('message', (m: any) => {
     if (m.type === 'ready') { lapLength = m.lapLength; ok(); }
     if (m.type === 'pos') { positions.set(m.pos, w * per * 4); if (w === 0) simT = m.t; }
@@ -119,7 +124,7 @@ const oppCache = new Map<string, { weights: number[]; setup?: unknown }>();
 function opponents(): { weights: number[]; setup?: unknown }[] { // frozen hall-of-fame models within 3 s of the fastest
   if (!OPP) return [];
   const all = Object.values(hof) as any[];
-  if (!all.length) return [];
+  if (!all.length) return RESIDUAL ? Array.from({ length: OPP }, () => ({ weights: new Array(N_W).fill(0) })) : []; // plain classic drivers
   const bestAvg = Math.min(...all.map((m) => m.avgLap));
   return pickOpponents(all, bestAvg, OPP, rand).map((m) => {
     if (!oppCache.has(m.file)) { const j = JSON.parse(readFileSync(join(modelDir, m.file), 'utf8')); oppCache.set(m.file, { weights: j.weights, setup: j.setup }); }
@@ -158,7 +163,7 @@ function saveModel(i: number, finish: number) {
   if (hof[key] && (hof[key].rc || !RACECRAFT)) return; // racecraft models replace plain ones in their bucket
   const sp = splitGenome(pop[i], carSpec);
   const file = `race-${key}s-gen${gen}.json`;
-  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], weights: Array.from(sp.weights), setup: sp.setup }));
+  writeFileSync(join(modelDir, file), JSON.stringify({ gen, nIn: N_IN, line: LINE, track: trackId, car: carId, raceLaps: RL, raceTime: finish, avgLap: avg, bestLap: lastR.lapT[i], ...(RESIDUAL ? { residual: true } : {}), weights: Array.from(sp.weights), setup: sp.setup }));
   hof[key] = { file, avgLap: avg, gen, ...(RACECRAFT ? { rc: true } : {}) };
   const all = Object.values(hof).sort((a: any, b: any) => a.avgLap - b.avgLap) as any[];
   const pick = (f: number) => all.reduce((b, m) => (Math.abs(m.avgLap - all[0].avgLap * f) < Math.abs(b.avgLap - all[0].avgLap * f) ? m : b)).file;

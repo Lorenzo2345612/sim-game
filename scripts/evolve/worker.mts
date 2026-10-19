@@ -21,8 +21,12 @@ import { applySetup, defaultSetup } from '../../src/physics/setup';
 import { padGenome } from '../../src/ai/neuralPolicy';
 import { RacecraftTracker, racecraftFitness, type RaceCar } from './racecraft.mts';
 import type { Telemetry } from '../../src/physics/vehicleModel';
+import { AiDriver, type AiObservation } from '../../src/ai/aiDriver';
+import { computeRacingLine } from '../../src/ai/racingLine';
+import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
+import { AI_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -40,6 +44,18 @@ const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : nul
 const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
   : line === 'racing' ? { points: racingTargetPoints(cl, hwL, hwR, kL, kR) } : undefined;
 const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
+// Residual mode: the classic AiDriver drives (as in RaceGame); the network only sets its lateral offset and pace.
+export const RES_OFFSET_M = 3.5, RES_PACE = 0.06;
+const cLine = computeRacingLine(cl, track.widthMeters / 2);
+const cLim = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
+const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * AI_GRIP_MARGIN, muLong: cLim.muLong * AI_GRIP_MARGIN });
+const drivers: AiDriver[] = [];
+const obs: AiObservation = { x: 0, z: 0, yaw: 0, speed: 0 };
+function newDriver(): AiDriver {
+  const d = new AiDriver(cLine, cSpeeds, { speedScale: 1 });
+  d.setSteerCurve(spec.steering.maxAngleLow, spec.steering.maxAngleHigh, spec.steering.fullSpeed);
+  return d;
+}
 
 // Fresh car per episode (VehicleModel.reset keeps fuel, tyre wear/temps and gearbox state).
 // Cars collide with each other (traffic). Fuel load, compound and wear rate are randomised per car and episode.
@@ -155,6 +171,7 @@ function episode(genomes: Float64Array[], setups: any[], start: number, secs: nu
     cars[k] = makeCar(poses[k], k);
     if (k >= m) parkCar(cars[k]);
     progress[k].reset();
+    drivers[k] = newDriver();
     state[k] = cars[k].getState(state[k] ?? undefined);
     const p = progress[k].update(state[k].position.x, state[k].position.z);
     lastS[k] = p.distance;
@@ -205,9 +222,20 @@ function episode(genomes: Float64Array[], setups: any[], start: number, secs: nu
         features.fill(x, carState);
         forward(genomes[k], x, out);
         const inp = inputs[k];
-        inp.steer = out[0];
-        inp.throttle = out[1] > 0 ? out[1] : 0;
-        inp.brake = out[1] < 0 ? -out[1] : 0;
+        if (residual) {
+          drivers[k].setLateralOffset(out[0] * RES_OFFSET_M);
+          drivers[k].setSpeedScale(1 + RES_PACE * out[1]);
+        } else {
+          inp.steer = out[0];
+          inp.throttle = out[1] > 0 ? out[1] : 0;
+          inp.brake = out[1] < 0 ? -out[1] : 0;
+        }
+      }
+      if (residual) {
+        const st = state[k], q = st.rotation;
+        const fx = -2 * (q.w * q.y + q.x * q.z), fz = -1 + 2 * (q.x * q.x + q.y * q.y);
+        obs.x = st.position.x; obs.z = st.position.z; obs.yaw = Math.atan2(-fx, -fz); obs.speed = st.forwardSpeed;
+        drivers[k].update(obs, FIXED_DT, inputs[k]);
       }
       v.setInput(inputs[k]);
       v.prePhysicsStep(FIXED_DT);
