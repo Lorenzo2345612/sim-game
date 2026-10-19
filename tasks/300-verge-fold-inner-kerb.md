@@ -10,28 +10,28 @@ Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal
 
-No grass, verge or runoff triangle rises above the kerb next to it, so driving over the inner kerb never meets a hidden ramp.
+No grass, gravel, verge or runoff triangle rises above the kerb next to it, so driving over the inner kerb never meets a hidden ramp.
 
 ## Context
 
-`buildTrackSurfaces` (`src/track/surfaces.ts`) clamps lateral ribbons per row (`INNER_CURVE_CLAMP`) but a row's verge/runoff can land on another part of the lap's kerb zone. The existing `nearAsphalt` filter only covers half-width − 1 m, not the kerb band. Measured: mexico left indices 1873–1881 (lap 3746–3762 m), a verge triangle from row 1903 lies over the kerb and rises from +0.04 at 1 m past the asphalt edge to +0.35 m at 3 m; monza 326–327 left a 0.10 m runoff step 1.4 m beyond the kerb; monza 307–309 right a grass ramp to +0.25 m at 6 m. Cleveland is clean.
+`buildTrackSurfaces` (`src/track/surfaces.ts`) clamps lateral ribbons per row (`INNER_CURVE_CLAMP`), but a row's verge/runoff/gravel can land over another row's kerb zone; the existing `nearAsphalt` filter only covers half-width − 1 m, not the kerb band. Measured rise of the first non-kerb surface above the kerb outer edge, within 0.5–2 m past it (sausages excluded): mexico right 1028–1039 grass +0.41–0.55 m, 1364r/1533r gravel +0.16, 1483l runoff +0.18, left 1875–1878 grass +0.16–0.29; monza right 304–306 gravel +0.38–0.42, left 322 runoff +0.40; cleveland right 207–217 grass +0.22–0.46, 668r grass +0.46, 1580l runoff +0.17. A car using the full kerb hits these like a wall.
 
 ## Files
 
-- `src/track/surfaces.ts` — modify — after building the strips, drop (or split) every non-asphalt, non-kerb triangle with any point (vertices or centroid) inside the band `distance to centerline point j < halfWidthAt(side, j) + KERB_WIDTH + 0.3` of a row j that is not within `INNER_ARC_WINDOW` metres of the triangle's own row. Same idea as `filterStripTriangles`; extend it, do not add a second pass.
+- `src/track/surfaces.ts` — modify — in the strip post-filter (`filterStripTriangles`), a non-asphalt, non-kerb triangle lying (any vertex or centroid) within `halfWidthAt(side, j) + KERB_WIDTH + 2` m of a centerline row j outside `INNER_ARC_WINDOW` m of its own row, and higher there than that row's kerb outer edge + 0.05 m, is dropped. Do not add a second pass; asphalt and kerb strips are untouched.
 - `tests/unit/acceptance/300-verge-fold-inner-kerb.test.ts` — create (acceptance worker).
-- Any frozen test whose triangle counts change: list it in a decision with old/new numbers; do not edit it.
+- Frozen tests whose triangle counts change: list them in a decision with old/new numbers; do not edit them.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
-Probe = downward ray (`createPhysicsWorld(track)`, all colliders) at the point `centerline[i] + side normal × (halfWidthAt(side, i) + KERB_WIDTH + d)`; kerb edge y = ray hit y at `d = −0.05`.
+Probe: world `createPhysicsWorld({ ...track, sausages: [] })`, stepped twice; downward ray at `centerline[i] + n_side × (halfWidthAt(side, i) + KERB_WIDTH + d)`, `n_side` = right normal (central difference) for `'right'`, its negative for `'left'`. Rise(d) = hit y(d) − hit y(−0.05).
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| AT1 | mexico, left, i ∈ 1873..1881 | probe d ∈ {0.5, 1, 2, 3} | hit y − kerb edge y ≤ 0.05 m |
-| AT2 | monza, left i ∈ {326, 327} and right i ∈ {307, 308, 309} | probe d ∈ {0.5, 1, 2, 3, 5} | hit y − kerb edge y ≤ 0.05 m |
-| AT3 | mexico, monza, cleveland: every index i where `hasKerb(track, side, i)` and `cornerCurvature` puts `side` on the inside with radius < 200 m | probe d ∈ {0.5, 1, 2} | hit y − kerb edge y ≤ 0.10 m |
-| AT4 | the same three tracks | `buildTrackSurfaces` | asphalt and kerb strips are byte-identical to before (positions and indices) |
+| AT1 | mexico right i ∈ 1028..1039, left i ∈ 1875..1878; cleveland right i ∈ 207..217 and 668 | probe d ∈ {0.5, 1, 2} | rise ≤ 0.10 m |
+| AT2 | monza right i ∈ 304..306, left i = 322 | probe d ∈ {0.5, 1, 2} | rise ≤ 0.10 m |
+| AT3 | mexico, monza, cleveland: every i and side with `hasKerb(track, side, i)` | probe d ∈ {0.5, 1, 2} | rise ≤ 0.20 m everywhere |
+| AT4 | the same three tracks | `buildTrackSurfaces`, triangle count per surface | asphalt / kerb counts unchanged: mexico 4306 / 3458, monza 5788 / 4020, cleveland 3426 / 2804 |
 
 ## Acceptance criteria
 
