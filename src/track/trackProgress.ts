@@ -27,6 +27,11 @@ export class TrackProgress {
     this.length = this.cumulative[n];
   }
 
+  /** Sample of the last update (same object, overwritten by the next one). */
+  get current(): ProgressSample {
+    return this.sample;
+  }
+
   update(x: number, z: number): ProgressSample {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return this.sample;
     const n = this.points.length;

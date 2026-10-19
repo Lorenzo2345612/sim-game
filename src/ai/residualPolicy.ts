@@ -70,10 +70,17 @@ export class ResidualNet {
     cum: ArrayLike<number>,
     private readonly halfLeft: ArrayLike<number>,
     private readonly halfRight: ArrayLike<number>,
+    phase = 0,
   ) {
+    this.calls = ((phase % RESIDUAL_EVERY) + RESIDUAL_EVERY) % RESIDUAL_EVERY;
     if (weights.length !== N_W) throw new Error(`ResidualNet: weights length ${weights.length}`);
     this.wk = Float64Array.from(weights);
     this.ahead = X_LOOK.map((d) => aheadIndices(cum, halfLeft.length, d));
+  }
+
+  /** True when the next `decide` recomputes (the caller fills the state only then). */
+  due(): boolean {
+    return this.calls % RESIDUAL_EVERY === 0;
   }
 
   /** Call once per step; recomputes every RESIDUAL_EVERY calls (first call included). */

@@ -200,6 +200,13 @@ export class VehicleModel {
   private readonly gearbox: Gearbox;
   private readonly tank: FuelTank;
   private readonly wheels: WheelModel[];
+  // Wheel rays cast by getWheelSurfaces, reused by the next prePhysicsStep while the pose is bit-identical.
+  private readonly rayPose = new Float64Array(7);
+  private rayCacheValid = false;
+  private readonly rayHit = new Uint8Array(4);
+  private readonly rayToi = new Float64Array(4);
+  private readonly rayNormal = new Float64Array(12);
+  private readonly raySurface: Surface[] = ['asphalt', 'asphalt', 'asphalt', 'asphalt'];
   private readonly comZ: number;
   private readonly brakeT: number[] = [0, 0, 0, 0];
   private readonly drivenKappas: number[] = [0, 0];
@@ -497,6 +504,12 @@ export class VehicleModel {
     tmpRay.dir.x = -upx;
     tmpRay.dir.y = -upy;
     tmpRay.dir.z = -upz;
+    const rp = this.rayPose;
+    const cached =
+      this.rayCacheValid &&
+      rp[0] === p.x && rp[1] === p.y && rp[2] === p.z &&
+      rp[3] === q.x && rp[4] === q.y && rp[5] === q.z && rp[6] === q.w;
+    this.rayCacheValid = false;
     for (let i = 0; i < 4; i++) {
       const w = wheels[i];
       const axle = i < 2 ? spec.suspension.front : spec.suspension.rear;
@@ -507,13 +520,33 @@ export class VehicleModel {
       tmpRay.origin.x = ox;
       tmpRay.origin.y = oy;
       tmpRay.origin.z = oz;
-      const hit = this.world.castRayAndGetNormal(
-        tmpRay,
-        axle.restLength + R,
-        true,
-        undefined,
-        WHEEL_RAY_FILTER_GROUPS,
-      );
+      let hit: boolean;
+      let d: number;
+      let hnx: number;
+      let hny: number;
+      let hnz: number;
+      if (cached) {
+        hit = this.rayHit[i] === 1;
+        d = this.rayToi[i];
+        hnx = this.rayNormal[3 * i];
+        hny = this.rayNormal[3 * i + 1];
+        hnz = this.rayNormal[3 * i + 2];
+        w.surface = this.raySurface[i];
+      } else {
+        const r = this.world.castRayAndGetNormal(
+          tmpRay,
+          axle.restLength + R,
+          true,
+          undefined,
+          WHEEL_RAY_FILTER_GROUPS,
+        );
+        hit = r !== null;
+        d = r ? r.timeOfImpact : 0;
+        hnx = r ? r.normal.x : 0;
+        hny = r ? r.normal.y : 0;
+        hnz = r ? r.normal.z : 0;
+        w.surface = r ? (surfaceOf(r.collider) ?? 'asphalt') : 'asphalt';
+      }
       if (!hit) {
         w.hit = false;
         w.x = 0;
@@ -526,14 +559,12 @@ export class VehicleModel {
         continue;
       }
       w.hit = true;
-      w.surface = surfaceOf(hit.collider) ?? 'asphalt';
-      const d = hit.timeOfImpact;
       w.cx = ox - upx * d;
       w.cy = oy - upy * d;
       w.cz = oz - upz * d;
-      w.nx = hit.normal.x;
-      w.ny = hit.normal.y;
-      w.nz = hit.normal.z;
+      w.nx = hnx;
+      w.ny = hny;
+      w.nz = hnz;
       const rmx = ox - comx;
       const rmy = oy - comy;
       const rmz = oz - comz;
@@ -790,6 +821,18 @@ export class VehicleModel {
   getWheelSurfaces(): Surface[] {
     const p = this.body.translation(bodyPos);
     const q = this.body.rotation(bodyRot);
+    const rp = this.rayPose;
+    // Same pose as the cached rays: the casts would return the same hits.
+    const same =
+      this.rayCacheValid &&
+      rp[0] === p.x && rp[1] === p.y && rp[2] === p.z &&
+      rp[3] === q.x && rp[4] === q.y && rp[5] === q.z && rp[6] === q.w;
+    if (same) {
+      for (let i = 0; i < 4; i++) tmpSurfaces[i] = this.raySurface[i];
+      return tmpSurfaces;
+    }
+    rp[0] = p.x; rp[1] = p.y; rp[2] = p.z;
+    rp[3] = q.x; rp[4] = q.y; rp[5] = q.z; rp[6] = q.w;
     rotVec(q, 0, 1, 0);
     tmpRay.dir.x = -rv.x;
     tmpRay.dir.y = -rv.y;
@@ -809,8 +852,16 @@ export class VehicleModel {
         undefined,
         WHEEL_RAY_FILTER_GROUPS,
       );
-      tmpSurfaces[i] = hit ? (surfaceOf(hit.collider) ?? 'asphalt') : 'asphalt';
+      const surf: Surface = hit ? (surfaceOf(hit.collider) ?? 'asphalt') : 'asphalt';
+      tmpSurfaces[i] = surf;
+      this.raySurface[i] = surf;
+      this.rayHit[i] = hit ? 1 : 0;
+      this.rayToi[i] = hit ? hit.timeOfImpact : 0;
+      this.rayNormal[3 * i] = hit ? hit.normal.x : 0;
+      this.rayNormal[3 * i + 1] = hit ? hit.normal.y : 0;
+      this.rayNormal[3 * i + 2] = hit ? hit.normal.z : 0;
     }
+    this.rayCacheValid = true;
     return tmpSurfaces;
   }
 

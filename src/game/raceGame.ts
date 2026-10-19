@@ -77,6 +77,8 @@ const STUCK_SPEED_MS = 1;
 const STUCK_RESET_S = 5;
 const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision inputs
 const SPAWN_HEIGHT_M = 0.6;
+/** Offsets each AI decision step by car index % 4. Off: 269 AT3 (resets <= 6) fails with it on. */
+export const AI_DECISION_STAGGER = false;
 const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
 const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car must not allocate
 const CONTACT_PAIR_S = 0.5; // min gap between two counts of the same pair
@@ -86,18 +88,14 @@ const OVERTAKE_CONTACT_M = 6; // m, Euclidean chassis proximity for the overtake
 const OVERTAKE_CONTACT_GAP_M = 0.01; // m, contact distance below which a pair counts as touching
 
 // contactPair callback: a named module function keeps the tick loop allocation-free.
+// One probe fills both flags so a pair is queried once per tick.
 let contactHit = false;
-function probeContact(manifold: RAPIER.TempContactManifold): void {
-  if (manifold.numSolverContacts() > 0) contactHit = true;
-}
 let contactNear = false;
-function probeContactNear(manifold: RAPIER.TempContactManifold): void {
+function probeContact(manifold: RAPIER.TempContactManifold): void {
   const n = manifold.numSolverContacts();
-  for (let i = 0; i < n; i++) {
-    if (manifold.solverContactDist(i) < OVERTAKE_CONTACT_GAP_M) {
-      contactNear = true;
-      return;
-    }
+  if (n > 0) contactHit = true;
+  for (let i = 0; i < n && !contactNear; i++) {
+    if (manifold.solverContactDist(i) < OVERTAKE_CONTACT_GAP_M) contactNear = true;
   }
 }
 // A neighbour this close makes the driver ease off (task 273): car alongside or
@@ -428,7 +426,7 @@ export class RaceGame {
     });
     // Neural AI (opt-in): one feature extractor per track, one driver per car; missing model falls back to classic.
     let neuralFeatures: NeuralFeatures | null = null;
-    let residualNet: ((w: Float64Array) => ResidualNet) | null = null;
+    let residualNet: ((w: Float64Array, phase: number) => ResidualNet) | null = null;
     const residualModel = neuralWeights ? options?.neuralResidual?.[config.difficulty] : undefined;
     let compoundGrip = 0;
     if (neuralWeights) {
@@ -450,7 +448,7 @@ export class RaceGame {
       if (residualModel) {
         const nf = neuralFeatures;
         const cum = cumulativeLengths(track.centerline, true);
-        residualNet = (w) => new ResidualNet(w, residualModel, nf, cum, halfLeft, halfRight);
+        residualNet = (w, phase) => new ResidualNet(w, residualModel, nf, cum, halfLeft, halfRight, phase);
       }
       const muMedium = spec.tyres.compounds.medium.mu0;
       compoundGrip = spec.tyres.compounds[tune?.compound ?? 'medium'].mu0 / muMedium - 1;
@@ -503,8 +501,8 @@ export class RaceGame {
           others,
         };
         const tel = vehicle.getTelemetry();
-        if (residualNet) car.residual = { net: residualNet(neuralWeights), state, tel };
-        else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures), state, tel };
+        if (residualNet) car.residual = { net: residualNet(neuralWeights, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
+        else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
       }
       ais.push(car);
       observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
@@ -615,7 +613,8 @@ export class RaceGame {
           continue;
         }
         if (ai.neural) {
-          this.fillNeuralState(k, ai.neural.state, ai.neural.tel);
+          // Observation only on this car's decision step (phase staggered by car index).
+          if (ai.neural.driver.due(this.stepIndex)) this.fillNeuralState(k, ai.neural.state, ai.neural.tel);
           const d = ai.neural.driver.decide(this.stepIndex, ai.neural.state);
           this.aiCmd.steer = d.steer;
           this.aiCmd.throttle = d.throttle;
@@ -652,7 +651,7 @@ export class RaceGame {
             ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
           if (ai.residual) {
             // The net replaces the traffic offset and scales pace (no difficulty jitter, as trained).
-            this.fillNeuralState(k, ai.residual.state, ai.residual.tel);
+            if (ai.residual.net.due()) this.fillNeuralState(k, ai.residual.state, ai.residual.tel);
             const r = ai.residual.net.decide(ai.residual.state);
             ai.driver.setLateralOffset(r.offset);
             ai.driver.setSpeedScale(r.scale * dmgScale);
@@ -685,8 +684,7 @@ export class RaceGame {
     this.debris.step(FIXED_DT, this.carPos);
     this.refreshProgress();
     if (!before) {
-      this.updateContactCount();
-      this.updateCarContacts();
+      this.updateContacts();
     }
     this.updateAiDynamics();
     for (let i = 0; i < this.count; i++) {
@@ -874,58 +872,52 @@ export class RaceGame {
     }
   }
 
-  // Counts pairs close in track coordinates (8 m along, 4 m across) whose chassis
-  // actually touch this tick; a pair is only counted again after CONTACT_PAIR_S.
-  private updateContactCount(): void {
+  // Per pair, one chassis contact query serves two consumers: the contact count (pair close in
+  // track coordinates, 8 m along and 4 m across, counted again only after CONTACT_PAIR_S) and
+  // the per-car touch time for the overtake log (task 290: within 6 m, contact distance < 1 cm).
+  private updateContacts(): void {
     const n = this.count;
     const lap = this.lapLength;
     const half = lap / 2;
     const now = this.time;
+    const sq = OVERTAKE_CONTACT_M * OVERTAKE_CONTACT_M;
     for (let i = 0; i < n; i++) {
       const ti = this.traffic[i];
+      const pi = this.current[i].position;
       for (let j = i + 1; j < n; j++) {
         const tj = this.traffic[j];
         let ds = ti.distance - tj.distance;
         if (ds > half) ds -= lap;
         else if (ds < -half) ds += lap;
-        if (Math.abs(ds) >= CONTACT_NEAR_S || Math.abs(ti.lateral - tj.lateral) >= CONTACT_NEAR_D) continue;
         const cell = i * n + j;
-        if (now - this.lastContact[cell] < CONTACT_PAIR_S) continue;
-        contactHit = false;
-        this.world.contactPair(
-          this.vehicles[i].chassisCollider,
-          this.vehicles[j].chassisCollider,
-          probeContact,
-        );
-        if (contactHit) {
-          this.contactTotal++;
-          this.lastContact[cell] = now;
-        }
-      }
-    }
-  }
-
-  // Per-car chassis touch time for the overtake log (task 290): pairs within 6 m
-  // whose contact distance is under 1 cm this tick.
-  private updateCarContacts(): void {
-    const n = this.count;
-    const now = this.time;
-    const sq = OVERTAKE_CONTACT_M * OVERTAKE_CONTACT_M;
-    for (let i = 0; i < n; i++) {
-      const pi = this.current[i].position;
-      for (let j = i + 1; j < n; j++) {
+        const count =
+          Math.abs(ds) < CONTACT_NEAR_S &&
+          Math.abs(ti.lateral - tj.lateral) < CONTACT_NEAR_D &&
+          now - this.lastContact[cell] >= CONTACT_PAIR_S;
         const pj = this.current[j].position;
         const dx = pi.x - pj.x;
         const dy = pi.y - pj.y;
         const dz = pi.z - pj.z;
-        if (dx * dx + dy * dy + dz * dz > sq) continue;
+        const near = dx * dx + dy * dy + dz * dz <= sq;
+        if (!count && !near) continue;
+        contactHit = false;
         contactNear = false;
-        this.world.contactPair(
-          this.vehicles[i].chassisCollider,
-          this.vehicles[j].chassisCollider,
-          probeContactNear,
-        );
-        if (contactNear) {
+        // Chassis plus the car-car colliders (body box, open wheels) of both cars.
+        const vi = this.vehicles[i];
+        const vj = this.vehicles[j];
+        const ni = vi.carColliders.length;
+        const nj = vj.carColliders.length;
+        for (let a = -1; a < ni; a++) {
+          const ca = a < 0 ? vi.chassisCollider : vi.carColliders[a];
+          for (let b = -1; b < nj; b++) {
+            this.world.contactPair(ca, b < 0 ? vj.chassisCollider : vj.carColliders[b], probeContact);
+          }
+        }
+        if (count && contactHit) {
+          this.contactTotal++;
+          this.lastContact[cell] = now;
+        }
+        if (near && contactNear) {
           this.lastCarContact[i] = now;
           this.lastCarContact[j] = now;
         }
@@ -1017,7 +1009,7 @@ export class RaceGame {
     s.forwardSpeed = car.forwardSpeed;
     this.ais[k].vehicle.body.linvel(s.linvel);
     this.ais[k].vehicle.body.angvel(s.angvel);
-    s.progress = this.progresses[i].update(car.position.x, car.position.z);
+    s.progress = this.progresses[i].current; // sampled by refreshProgress from this same pose
     const t = this.ais[k].vehicle.getTelemetry(tel);
     s.fuelMassKg = t.fuelKg;
     const w = t.wheels;

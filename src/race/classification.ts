@@ -60,6 +60,9 @@ export class RaceClassification {
   private retireCount = 0;
   private disqCount = 0;
 
+  // standings() recomputes only after a mutation (update, penalty, retirement).
+  private dirty = true;
+
   constructor(carCount: number, laps: number, lapLength: number) {
     this.laps = laps;
     this.lapLength = lapLength;
@@ -121,6 +124,7 @@ export class RaceClassification {
       st.hasPrev = true;
       return;
     }
+    this.dirty = true;
     const L = this.lapLength;
 
     if (st.hasPrev && st.prevDist > 0.9 * L && lapDistance < 0.1 * L) {
@@ -180,6 +184,7 @@ export class RaceClassification {
     this.check(car);
     if (!Number.isFinite(seconds)) return;
     this.cars[car].s.penalty += seconds;
+    this.dirty = true;
   }
 
   retire(car: number): void {
@@ -187,6 +192,7 @@ export class RaceClassification {
     const st = this.cars[car];
     if (st.s.finished || st.retired || st.disq) return;
     st.retired = true;
+    this.dirty = true;
     st.retireSeq = this.retireCount++;
   }
 
@@ -205,6 +211,8 @@ export class RaceClassification {
   }
 
   standings(): readonly Standing[] {
+    if (!this.dirty) return this.rows;
+    this.dirty = false;
     this.rows.sort((a, b) => this.compare(this.cars[a.car], this.cars[b.car]));
     for (let i = 0; i < this.rows.length; i++) this.rows[i].position = i + 1;
     const leader = this.cars[this.rows[0]?.car ?? 0];
