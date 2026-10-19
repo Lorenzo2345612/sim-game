@@ -160,7 +160,8 @@ describe('152 render cost edge cases', () => {
 
     const merged = mergeStaticGroup(group, CHUNK);
     const meshes = merged.children.filter((c): c is THREE.Mesh => c instanceof THREE.Mesh);
-    expect(meshes.length).toBe(1);
+    // Planner-authorised (152 round 1): floor cells (0,0), (0,-1), (-1,0) → one mesh per cell.
+    expect(meshes.length).toBe(3);
     expect(disposed).toEqual([true, true, true]);
     for (const m of meshes) {
       expect(m.frustumCulled).toBe(true);

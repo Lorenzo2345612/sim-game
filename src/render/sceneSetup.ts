@@ -1,5 +1,22 @@
 import * as THREE from 'three';
 
+export interface ShadowConfig {
+  mapSize: number;
+  cascades: number;
+}
+
+/** low: no shadow map; medium: one 1024 map; high: 2048 map plus a far cascade. */
+export function shadowConfig(preset: 'low' | 'medium' | 'high'): ShadowConfig {
+  switch (preset) {
+    case 'low':
+      return { mapSize: 0, cascades: 0 };
+    case 'medium':
+      return { mapSize: 1024, cascades: 1 };
+    case 'high':
+      return { mapSize: 2048, cascades: 2 };
+  }
+}
+
 export interface SceneParts {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -62,6 +79,8 @@ export function createScene(): SceneParts {
 
 export function createRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  // drawCalls/perfStats count the whole frame (scene + shadows + post passes); the app resets per frame.
+  renderer.info.autoReset = false;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;

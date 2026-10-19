@@ -38,7 +38,8 @@ import { CameraRig, type CameraMode } from './render/cameraRig';
 import { DynamicResolution, autoPreset } from './render/dynamicResolution';
 import { HeadMotion } from './render/headMotion';
 import { createPostProcessing, parseCube, type PassName } from './render/postProcessing';
-import { createRenderer, createScene, maxWhiteAlbedo, type RendererHandle } from './render/sceneSetup';
+import { createRenderer, createScene, maxWhiteAlbedo, shadowConfig, type RendererHandle } from './render/sceneSetup';
+import { chunkInstancedMesh, mergeStaticGroup } from './render/chunking';
 import { VirtualMirror } from './render/mirror';
 import { createSteeringWheel, disposeSteeringWheel, setSteeringWheelAngle } from './render/steeringWheel';
 import { SurfaceParticles, emissionRate } from './render/surfaceParticles';
@@ -194,6 +195,9 @@ declare global {
       /** Race only: books `count` track-limit strikes for the player (130). */
       forceTrackLimits?(count: number): void;
       qaCamera(view: QaCameraView): QaCameraInfo;
+      /** 152: yaw the chase camera about world Y around its position; 0 restores the rig pose. */
+      debugCameraYaw(rad: number): void;
+      debugScene?(): unknown;
     };
   }
 }
@@ -219,6 +223,11 @@ const MAX_SIM_STEPS_PER_FRAME = 240;
 const STEERING_WHEEL_TILT = -(20 * Math.PI) / 180;
 
 const G = 9.81;
+
+// 152 render cost: static trackside merged per 500 m XZ chunk, instanced fields split per 200 m cell.
+const MERGE_CHUNK_M = 500;
+const INSTANCE_CELL_M = 200;
+const CASCADE_RANGE_M = 240;
 
 const status = document.getElementById('status');
 
@@ -347,6 +356,9 @@ let mixer: Mixer | null = null;
 let audioResumed = false;
 
 const NO_SLIP: readonly number[] = [0, 0, 0, 0];
+// Reused by the 152 debugCameraYaw hook; never reallocated.
+const DEBUG_YAW_QUAT = new THREE.Quaternion();
+const UP_AXIS = new THREE.Vector3(0, 1, 0);
 // Reused per frame by updateEffects; never reallocated in the loop.
 const effectState = { speed: 0, surface: 'asphalt' as Surface, shifting: false, slipRatios: [0, 0, 0, 0] };
 
@@ -540,6 +552,7 @@ function createLiveryPreview(canvas: HTMLCanvasElement): LiveryPreview {
       bufferH = PREVIEW_HEIGHT;
     }
     renderer.setRenderTarget(null);
+    renderer.info.reset(); // autoReset is off (shared renderer with the game frame counter)
     renderer.render(scene, camera);
     ctx.drawImage(renderer.domElement, 0, 0, PREVIEW_WIDTH, PREVIEW_HEIGHT);
   };
@@ -831,6 +844,12 @@ async function startGame(trackId: string): Promise<void> {
 
   const disposables: { dispose(): void }[] = [];
   let shadows: ShadowRig | null = null;
+  // High-preset far cascade (152): second shadow map on the same sun direction.
+  let shadowCascade: THREE.DirectionalLight | null = null;
+  // Static/instanced scene groups queued for the merge+chunk post-pass (152).
+  const optimizeGroups: THREE.Group[] = [];
+  // 152 test hook: world-Y camera yaw offset, reapplied after each rig pose.
+  let debugYaw = 0;
   let treeField: TreeField | null = null;
   let city: CityObject | null = null;
   let startLightsCtl: StartLights | null = null;
@@ -904,8 +923,31 @@ async function startGame(trackId: string): Promise<void> {
     scene.remove(sun);
     sun.shadow.map?.dispose();
     sun.dispose();
-    shadows.setEnabled(handle.renderer, settings.shadows);
-    if (softwareGl) shadows.light.shadow.mapSize.set(1024, 1024); // same contention reason as the pixel ratio
+    const shadow = shadowConfig(preset);
+    const shadowsOn = shadow.mapSize > 0 && settings.shadows;
+    shadows.setEnabled(handle.renderer, shadowsOn);
+    if (shadowsOn) {
+      shadows.light.shadow.mapSize.set(shadow.mapSize, shadow.mapSize);
+      if (softwareGl) {
+        // Same contention reason as the pixel ratio: one 1024 map, no far cascade.
+        shadows.light.shadow.mapSize.set(1024, 1024);
+      } else if (shadow.cascades > 1) {
+        // Far cascade: wider map on the same sun direction, intensity split so total light is unchanged.
+        shadowCascade = new THREE.DirectionalLight('#ffffff', shadows.light.intensity / 2);
+        shadows.light.intensity /= 2;
+        shadowCascade.castShadow = true;
+        shadowCascade.shadow.mapSize.set(shadow.mapSize, shadow.mapSize);
+        shadowCascade.shadow.bias = -0.0004;
+        const far = shadowCascade.shadow.camera;
+        far.left = -CASCADE_RANGE_M;
+        far.right = CASCADE_RANGE_M;
+        far.top = CASCADE_RANGE_M;
+        far.bottom = -CASCADE_RANGE_M;
+        far.near = 1;
+        far.far = CASCADE_RANGE_M * 4;
+        scene.add(shadowCascade, shadowCascade.target);
+      }
+    }
 
     const groundUrl = `textures/ground/${track.id}.jpg`;
     // Cap 600 so trackDist reaches the satellite fade's full-weight distance (081's default 200 would hide it).
@@ -936,21 +978,27 @@ async function startGame(trackId: string): Promise<void> {
     const barriers = createBarrierObject(track, undefined, trackStyle);
     scene.add(barriers.group);
     disposables.push(barriers);
+    optimizeGroups.push(barriers.group);
 
     const bridges = createBridgeObject(track, terrainY);
-    if (bridges.group.children.length > 0) scene.add(bridges.group);
+    if (bridges.group.children.length > 0) {
+      scene.add(bridges.group);
+      optimizeGroups.push(bridges.group);
+    }
     disposables.push(bridges);
 
     const floodlights = createFloodlights(track, trackStyle);
     if (floodlights !== null) {
       scene.add(floodlights.group);
       disposables.push(floodlights);
+      optimizeGroups.push(floodlights.group);
       stats.floodlights = floodlights.group.userData.poles as number;
     }
 
     const sausages = createSausages(track);
     scene.add(sausages.group);
     disposables.push(sausages);
+    optimizeGroups.push(sausages.group);
 
     if (raceTrack !== null && (raceTrack.bollards?.length ?? 0) > 0) {
       bollardField = createBollardField(raceTrack);
@@ -965,16 +1013,19 @@ async function startGame(trackId: string): Promise<void> {
     const boards = createDistanceBoards(track);
     scene.add(boards.group);
     disposables.push(boards);
+    optimizeGroups.push(boards.group);
 
     if (environmentType === 'city') await loadLampModel();
     const furniture = createStreetFurniture(track);
     scene.add(furniture.group);
     disposables.push(furniture);
+    optimizeGroups.push(furniture.group);
 
     const props = createTrackProps(track, trackStyle);
     if (props) {
       scene.add(props.group);
       disposables.push(props);
+      optimizeGroups.push(props.group);
       stats.props = props.group.userData.placed as number;
     }
 
@@ -996,6 +1047,7 @@ async function startGame(trackId: string): Promise<void> {
       const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
       stand.position.y = baseY;
       scene.add(stand);
+      optimizeGroups.push(stand);
     }
 
     const extras = extraGrandstands(track, trackStyle);
@@ -1004,11 +1056,16 @@ async function startGame(trackId: string): Promise<void> {
       const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
       stand.position.y = baseY;
       scene.add(stand);
+      optimizeGroups.push(stand);
     }
     stats.style = { id: trackId, loaded: loadedStyle.loaded, warnings: loadedStyle.warnings.length, extraGrandstands: extras.length };
 
-    scene.add(createPitBuilding(track, trackStyle));
-    scene.add(createStartGantry(track));
+    const pit = createPitBuilding(track, trackStyle);
+    scene.add(pit);
+    optimizeGroups.push(pit);
+    const gantry = createStartGantry(track);
+    scene.add(gantry);
+    optimizeGroups.push(gantry);
     startLightsCtl = createStartLights(track);
     startLightsCtl.setLights(0);
     scene.add(startLightsCtl.object);
@@ -1017,6 +1074,7 @@ async function startGame(trackId: string): Promise<void> {
     if (kerbOuter !== null) {
       scene.add(kerbOuter.group);
       disposables.push(kerbOuter);
+      optimizeGroups.push(kerbOuter.group);
       stats.kerbOuterStripMeters = kerbOuter.group.userData.meters as number;
     }
 
@@ -1035,6 +1093,7 @@ async function startGame(trackId: string): Promise<void> {
     scene.add(landmarks.group);
     stats.landmarks = landmarks.count;
     disposables.push(landmarks);
+    optimizeGroups.push(landmarks.group);
 
     // Baked OSM city (157); absent on non-city tracks, ignored on failure.
     try {
@@ -1044,12 +1103,36 @@ async function startGame(trackId: string): Promise<void> {
         scene.add(city.group);
         stats.buildings = city.buildings;
         disposables.push(city);
+        optimizeGroups.push(city.group);
       }
     } catch {
       // a missing or malformed env file leaves the track without a city
     }
     stats.lamps = furniture.lamps;
     stats.sidewalks = furniture.sidewalks;
+
+    // 152 post-pass: merge static meshes per material per chunk (baking static instancing);
+    // fields that stay instanced (crowd, tyres, foam, per-instance colours) split per 200 m cell.
+    for (const group of optimizeGroups) {
+      mergeStaticGroup(group, MERGE_CHUNK_M);
+      group.updateWorldMatrix(true, true);
+      const invGroup = group.matrixWorld.clone().invert();
+      const pending: THREE.InstancedMesh[] = [];
+      group.traverse((child) => {
+        const instanced = child as THREE.InstancedMesh;
+        if (instanced.isInstancedMesh) pending.push(instanced);
+      });
+      for (const instanced of pending) {
+        const cells = chunkInstancedMesh(
+          instanced,
+          INSTANCE_CELL_M,
+          new THREE.Matrix4().multiplyMatrices(invGroup, instanced.matrixWorld),
+        );
+        instanced.removeFromParent();
+        instanced.dispose();
+        group.add(cells);
+      }
+    }
   } else {
     const trackObj = createTrackObject(buildRibbon(track.centerline, track.widthMeters, 0.02), track);
     scene.add(trackObj.group);
@@ -1560,6 +1643,10 @@ async function startGame(trackId: string): Promise<void> {
       qaViewCam.updateProjectionMatrix();
     }
   };
+  const applyDebugYaw = (): void => {
+    camera.quaternion.premultiply(DEBUG_YAW_QUAT.setFromAxisAngle(UP_AXIS, debugYaw));
+  };
+
   const frameFn = (now: number): void => {
     if (!running) return;
     if (last < 0) last = now;
@@ -1680,8 +1767,14 @@ async function startGame(trackId: string): Promise<void> {
       surfaceFeedback(telemetry.wheels, Math.abs(interp.forwardSpeed), fb);
       gamepad.rumble(fb.low, fb.high, performance.now());
       if (qaCam === null) cameraRig.applyShake(fb.shake, sim.simTime);
+      // 152 test hook: keep the camera yawed about its own position after the rig pose.
+      if (debugYaw !== 0 && qaCam === null) applyDebugYaw();
       emitParticles(frame);
       shadows?.update(interp.position);
+      if (shadowCascade !== null && shadows !== null) {
+        shadowCascade.position.copy(shadows.light.position);
+        shadowCascade.target.position.copy(shadows.light.target.position);
+      }
       if (qaCam !== null) treeField?.update(qaCam.position);
       else treeField?.update(camera.position);
       city?.update(sim.simTime);
@@ -1742,6 +1835,8 @@ async function startGame(trackId: string): Promise<void> {
       gamepad.rumble(0, 0, performance.now());
     }
     const renderStart = performance.now();
+    // autoReset is off (151/152): one manual reset per frame so drawCalls covers the whole frame.
+    handle.renderer.info.reset();
     cockpitWheel.visible = qaCam === null && cameraRig.mode === 'cockpit';
     const mirrorVisible = qaCam === null && mirrorEnabled && cameraRig.mode !== 'chase';
     mirror.setVisible(mirrorVisible);
@@ -2033,6 +2128,11 @@ async function startGame(trackId: string): Promise<void> {
     forceTrackLimits:
       raceGame !== null ? (count: number) => raceGame?.debugForceTrackLimits(0, count) : undefined,
     qaCamera,
+    debugCameraYaw: (rad: number) => {
+      debugYaw = rad;
+      if (rad !== 0 && qaCam === null) applyDebugYaw();
+    },
+    debugScene: () => ({ scene, camera, renderer: handle.renderer }),
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
       playerLivery = { ...playerLivery, ...l };
