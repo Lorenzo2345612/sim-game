@@ -256,7 +256,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 252 | Expert AI drives spin-free on monza and spa | done | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
-| 255 | Per-car weight distribution and tyre widths | in progress | 254, 252 |
+| 255 | Per-car weight distribution and tyre widths | done | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |

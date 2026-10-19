@@ -3476,7 +3476,7 @@
     {
       "num": "255",
       "title": "Per-car weight distribution and tyre widths",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "254",
         "252"
