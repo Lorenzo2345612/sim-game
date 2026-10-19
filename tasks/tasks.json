@@ -1704,7 +1704,7 @@
     {
       "num": "125",
       "title": "Assist presets and braking assist",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "054",
         "057",
@@ -2102,7 +2102,7 @@
     {
       "num": "152",
       "title": "Render cost: draw calls, culling, shadows",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "151"
       ],
@@ -3476,7 +3476,7 @@
     {
       "num": "255",
       "title": "Per-car weight distribution and tyre widths",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "254",
         "252"
