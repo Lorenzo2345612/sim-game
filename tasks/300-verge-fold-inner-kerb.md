@@ -5,7 +5,7 @@ Phase: 2
 Depends on: nothing
 Complexity: complex
 Type: bugfix
-Models: standard
+Models: heavy
 Roles: acceptance, tester-pre, coder, tester, reviewer
 
 ## Goal

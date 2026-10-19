@@ -4051,11 +4051,11 @@
     {
       "num": "300",
       "title": "Verge and runoff strips must not fold over the inner kerb",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
-      "models": "standard",
+      "models": "heavy",
       "phase": 2,
       "spec": "tasks/300-verge-fold-inner-kerb.md"
     },
@@ -4192,7 +4192,7 @@
     {
       "num": "311",
       "title": "Penalty caps and disqualification in PenaltyBook and RaceClassification",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "feature",
