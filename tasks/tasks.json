@@ -3551,7 +3551,7 @@
     {
       "num": "261",
       "title": "RaceGame scenario starts and contact counter",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",

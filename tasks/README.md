@@ -262,7 +262,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 258 | Frenet race view and track corridor | done | - |
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | done | 258 |
-| 261 | RaceGame scenario starts and contact counter | in progress | - |
+| 261 | RaceGame scenario starts and contact counter | done | - |
 | 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
