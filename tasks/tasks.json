@@ -3476,7 +3476,7 @@
     {
       "num": "255",
       "title": "Per-car weight distribution and tyre widths",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "254",
         "252"
@@ -3644,7 +3644,7 @@
     {
       "num": "268",
       "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",

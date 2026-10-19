@@ -131,7 +131,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 127 | Track limits strikes | done | 092 |
 | 128 | Yellow and blue flags | done | 092 |
 | 129 | Virtual safety car | done | 088, 092 |
-| 130 | Penalty book, HUD messages and wiring of rules | waiting decision | 089, 092, 093, 094, 095, 127, 128, 129 |
+| 130 | Penalty book, HUD messages and wiring of rules | in progress | 089, 092, 093, 094, 095, 127, 128, 129 |
 | 131 | Telemetry recorder and store | done | 050, 070 |
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
@@ -153,8 +153,8 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 149 | Sausage kerb placement (builder) | done | 140 |
 | 150 | Sausage kerb render and colliders | done | 141, 149 |
 | 151 | Performance harness and budgets | done | 093 |
-| 152 | Render cost: draw calls, culling, shadows | in progress | 151 |
-| 153 | Simulation cost with 16 cars | waiting decision | 151 |
+| 152 | Render cost: draw calls, culling, shadows | waiting decision | 151 |
+| 153 | Simulation cost with 16 cars | in progress | 151 |
 | 154 | Adaptive quality (dynamic resolution, auto preset) | done | 151 |
 | 155 | Close parallel sections: per-index half-widths and shared median wall | done | 140, 141, 142, 143 |
 | 156 | Environment type per track: ground palette and vegetation | done | 081, 101, 106 |
@@ -256,7 +256,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 252 | Expert AI drives spin-free on monza and spa | done | 225, 254 |
 | 253 | Run-off paint uses only the country's flag colours | done | - |
 | 254 | Weight distribution and rear grip (stable OW-26 rear) | done | 146, 239 |
-| 255 | Per-car weight distribution and tyre widths | in progress | 254, 252 |
+| 255 | Per-car weight distribution and tyre widths | waiting decision | 254, 252 |
 | 256 | Fix two test failures on master after the 247 merge | done | - |
 | 257 | Drop the stale track-hash test in 243 | done | 243 |
 | 258 | Frenet race view and track corridor | done | - |
@@ -269,7 +269,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
-| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
@@ -288,3 +288,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
 | 285 | Electric voice | pending | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
+| 287 | Decouple 269 POST9 from published models | pending | 269 |
