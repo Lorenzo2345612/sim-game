@@ -290,7 +290,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
 | 288 | Residual neural AI in the game | done | 269, 270 |
-| 289 | Yellow-flag cap must not freeze the field behind a stopped car | in progress | 130 |
+| 289 | Yellow-flag cap must not freeze the field behind a stopped car | done | 130 |
 | 290 | Overtake log and grid positions in RaceGame | pending | 289 |
 | 291 | Results screen: grid, places gained, overtakes and race recap | pending | 290 |
 | 292 | Current, last and best lap times in the race HUD | done | 093 |

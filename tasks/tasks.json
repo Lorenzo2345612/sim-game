@@ -3914,7 +3914,7 @@
     {
       "num": "289",
       "title": "Yellow-flag cap must not freeze the field behind a stopped car",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "130"
       ],
