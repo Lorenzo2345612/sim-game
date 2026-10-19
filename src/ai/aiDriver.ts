@@ -48,6 +48,7 @@ export class AiDriver {
   private reqOffset = 0;
   private offset = 0;
   private speedCap: number | null = null;
+  private steerCurve: { low: number; high: number; fullSpeed: number } | null = null;
   private lastSteer = 0;
   private idx = 0;
   private segIdx = 0;
@@ -79,6 +80,12 @@ export class AiDriver {
 
   setSpeedScale(v: number): void {
     this.p.speedScale = v;
+  }
+
+  // Vehicle steering lock (rad) blended with speed, as the vehicle model applies
+  // it; the steer command is a fraction of the lock actually available.
+  setSteerCurve(maxAngleLow: number, maxAngleHigh: number, fullSpeed: number): void {
+    this.steerCurve = { low: maxAngleLow, high: maxAngleHigh, fullSpeed };
   }
 
   reset(obs: AiObservation): void {
@@ -144,7 +151,8 @@ export class AiDriver {
       const rz = fx;
       const alpha = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz);
       const delta = Math.atan((2 * this.p.wheelbase * Math.sin(alpha)) / ld);
-      out.steer = clamp(delta / this.p.maxSteerAngle, -1, 1);
+      const lock = this.steerLimit(obs.speed);
+      out.steer = lock > 1e-9 ? clamp(delta / lock, -1, 1) : delta > 0 ? 1 : delta < 0 ? -1 : 0;
     }
 
     let vTarget = this.previewSpeed(n, obs.speed);
@@ -169,6 +177,14 @@ export class AiDriver {
     this.lastSteer = out.steer;
     out.reset = false;
     return out;
+  }
+
+  // steering lock in rad at this speed; the fixed param when no curve is set
+  private steerLimit(speed: number): number {
+    const c = this.steerCurve;
+    if (c === null) return this.p.maxSteerAngle;
+    const t = clamp(c.fullSpeed > 0 ? speed / c.fullSpeed : 1, 0, 1);
+    return c.low + (c.high - c.low) * t;
   }
 
   // |yaw rate - v * steer curvature|; 0 when the observation carries no yaw rate

@@ -256,9 +256,15 @@ export class RaceGame {
       progresses.push(progress);
       const jitter = (rng() * 2 - 1) * 0.01;
       const vehicle = vehicles[k + 1];
+      const driver = new AiDriver(line, speeds, { speedScale: speedScale + jitter });
+      driver.setSteerCurve(
+        spec.steering.maxAngleLow,
+        spec.steering.maxAngleHigh,
+        spec.steering.fullSpeed,
+      );
       const car: AiCar = {
         vehicle,
-        driver: new AiDriver(line, speeds, { speedScale: speedScale + jitter }),
+        driver,
         baseSpeedScale: speedScale + jitter,
         progress,
         stuckS: 0,
