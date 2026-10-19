@@ -363,10 +363,7 @@ describe('250 bollard placement acceptance — built tracks and parser', () => {
   }, 120000);
 
   it('AT9: rebuilt track JSONs differ from the pre-task JSON only by the added bollards key', () => {
-    const baseRev = execFileSync('git', ['merge-base', 'master', 'HEAD'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    }).trim();
+    const baseRev = '59057fa^';
     for (const { id, track } of builtTracks()) {
       const prev = JSON.parse(
         execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], {
