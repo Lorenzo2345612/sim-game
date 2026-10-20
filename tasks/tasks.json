@@ -4089,7 +4089,7 @@
     {
       "num": "303",
       "title": "Yellow-flag alert: flashing lights, banner, sector-clear notice",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "302"
       ],
