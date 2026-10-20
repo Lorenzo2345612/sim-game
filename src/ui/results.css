@@ -18,12 +18,38 @@
   gap: 12px;
   min-width: 320px;
   max-width: min(680px, calc(100vw - 48px));
-  max-height: 86vh;
+  max-height: 90vh;
   padding: 28px 32px;
   box-sizing: border-box;
   background: var(--ui-panel-solid);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
+}
+
+#results .results-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+#results .results-tabs button {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+#results .results-tabs button.active {
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+
+#results .results-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 #results .results-title {
@@ -48,12 +74,14 @@
   transform: skewX(-20deg);
 }
 
-#results .results-table {
+#results .results-table,
+#results .results-overtakes-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-#results .results-table td {
+#results .results-table td,
+#results .results-overtakes-table td {
   padding: 6px 10px;
   border-bottom: 1px solid var(--ui-border);
   font-size: 16px;
@@ -61,13 +89,15 @@
   text-align: left;
 }
 
-#results .results-table td:first-child {
+#results .results-table td:first-child,
+#results .results-overtakes-table td:first-child {
   width: 44px;
   font-weight: 800;
   color: var(--ui-accent);
 }
 
-#results .results-table th {
+#results .results-table th,
+#results .results-overtakes-table th {
   padding: 4px 10px;
   border-bottom: 1px solid var(--ui-border);
   font-size: 13px;
@@ -79,27 +109,26 @@
   opacity: 0.7;
 }
 
+#results .results-overtakes-table tbody tr.clickable,
 #results .results-table tbody tr.clickable {
   cursor: pointer;
 }
 
-#results .results-table tbody tr.clickable:hover td,
-#results .results-table tbody tr.selected td {
+#results .results-overtakes-table tbody tr.clickable:hover td,
+#results .results-overtakes-table tbody tr.selected td {
   background: var(--ui-card);
 }
 
-#results .results-recap {
+#results .results-legend {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 28vh;
-}
-
-#results .results-recap-title {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  gap: 2px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  opacity: 0.85;
 }
 
 #results .results-recap-highlights {
@@ -109,7 +138,6 @@
 }
 
 #results .results-recap-list {
-  overflow-y: auto;
   font-size: 14px;
   letter-spacing: 0.03em;
 }

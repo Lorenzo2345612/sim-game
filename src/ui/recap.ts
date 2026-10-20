@@ -11,7 +11,8 @@ export function passesText(s: OvertakeSummary): string {
 
 export function recapLine(e: OvertakeEvent, name: (car: number) => string): string {
   const km = (e.lapDistance / 1000).toFixed(2);
-  const suffix = e.kind === 'clean' ? '' : ` (${e.kind})`;
+  const suffix =
+    e.kind === 'clean' ? '' : e.kind === 'gift' ? ' (rival slow or off track)' : ` (${e.kind})`;
   return `L${e.lap} · ${km} km · ${name(e.passer)} passes ${name(e.passed)} for P${e.position}${suffix}`;
 }
 

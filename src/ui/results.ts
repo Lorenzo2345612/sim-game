@@ -1,7 +1,15 @@
 import './results.css';
 import { formatLapTime } from './formatTime';
-import { gainText, highlights, passesText, recapFor, recapLine } from './recap';
+import { gainText, highlights, recapFor, recapLine } from './recap';
 import type { OvertakeEvent, OvertakeSummary } from '../race/overtakeLog';
+
+type Tab = 'classification' | 'overtakes';
+
+const LEGEND = [
+  'Clean: passed without contact',
+  'Contact: passed with contact',
+  'Rival slow/off: passed a car that was stopped, off track or much slower',
+];
 
 export interface ResultsRow {
   car?: number;
@@ -25,9 +33,13 @@ const ZERO_SUMMARY: OvertakeSummary = { clean: 0, contact: 0, gift: 0, lost: 0 }
 export class Results {
   private readonly doc: Document;
   private readonly root: HTMLElement;
+  private readonly tabs: HTMLElement;
+  private readonly tabButtons = new Map<Tab, HTMLButtonElement>();
+  private readonly panes = new Map<Tab, HTMLElement>();
   private readonly thead: HTMLElement;
   private readonly tbody: HTMLElement;
-  private readonly recapBox: HTMLElement;
+  private readonly overtakeThead: HTMLElement;
+  private readonly overtakeTbody: HTMLElement;
   private readonly recapHighlights: HTMLElement;
   private readonly recapList: HTMLElement;
   private readonly actions: HTMLElement;
@@ -43,24 +55,50 @@ export class Results {
     const title = this.doc.createElement('div');
     title.className = 'results-title';
     title.textContent = 'Results';
+    this.tabs = this.doc.createElement('div');
+    this.tabs.className = 'results-tabs';
+    for (const tab of ['classification', 'overtakes'] as const) {
+      const button = this.doc.createElement('button');
+      button.id = `results-tab-${tab}`;
+      button.textContent = tab === 'classification' ? 'Classification' : 'Overtakes';
+      button.addEventListener('click', () => this.selectTab(tab));
+      this.tabButtons.set(tab, button);
+      this.tabs.appendChild(button);
+    }
     const table = this.doc.createElement('table');
     table.className = 'results-table';
     this.thead = this.doc.createElement('thead');
     this.tbody = this.doc.createElement('tbody');
     table.append(this.thead, this.tbody);
-    this.recapBox = this.doc.createElement('div');
-    this.recapBox.className = 'results-recap';
-    const recapTitle = this.doc.createElement('div');
-    recapTitle.className = 'results-recap-title';
-    recapTitle.textContent = 'Race recap';
+    const classificationPane = this.doc.createElement('div');
+    classificationPane.className = 'results-pane';
+    classificationPane.appendChild(table);
+    this.panes.set('classification', classificationPane);
+    const overtakePane = this.doc.createElement('div');
+    overtakePane.id = 'results-overtakes';
+    overtakePane.className = 'results-pane';
+    const overtakeTable = this.doc.createElement('table');
+    overtakeTable.className = 'results-overtakes-table';
+    this.overtakeThead = this.doc.createElement('thead');
+    this.overtakeTbody = this.doc.createElement('tbody');
+    overtakeTable.append(this.overtakeThead, this.overtakeTbody);
     this.recapHighlights = this.doc.createElement('div');
     this.recapHighlights.className = 'results-recap-highlights';
+    const legend = this.doc.createElement('div');
+    legend.className = 'results-legend';
+    for (const line of LEGEND) {
+      const item = this.doc.createElement('div');
+      item.className = 'results-legend-item';
+      item.textContent = line;
+      legend.appendChild(item);
+    }
     this.recapList = this.doc.createElement('div');
     this.recapList.className = 'results-recap-list';
-    this.recapBox.append(recapTitle, this.recapHighlights, this.recapList);
+    overtakePane.append(overtakeTable, this.recapHighlights, legend, this.recapList);
+    this.panes.set('overtakes', overtakePane);
     this.actions = this.doc.createElement('div');
     this.actions.className = 'results-actions';
-    panel.append(title, table, this.recapBox, this.actions);
+    panel.append(title, this.tabs, classificationPane, overtakePane, this.actions);
     this.root.appendChild(panel);
     parent.appendChild(this.root);
     this.hide();
@@ -71,7 +109,9 @@ export class Results {
     const extended = sorted.some((r) => r.car !== undefined || r.grid !== undefined || r.summary !== undefined);
     this.filterCar = null;
     this.header(extended);
+    this.overtakeHeader();
     this.tbody.replaceChildren();
+    this.overtakeTbody.replaceChildren();
     this.rowCars = new Map();
     for (const row of sorted) {
       const tr = this.doc.createElement('tr');
@@ -91,30 +131,36 @@ export class Results {
             ? `${row.penalty} s (${reasons.join(', ')})`
             : `${row.penalty} s`;
       this.cell(tr, text, 'penalty');
-      if (extended) {
-        this.cell(tr, row.summary === undefined ? '-' : passesText(row.summary));
-        this.cell(tr, row.summary === undefined ? '-' : String(row.summary.lost));
-      }
+      this.tbody.appendChild(tr);
+      const ot = this.doc.createElement('tr');
+      const s = row.summary;
+      this.cell(ot, String(row.position));
+      this.cell(ot, row.name);
+      this.cell(ot, s === undefined ? '-' : String(s.clean));
+      this.cell(ot, s === undefined ? '-' : String(s.contact));
+      this.cell(ot, s === undefined ? '-' : String(s.gift));
+      this.cell(ot, s === undefined ? '-' : String(s.lost));
       if (recap !== undefined && row.car !== undefined) {
         const car = row.car;
-        tr.classList.add('clickable');
-        this.rowCars.set(tr, car);
-        tr.addEventListener('click', () => {
+        ot.classList.add('clickable');
+        this.rowCars.set(ot, car);
+        ot.addEventListener('click', () => {
           this.filterCar = this.filterCar === car ? null : car;
           this.paintSelection();
           this.renderRecap(sorted, recap);
         });
       }
-      this.tbody.appendChild(tr);
+      this.overtakeTbody.appendChild(ot);
     }
     if (recap !== undefined) {
-      this.recapBox.style.display = 'block';
+      this.tabs.style.display = 'flex';
       this.renderRecap(sorted, recap);
     } else {
-      this.recapBox.style.display = 'none';
+      this.tabs.style.display = 'none';
       this.recapHighlights.textContent = '';
       this.recapList.replaceChildren();
     }
+    this.selectTab('classification');
     this.actions.replaceChildren(
       this.button('Restart', 'btn-primary', handlers.onRestart),
       this.button('Menu', 'btn-secondary', handlers.onMenu),
@@ -124,6 +170,14 @@ export class Results {
 
   hide(): void {
     this.root.style.display = 'none';
+  }
+
+  private selectTab(tab: Tab): void {
+    for (const [name, button] of this.tabButtons) {
+      if (name === tab) button.classList.add('active');
+      else button.classList.remove('active');
+    }
+    for (const [name, pane] of this.panes) pane.style.display = name === tab ? 'flex' : 'none';
   }
 
   private header(extended: boolean): void {
@@ -137,11 +191,13 @@ export class Results {
     this.headCell(tr, 'Time');
     this.headCell(tr, 'Best lap');
     this.headCell(tr, 'Penalty');
-    if (extended) {
-      this.headCell(tr, 'Passes', 'clean/contact/gift');
-      this.headCell(tr, 'Lost');
-    }
     this.thead.replaceChildren(tr);
+  }
+
+  private overtakeHeader(): void {
+    const tr = this.doc.createElement('tr');
+    for (const label of ['P', 'Name', 'Clean', 'Contact', 'Rival slow/off', 'Lost']) this.headCell(tr, label);
+    this.overtakeThead.replaceChildren(tr);
   }
 
   private renderRecap(rows: readonly ResultsRow[], recap: ResultsRecap): void {
