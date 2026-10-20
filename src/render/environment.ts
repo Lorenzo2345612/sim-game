@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import type { Vec3 } from '../core/types';
+import { defaultTimeOfDay, type TimeOfDay } from '../core/timeOfDay';
 import type { ResolvedTrackStyle } from '../track/trackStyle';
 
 export const FOG_TABLE: Record<string, { density: number }> = {
@@ -59,9 +60,24 @@ export const ENV_TABLE: Record<string, string> = {
   'ermita-veloz': 'qwantani_noon_puresky',
 };
 
+export interface TodPreset {
+  /** HDRI base name under `public/hdri/<name>_2k.hdr`; null = the track's own HDRI. */
+  hdri: string | null;
+  sunElevationDeg: number;
+  sunIntensity: number;
+  ambientScale: number;
+}
+
+export const TOD_TABLE: Record<TimeOfDay, TodPreset> = {
+  day: { hdri: null, sunElevationDeg: 48, sunIntensity: 2, ambientScale: 1 },
+  sunset: { hdri: 'tod_sunset', sunElevationDeg: 8, sunIntensity: 1.2, ambientScale: 0.8 },
+  night: { hdri: 'tod_night', sunElevationDeg: 25, sunIntensity: 0.08, ambientScale: 0.25 },
+};
+
 export interface EnvironmentInfo {
   name: string;
   horizon: [number, number, number];
+  timeOfDay: TimeOfDay;
 }
 
 export function envNameFor(trackId: string, style?: ResolvedTrackStyle): string {
@@ -123,12 +139,20 @@ function clamp01(v: number): number {
 // The PMREM render target behind scene.environment, kept so a re-call can free it.
 let environmentTarget: THREE.WebGLRenderTarget | null = null;
 
+export interface ApplyEnvironmentOptions {
+  tod?: TimeOfDay;
+  style?: ResolvedTrackStyle;
+}
+
 export async function applyEnvironment(
   scene: THREE.Scene,
   trackId: string,
   renderer: THREE.WebGLRenderer,
-  style?: ResolvedTrackStyle,
+  options: ApplyEnvironmentOptions = {},
 ): Promise<EnvironmentInfo> {
+  const { style } = options;
+  const timeOfDay = options.tod ?? defaultTimeOfDay(trackId);
+  const preset = TOD_TABLE[timeOfDay];
   const oldSky = scene.getObjectByName('sky');
   if (oldSky) {
     scene.remove(oldSky);
@@ -137,7 +161,7 @@ export async function applyEnvironment(
     (mesh.material as THREE.Material).dispose();
   }
 
-  const name = envNameFor(trackId, style);
+  const name = preset.hdri ?? envNameFor(trackId, style);
   const loader = new RGBELoader();
   loader.setDataType(THREE.FloatType);
   const texture = await loader.loadAsync(`/hdri/${name}_2k.hdr`);
@@ -151,13 +175,13 @@ export async function applyEnvironment(
 
   texture.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = texture;
-  scene.backgroundIntensity = 0.85;
+  scene.backgroundIntensity = 0.85 * preset.ambientScale;
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   const target = pmrem.fromEquirectangular(texture);
   pmrem.dispose();
   scene.environment = target.texture;
-  scene.environmentIntensity = 0.7;
+  scene.environmentIntensity = 0.7 * preset.ambientScale;
 
   environmentTarget?.dispose();
   environmentTarget = target;
@@ -168,13 +192,14 @@ export async function applyEnvironment(
     fogDensityFor(trackId, style),
   );
 
-  return { name, horizon };
+  return { name, horizon, timeOfDay };
 }
 
 const SUN_OFFSET = new THREE.Vector3(150, 200, 100);
 
 export class ShadowRig {
   readonly light: THREE.DirectionalLight;
+  private readonly offset = SUN_OFFSET.clone();
 
   constructor(scene: THREE.Scene) {
     this.light = new THREE.DirectionalLight('#ffffff', 2.2);
@@ -191,12 +216,27 @@ export class ShadowRig {
     scene.add(this.light, this.light.target);
   }
 
+  // Sun distance stays 269.26 m (|(150, 200, 100)|); only elevation and intensity change.
+  setTimeOfDay(tod: TimeOfDay): void {
+    const preset = TOD_TABLE[tod];
+    this.light.intensity = preset.sunIntensity;
+    const len = SUN_OFFSET.length();
+    const horizontal = Math.hypot(SUN_OFFSET.x, SUN_OFFSET.z);
+    const rad = (preset.sunElevationDeg * Math.PI) / 180;
+    const reach = len * Math.cos(rad);
+    this.offset.set(
+      (reach * SUN_OFFSET.x) / horizontal,
+      len * Math.sin(rad),
+      (reach * SUN_OFFSET.z) / horizontal,
+    );
+  }
+
   update(carPosition: Vec3): void {
     this.light.target.position.set(carPosition.x, carPosition.y, carPosition.z);
     this.light.position.set(
-      carPosition.x + SUN_OFFSET.x,
-      carPosition.y + SUN_OFFSET.y,
-      carPosition.z + SUN_OFFSET.z,
+      carPosition.x + this.offset.x,
+      carPosition.y + this.offset.y,
+      carPosition.z + this.offset.z,
     );
   }
 

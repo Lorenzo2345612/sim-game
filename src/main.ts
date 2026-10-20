@@ -63,7 +63,8 @@ import { loadGlbModels, loadTreeModels } from './render/treeModels';
 import { createGrandstand } from './render/grandstand';
 import { createPitBuilding, createStartGantry, createStartLights, type StartLights } from './render/pitAndStart';
 import { createFloodlights } from './render/floodlights';
-import { applyEnvironment, ShadowRig } from './render/environment';
+import { applyEnvironment, ShadowRig, TOD_TABLE } from './render/environment';
+import { defaultTimeOfDay, parseTimeOfDay, type TimeOfDay } from './core/timeOfDay';
 import { CarRenderer, WHEEL_NODE_NAMES } from './render/carRenderer';
 import { DebrisRenderer, type DebrisRenderEntry } from './render/debrisRenderer';
 import { MAX_DEBRIS } from './physics/debris';
@@ -151,6 +152,8 @@ export interface SceneStats {
   drivingLine: { visible: boolean; vertexCount: number };
   cars: number;
   startLightsOn: number;
+  timeOfDay: TimeOfDay;
+  sunElevationDeg: number;
 }
 
 declare global {
@@ -801,6 +804,9 @@ async function startGame(trackId: string): Promise<void> {
       ? raceConfigFromQuery(params, track.id, carId)
       : null;
   if (params.get('race') === '1' && raceTrack === null) throw new Error('?race=1 requires a v2 track');
+  // 135 precedence: race config, then ?tod= (invalid values ignored), then the track default.
+  const timeOfDay =
+    raceCfg?.timeOfDay ?? parseTimeOfDay(params.get('tod')) ?? defaultTimeOfDay(track.id);
   let game: Game | null = null;
   let raceGame: RaceGame | null = null;
   // Neural AI is opt-in via ?aidriver=neural (task 269); missing model falls back to classic.
@@ -967,6 +973,8 @@ async function startGame(trackId: string): Promise<void> {
     drivingLine: { visible: false, vertexCount: 0 },
     cars: 1,
     startLightsOn: 0,
+    timeOfDay,
+    sunElevationDeg: TOD_TABLE[timeOfDay].sunElevationDeg,
   };
 
   // Driving-line overlay (123): same line/profile construction as RaceGame, so both
@@ -990,10 +998,12 @@ async function startGame(trackId: string): Promise<void> {
     ground.visible = false;
     const environmentType: EnvironmentType = track.environment ?? 'parkland';
     stats.environmentType = environmentType;
-    const env = await applyEnvironment(scene, track.id, handle.renderer, trackStyle);
+    const envOptions = { style: trackStyle, tod: timeOfDay };
+    const env = await applyEnvironment(scene, track.id, handle.renderer, envOptions);
     stats.environment = env.name;
     stats.horizonColor = env.horizon;
     shadows = new ShadowRig(scene);
+    shadows.setTimeOfDay(timeOfDay);
     // The rig is the v2 sun; the Phase-0 one would double the direct light on top of the IBL.
     scene.remove(sun);
     sun.shadow.map?.dispose();

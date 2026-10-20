@@ -1,4 +1,5 @@
 import { FIXED_DT } from '../core/constants';
+import type { TimeOfDay } from '../core/timeOfDay';
 import { copyVehicleState, createVehicleState } from '../core/interpolation';
 import type { DriverInput, SpawnPose, TrackDataV2, Vec3, VehicleState } from '../core/types';
 import { AiDriver, type AiObservation } from '../ai/aiDriver';
@@ -65,6 +66,8 @@ export interface RaceConfig {
   /** gridOrder[p] = car index at grid position p (default: player last). */
   gridOrder?: number[];
   scenario?: RaceScenario;
+  /** Scene time of day (135); absent = the track's default preset. */
+  timeOfDay?: TimeOfDay;
 }
 
 // Tune fields stay optional so the neural driver can be selected without a tune.
