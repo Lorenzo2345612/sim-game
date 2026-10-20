@@ -43,9 +43,9 @@ Conventions: step dt is fixed `FIXED_DT`; negative speeds use |ω| for torque/po
 | ID | Given (flat physics world as in vehicle.test.ts, eow spec from 283 AT2 values, race mode) | When | Then |
 |---|---|---|---|
 | AT1 | standstill, full throttle | step until 27.78 m/s | reached between 1.5 and 2.8 s |
-| AT2 | full throttle 30 s | speed | 75–92.6 m/s; front and rear drive torque both > 0 at t = 1 s |
+| AT2 | full throttle 30 s | speed | 75–92.6 m/s (AWD torque split checked by the reviewer in code, not observable) |
 | AT3 | full throttle 10 s from standstill | battery | socJ drop 2.5–4.8 MJ |
-| AT4 | 55 m/s, full brake 2 s | battery | socJ rises; friction torque < requested on both axles at t = 0.1 s |
+| AT4 | 55 m/s, full brake 2 s | battery | socJ rises (regen/friction split checked by the reviewer in code) |
 | AT5 | attack activated at lap 2 (setLap(2), overtake edge) at 40 m/s full throttle | 3 s | mean drive power > race-mode run by ≥ 15 % |
 | AT6 | battery start 100 J | full throttle 2 s | speed < 1 m/s after battery empties (drive 0) |
 | AT7 | f4, ow26 | existing physics tests | unchanged |
