@@ -29,8 +29,9 @@ export function cornerGrandstands(track: TrackDataV2, style: ResolvedTrackStyle)
 ```
 1. Returns `[]` when `style.cornerGrandstands === false`.
 2. Corner indices: `cornerCurvature(track.centerline, i)` non-null with radius < 120 m. Consecutive indices (circular) form a run; apex = index of the minimum radius in the run.
-3. Sort apexes by radius ascending (tie: lower index). Pick greedily; an apex is accepted only if its arc distance (circular, along the centerline) to index 0, to every accepted apex and to the pit range `track.pit.start..end` (0 when inside) is ≥ 12 % of the lap length. Max 4.
+3. Sort apexes by radius ascending (tie: lower index). Pick greedily; an apex is accepted only if its arc distance (circular, along the centerline) to index 0, to every accepted apex and to the pit range `track.pit.start..end` (0 when inside) is ≥ 12 % of the lap length, and its centerline point is ≥ 150 m (XZ) from every accepted apex's point (spatially adjacent corners, e.g. singapore 976/1788 at 52 m, are skipped). Max 4.
 4. Per accepted apex: section = apex ± 40 m of arc. Side = opposite of `cornerCurvature(apex).side`. Build contour pieces with 316's helper, near face at `max(over the section of maxBarrierOffsetAt(track, side, k)) + 3`, or `EDGE_OFFSET` + half width when no barrier covers the section (same per-vertex base as 316). `rows` 10, `roof` false.
+5. Drop a corner piece whose centre is < 20 m (XZ) from a piece of an earlier accepted corner (output order).
 
 Conventions: arc distance in metres on the closed ring; threshold `≥` inclusive for the 12 %, `<` strict for radius 120; tracks with no qualifying corner return `[]`; no inputs mutated; output order = acceptance order.
 
@@ -39,7 +40,7 @@ Conventions: arc distance in metres on the closed ring; threshold `≥` inclusiv
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
 | AT1 | every shipped track with its style | `placedGrandstands` | ≥ 2 stands whose nearest centerline index is ≥ 12 % of the lap (circular) from index 0 |
-| AT2 | every shipped track | `cornerGrandstands` | ≤ 4 corners' worth of pieces; for each piece, its side is the outside of the corner it belongs to |
+| AT2 | every shipped track | `cornerGrandstands` | ≤ 4 distinct corners; each piece belongs to the accepted apex nearest its centre in XZ (not nearest centerline index: at barrier + 3 that lands on another lap stretch); `dot(centre − apex point, outside normal at apex)` > 0 and XZ distance to the apex point ≤ 150 m |
 | AT3 | every shipped track | `placedGrandstands` | all `standClearance ≥ 5` (−1e-6); no two corner-stand pieces from different corners closer than 20 m centre to centre |
 | AT4 | mexico style with `cornerGrandstands: false` | `placedGrandstands` | count equals the 316 count (builder + extras) |
 | AT5 | any track | `cornerGrandstands` twice | deep-equal (deterministic) |
@@ -60,3 +61,5 @@ npm test
 ## Out of scope
 
 Builder changes, stand meshes, crowds, changing the builder or style-file stands.
+
+Planner 2026-10-20 (decision 318-coder): step 3 spatial 150 m separation, step 5 drop rule, AT2 attribution by nearest apex in XZ. Acceptance test file is updated to match. 147/254/269/093 failures belong to task 323; ignore.

@@ -59,7 +59,7 @@ isInTrouble(car: number): boolean // trouble.inTrouble(car, current time)
 | AT4 | `RaceGame` cleveland, f4, aiCount 3, expert, seed 1, `setPlayerAutopilot(true)`, step to 30 s after go | `debugRespawn(2)`, then step 9.9 s | `isInTrouble(2)` true right after the call and at every tick of the 9.9 s |
 | AT5 | same as AT4 | `debugRespawn(0)`, `debugRespawn(4)` | both throw `RangeError` |
 | AT6 | as AT4 right after `debugRespawn(2)` | `debugGiveBack(1, 2)`, then step 12 s | no `'yellow flag overtake'` entry in `penalties.forCar(1)` at the end (the entry is voided because car 2 is in trouble) |
-| AT7 | — | run 128, 130, 289, 298, 305 unit acceptance tests | pass |
+| AT7 | — | regression only, no new test: run 128, 130, 289, 298, 305 unit acceptance tests | pass |
 
 ## Acceptance criteria
 
