@@ -4051,7 +4051,7 @@
     {
       "num": "300",
       "title": "Verge and runoff strips must not fold over the inner kerb",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
