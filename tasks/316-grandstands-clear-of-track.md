@@ -21,7 +21,7 @@ User report: grandstands sit on the track (e.g. Mexico) and should be contoured,
 - `src/track/placement.ts` — modify: shared run splitter, `extraGrandstands` moves here, new exports below.
 - `src/track/trackStyleWiring.ts` — modify: re-export `extraGrandstands` from `./placement` (no cycle).
 - `src/main.ts` — modify: the two grandstand loops (~1096, ~1104) become one loop over `placedGrandstands(track, trackStyle)`; `stats.grandstands` and `stats.style.extraGrandstands` keep counting inputs (builder stands, style entries).
-- `tests/unit/acceptance/316-grandstands-clear-of-track.test.ts` — create (acceptance worker).
+- `tests/unit/acceptance/316-grandstands-clear-of-track.test.ts` — create (acceptance worker). Planner-authorised edit (2026-10-19): AT1 count check becomes per track `stands.length ≥ inputs − 1` plus a global sum of `inputs − stands.length` ≤ 1; AT3 drops the yaw assertion (chord-to-chord turn is up to ~2×8°, plus kinks at hairpins). Nothing else.
 
 ## Steps
 
@@ -42,9 +42,9 @@ export function placedGrandstands(track: TrackDataV2, style: ResolvedTrackStyle)
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| AT1 | every `public/tracks/*.json` track with its `*.style.json` when present | `placedGrandstands` | every stand `standClearance ≥ 5` (−1e-6); count = `track.grandstands.length + extraGrandstands(...).length` |
+| AT1 | every `public/tracks/*.json` track with its `*.style.json` when present | `placedGrandstands` | every stand `standClearance ≥ 5` (−1e-6); count = `track.grandstands.length + extraGrandstands(...).length` − dropped, with dropped summed over all tracks ≤ 1 (sepang 1449–1667 left has one 14-row piece that hits the parallel straight behind it) |
 | AT2 | same tracks | `clearGrandstand(track, g)` for each `track.grandstands` stand with clearance ≥ 5 | returns `g` (`toBe`) |
-| AT3 | mexico, style entry 560–640 left | `extraGrandstands` pieces of that entry | ≥ 2 pieces; each `standClearance ≥ 5` without pushing; consecutive pieces: yaw differs ≤ 0.15 rad and the gap between facing front corners ≤ 1.0 m |
+| AT3 | mexico, style entry 560–640 left | `extraGrandstands` pieces of that entry | ≥ 2 pieces; each `standClearance ≥ 5` without pushing; consecutive pieces: gap between facing front corners ≤ 1.0 m |
 | AT4 | synthetic circle (360 points, radius 200, width 12, other fields as `tests/unit/acceptance/022-fixture-trackdatav2.ts`), style entry start 0, end 30, offset 10, rows 8, both sides | `extraGrandstands` | per side ≥ 4 pieces; every front-edge midpoint at radius 216 (outer side) or 184 (inner side), ±0.6 m |
 | AT5 | `pitBuildingPieces` on every shipped track | call | identical to master (literal snapshot stored in the test for mexico and monza: count, and x, z, yaw, length of the first piece ±1e-9) |
 | AT6 | the AT4 circle and a stand at the centre, length 400, rows 10, yaw 0 | `clearGrandstand` | `null` |
