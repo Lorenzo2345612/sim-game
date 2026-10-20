@@ -11,6 +11,8 @@ const LEGEND = [
   'Rival slow/off: passed a car that was stopped, off track or much slower',
 ];
 
+export type ResultStatus = 'finished' | 'running' | 'dnf';
+
 export interface ResultsRow {
   car?: number;
   grid?: number;
@@ -21,11 +23,18 @@ export interface ResultsRow {
   bestLap: number | null;
   penalty: number;
   penaltyReasons?: string[];
+  status?: ResultStatus;
 }
 
 export interface ResultsRecap {
   events: readonly OvertakeEvent[];
   name(car: number): string;
+}
+
+function timeText(row: ResultsRow): string {
+  if (row.status === 'running') return 'Running';
+  if (row.status === 'dnf' || row.totalTime === null) return 'DNF';
+  return formatLapTime(row.totalTime + row.penalty);
 }
 
 const ZERO_SUMMARY: OvertakeSummary = { clean: 0, contact: 0, gift: 0, lost: 0 };
@@ -45,6 +54,7 @@ export class Results {
   private readonly actions: HTMLElement;
   private filterCar: number | null = null;
   private rowCars = new Map<HTMLElement, number>();
+  private recap: ResultsRecap | undefined;
 
   constructor(parent: HTMLElement) {
     this.doc = parent.ownerDocument;
@@ -110,6 +120,33 @@ export class Results {
     this.filterCar = null;
     this.header(extended);
     this.overtakeHeader();
+    this.recap = recap;
+    this.fillBody(sorted, extended);
+    if (recap !== undefined) {
+      this.tabs.style.display = 'flex';
+      this.renderRecap(sorted, recap);
+    } else {
+      this.tabs.style.display = 'none';
+      this.recapHighlights.textContent = '';
+      this.recapList.replaceChildren();
+    }
+    this.selectTab('classification');
+    this.actions.replaceChildren(
+      this.button('Restart', 'btn-primary', handlers.onRestart),
+      this.button('Menu', 'btn-secondary', handlers.onMenu),
+    );
+    this.root.style.display = 'flex';
+  }
+
+  update(rows: readonly ResultsRow[]): void {
+    const sorted = [...rows].sort((a, b) => a.position - b.position);
+    const extended = sorted.some((r) => r.car !== undefined || r.grid !== undefined || r.summary !== undefined);
+    this.fillBody(sorted, extended);
+    if (this.recap !== undefined) this.renderRecap(sorted, this.recap);
+  }
+
+  private fillBody(sorted: readonly ResultsRow[], extended: boolean): void {
+    const recap = this.recap;
     this.tbody.replaceChildren();
     this.overtakeTbody.replaceChildren();
     this.rowCars = new Map();
@@ -121,7 +158,7 @@ export class Results {
         this.cell(tr, row.grid === undefined ? '-' : String(row.grid));
         this.cell(tr, row.grid === undefined ? '-' : gainText(row.grid, row.position));
       }
-      this.cell(tr, row.totalTime === null ? 'DNF' : formatLapTime(row.totalTime));
+      this.cell(tr, timeText(row));
       this.cell(tr, row.bestLap === null ? '-' : formatLapTime(row.bestLap));
       const reasons = row.penaltyReasons ?? [];
       const text =
@@ -152,20 +189,6 @@ export class Results {
       }
       this.overtakeTbody.appendChild(ot);
     }
-    if (recap !== undefined) {
-      this.tabs.style.display = 'flex';
-      this.renderRecap(sorted, recap);
-    } else {
-      this.tabs.style.display = 'none';
-      this.recapHighlights.textContent = '';
-      this.recapList.replaceChildren();
-    }
-    this.selectTab('classification');
-    this.actions.replaceChildren(
-      this.button('Restart', 'btn-primary', handlers.onRestart),
-      this.button('Menu', 'btn-secondary', handlers.onMenu),
-    );
-    this.root.style.display = 'flex';
   }
 
   hide(): void {

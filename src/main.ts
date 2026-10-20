@@ -193,6 +193,7 @@ declare global {
       startLights(): number;
       /** Race only: ends the race immediately and shows the results overlay (095). */
       finishRaceNow?(): void;
+      debugAutopilot?(on: boolean): void;
       /** Merges a patch into the player's damage state (148). */
       debugDamage(patch: Partial<DamageState>): void;
       /** Race only: penalty book entries in insertion order (130). */
@@ -382,6 +383,7 @@ function resultRows(standings: readonly Standing[], book: PenaltyBook, game: Rac
     bestLap: s.bestLap,
     penalty: s.penalty,
     penaltyReasons: penaltyReasons(book, s.car),
+    status: s.totalTime !== null ? 'finished' : game.isRetired(s.car) ? 'dnf' : 'running',
   }));
 }
 
@@ -1573,6 +1575,8 @@ async function startGame(trackId: string): Promise<void> {
   let lastGear = sim.gear();
   let paused = false;
   let resultsShown = false;
+  let resultsFinal = false;
+  let resultsUpdatedAt = 0;
   let running = true;
   let last = -1;
   // Renderer submit time of the previous frame (ms), fed to the dynamic-resolution controller.
@@ -1858,6 +1862,19 @@ async function startGame(trackId: string): Promise<void> {
         if (!resultsShown) {
           const player = raceHudData.standings.find((s) => s.car === 0);
           if (raceGame.raceFinished || player?.finished === true) showResults();
+        } else if (!resultsFinal) {
+          const now = performance.now();
+          const done = raceGame.raceFinished;
+          if (done || now - resultsUpdatedAt >= 500) {
+            resultsUpdatedAt = now;
+            results?.update(resultRows(raceGame.standings(), raceGame.penalties, raceGame));
+            if (done) {
+              resultsFinal = true;
+              paused = true;
+              engineAudio?.setPaused(true);
+              mixer?.setPaused(true);
+            }
+          }
         }
       }
       setSteeringWheelAngle(cockpitWheel, simInput.steer, baseSpec.cockpit.lockDeg);
@@ -2045,15 +2062,20 @@ async function startGame(trackId: string): Promise<void> {
   const showResults = (): void => {
     if (resultsShown || raceGame === null) return;
     resultsShown = true;
-    paused = true;
-    engineAudio?.setPaused(true);
-    mixer?.setPaused(true);
+    resultsFinal = raceGame.raceFinished;
+    resultsUpdatedAt = performance.now();
+    if (resultsFinal) {
+      paused = true;
+      engineAudio?.setPaused(true);
+      mixer?.setPaused(true);
+    }
     results?.show(
       resultRows(raceGame.standings(), raceGame.penalties, raceGame),
       {
         onRestart: () => {
           results?.hide();
           resultsShown = false;
+          resultsFinal = false;
           restart()
             .then(() => {
               if (running) resume();
@@ -2063,6 +2085,7 @@ async function startGame(trackId: string): Promise<void> {
         onMenu: () => {
           results?.hide();
           resultsShown = false;
+          resultsFinal = false;
           changeTrack();
         },
       },
@@ -2260,6 +2283,7 @@ async function startGame(trackId: string): Promise<void> {
       })),
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
+    debugAutopilot: raceGame !== null ? (on: boolean) => raceGame?.setPlayerAutopilot(on) : undefined,
     finishRaceNow: raceGame !== null ? () => showResults() : undefined,
     debugDamage: (patch) => {
       if (raceGame === null) return;

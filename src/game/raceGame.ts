@@ -218,6 +218,10 @@ export class RaceGame {
   private readonly start: StartSequence;
   private readonly classification: RaceClassification;
   private readonly autoReverse = new AutoReverse();
+  private readonly steering: CarSpec['steering'];
+  private playerAuto = false;
+  private playerDriver: AiDriver | null = null;
+  private readonly playerObs: AiObservation = { x: 0, z: 0, yaw: 0, speed: 0 };
   private readonly prev: VehicleState[];
   private readonly current: VehicleState[];
   private readonly slots: SpawnPose[];
@@ -311,7 +315,9 @@ export class RaceGame {
     aheadIdx: number,
     rearAxleM: number,
     wheelRadiusM: number,
+    steering: CarSpec['steering'],
   ) {
+    this.steering = steering;
     this.track = track;
     this.config = config;
     this.world = world;
@@ -611,6 +617,7 @@ export class RaceGame {
       aheadIdx,
       rearAxleM,
       spec.wheels.radius,
+      spec.steering,
     );
     game.refreshProgress();
     game.gridPos.set(gridPos);
@@ -643,9 +650,11 @@ export class RaceGame {
     }
     cmd.overtake = playerInput.overtake;
     cmd.ersCycle = playerInput.ersCycle;
+    const auto = (this.playerAuto || this.finished[0] === 1) && !before && !frozenPlayer;
+    if (auto) this.driveAutopilot(cmd);
     // AutoReverse is post-go UX only: a pre-go brake hold (waiting for the lights)
     // must not engage reverse, which would turn the forced start brake into throttle.
-    if (!before && !frozenPlayer) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
+    if (!before && !frozenPlayer && !auto) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
     this.vehicles[0].setInput(cmd);
     this.vehicles[0].prePhysicsStep(FIXED_DT);
 
@@ -959,6 +968,36 @@ export class RaceGame {
   /** Player's last VSC delta in seconds (0 while VSC is off). */
   get playerVscDelta(): number {
     return this.vscDelta0;
+  }
+
+  setPlayerAutopilot(on: boolean): void {
+    this.playerAuto = on;
+  }
+
+  isRetired(car: number): boolean {
+    return this.stopped[car] === 1;
+  }
+
+  private driveAutopilot(cmd: DriverInput): void {
+    let d = this.playerDriver;
+    if (d === null) {
+      d = new AiDriver(this.line, this.speeds, { speedScale: 0.8, kp: AI_THROTTLE_KP, kb: AI_BRAKE_KB });
+      const st = this.steering;
+      d.setSteerCurve(st.maxAngleLow, st.maxAngleHigh, st.fullSpeed);
+      this.playerDriver = d;
+    }
+    const s = this.current[0];
+    const q = s.rotation;
+    const obs = this.playerObs;
+    obs.x = s.position.x;
+    obs.z = s.position.z;
+    obs.yaw = Math.atan2(-(-2 * (q.w * q.y + q.x * q.z)), -(-1 + 2 * (q.x * q.x + q.y * q.y)));
+    obs.speed = s.forwardSpeed;
+    d.setMaxSteerAngle(
+      this.steering.maxAngleLow +
+        (this.steering.maxAngleHigh - this.steering.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / this.steering.fullSpeed),
+    );
+    d.update(obs, FIXED_DT, cmd);
   }
 
   /** Test hook: holds an AI car stopped from now on (player not allowed). */

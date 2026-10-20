@@ -193,10 +193,19 @@ describe('304 race results acceptance (sim)', () => {
       game.setPlayerAutopilot(true);
       expect(stepUntil(game, () => carDone(game, 0), 400)).toBe(true);
       game.setPlayerAutopilot(false);
-      const d0 = game.standings().find((s) => s.car === 0)!.distance;
-      for (let i = 0; i < 30 / DT; i++) game.step(BRAKE);
-      const d1 = game.standings().find((s) => s.car === 0)!.distance;
-      expect(d1 - d0).toBeGreaterThan(300);
+      const out = { x: 0, z: 0, stopped: false };
+      game.carMapState(0, out);
+      let px = out.x;
+      let pz = out.z;
+      let travelled = 0;
+      for (let i = 0; i < 30 / DT; i++) {
+        game.step(BRAKE);
+        game.carMapState(0, out);
+        travelled += Math.hypot(out.x - px, out.z - pz);
+        px = out.x;
+        pz = out.z;
+      }
+      expect(travelled).toBeGreaterThan(300);
     } finally {
       game.dispose();
     }
