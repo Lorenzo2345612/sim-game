@@ -113,7 +113,7 @@ describe('305 yellow overtake give back acceptance', () => {
       for (let i = 0; i + 1 < rows.length; i++) {
         const a = rows[i];
         const b = rows[i + 1];
-        if (a.car >= 1 && b.car >= 1 && a.distance - b.distance <= 150) {
+        if (a.car >= 1 && b.car >= 1 && a.distance - b.distance <= 80) {
           pair = [a.car, b.car];
           break;
         }

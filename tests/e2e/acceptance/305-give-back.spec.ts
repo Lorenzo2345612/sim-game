@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const RACE = '/?race=1&track=cleveland&ai=3&laps=3';
+const RACE_POLE = RACE + '&grid=pole';
 
 type Debug305 = { debugGiveBack(car: number, passed: number): void };
 
@@ -19,13 +20,14 @@ async function simAdvance(page: Page, seconds: number): Promise<void> {
   });
 }
 
-async function raceAfterLights(page: Page, after: number): Promise<void> {
+async function raceAfterLights(page: Page, after: number, autopilot = false): Promise<void> {
   await page.waitForFunction(() => (window.__SIMGAME__?.startLights() ?? -1) > 0, undefined, {
     timeout: 60000,
   });
   await page.waitForFunction(() => window.__SIMGAME__?.startLights() === 0, undefined, {
     timeout: 60000,
   });
+  if (autopilot) await page.evaluate(() => window.__SIMGAME__?.debugAutopilot?.(true));
   await simAdvance(page, after);
 }
 
@@ -36,8 +38,8 @@ test.describe('305 give back', () => {
       if (m.type() === 'error') errors.push(m.text());
     });
     page.on('pageerror', (e) => errors.push(e.message));
-    await loadGame(page, RACE);
-    await raceAfterLights(page, 3);
+    await loadGame(page, RACE_POLE);
+    await raceAfterLights(page, 3, true);
     await page.evaluate(() => (window.__SIMGAME__ as unknown as Debug305).debugGiveBack(0, 3));
     await page.waitForFunction(
       () => {
