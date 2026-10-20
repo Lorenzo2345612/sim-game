@@ -374,6 +374,14 @@ describe('250 bollard placement acceptance — built tracks and parser', () => {
       ) as TrackDataV2;
       const pin: Record<string, unknown> = { ...track };
       delete pin.bollards;
+      // 320 adds water to river arroyos.
+      if (Array.isArray(pin.arroyos)) {
+        pin.arroyos = (pin.arroyos as Array<{ water?: boolean }>).map((a) => {
+          const rest = { ...a };
+          delete rest.water;
+          return rest;
+        });
+      }
       expect(pin, `${id}: only bollards added`).toEqual(prev);
     }
   }, 120000);

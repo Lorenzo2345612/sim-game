@@ -4,6 +4,8 @@ import { projectLonLat, type LonLat, type Point2 } from '../../src/track/geo';
 export interface Arroyo {
   line: Point2[];
   width: number;
+  /** True for permanent rivers; intermittent streams stay dry. */
+  water?: boolean;
 }
 
 export interface Bridge {
@@ -61,7 +63,8 @@ export function loadArroyos(areasJsonPath: string, origin: LonLat): Arroyo[] {
     if (!Number.isFinite(width) || width <= 0) continue;
     const line = projectLonLat(f.ring, origin);
     if (line.length < 2) continue;
-    out.push({ line, width });
+    const water = f.tags?.waterway === 'river' && f.tags?.intermittent !== 'yes';
+    out.push(water ? { line, width, water: true } : { line, width });
   }
   return out;
 }

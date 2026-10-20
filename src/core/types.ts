@@ -112,7 +112,7 @@ export interface TrackDataV2 extends Omit<TrackData, 'source'> {
   bank?: number[];
   /** Bridge spans over an arroyo, as inclusive centerline indices. Absent when the track has none. */
   bridges?: { from: number; to: number }[];
-  /** Dry arroyo corridors: polyline in local metres plus the full corridor width in metres. */
-  arroyos?: { line: [number, number][]; width: number }[];
+  /** Arroyo corridors: polyline in local metres plus the full corridor width in metres; `water` only for rivers. */
+  arroyos?: { line: [number, number][]; width: number; water?: boolean }[];
   source: { dataset: string; license: string; url: string; dem: string };
 }

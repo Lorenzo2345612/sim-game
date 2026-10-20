@@ -384,6 +384,16 @@ describe('247 sausage fit corner acceptance', () => {
         delete now.barriers;
         delete before.barriers;
       }
+      // 320 adds water to river arroyos.
+      for (const copy of [now, before]) {
+        if (Array.isArray(copy.arroyos)) {
+          copy.arroyos = (copy.arroyos as Array<{ water?: boolean }>).map((a) => {
+            const rest = { ...a };
+            delete rest.water;
+            return rest;
+          });
+        }
+      }
       expect(now, `${id}: fields other than sausages changed`).toEqual(before);
     }
   }, 120000);

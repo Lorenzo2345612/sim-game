@@ -286,6 +286,14 @@ describe('248 pit clears runoff acceptance', () => {
     const pin = (t: TrackDataV2): Record<string, unknown> => {
       const copy: Record<string, unknown> = { ...t };
       for (const key of allowed) delete copy[key];
+      // 320 adds water to river arroyos.
+      if (Array.isArray(copy.arroyos)) {
+        copy.arroyos = (copy.arroyos as Array<{ water?: boolean }>).map((a) => {
+          const rest = { ...a };
+          delete rest.water;
+          return rest;
+        });
+      }
       return copy;
     };
     for (const { id, track } of builtTracks()) {

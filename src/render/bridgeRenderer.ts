@@ -10,6 +10,8 @@ const BARRIER_OFFSET = 1.25;
 const STONE_DIR = 'textures/stone/old-wall';
 const STONE_TILE = 4; // metres per stone tile, as in cityRenderer
 const SURFACE_UV = 10; // surface materials sample uv in metres / 10
+const ARROYO_DEPTH = 2; // same value as the track builder's
+const WATER_HEX = 0x2f5d62;
 
 interface TexSet {
   color: THREE.Texture;
@@ -130,10 +132,7 @@ function buildWall(
   return geometryFrom(positions, uvs);
 }
 
-function buildBed(
-  line: Point2[], width: number, terrainY: (x: number, z: number) => number,
-): THREE.BufferGeometry {
-  const half = width / 2;
+function averagedNormals(line: Point2[]): Point2[] {
   const normals: Point2[] = [];
   for (let i = 0; i < line.length; i++) {
     let mx = 0;
@@ -153,6 +152,14 @@ function buildBed(
     const len = Math.hypot(mx, mz) || 1;
     normals.push([mx / len, mz / len]);
   }
+  return normals;
+}
+
+function buildBed(
+  line: Point2[], width: number, terrainY: (x: number, z: number) => number,
+): THREE.BufferGeometry {
+  const half = width / 2;
+  const normals = averagedNormals(line);
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
@@ -170,6 +177,39 @@ function buildBed(
   for (let i = 0; i + 1 < line.length; i++) {
     const b = i * 2;
     indices.push(b, b + 1, b + 3, b, b + 3, b + 2);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Water surface ribbon in the arroyo bed, 1.4 m below the centre-line terrain.
+export function buildArroyoWater(
+  line: [number, number][],
+  width: number,
+  terrainY: (x: number, z: number) => number,
+): THREE.BufferGeometry {
+  const half = 0.35 * width;
+  const normals = averagedNormals(line);
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  let along = 0;
+  for (let i = 0; i < line.length; i++) {
+    if (i > 0) along += Math.hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]);
+    const [mx, mz] = normals[i];
+    const y = terrainY(line[i][0], line[i][1]) - ARROYO_DEPTH + 0.6;
+    for (const s of [1, -1]) {
+      positions.push(line[i][0] + mx * half * s, y, line[i][1] + mz * half * s);
+      uvs.push((half * s) / SURFACE_UV, along / SURFACE_UV);
+    }
+  }
+  for (let i = 0; i + 1 < line.length; i++) {
+    const b = i * 2;
+    indices.push(b + 1, b, b + 2, b + 1, b + 2, b + 3);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -279,6 +319,24 @@ export function createBridgeObject(
     const mesh = child as THREE.Mesh;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+  }
+
+  const waterArroyos = arroyos.filter((a) => a.water === true && a.line.length >= 2);
+  if (waterArroyos.length > 0) {
+    const water = new THREE.MeshStandardMaterial({
+      color: WATER_HEX,
+      roughness: 0.15,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.85,
+    });
+    materials.push(water);
+    for (const a of waterArroyos) {
+      const mesh = new THREE.Mesh(buildArroyoWater(a.line, a.width, terrainY), water);
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      geometries.push(mesh.geometry);
+    }
   }
   return { group, dispose };
 }
