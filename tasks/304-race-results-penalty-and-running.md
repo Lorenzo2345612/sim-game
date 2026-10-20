@@ -47,6 +47,8 @@ isRetired(car: number): boolean // stopped[car] === 1
 - `main.ts`: when results appear, do not pause the simulation (race continues behind the overlay; audio may stay muted). While results are shown and `!raceGame.raceFinished`, call `results.update(resultRows(...))` at most every 0.5 s wall time; once `raceFinished`, do one last update, then pause. Restart/Menu work at any time.
 - Debug hook `window.__SIMGAME__.debugAutopilot(on: boolean)` → `raceGame.setPlayerAutopilot(on)`.
 
+Planner-authorised edit (2026-10-19): `tests/unit/acceptance/304-race-results.test.ts` AT6 measures travel as the AT6 row says (no classification change). `ResultsRow.status` may stay optional (130 edge tests build rows without it); the RaceGame `steering` parameter is accepted.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |
@@ -56,7 +58,7 @@ isRetired(car: number): boolean // stopped[car] === 1
 | AT3 | after AT1 | `update(rows)` with 2 rows | tbody has 2 rows; `.results-actions` buttons are the same element instances as before `update` |
 | AT4 | `Classification`, 2 cars, car 0 finishes at 600 s with `addPenalty(0, 5)`, car 1 finishes at 603 s | `standings()` | car 1 position 1, car 0 position 2 |
 | AT5 | `RaceGame` cleveland, f4, aiCount 3, laps 1, expert, seed 1, `setPlayerAutopilot(true)` | step with input `{throttle 0, brake 1}` until car 0 standing `finished` (cap 400 s sim) | car 0 finishes; then step on (cap 200 s more) until `raceFinished`: true, and every car is finished or `isRetired` |
-| AT6 | as AT5 at the tick car 0 finishes | `setPlayerAutopilot(false)`, step 30 s with input `{throttle 0, brake 1}` | car 0 position moved > 300 m along the track (autopilot stays on after finishing) |
+| AT6 | as AT5 at the tick car 0 finishes | `setPlayerAutopilot(false)`, step 30 s with input `{throttle 0, brake 1}` | car 0 travelled > 300 m: sum over steps of the XZ displacement from `carMapState(0, out)` (`Standing.distance` freezes at the finish) (autopilot stays on after finishing) |
 | AT7 | as AT5 before go, `debugStopCar(2)` | read `isRetired(2)`, `isRetired(1)` | true, false |
 | AT8 | page `/?race=1&track=cleveland&ai=3&laps=3`, 3 s sim after lights out | `finishRaceNow()` | `#results` visible; no time cell reads `'DNF'`; at least 3 read `'Running'`; `getSimTime()` grows ≥ 1 s within the next 5 s wall time |
 | AT9 | — (regression, no new test file: the acceptance worker writes nothing for it) | run 095, 130 and 207 e2e acceptance specs | pass |
