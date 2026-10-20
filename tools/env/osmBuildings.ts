@@ -47,7 +47,8 @@ export type ExtractBbox = [number, number, number, number];
 export interface CityEnvParams {
   origin: LonLat;
   centerline: Point2[];
-  corridorLimit: number;
+  /** Metres from centerline segment i (point i to i+1, closed) within which buildings are dropped. */
+  corridorAt: (segmentIndex: number) => number;
   keepRadius: number;
   bbox: ExtractBbox;
 }
@@ -139,7 +140,7 @@ function segSegDist2(a: Point2, b: Point2, c: Point2, d: Point2): number {
   return Math.min(
     pointSegDist2(a[0], a[1], c[0], c[1], d[0], d[1]),
     pointSegDist2(b[0], b[1], c[0], c[1], d[0], d[1]),
-    pointSegDist2(c[0], c[1], d[0], d[1], a[0], a[1]),
+    pointSegDist2(c[0], c[1], a[0], a[1], b[0], b[1]),
     pointSegDist2(d[0], d[1], a[0], a[1], b[0], b[1]),
   );
 }
@@ -150,13 +151,18 @@ const CELL = 100;
 class CenterlineIndex {
   private cells = new Map<string, number[]>();
   private segs: [number, number, number, number][] = [];
+  private limits: number[] = [];
+  private maxLimit = 0;
 
-  constructor(points: Point2[]) {
+  constructor(points: Point2[], corridorAt: (segmentIndex: number) => number) {
     for (let i = 0; i < points.length; i++) {
       const a = points[i];
       const b = points[(i + 1) % points.length];
       const idx = this.segs.length;
       this.segs.push([a[0], a[1], b[0], b[1]]);
+      const limit = corridorAt(i);
+      this.limits.push(limit);
+      if (limit > this.maxLimit) this.maxLimit = limit;
       const minX = Math.floor(Math.min(a[0], b[0]) / CELL);
       const maxX = Math.floor(Math.max(a[0], b[0]) / CELL);
       const minZ = Math.floor(Math.min(a[1], b[1]) / CELL);
@@ -193,23 +199,24 @@ class CenterlineIndex {
     return false;
   }
 
-  /** True when any closed-ring edge comes closer than `dist` to the centerline. */
-  anyEdgeCloserThan(ring: Point2[], dist: number): boolean {
-    const d2 = dist * dist;
+  /** True when any closed-ring edge comes closer than the local limit of a nearby segment. */
+  anyEdgeCloserThan(ring: Point2[]): boolean {
+    const r = this.maxLimit;
     for (let i = 0; i < ring.length; i++) {
       const a = ring[i];
       const b = ring[(i + 1) % ring.length];
-      const minX = Math.floor((Math.min(a[0], b[0]) - dist) / CELL);
-      const maxX = Math.floor((Math.max(a[0], b[0]) + dist) / CELL);
-      const minZ = Math.floor((Math.min(a[1], b[1]) - dist) / CELL);
-      const maxZ = Math.floor((Math.max(a[1], b[1]) + dist) / CELL);
+      const minX = Math.floor((Math.min(a[0], b[0]) - r) / CELL);
+      const maxX = Math.floor((Math.max(a[0], b[0]) + r) / CELL);
+      const minZ = Math.floor((Math.min(a[1], b[1]) - r) / CELL);
+      const maxZ = Math.floor((Math.max(a[1], b[1]) + r) / CELL);
       for (let cx = minX; cx <= maxX; cx++) {
         for (let cz = minZ; cz <= maxZ; cz++) {
           const list = this.cells.get(`${cx},${cz}`);
           if (!list) continue;
           for (const s of list) {
             const seg = this.segs[s];
-            if (segSegDist2(a, b, [seg[0], seg[1]], [seg[2], seg[3]]) < d2) return true;
+            const limit = this.limits[s];
+            if (segSegDist2(a, b, [seg[0], seg[1]], [seg[2], seg[3]]) < limit * limit) return true;
           }
         }
       }
@@ -447,8 +454,8 @@ function byFirstVertex(a: Point2[], b: Point2[]): number {
 
 /** Bake cached Overpass elements into the city environment (deterministic). */
 export function buildCityEnv(elements: OverpassElement[], params: CityEnvParams): CityEnv {
-  const { origin, centerline, corridorLimit, keepRadius, bbox } = params;
-  const center = new CenterlineIndex(centerline);
+  const { origin, centerline, corridorAt, keepRadius, bbox } = params;
+  const center = new CenterlineIndex(centerline, corridorAt);
   const project = (pts: OverpassPoint[]): Point2[] =>
     projectLonLat(pts.map((p): LonLat => [p.lon, p.lat]), origin).map(
       ([x, z]): Point2 => [round2(x), round2(z)],
@@ -481,7 +488,7 @@ export function buildCityEnv(elements: OverpassElement[], params: CityEnvParams)
         const pts = project(ring);
         if (pts.length < 3) continue;
         if (!center.anyPointCloserThan(pts, keepRadius)) continue;
-        if (center.anyEdgeCloserThan(pts, corridorLimit)) continue;
+        if (center.anyEdgeCloserThan(pts)) continue;
         const insideOldCity = oldCityAreas.some((area) => pointInPolygon(pts[0], area));
         buildings.push({ ring: pts, height, material: materialOf(tags, height, insideOldCity) });
       }

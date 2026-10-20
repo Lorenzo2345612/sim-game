@@ -523,15 +523,24 @@ describe('242 village buildings acceptance', () => {
     for (const s of matSpies) expect(s, 'material disposed').toHaveBeenCalled();
   });
 
-  it('AT12: baku, lasvegas and singapore env files are byte-identical to master', () => {
+  it('AT12: baku, lasvegas and singapore env files match master outside `buildings`', () => {
     for (const id of ['baku', 'lasvegas', 'singapore']) {
       const file = `public/tracks/${id}-env.json`;
-      const before = execFileSync('git', ['show', `master:${file}`], {
-        cwd: ROOT,
-        maxBuffer: 64 * 1024 * 1024,
-      });
-      const after = readFileSync(join(ROOT, file));
-      expect(after.equals(before), `${file} differs from master`).toBe(true);
+      const before = JSON.parse(
+        execFileSync('git', ['show', `master:${file}`], {
+          cwd: ROOT,
+          maxBuffer: 64 * 1024 * 1024,
+        }).toString('utf8'),
+      ) as Record<string, unknown>;
+      const after = JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as Record<string, unknown>;
+      for (const key of Object.keys(before)) {
+        if (key === 'buildings') continue;
+        expect(after[key], `${file} key ${key}`).toEqual(before[key]);
+      }
+      for (const key of Object.keys(after)) {
+        if (key === 'buildings' || key in before) continue;
+        expect(key, `${file} unexpected key ${key}`).toBe('');
+      }
     }
   });
 });

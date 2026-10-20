@@ -38,7 +38,7 @@ const SQUARE: CityEnvParams = {
     [1000, 1000],
     [0, 1000],
   ],
-  corridorLimit: 50,
+  corridorAt: () => 50,
   keepRadius: 600,
   bbox: [39, 49, 41, 51],
 };
@@ -50,7 +50,7 @@ const TRACK: CityEnvParams = {
     [1000, 0],
     [0, 0],
   ],
-  corridorLimit: 50,
+  corridorAt: () => 50,
   keepRadius: 600,
   bbox: [39, 49, 41, 51],
 };

@@ -33,7 +33,7 @@ const TRACK: CityEnvParams = {
     [1000, 0],
     [0, 0],
   ],
-  corridorLimit: 50,
+  corridorAt: () => 50,
   keepRadius: 600,
   bbox: [39, 49, 41, 51],
 };
@@ -46,7 +46,7 @@ const SQUARE: CityEnvParams = {
     [1000, 1000],
     [0, 1000],
   ],
-  corridorLimit: 50,
+  corridorAt: () => 50,
   keepRadius: 600,
   bbox: [39, 49, 41, 51],
 };
@@ -284,7 +284,7 @@ describe('157 city bake post-coder gaps', () => {
   });
 
   it('buildCityEnv breaks first-vertex sort ties by the second coordinate', () => {
-    const params: CityEnvParams = { ...SQUARE, corridorLimit: 5 };
+    const params: CityEnvParams = { ...SQUARE, corridorAt: () => 5 };
     const env = buildCityEnv(
       [
         wayEl(1, { building: 'yes' }, rect(10, 50, 20, 54)),
@@ -307,7 +307,7 @@ describe('157 city bake post-coder gaps', () => {
         [100, 1000],
         [0, 1000],
       ],
-      corridorLimit: 50,
+      corridorAt: () => 50,
       keepRadius: 600,
       bbox: [39, 49, 41, 51],
     };

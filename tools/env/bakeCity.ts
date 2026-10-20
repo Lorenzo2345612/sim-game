@@ -119,6 +119,21 @@ export interface BakeResult {
   water: number;
 }
 
+/** Per-centerline-index corridor: width/2 + covering barrier offset (8 when none) + 5. */
+export function corridorLimits(track: TrackDataV2): Float64Array {
+  const n = track.centerline.length;
+  const limits = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    let offset = 0;
+    for (const b of track.barriers) {
+      const covers = b.start <= b.end ? b.start <= i && i <= b.end : i >= b.start || i <= b.end;
+      if (covers && b.offsetMeters > offset) offset = b.offsetMeters;
+    }
+    limits[i] = track.widthMeters / 2 + (offset || 8) + 5;
+  }
+  return limits;
+}
+
 export async function bakeCity(id: string): Promise<BakeResult> {
   const track = JSON.parse(
     readFileSync(join(ROOT, 'public', 'tracks', `${id}.json`), 'utf8'),
@@ -126,12 +141,11 @@ export async function bakeCity(id: string): Promise<BakeResult> {
   const { origin, bbox } = trackFrame(id);
   const cachePath = join(ROOT, 'assets', 'source', 'osm', `${id}-city.json`);
   const elements = await fetchElements(id, cachePath, bbox);
-  const corridorLimit =
-    track.widthMeters / 2 + Math.max(...track.barriers.map((b) => b.offsetMeters)) + 5;
+  const limits = corridorLimits(track);
   const env = buildCityEnv(elements, {
     origin,
     centerline: track.centerline,
-    corridorLimit,
+    corridorAt: (i) => limits[i],
     keepRadius: KEEP_RADIUS_M,
     bbox,
   });
