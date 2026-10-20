@@ -3644,7 +3644,7 @@
     {
       "num": "268",
       "title": "AI driving regressions: barrier climbing, off-track, stuck recovery",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
@@ -4051,7 +4051,7 @@
     {
       "num": "300",
       "title": "Verge and runoff strips must not fold over the inner kerb",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
