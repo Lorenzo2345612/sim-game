@@ -4115,7 +4115,7 @@
     {
       "num": "305",
       "title": "Yellow overtake: 10 s to give the position back",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "304"
       ],
