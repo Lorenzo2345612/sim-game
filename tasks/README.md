@@ -136,7 +136,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
-| 135 | Time of day presets | waiting decision | 093, 099, 106, 130 |
+| 135 | Time of day presets | in progress | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
 | 137 | Rain and track wetness model, wet compounds | done | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
@@ -276,7 +276,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
 | 273 | Expert AI spin-free in 3-car traffic (silverstone) | done | 252 |
 | 274 | Weekend formats and points tables | done | - |
-| 275 | Weekend controller (grid rules, points, standings) | in progress | 274 |
+| 275 | Weekend controller (grid rules, points, standings) | waiting decision | 274 |
 | 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | done | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | in progress | 276, 277 |
@@ -285,7 +285,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 281 | Electric powertrain math | done | - |
 | 282 | Attack mode rules | done | - |
 | 283 | CarSpec awd + electric block | done | 281 |
-| 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
+| 284 | AWD electric drive in VehicleModel | waiting decision | 281, 282, 283 |
 | 285 | Electric voice | done | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
@@ -307,7 +307,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | done | 302 |
 | 304 | Race results: penalties added, running cars not DNF | done | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | done | 304 |
-| 306 | Timing tower views: gap, tyres, laps | in progress | 305 |
+| 306 | Timing tower views: gap, tyres, laps | waiting decision | 305 |
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
 | 308 | Yellow flags: minimum duration and continuous spin cause | done | 307 |
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | in progress | 308 |
@@ -322,5 +322,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 318 | Grandstands at the main corners, not only on the start straight | done | 316 |
 | 319 | Surrounding buildings for every circuit | done | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
-| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | waiting decision | 305 |
+| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | in progress | 305 |
 | 323 | Master green after the car tyre colliders | done | - |

@@ -1858,7 +1858,7 @@
     {
       "num": "135",
       "title": "Time of day presets",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "093",
         "099",
@@ -3732,7 +3732,7 @@
     {
       "num": "275",
       "title": "Weekend controller (grid rules, points, standings)",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "274"
       ],
@@ -3848,7 +3848,7 @@
     {
       "num": "284",
       "title": "AWD electric drive in VehicleModel",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "281",
         "282",
@@ -4128,7 +4128,7 @@
     {
       "num": "306",
       "title": "Timing tower views: gap, tyres, laps",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "305"
       ],
@@ -4322,7 +4322,7 @@
     {
       "num": "321",
       "title": "Blue flags: lapped cars yield without leaving their fight; player penalty",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "305"
       ],
