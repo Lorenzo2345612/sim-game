@@ -3562,7 +3562,7 @@
     {
       "num": "262",
       "title": "Racecraft AI drives the race",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "259",
         "260",
@@ -4128,7 +4128,7 @@
     {
       "num": "306",
       "title": "Timing tower views: gap, tyres, laps",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "305"
       ],
@@ -4154,7 +4154,7 @@
     {
       "num": "308",
       "title": "Yellow flags: minimum duration and continuous spin cause",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "307"
       ],
@@ -4324,7 +4324,7 @@
       "title": "Blue flags: lapped cars yield without leaving their fight; player penalty",
       "status": "pending",
       "deps": [
-        "314"
+        "305"
       ],
       "complexity": "simple",
       "type": "feature",
