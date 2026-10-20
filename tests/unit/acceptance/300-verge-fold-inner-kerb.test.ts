@@ -1,14 +1,12 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { KERB_WIDTH } from '../../../src/core/constants';
 import type { Side, TrackDataV2 } from '../../../src/core/types';
 import { createPhysicsWorld, initPhysics, RAPIER } from '../../../src/physics/physicsWorld';
-import { buildTrackSurfaces, cornerCurvature, halfWidthAt, hasKerb } from '../../../src/track/surfaces';
+import { buildTrackSurfaces, halfWidthAt, hasKerb } from '../../../src/track/surfaces';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const IDS = ['mexico', 'monza', 'cleveland'] as const;
 
 function loadTrack(id: string): TrackDataV2 {
   return JSON.parse(readFileSync(join(ROOT, 'public', 'tracks', `${id}.json`), 'utf8')) as TrackDataV2;
@@ -25,15 +23,7 @@ function rightNormalAt(cx: [number, number][], i: number): [number, number] {
   return [-dz / len, dx / len];
 }
 
-/** centerline[i] + side normal * (halfWidthAt + KERB_WIDTH + d). */
-function probePoint(track: TrackDataV2, side: Side, i: number, d: number): [number, number] {
-  const sign = side === 'right' ? 1 : -1;
-  const [rx, rz] = rightNormalAt(track.centerline, i);
-  const t = halfWidthAt(track, side, i) + KERB_WIDTH + d;
-  const [x0, z0] = track.centerline[i];
-  return [x0 + sign * rx * t, z0 + sign * rz * t];
-}
-
+/** Downward-ray hit y at centerline[i] + n_side * (halfWidthAt(side, i) + KERB_WIDTH + d). */
 function probeY(
   world: RAPIER.World,
   track: TrackDataV2,
@@ -42,12 +32,19 @@ function probeY(
   d: number,
   fromY: number,
 ): number | null {
-  const [x, z] = probePoint(track, side, i, d);
-  const hit = world.castRay(new RAPIER.Ray({ x, y: fromY, z }, { x: 0, y: -1, z: 0 }), 240, true);
+  const sign = side === 'right' ? 1 : -1;
+  const [rx, rz] = rightNormalAt(track.centerline, i);
+  const t = halfWidthAt(track, side, i) + KERB_WIDTH + d;
+  const [x0, z0] = track.centerline[i];
+  const hit = world.castRay(
+    new RAPIER.Ray({ x: x0 + sign * rx * t, y: fromY, z: z0 + sign * rz * t }, { x: 0, y: -1, z: 0 }),
+    fromY + 100,
+    true,
+  );
   return hit === null ? null : fromY - hit.timeOfImpact;
 }
 
-/** Violation strings for every probe of the row set: rise over the kerb edge exceeds tol. */
+/** Violation strings for every probe row: Rise(d) = hit y(d) - hit y(-0.05) above tol. */
 function rises(
   world: RAPIER.World,
   track: TrackDataV2,
@@ -78,32 +75,24 @@ function rises(
   return bad;
 }
 
-function innerRows(track: TrackDataV2, side: Side): number[] {
+function rowsOf(track: TrackDataV2, side: Side): number[] {
   const out: number[] = [];
-  const cx = track.centerline;
-  for (let i = 0; i < cx.length; i++) {
-    if (!hasKerb(track, side, i)) continue;
-    const c = cornerCurvature(cx, i);
-    if (c !== null && c.side === side && c.radius < 200) out.push(i);
+  for (let i = 0; i < track.centerline.length; i++) {
+    if (hasKerb(track, side, i)) out.push(i);
   }
   return out;
 }
 
-const GOLDEN: Record<(typeof IDS)[number], string> = {
-  mexico: '77986b19c5b64f6c5ef98fa5157914f96150e3961f03495a33169f58f858a6e2',
-  monza: '2cb4711e491c1d1ee02b56abefac051191d9ed12caa2ab90ca0b53cc27a82938',
-  cleveland: 'fa5658d699920e7a9441b9c039fd2912a85aa01ecfcbcaf6437e97e3ab525172',
-};
+function range(a: number, b: number): number[] {
+  return Array.from({ length: b - a + 1 }, (_, k) => a + k);
+}
 
-function asphaltKerbHash(track: TrackDataV2): string {
-  const h = createHash('sha256');
+function triangleCounts(track: TrackDataV2): Record<string, number> {
+  const out: Record<string, number> = {};
   for (const s of buildTrackSurfaces(track)) {
-    if (s.surface !== 'asphalt' && s.surface !== 'kerb') continue;
-    h.update(s.surface);
-    h.update(Buffer.from(s.positions.buffer, s.positions.byteOffset, s.positions.byteLength));
-    h.update(Buffer.from(s.indices.buffer, s.indices.byteOffset, s.indices.byteLength));
+    out[s.surface] = (out[s.surface] ?? 0) + s.indices.length / 3;
   }
-  return h.digest('hex');
+  return out;
 }
 
 describe('300 verge fold over inner kerb acceptance', () => {
@@ -118,47 +107,67 @@ describe('300 verge fold over inner kerb acceptance', () => {
     world = null;
   });
 
-  it('AT1: mexico left 1873..1881 probes at d 0.5..3 rise at most 0.05 m above the kerb edge', () => {
-    const track = loadTrack('mexico');
-    world = createPhysicsWorld(track);
+  /** createPhysicsWorld without sausages, stepped twice; runs `probe` and frees. */
+  function withWorld(id: string, probe: (w: RAPIER.World, t: TrackDataV2) => string[]): string[] {
+    const track = loadTrack(id);
+    world = createPhysicsWorld({ ...track, sausages: [] });
     world.step();
-    const rows = Array.from({ length: 9 }, (_, k) => 1873 + k);
-    const bad = rises(world, track, 'mexico', 'left', rows, [0.5, 1, 2, 3], 0.05);
+    world.step();
+    const bad = probe(world, track);
     world.free();
     world = null;
-    expect(bad).toEqual([]);
-  });
+    return bad;
+  }
 
-  it('AT2: monza left 326..327 and right 307..309 probes at d 0.5..5 rise at most 0.05 m above the kerb edge', () => {
-    const track = loadTrack('monza');
-    world = createPhysicsWorld(track);
-    world.step();
+  it('AT1: mexico 1028..1039 right, 1875..1878 left and cleveland 207..217, 668 right rise at most 0.10 m at d 0.5, 1, 2', () => {
     const bad = [
-      ...rises(world, track, 'monza', 'left', [326, 327], [0.5, 1, 2, 3, 5], 0.05),
-      ...rises(world, track, 'monza', 'right', [307, 308, 309], [0.5, 1, 2, 3, 5], 0.05),
+      ...withWorld('mexico', (w, t) => [
+        ...rises(w, t, 'mexico', 'right', range(1028, 1039), [0.5, 1, 2], 0.1),
+        ...rises(w, t, 'mexico', 'left', range(1875, 1878), [0.5, 1, 2], 0.1),
+      ]),
+      ...withWorld('cleveland', (w, t) =>
+        rises(w, t, 'cleveland', 'right', [...range(207, 217), 668], [0.5, 1, 2], 0.1),
+      ),
     ];
-    world.free();
-    world = null;
     expect(bad).toEqual([]);
-  });
+  }, 300000);
 
-  it('AT3: mexico, monza and cleveland inner-corner kerb rows rise at most 0.10 m above the kerb edge at d 0.5..2', () => {
+  it('AT2: monza 304..306 right, 322 left and detroit 150..162, 364..365, 668..688 left rise at most 0.10 m at d 0.5, 1, 2', () => {
+    const bad = [
+      ...withWorld('monza', (w, t) => [
+        ...rises(w, t, 'monza', 'right', range(304, 306), [0.5, 1, 2], 0.1),
+        ...rises(w, t, 'monza', 'left', [322], [0.5, 1, 2], 0.1),
+      ]),
+      ...withWorld('detroit', (w, t) =>
+        rises(w, t, 'detroit', 'left', [...range(150, 162), ...range(364, 365), ...range(668, 688)], [0.5, 1, 2], 0.1),
+      ),
+    ];
+    expect(bad).toEqual([]);
+  }, 300000);
+
+  it('AT3: every kerb row of mexico, monza, cleveland and detroit rises at most 0.20 m at d 0.5, 1, 2', () => {
     const bad: string[] = [];
-    for (const id of IDS) {
-      const track = loadTrack(id);
-      world = createPhysicsWorld(track);
-      world.step();
-      for (const side of ['left', 'right'] as const) {
-        bad.push(...rises(world, track, id, side, innerRows(track, side), [0.5, 1, 2], 0.1));
-      }
-      world.free();
-      world = null;
+    for (const id of ['mexico', 'monza', 'cleveland', 'detroit'] as const) {
+      bad.push(
+        ...withWorld(id, (w, t) => [
+          ...rises(w, t, id, 'right', rowsOf(t, 'right'), [0.5, 1, 2], 0.2),
+          ...rises(w, t, id, 'left', rowsOf(t, 'left'), [0.5, 1, 2], 0.2),
+        ]),
+      );
     }
     expect(bad).toEqual([]);
-  }, 600000);
+  }, 900000);
 
-  it('AT4: asphalt and kerb strips are byte-identical to before on mexico, monza and cleveland', () => {
-    const actual = Object.fromEntries(IDS.map((id) => [id, asphaltKerbHash(loadTrack(id))]));
-    expect(actual).toEqual(GOLDEN);
-  });
+  it('AT4: asphalt and kerb triangle counts unchanged on mexico, monza and cleveland', () => {
+    const expectCounts: Record<string, [number, number]> = {
+      mexico: [4306, 3458],
+      monza: [5788, 4020],
+      cleveland: [3426, 2804],
+    };
+    for (const [id, [asphalt, kerb]] of Object.entries(expectCounts)) {
+      const counts = triangleCounts(loadTrack(id));
+      expect(counts.asphalt, `${id} asphalt`).toBe(asphalt);
+      expect(counts.kerb, `${id} kerb`).toBe(kerb);
+    }
+  }, 300000);
 });

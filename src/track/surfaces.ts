@@ -12,6 +12,13 @@ const VERGE_DROP = 0.3;
 export const INNER_CURVE_CLAMP = 0.9; // lateral ribbons stay inside this multiple of the corner radius
 export const KERB_MIN_WIDTH = 0.4; // clamped inner kerb thinner than this is dropped
 export const INNER_ARC_WINDOW = 10; // metres of arc around a row that inherit its corner radii
+const KERB_BAND_MARGIN = 2; // metres past KERB_WIDTH that still count as a row's kerb band
+const KERB_EDGE_RISE = 0.05; // a foreign ribbon may sit this far above a row's kerb edge
+// Kerb and verge rows are turned by this angle about the centreline so no row line lies on the radial
+// through its centreline point: a vertical ray exactly on a shared mesh edge can slip through both triangles.
+const ROW_SKEW = 2e-5;
+const SHELF_GAP = 0.2; // a kerbed row whose clamp leaves the verge this far inside the kerb keeps a flat shelf
+const EPS = 1e-9;
 
 interface PointIndex {
   cell: number;
@@ -190,6 +197,107 @@ function nearAsphaltQuery(track: TrackDataV2): (x: number, z: number) => boolean
   };
 }
 
+/** Cumulative arc length of the closed ring and its total (including the seam). */
+function arcLengths(cx: [number, number][]): { s: Float64Array; total: number } {
+  const n = cx.length;
+  const s = new Float64Array(n);
+  for (let i = 1; i < n; i++) {
+    s[i] = s[i - 1] + Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
+  }
+  const total = n > 0 ? s[n - 1] + Math.hypot(cx[0][0] - cx[n - 1][0], cx[0][1] - cx[n - 1][1]) : 0;
+  return { s, total };
+}
+
+function arcDist(s: Float64Array, total: number, i: number, j: number): number {
+  const d = Math.abs(s[i] - s[j]);
+  return Math.min(d, total - d);
+}
+
+/**
+ * True when (x, y, z) sits inside the kerb band (halfWidth + KERB_WIDTH + 2 on the
+ * point's own side) of a row more than INNER_ARC_WINDOW arc-metres from every row
+ * in ownRows and rises above that row's kerb outer edge — i.e. a ribbon from
+ * another part of the lap folded over that kerb as a ramp. Rows whose kerb the
+ * clamp dropped (a pocket inside a tight bend) also reject triangles from other
+ * dropped-kerb rows or from outside their own window, whatever their height.
+ */
+function kerbBandQuery(
+  track: TrackDataV2,
+  reff: { left: Float64Array; right: Float64Array },
+): (x: number, y: number, z: number, ownRows: readonly number[]) => boolean {
+  const cx = track.centerline;
+  const n = cx.length;
+  if (n < 2) return () => false;
+  const reach = new Array<number>(n);
+  for (let j = 0; j < n; j++) {
+    reach[j] =
+      Math.max(halfWidthAt(track, 'left', j), halfWidthAt(track, 'right', j)) +
+      KERB_WIDTH +
+      KERB_BAND_MARGIN +
+      EPS;
+  }
+  const index = buildPointIndex(cx, reach);
+  const { s, total } = arcLengths(cx);
+  return (x, y, z, ownRows) => {
+    let foreign = false;
+    nearPoints(index, x, z, (j) => {
+      if (foreign) return;
+      const dx = x - cx[j][0];
+      const dz = z - cx[j][1];
+      const dist = Math.hypot(dx, dz);
+      const leftBand = halfWidthAt(track, 'left', j) + KERB_WIDTH + KERB_BAND_MARGIN;
+      const rightBand = halfWidthAt(track, 'right', j) + KERB_WIDTH + KERB_BAND_MARGIN;
+      if (dist >= leftBand + EPS && dist >= rightBand + EPS) return;
+      const [rx, rz] = rightNormal(cx, j);
+      const side: Side = dx * rx + dz * rz >= 0 ? 'right' : 'left';
+      const band = side === 'left' ? leftBand : rightBand;
+      if (dist >= band + EPS) return;
+      const near = ownRows.some((o) => arcDist(s, total, j, o) <= INNER_ARC_WINDOW);
+      if (kerbDropped(track, reff, side, j) && !(near && ownRows.every((o) => !kerbDropped(track, reff, side, o)))) {
+        foreign = true;
+        return;
+      }
+      if (near) return;
+      if (y <= kerbOuterEdgeY(track, reff, side, j) + KERB_EDGE_RISE) return;
+      foreign = true;
+    });
+    return foreign;
+  };
+}
+
+/** True when INNER_CURVE_CLAMP dropped the kerb at row i, which itself bends towards that side. */
+function kerbDropped(
+  track: TrackDataV2,
+  reff: { left: Float64Array; right: Float64Array },
+  side: Side,
+  i: number,
+): boolean {
+  const half = halfWidthAt(track, side, i);
+  const corner = cornerCurvature(track.centerline, i);
+  return (
+    hasKerb(track, side, i) &&
+    corner !== null &&
+    corner.side === side &&
+    kerbOuterLat(track, reff, side, i) <= half + EPS
+  );
+}
+
+/** Maps a strip vertex index to the centerline row that generated it. */
+function stripRowOf(track: TrackDataV2, strip: SurfaceStrip): (vi: number) => number {
+  const n = track.centerline.length;
+  const seg = strip.segment;
+  if (seg?.kind === 'runoff') {
+    const r = track.runoffs[seg.index];
+    const start = normIndex(r.start, n);
+    const end = normIndex(r.end, n);
+    const ext = segmentLength(start, end, n) + 2 <= n ? 1 : 0;
+    const base = start - ext;
+    return (vi) => normIndex(base + Math.floor(vi / 2), n);
+  }
+  // Verge rows carry three columns and cover the whole ring.
+  return (vi) => Math.floor(vi / 3) % n;
+}
+
 /** Offset of the last barrier covering (side, i); null when none does. */
 function barrierOffsetAt(track: TrackDataV2, side: Side, i: number): number | null {
   const n = track.centerline.length;
@@ -230,6 +338,8 @@ function segmentRows(
   yOf: (idx: number, lat: number) => number,
   vScale: number,
   keep?: (idx: number) => boolean,
+  skew = 0,
+  flipStart = false,
 ): Vertex[][][] {
   const cx = track.centerline;
   const n = cx.length;
@@ -261,7 +371,8 @@ function segmentRows(
       continue;
     }
     const [latMin, latMax, u0, u1] = latOf(idx);
-    const [rx, rz] = rightNormal(cx, idx);
+    const rowSkew = flipStart && run.length === 0 && idx !== 0 ? -skew : skew;
+    const [rx, rz] = rowSkew ? skewedNormal(cx, idx, rowSkew) : rightNormal(cx, idx);
     const v = s / vScale;
     run.push([
       { x: x + rx * latMin, y: yOf(idx, latMin), z: z + rz * latMin, u: u0, v },
@@ -283,14 +394,18 @@ function segmentRows(
 }
 
 /** Outermost lateral extent of asphalt, kerbs and runoffs on one side at centerline index i. */
-function vergeInnerExtent(track: TrackDataV2, side: Side, i: number): number {
+function vergeInnerExtent(
+  track: TrackDataV2,
+  reff: { left: Float64Array; right: Float64Array },
+  side: Side,
+  i: number,
+): number {
   const n = track.centerline.length;
-  const half = halfWidthAt(track, side, i);
-  const kerb = track.kerbs.some((k) => k.side === side && segmentCovers(k, i, n));
-  let inner = half + (kerb ? KERB_WIDTH : 0);
+  const base = kerbOuterLat(track, reff, side, i);
+  let inner = base;
   for (const seg of track.runoffs) {
     if (seg.side !== side || !segmentCovers(seg, i, n)) continue;
-    inner = Math.max(inner, half + (kerb ? KERB_WIDTH : 0) + seg.widthMeters);
+    inner = Math.max(inner, base + seg.widthMeters);
   }
   return inner;
 }
@@ -325,11 +440,7 @@ export function innerCornerRadii(cx: [number, number][]): {
   const left = new Float64Array(n).fill(Infinity);
   const right = new Float64Array(n).fill(Infinity);
   if (n === 0) return { left, right };
-  const s = new Float64Array(n);
-  for (let i = 1; i < n; i++) {
-    s[i] = s[i - 1] + Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
-  }
-  const total = s[n - 1] + Math.hypot(cx[0][0] - cx[n - 1][0], cx[0][1] - cx[n - 1][1]);
+  const { s, total } = arcLengths(cx);
   for (let j = 0; j < n; j++) {
     const corner = cornerCurvature(cx, j);
     if (corner === null) continue;
@@ -343,8 +454,43 @@ export function innerCornerRadii(cx: [number, number][]): {
   return { left, right };
 }
 
-/** Closed grass verge: inner and flat columns at elev(i), outer column at elev(i) - VERGE_DROP. */
-function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
+/**
+ * Lateral of the kerb strip's outer edge at row i — the clamped outer of the
+ * kerb where it survives, the asphalt edge where it is dropped or absent.
+ */
+export function kerbOuterLat(
+  track: TrackDataV2,
+  reff: { left: Float64Array; right: Float64Array },
+  side: Side,
+  i: number,
+): number {
+  const half = halfWidthAt(track, side, i);
+  if (!hasKerb(track, side, i)) return half;
+  const near = side === 'left' ? reff.left[i] : reff.right[i];
+  const outer = Number.isFinite(near)
+    ? Math.min(half + KERB_WIDTH, INNER_CURVE_CLAMP * near)
+    : half + KERB_WIDTH;
+  return outer - half >= KERB_MIN_WIDTH ? outer : half;
+}
+
+/** Height of the kerb outer edge along the row's cross-slope. */
+export function kerbOuterEdgeY(
+  track: TrackDataV2,
+  reff: { left: Float64Array; right: Float64Array },
+  side: Side,
+  i: number,
+): number {
+  const lat = kerbOuterLat(track, reff, side, i);
+  const y = lat > halfWidthAt(track, side, i) ? KERB_Y : ASPHALT_Y;
+  return (track.elevation[i] ?? 0) + y + lat * bankTanAt(track, i);
+}
+
+/** Closed grass verge: inner and flat columns at elev(i), outer column at elev(i) - VERGE_DROP (less when clamped). */
+function vergeStrip(
+  track: TrackDataV2,
+  side: Side,
+  reff: { left: Float64Array; right: Float64Array },
+): SurfaceStrip {
   const cx = track.centerline;
   const n = cx.length;
   const sign = side === 'right' ? 1 : -1;
@@ -352,16 +498,21 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
   let s = 0;
   for (let i = 0; i < n; i++) {
     if (i > 0) s += Math.hypot(cx[i][0] - cx[i - 1][0], cx[i][1] - cx[i - 1][1]);
-    let inner = vergeInnerExtent(track, side, i);
+    let inner = vergeInnerExtent(track, reff, side, i);
     let flat = inner + VERGE_FLAT;
     let outer = flat + VERGE_SLOPE;
     const corner = cornerCurvature(cx, i);
-    if (corner !== null && corner.side === side) {
+    const radius = corner !== null && corner.side === side ? corner.radius : Infinity;
+    if (Number.isFinite(radius)) {
       // Inner side of a corner: keep the verge inside 0.8 x radius of curvature.
-      const cap = 0.8 * corner.radius;
-      inner = Math.max(halfWidthAt(track, side, i), Math.min(inner, INNER_CURVE_CLAMP * corner.radius));
+      const cap = 0.8 * radius;
+      inner = Math.max(halfWidthAt(track, side, i), Math.min(inner, INNER_CURVE_CLAMP * radius));
       flat = Math.max(inner, Math.min(inner + VERGE_FLAT, cap - VERGE_SLOPE));
       outer = Math.max(inner, Math.min(flat + VERGE_SLOPE, cap));
+      if (hasKerb(track, side, i) && halfWidthAt(track, side, i) + KERB_WIDTH - inner > SHELF_GAP) {
+        flat = Math.max(flat, halfWidthAt(track, side, i) + KERB_WIDTH + KERB_BAND_MARGIN + 0.5);
+        outer = Math.max(outer, flat + 1);
+      }
     }
     if (halfWidthAt(track, side, i) < track.widthMeters / 2 - 1e-9) {
       // Narrowed side: the verge stops at the barrier (the shared median wall).
@@ -371,20 +522,31 @@ function vergeStrip(track: TrackDataV2, side: Side): SurfaceStrip {
         outer = Math.max(inner, Math.min(outer, cap));
       }
     }
+    // A clamped slope is shorter than VERGE_SLOPE: it drops in proportion so it stays no steeper.
+    const drop = (VERGE_DROP * Math.min(outer - flat, VERGE_SLOPE)) / VERGE_SLOPE;
     const y = track.elevation[i] ?? 0;
     const tanB = bankTanAt(track, i);
     const [rx, rz] = rightNormal(cx, i);
+    const [sx, sz] = skewedNormal(cx, i, ROW_SKEW);
     const v = s / UV_SCALE;
     const cols: Vertex[] = [
-      { x: cx[i][0] + rx * sign * outer, y: y + sign * outer * tanB - VERGE_DROP, z: cx[i][1] + rz * sign * outer, u: (sign * outer) / UV_SCALE, v },
-      { x: cx[i][0] + rx * sign * flat, y: y + sign * flat * tanB, z: cx[i][1] + rz * sign * flat, u: (sign * flat) / UV_SCALE, v },
-      { x: cx[i][0] + rx * sign * inner, y: y + sign * inner * tanB, z: cx[i][1] + rz * sign * inner, u: (sign * inner) / UV_SCALE, v },
+      { x: cx[i][0] + rx * sign * outer, y: y + sign * outer * tanB - drop, z: cx[i][1] + rz * sign * outer, u: (sign * outer) / UV_SCALE, v },
+      { x: cx[i][0] + sx * sign * flat, y: y + sign * flat * tanB, z: cx[i][1] + sz * sign * flat, u: (sign * flat) / UV_SCALE, v },
+      { x: cx[i][0] + sx * sign * inner, y: y + sign * inner * tanB, z: cx[i][1] + sz * sign * inner, u: (sign * inner) / UV_SCALE, v },
     ];
     // makeStrip expects columns ordered by increasing lateral.
     if (sign > 0) cols.reverse();
     rows.push(cols);
   }
   return makeStrip('grass', rows, true);
+}
+
+/** rightNormal turned by `skew` radians. */
+function skewedNormal(centerline: [number, number][], i: number, skew: number): [number, number] {
+  const [rx, rz] = rightNormal(centerline, i);
+  const c = Math.cos(skew);
+  const sn = Math.sin(skew);
+  return [rx * c - rz * sn, rx * sn + rz * c];
 }
 
 /** Unit right lateral at polyline point i: end segments use their own normal, inner points average the adjacent ones. */
@@ -503,14 +665,17 @@ function signedArea2(p: Float32Array, a: number, b: number, c: number): number {
 /**
  * Drops triangles of a non-asphalt/kerb strip lying on asphalt (centroid or any
  * vertex inside asphaltOwner, or within min half-width - 1 m of a centerline
- * point — segment containment misses fans past hairpin apexes), then every
- * triangle wound against its strip's majority. Returns a new strip, or null
- * when nothing was dropped.
+ * point — segment containment misses fans past hairpin apexes) or with any point
+ * inside the kerb band of a row foreign to the triangle's own rows and above
+ * that row's kerb outer edge, then every triangle wound against its strip's
+ * majority. Returns a new strip, or null when nothing was dropped.
  */
 function filterStripTriangles(
   strip: SurfaceStrip,
   owner: (x: number, z: number) => number,
   nearAsphalt: (x: number, z: number) => boolean,
+  rowOf: (vi: number) => number,
+  foreignBand: (x: number, y: number, z: number, ownRows: readonly number[]) => boolean,
 ): SurfaceStrip | null {
   const p = strip.positions;
   const ind = strip.indices;
@@ -525,6 +690,7 @@ function filterStripTriangles(
     const c = 3 * ind[3 * t + 2];
     if (!exempt) {
       const cx3 = (p[a] + p[b] + p[c]) / 3;
+      const cy3 = (p[a + 1] + p[b + 1] + p[c + 1]) / 3;
       const cz3 = (p[a + 2] + p[b + 2] + p[c + 2]) / 3;
       const onAsphalt =
         owner(cx3, cz3) !== -1 ||
@@ -532,7 +698,13 @@ function filterStripTriangles(
         owner(p[b], p[b + 2]) !== -1 ||
         owner(p[c], p[c + 2]) !== -1 ||
         nearAsphalt(cx3, cz3);
-      if (onAsphalt) {
+      const ownRows = [rowOf(ind[3 * t]), rowOf(ind[3 * t + 1]), rowOf(ind[3 * t + 2])];
+      const onForeignBand =
+        foreignBand(p[a], p[a + 1], p[a + 2], ownRows) ||
+        foreignBand(p[b], p[b + 1], p[b + 2], ownRows) ||
+        foreignBand(p[c], p[c + 1], p[c + 2], ownRows) ||
+        foreignBand(cx3, cy3, cz3, ownRows);
+      if (onAsphalt || onForeignBand) {
         keep[t] = 0;
         changed = true;
         continue;
@@ -618,6 +790,8 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       (idx, lat) => elev(idx) + KERB_Y + lat * bankTanAt(track, idx),
       KERB_UV_V,
       (idx) => outerOf(idx) - halfWidthAt(track, seg.side, idx) >= KERB_MIN_WIDTH,
+      -ROW_SKEW * sign,
+      true,
     );
     for (const rows of runs) {
       if (rows.length >= 2) {
@@ -636,8 +810,7 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
       start,
       end,
       (idx) => {
-        const pushed = track.kerbs.some((k) => k.side === seg.side && segmentCovers(k, idx, n));
-        let inner = sign * (halfWidthAt(track, seg.side, idx) + (pushed ? KERB_WIDTH : 0));
+        let inner = sign * kerbOuterLat(track, reff, seg.side, idx);
         let outer = inner + sign * seg.widthMeters;
         const corner = cornerCurvature(cx, idx);
         if (corner !== null && corner.side === seg.side) {
@@ -661,8 +834,8 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   }
 
   const escapeStrips = escapeRoadStrips(track);
-  strips.push(vergeStrip(track, 'left'));
-  strips.push(vergeStrip(track, 'right'));
+  strips.push(vergeStrip(track, 'left', reff));
+  strips.push(vergeStrip(track, 'right', reff));
   strips.push(...escapeStrips);
 
   // Escape strips are appended verbatim (141 pins them against escapeRoadStrips);
@@ -670,9 +843,10 @@ export function buildTrackSurfaces(track: TrackDataV2): SurfaceStrip[] {
   const unfiltered = new Set(escapeStrips);
   const owner = asphaltOwner(track);
   const nearAsphalt = nearAsphaltQuery(track);
+  const foreignBand = kerbBandQuery(track, reff);
   for (let i = 0; i < strips.length; i++) {
     if (unfiltered.has(strips[i])) continue;
-    const filtered = filterStripTriangles(strips[i], owner, nearAsphalt);
+    const filtered = filterStripTriangles(strips[i], owner, nearAsphalt, stripRowOf(track, strips[i]), foreignBand);
     if (filtered) strips[i] = filtered;
   }
   return strips;

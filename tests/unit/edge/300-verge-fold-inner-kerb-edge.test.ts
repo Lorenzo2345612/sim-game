@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { KERB_WIDTH } from '../../../src/core/constants';
 import type { Side, SurfaceStrip, TrackDataV2 } from '../../../src/core/types';
-import { INNER_ARC_WINDOW, buildTrackSurfaces, halfWidthAt } from '../../../src/track/surfaces';
+import { INNER_ARC_WINDOW, buildTrackSurfaces, halfWidthAt, innerCornerRadii, kerbOuterEdgeY } from '../../../src/track/surfaces';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const BAND_MARGIN = 0.3;
+const BAND_MARGIN = 2;
+const RISE = 0.05;
 const EPS = 1e-9;
 const ACCEPTANCE_IDS = ['mexico', 'monza', 'cleveland'] as const;
 
@@ -65,19 +66,29 @@ function maxBandOf(track: TrackDataV2): number {
   return max + KERB_WIDTH + BAND_MARGIN;
 }
 
-/** Point sits inside the kerb band of row j: dist < halfWidthAt(its side, j) + KERB_WIDTH + 0.3. */
-function inBandOf(track: TrackDataV2, p: [number, number], j: number): boolean {
+/** Side of row j whose kerb band (halfWidthAt + KERB_WIDTH + 2) contains the point; null when none. */
+function bandSideOf(track: TrackDataV2, p: [number, number], j: number): Side | null {
   const [jx, jz] = track.centerline[j];
   const dx = p[0] - jx;
   const dz = p[1] - jz;
   if (Math.hypot(dx, dz) >= halfWidthAt(track, 'left', j) + KERB_WIDTH + BAND_MARGIN + EPS &&
       Math.hypot(dx, dz) >= halfWidthAt(track, 'right', j) + KERB_WIDTH + BAND_MARGIN + EPS) {
-    return false;
+    return null;
   }
   const [rx, rz] = rightNormalAt(track.centerline, j);
   const side: Side = dx * rx + dz * rz >= 0 ? 'right' : 'left';
-  return Math.hypot(dx, dz) < halfWidthAt(track, side, j) + KERB_WIDTH + BAND_MARGIN + EPS;
+  return Math.hypot(dx, dz) < halfWidthAt(track, side, j) + KERB_WIDTH + BAND_MARGIN + EPS ? side : null;
 }
+
+/** Point inside row j's band and higher than that row's kerb outer edge + 0.05 m. */
+function inBandOf(track: TrackDataV2, p: [number, number, number], j: number): boolean {
+  const side = bandSideOf(track, [p[0], p[1]], j);
+  if (side === null) return false;
+  const reff = reffCache.get(track) ?? innerCornerRadii(track.centerline);
+  reffCache.set(track, reff);
+  return p[2] > kerbOuterEdgeY(track, reff, side, j) + RISE;
+}
+const reffCache = new WeakMap<TrackDataV2, ReturnType<typeof innerCornerRadii>>();
 
 /** Rows j whose band contains the point and which are more than INNER_ARC_WINDOW arc-metres from every own row. */
 function foreignBandRows(
@@ -86,7 +97,7 @@ function foreignBandRows(
   sArc: number[],
   total: number,
   ownRows: number[],
-  p: [number, number],
+  p: [number, number, number],
 ): number[] {
   const out: number[] = [];
   const gx = Math.floor(p[0] / grid.cell);
@@ -113,7 +124,7 @@ function segmentLength(start: number, end: number, n: number): number {
 interface Tri {
   surf: string;
   ownRows: number[];
-  pts: Array<[number, number]>;
+  pts: Array<[number, number, number]>;
 }
 
 /** Verge and runoff triangles with their generating rows; escape strips (runoff without segment) excluded. */
@@ -138,15 +149,16 @@ function candidateTris(track: TrackDataV2, strips: SurfaceStrip[]): Tri[] {
     const ind = s.indices;
     for (let t = 0; t + 2 < ind.length; t += 3) {
       const rows = new Set<number>();
-      const pts: Array<[number, number]> = [];
+      const pts: Array<[number, number, number]> = [];
       for (let u = 0; u < 3; u++) {
         const vi = ind[3 * t + u];
         rows.add(w === 3 ? Math.floor(vi / w) % n : normIndex(rowBase + Math.floor(vi / w), n));
-        pts.push([p[3 * vi], p[3 * vi + 2]]);
+        pts.push([p[3 * vi], p[3 * vi + 2], p[3 * vi + 1]]);
       }
       pts.push([
         (pts[0][0] + pts[1][0] + pts[2][0]) / 3,
         (pts[0][1] + pts[1][1] + pts[2][1]) / 3,
+        (pts[0][2] + pts[1][2] + pts[2][2]) / 3,
       ]);
       out.push({ surf: s.surface, ownRows: Array.from(rows), pts });
     }
