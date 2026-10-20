@@ -154,11 +154,30 @@ describe('180 track style wiring', () => {
       }),
     };
     const stands = extraGrandstands(ring, styleWith({ start: 95, end: 5, side: 'left', offsetMeters: 15 }, 100));
-    expect(stands).toHaveLength(1);
-    expect(Math.abs(stands[0].lengthMeters - 309.0)).toBeLessThanOrEqual(0.5);
-    const dist = Math.hypot(stands[0].x, stands[0].z);
-    const near = Math.min(Math.abs(dist - (475.5 + 21)), Math.abs(dist - (475.5 - 21)));
-    expect(near).toBeLessThanOrEqual(1);
+    expect(stands.length).toBeGreaterThanOrEqual(4);
+    const corners = (g: Grandstand): Array<[number, number]> => {
+      const half = g.lengthMeters / 2;
+      return [
+        [g.x + half * Math.cos(g.yaw), g.z - half * Math.sin(g.yaw)],
+        [g.x - half * Math.cos(g.yaw), g.z + half * Math.sin(g.yaw)],
+      ];
+    };
+    for (let i = 1; i < stands.length; i++) {
+      let gap = Infinity;
+      for (const [ax, az] of corners(stands[i - 1])) {
+        for (const [bx, bz] of corners(stands[i])) gap = Math.min(gap, Math.hypot(ax - bx, az - bz));
+      }
+      expect(gap).toBeLessThanOrEqual(1);
+    }
+    for (const g of stands) {
+      const half = g.lengthMeters / 2;
+      const dist = Math.hypot(g.x, g.z);
+      const near = Math.min(
+        Math.abs(dist - Math.sqrt((500 + 21) ** 2 - half * half)),
+        Math.abs(dist - Math.sqrt((500 - 21) ** 2 - half * half)),
+      );
+      expect(near).toBeLessThanOrEqual(0.6);
+    }
   });
 
   it('AT9: default style builds identical objects to no style', () => {

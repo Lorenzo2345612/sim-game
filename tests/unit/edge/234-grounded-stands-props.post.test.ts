@@ -164,7 +164,7 @@ describe('234 grounded stands and props post-code gaps', () => {
 
   it('POST8: main.ts grounds both grandstand loops with groundedBase and no groundHeightAt', () => {
     const mainSrc = readFileSync(join(ROOT, 'src', 'main.ts'), 'utf8');
-    expect(mainSrc.match(/groundedBase\(/g)).toHaveLength(2);
+    expect(mainSrc.match(/groundedBase\(/g)).toHaveLength(1);
     expect(mainSrc).not.toMatch(/groundHeightAt\(/);
   });
 

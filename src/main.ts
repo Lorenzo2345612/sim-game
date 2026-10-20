@@ -75,10 +75,10 @@ import { surfaceHeightAt, terrainHeightAt } from './track/ground';
 import { computeRacingLine } from './ai/racingLine';
 import { carLimitsFromSpec, speedProfile } from './ai/speedProfile';
 import { DrivingLine } from './render/drivingLine';
-import { grandstandFootprint, groundedBase } from './track/placement';
+import { grandstandFootprint, groundedBase, placedGrandstands } from './track/placement';
 import { buildTrackSurfaces } from './track/surfaces';
 import { buildTrackMarkings } from './track/markings';
-import { loadTrackStyle, extraGrandstands } from './track/trackStyleWiring';
+import { loadTrackStyle } from './track/trackStyleWiring';
 import { parseTrackData } from './track/parseTrackData';
 import { bollardCarFromState, createBollardField, stepBollards, type BollardCar, type BollardField } from './track/bollards';
 import { HudV2, type HudV2Data } from './ui/hudV2';
@@ -1110,23 +1110,19 @@ async function startGame(trackId: string): Promise<void> {
     treeField = trees;
     scene.add(trees.object);
 
-    for (const g of track.grandstands) {
+    for (const g of placedGrandstands(track, trackStyle)) {
       const { baseY, plinthBottom } = groundedBase(track, g.x, g.z, g.yaw, grandstandFootprint(g));
       const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
       stand.position.y = baseY;
       scene.add(stand);
       optimizeGroups.push(stand);
     }
-
-    const extras = extraGrandstands(track, trackStyle);
-    for (const g of extras) {
-      const { baseY, plinthBottom } = groundedBase(track, g.x, g.z, g.yaw, grandstandFootprint(g));
-      const stand = createGrandstand(g, undefined, trackStyle, baseY - plinthBottom);
-      stand.position.y = baseY;
-      scene.add(stand);
-      optimizeGroups.push(stand);
-    }
-    stats.style = { id: trackId, loaded: loadedStyle.loaded, warnings: loadedStyle.warnings.length, extraGrandstands: extras.length };
+    stats.style = {
+      id: trackId,
+      loaded: loadedStyle.loaded,
+      warnings: loadedStyle.warnings.length,
+      extraGrandstands: trackStyle.extraGrandstands.length,
+    };
 
     const pit = createPitBuilding(track, trackStyle);
     scene.add(pit);
