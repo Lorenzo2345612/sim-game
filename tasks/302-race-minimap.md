@@ -54,11 +54,10 @@ Rules:
 | AT6 | same page, after AT5 | `debugFlagOverride({flags:['green','yellow','green'], playerSector:2})`, wait 1 s | canvas pixels within ±12 per channel of (255,212,0) or (160,134,0): ≥ 150 |
 | AT7 | after AT6 | `debugFlagOverride({flags:['green','green','green'], playerSector:2})`, wait 0.5 s | those pixels ≤ 5; pixels within ±12 of (47,125,255) ≥ 150 |
 | AT8 | page `/?track=cleveland` (no race) | loaded | `.minimap` 160 px (±1); no `.minimap-legend`; 049, 161 and 207 tests unchanged and passing |
-| AT9 | — | run 293 and 294 e2e acceptance specs | pass |
 
 ## Acceptance criteria
 
-- [ ] AT1–AT9 pass.
+- [ ] AT1–AT8 pass; 293 and 294 e2e acceptance specs still pass (Verification).
 
 ## Verification
 
