@@ -59,7 +59,7 @@ isRetired(car: number): boolean // stopped[car] === 1
 | AT6 | as AT5 at the tick car 0 finishes | `setPlayerAutopilot(false)`, step 30 s with input `{throttle 0, brake 1}` | car 0 position moved > 300 m along the track (autopilot stays on after finishing) |
 | AT7 | as AT5 before go, `debugStopCar(2)` | read `isRetired(2)`, `isRetired(1)` | true, false |
 | AT8 | page `/?race=1&track=cleveland&ai=3&laps=3`, 3 s sim after lights out | `finishRaceNow()` | `#results` visible; no time cell reads `'DNF'`; at least 3 read `'Running'`; `getSimTime()` grows ≥ 1 s within the next 5 s wall time |
-| AT9 | — | run 095, 130 and 207 e2e acceptance specs | pass |
+| AT9 | — (regression, no new test file: the acceptance worker writes nothing for it) | run 095, 130 and 207 e2e acceptance specs | pass |
 
 ## Acceptance criteria
 
