@@ -26,7 +26,7 @@ import type { Telemetry } from '../../src/physics/vehicleModel';
 import { AiDriver, type AiObservation } from '../../src/ai/aiDriver';
 import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
-import { AI_GRIP_MARGIN } from '../../src/game/raceGame';
+import { NEURAL_GRIP_MARGIN } from '../../src/game/raceGame';
 
 const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 } } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
@@ -49,7 +49,7 @@ const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
 // Residual mode: the classic AiDriver drives (as in RaceGame); the network only sets its lateral offset and pace.
 const cLine = computeRacingLine(cl, track.widthMeters / 2);
 const cLim = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
-const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * AI_GRIP_MARGIN, muLong: cLim.muLong * AI_GRIP_MARGIN });
+const cSpeeds = speedProfile(cLine, { ...cLim, muLat: cLim.muLat * NEURAL_GRIP_MARGIN, muLong: cLim.muLong * NEURAL_GRIP_MARGIN });
 const drivers: AiDriver[] = [];
 // Extra residual inputs: centerline index X_LOOK metres ahead of each index.
 const ahead = X_LOOK.map((d) => aheadIndices(cum, n, d));
