@@ -4273,7 +4273,7 @@
     {
       "num": "317",
       "title": "City bake: buildings allowed up to the local barrier, not the lap's farthest one",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
@@ -4310,13 +4310,26 @@
     {
       "num": "320",
       "title": "Ermita river with water (streams stay dry)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
       "models": "standard",
       "phase": 2,
       "spec": "tasks/320-ermita-river-water.md"
+    },
+    {
+      "num": "321",
+      "title": "Blue flags: lapped cars yield without leaving their fight; player penalty",
+      "status": "pending",
+      "deps": [
+        "314"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/321-blue-flags.md"
     }
   ]
 }
