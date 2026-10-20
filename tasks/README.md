@@ -323,4 +323,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 319 | Surrounding buildings for every circuit | in progress | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | pending | 314 |
-| 323 | Master green after the car tyre colliders | in progress | - |
+| 323 | Master green after the car tyre colliders | done | - |
