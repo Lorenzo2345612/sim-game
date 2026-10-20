@@ -311,11 +311,11 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
 | 308 | Yellow flags: minimum duration and continuous spin cause | done | 307 |
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | done | 308 |
-| 310 | Yellow countdown in race HUD and minimap | pending | 309 |
+| 310 | Yellow countdown in race HUD and minimap | in progress | 309 |
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
 | 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
-| 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | pending | 305, 309 |
+| 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | in progress | 305, 309 |
 | 315 | Results: overtakes in their own tab, with a legend | done | 296 |
 | 316 | Grandstands follow the track and never sit on it | done | - |
 | 317 | City bake: buildings allowed up to the local barrier, not the lap's farthest one | done | - |

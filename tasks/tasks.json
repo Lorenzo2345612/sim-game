@@ -4180,7 +4180,7 @@
     {
       "num": "310",
       "title": "Yellow countdown in race HUD and minimap",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "309"
       ],
@@ -4236,7 +4236,7 @@
     {
       "num": "314",
       "title": "Incident car may be passed under yellow; yellow clears 3 s after the threat",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "305",
         "309"
