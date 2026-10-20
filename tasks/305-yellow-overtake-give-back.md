@@ -67,13 +67,13 @@ get playerGiveBack(): { passed: number; remaining: number } | null  // reused ob
 | AT1 | `new GiveBack(3)`, `open(0, 1, 100)` | `update([1010, 1000, 0], [false,false,false], 105)` then `update([995, 1000, 0], [false,false,false], 105.5)`, then `update` at 111 with the same distances | events drained after 105.5: exactly `[{car:0, passed:1, kind:'returned'}]`; none after 111; `owes(0)` −1 |
 | AT2 | `open(0, 1, 100)`, car 0 stays ahead (1010 vs 1000) | `update` at 109.99 and at 110 | no events after 109.99, `remaining(0, 109.99)` 0.01 (±1e-9); after 110 exactly `[{0, 1, 'penalty'}]`; `owes(0)` −1, `remaining(0, 110)` NaN |
 | AT3 | `open(0, 1, 100)` | `update([1010, 1000, 0], [false, true, false], 103)` | exactly `[{0, 1, 'void'}]` |
-| AT4 | `open(0, 1, 100)`, `open(0, 1, 101)`, `open(0, 2, 102)` | `owes(0)` at 102; then `update([1010, 1000, 1005], all false, 112)` | `owes(0)` = 1; events: `[{0,1,'penalty'}]` only (pair 0–2 opened at 102 still open), `owes(0)` = 2 |
+| AT4 | `open(0, 1, 100)`, `open(0, 1, 101)`, `open(0, 2, 102)` | `owes(0)` at 102; then `update([1010, 1000, 1005], all false, 111)` | `owes(0)` = 2 before; events: `[{0,1,'penalty'}]` only (pair 0–2, due at 112, still open); `owes(0)` = 1 after |
 | AT5 | `open(0, 1, 100)`, distances equal `[1000, 1000, 0]` | `update` at 105 | no event (strictly behind required) |
 | AT6 | `RaceGame` cleveland, f4, aiCount 3, expert, seed 1, `setPlayerAutopilot(true)`, step to 40 s after go | pick AI cars a, b with a directly ahead of b in `standings()` (both ≥ 1, gap ≤ 150 m); `debugGiveBack(a, b)`; step 10 s | at some tick within the 10 s, `standings()` distance of b > distance of a; `penalties.forCar(a)` has no `'yellow flag overtake'` entry |
 | AT7 | `new GiveBack(3)`, `open(0, 1, 100)` | `isGiveBack(1, 0, 101)`; `update([995, 1000, 0], all false, 105.5)`; then `isGiveBack(1, 0, 105.5)`, `isGiveBack(1, 0, 107.4)`, `isGiveBack(1, 0, 107.6)`, `isGiveBack(0, 1, 105.5)`, `isGiveBack(2, 0, 105.5)` | true; then true, true, false, false, false |
 | AT8 | as AT6 at 40 s after go | `debugGiveBack(0, c)` with c the last car in `standings()`; step 10.5 s, recording whether car 0 stayed ahead of c at every tick | `playerGiveBack` non-null right after the call with `passed` = c and `remaining` 10 (±0.01); if car 0 stayed ahead: exactly one `'yellow flag overtake'` penalty of 5 s for car 0, else none; `playerGiveBack` null at the end |
 | AT9 | page `/?race=1&track=cleveland&ai=3&laps=3`, viewport 1280×720, 3 s sim after lights out | `debugGiveBack(0, 3)` | within 0.5 s `#giveback-banner` visible, text matches `/^GIVE THE POSITION BACK TO AI 3 · (10\|9) s$/`; no overlap with `.minimap`, `#race-tower`, `.race-hud-top` |
-| AT10 | — | run 128, 130, 289, 298 unit tests and 294, 303 e2e acceptance specs | pass |
+| AT10 | — (regression, no new test file: the acceptance worker writes nothing for it) | run 128, 130, 289, 298 unit tests and 294, 303 e2e acceptance specs | pass |
 
 ## Acceptance criteria
 
