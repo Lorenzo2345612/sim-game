@@ -86,6 +86,11 @@ export class AiDriver {
     this.p.maxSteerAngle = rad;
   }
 
+  setPedalGains(kp: number, kb: number): void {
+    this.p.kp = kp;
+    this.p.kb = kb;
+  }
+
   setBrakeGain(kb: number): void {
     this.p.kb = kb;
   }

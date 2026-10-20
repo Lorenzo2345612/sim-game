@@ -72,6 +72,8 @@ type World = ReturnType<typeof createPhysicsWorld>;
 export const AI_GRIP_MARGIN: number = 0.75;
 export const NEURAL_GRIP_MARGIN = 0.82; // residual nets were trained against this profile
 
+const RESIDUAL_THROTTLE_KP = 0.5;
+const RESIDUAL_BRAKE_KB = 0.25;
 const AI_THROTTLE_KP = 1.5;
 const AI_BRAKE_KB = 0.07;
 const RULE_BRAKE_KB = 0.25; // firm braking while a rule cap (VSC/yellow/blue) applies
@@ -554,7 +556,11 @@ export class RaceGame {
           others,
         };
         const tel = vehicle.getTelemetry();
-        if (residualNet) car.residual = { net: residualNet(neuralWeights, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
+        if (residualNet) {
+          car.residual = { net: residualNet(neuralWeights, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
+          // The nets were trained on the default pedal gains; the classic gains cost ~8 s a lap.
+          driver.setPedalGains(RESIDUAL_THROTTLE_KP, RESIDUAL_BRAKE_KB);
+        }
         else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
       }
       ais.push(car);
@@ -1344,7 +1350,9 @@ export class RaceGame {
     if (this.yellow[i] === 1 && this.yellowHold[i] === 1) driver.setLateralOffset(0);
     else if (this.time <= this.blueUntil[i]) driver.setLateralOffset(this.ruleOffset[i]);
     const ruleCap = this.ruleCap[i];
-    driver.setBrakeGain(Number.isNaN(ruleCap) && this.aheadSpeedCap === null ? AI_BRAKE_KB : RULE_BRAKE_KB);
+    if (!this.ais[i - 1].residual) {
+      driver.setBrakeGain(Number.isNaN(ruleCap) && this.aheadSpeedCap === null ? AI_BRAKE_KB : RULE_BRAKE_KB);
+    }
     // Several caps (traffic, blue, yellow, VSC) combine as the minimum.
     if (Number.isNaN(ruleCap)) driver.setSpeedCap(trafficCap);
     else driver.setSpeedCap(trafficCap === null ? ruleCap : Math.min(trafficCap, ruleCap));
