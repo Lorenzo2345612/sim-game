@@ -1396,6 +1396,7 @@ async function startGame(trackId: string): Promise<void> {
     laps: 0,
     flags: raceFlags,
     blue: false,
+    blueLapper: -1,
     vscPhase: 'off',
     vscDelta: 0,
     giveBack: null,
@@ -1860,6 +1861,7 @@ async function startGame(trackId: string): Promise<void> {
         raceHudData.playerFlag = raceFlags[Math.min(2, Math.max(0, pSector - 1))];
         raceHudData.time = raceGame.simTime;
         raceHudData.blue = raceGame.playerBlueFlag;
+        raceHudData.blueLapper = raceGame.playerBlueLapper;
         raceHudData.vscPhase = raceGame.vsc.phase;
         raceHudData.vscDelta = raceGame.playerVscDelta;
         raceHudData.giveBack = raceGame.playerGiveBack;

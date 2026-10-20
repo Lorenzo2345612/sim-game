@@ -37,6 +37,7 @@ import { damageSpeedScale, type DamageState } from '../physics/damage';
 import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
 import { DebrisField, type DebrisKind } from '../physics/debris';
 import { V_LOW } from '../physics/tyre';
+import { BlueFlagTimer } from '../race/blueFlagTimer';
 import { TrackProgress } from '../track/trackProgress';
 
 /** Per-car start pose (task 261): arc length s, lateral d (+ right), speed v. */
@@ -44,6 +45,7 @@ export interface RaceScenario {
   starts: { s: number; d: number; v: number }[]; // by car index; player = 0
   speedScales?: number[]; // by car index, AI only
   frozen?: number[]; // car indices held with brake 1
+  lapsAhead?: number[]; // by car index, whole laps added to race distance at start
 }
 
 export interface RaceConfig {
@@ -95,6 +97,12 @@ const LOOKAHEAD_M = 30; // m ahead on the racing line for the traffic decision i
 const SPAWN_HEIGHT_M = 0.6;
 /** Offsets each AI decision step by car index % 4. Off: 269 AT3 (resets <= 6) fails with it on. */
 export const AI_DECISION_STAGGER = false;
+const BLUE_OFFSET_M = 2.5;
+const BLUE_EDGE_M = 1.2; // m kept inside the track edge
+const BLUE_BATTLE_M = 50;
+const BLUE_CAP_RANGE_M = 40;
+const BLUE_PENALTY_S = 5;
+const BLUE_PUSH_M = 1.5; // extra offset the lapper takes to the side opposite the blued car
 const BLUE_HOLD_S = 3; // blue-flag reaction persists this long after the flag clears
 const ZERO_VEL = { x: 0, y: 0, z: 0 }; // reused: holding a debug-stopped car must not allocate
 const CONTACT_PAIR_S = 0.5; // min gap between two counts of the same pair
@@ -277,6 +285,11 @@ export class RaceGame {
   private readonly sectorB1: number;
   private readonly sectorB2: number;
   private blue0 = false;
+  private blueLapper0 = -1;
+  private readonly blueTimer = new BlueFlagTimer();
+  private blueLapperOf: Int16Array = new Int16Array(0);
+  private blueSide: Int8Array = new Int8Array(0);
+  private lapperPush: Float64Array = new Float64Array(0);
   private vscDelta0 = 0;
   private readonly giveBack: GiveBack;
   private readonly trouble: TroubleTracker;
@@ -381,6 +394,9 @@ export class RaceGame {
     this.stoppedSec = new Float64Array(this.count);
     this.blueUntil = new Float64Array(this.count).fill(Number.NEGATIVE_INFINITY);
     this.ruleOffset = new Float64Array(this.count);
+    this.blueLapperOf = new Int16Array(this.count).fill(-1);
+    this.blueSide = new Int8Array(this.count);
+    this.lapperPush = new Float64Array(this.count);
     this.ruleCap = new Float64Array(this.count).fill(Number.NaN);
     this.giveBack = new GiveBack(this.count);
     this.trouble = new TroubleTracker(this.count);
@@ -595,6 +611,10 @@ export class RaceGame {
       othersByCar.push(others);
     }
     const classification = new RaceClassification(count, config.laps, progresses[0].length);
+    const lapsAhead = config.scenario?.lapsAhead;
+    for (let i = 0; lapsAhead !== undefined && i < count; i++) {
+      if (lapsAhead[i]) classification.setLapsAhead(i, lapsAhead[i]);
+    }
     const current: VehicleState[] = [];
     const prev: VehicleState[] = [];
     for (let i = 0; i < count; i++) {
@@ -754,7 +774,7 @@ export class RaceGame {
             ai.driver.setLateralOffset(r.offset);
             ai.driver.setSpeedScale(r.scale * dmgScale);
           } else {
-            ai.driver.setLateralOffset(decision.offset);
+            ai.driver.setLateralOffset(decision.offset + this.lapperPush[i]);
             ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
           }
           this.updateTrafficCaution(i);
@@ -977,6 +997,10 @@ export class RaceGame {
   }
 
   /** Blue flag on the player this tick (false until the first post-go tick). */
+  get playerBlueLapper(): number {
+    return this.blueLapper0;
+  }
+
   get playerBlueFlag(): boolean {
     return this.blue0;
   }
@@ -1173,7 +1197,8 @@ export class RaceGame {
         // queue to join: the yellow cap governs and the field must roll on (289).
         const t = this.traffic.indexOf(other);
         const incident = yellow && t >= 0 && (this.stopped[t] === 1 || this.finished[t] === 1);
-        if (!incident && gap >= minGap && gap < bestGap) {
+        const yielding = t >= 0 && this.blueLapperOf[t] === i && this.time <= this.blueUntil[t];
+        if (!incident && !yielding && gap >= minGap && gap < bestGap) {
           bestGap = gap;
           this.aheadSpeedCap = other.speed;
         }
@@ -1421,6 +1446,7 @@ export class RaceGame {
   private updateRuleReactions(): void {
     const n = this.count;
     const t = this.time;
+    this.lapperPush.fill(0);
     const vscOn = this.vsc.phase === 'deployed' || this.vsc.phase === 'ending';
     for (let j = 0; j < n; j++) {
       this.yellowLapDist[j] = this.traffic[j].distance;
@@ -1446,14 +1472,36 @@ export class RaceGame {
           cap = Number.isNaN(cap) ? ahead : Math.min(cap, ahead);
         }
       }
-      if (this.flags.blueFor(i)) this.blueUntil[i] = t + BLUE_HOLD_S;
+      const lapper = this.flags.blueLapper(i);
+      if (lapper !== -1) {
+        if (t > this.blueUntil[i] || lapper !== this.blueLapperOf[i]) this.blueSide[i] = 0;
+        this.blueUntil[i] = t + BLUE_HOLD_S;
+        this.blueLapperOf[i] = lapper;
+      }
       if (t <= this.blueUntil[i]) {
+        const lp = this.blueLapperOf[i];
         const off = this.line.offsets[idx];
-        const left = halfWidthAt(this.track, 'left', idx) + off;
+        const room = halfWidthAt(this.track, 'left', idx);
+        const left = room + off;
         const right = halfWidthAt(this.track, 'right', idx) - off;
-        this.ruleOffset[i] = right >= left ? 2 : -2;
-        const blueCap = 0.95 * this.speeds[idx];
-        cap = Number.isNaN(cap) ? blueCap : Math.min(cap, blueCap);
+        const roomL = Math.max(0, left - BLUE_EDGE_M);
+        const roomR = Math.max(0, right - BLUE_EDGE_M);
+        if (this.blueSide[i] === 0) {
+          const goLeft = this.traffic[lp].lateral > this.traffic[i].lateral;
+          this.blueSide[i] = goLeft ? -1 : 1;
+        }
+        this.ruleOffset[i] = this.blueSide[i] < 0 ? -Math.min(BLUE_OFFSET_M, roomL) : Math.min(BLUE_OFFSET_M, roomR);
+        const behind = ((this.traffic[i].distance - this.traffic[lp].distance) % this.lapLength + this.lapLength) % this.lapLength;
+        let battling = false;
+        for (let k = 0; k < n && !battling; k++) {
+          if (k === i || k === lp || this.finished[k] === 1) continue;
+          battling = Math.abs(this.totalDist[k] - this.totalDist[i]) <= BLUE_BATTLE_M;
+        }
+        if (i > 0 && behind <= BLUE_CAP_RANGE_M && this.lapperPush[lp] === 0) this.lapperPush[lp] = -this.blueSide[i] * BLUE_PUSH_M;
+        if (!battling && behind <= BLUE_CAP_RANGE_M) {
+          const blueCap = 0.92 * this.speeds[idx];
+          cap = Number.isNaN(cap) ? blueCap : Math.min(cap, blueCap);
+        }
       }
       const owed = i >= 1 ? this.giveBack.owes(i) : -1;
       if (owed >= 0) {
@@ -1464,7 +1512,12 @@ export class RaceGame {
       }
       this.ruleCap[i] = cap;
     }
-    this.blue0 = this.flags.blueFor(0);
+    const lapper0 = this.flags.blueLapper(0);
+    this.blue0 = lapper0 !== -1;
+    this.blueLapper0 = lapper0;
+    if (this.blueTimer.update(lapper0, lapper0 === -1 ? 0 : this.trackGap(0, lapper0), FIXED_DT)) {
+      this.book(0, 'penalty', BLUE_PENALTY_S, 'ignoring blue flags');
+    }
   }
 
   private applyRulesReaction(i: number, driver: AiDriver, trafficCap: number | null): void {
@@ -1479,6 +1532,11 @@ export class RaceGame {
     // Several caps (traffic, blue, yellow, VSC) combine as the minimum.
     if (Number.isNaN(ruleCap)) driver.setSpeedCap(trafficCap);
     else driver.setSpeedCap(trafficCap === null ? ruleCap : Math.min(trafficCap, ruleCap));
+  }
+
+  private trackGap(car: number, lapper: number): number {
+    const L = this.lapLength;
+    return ((this.traffic[car].distance - this.traffic[lapper].distance) % L + L) % L;
   }
 
   private sectorOf(lapDistance: number): number {

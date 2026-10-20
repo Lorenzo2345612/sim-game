@@ -131,21 +131,30 @@ export class FlagState {
   }
 
   blueFor(car: number): boolean {
+    return this.blueLapper(car) !== -1;
+  }
+
+  blueLapper(car: number): number {
     if (!Number.isInteger(car) || car < 0 || car >= this.count) {
       throw new RangeError(`car ${car} out of range`);
     }
-    if (this.retired[car]) return false;
+    if (this.retired[car]) return -1;
     const half = this.lapLength / 2;
     const L = this.lapLength;
     const xd = this.dist[car];
     const xl = this.lapDist[car];
+    let best = -1;
+    let bestGap = Infinity;
     for (let j = 0; j < this.count; j++) {
       if (j === car || this.retired[j] || !this.valid[j]) continue;
       if (this.dist[j] - xd <= half) continue;
       const behind = ((xl - this.lapDist[j]) % L + L) % L;
-      if (behind <= BLUE_WINDOW) return true;
+      if (behind <= BLUE_WINDOW && behind < bestGap) {
+        bestGap = behind;
+        best = j;
+      }
     }
-    return false;
+    return best;
   }
 
   overtakeUnderYellow(): { car: number; passed: number }[] {

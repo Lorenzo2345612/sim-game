@@ -1,4 +1,4 @@
-export type PenaltyReason = 'track limits' | 'yellow flag overtake' | 'VSC delta' | 'jump start';
+export type PenaltyReason = 'track limits' | 'yellow flag overtake' | 'VSC delta' | 'jump start' | 'ignoring blue flags';
 
 export type PenaltyOutcome = 'ok' | 'final-warning' | 'black-flag';
 
@@ -41,7 +41,7 @@ export class PenaltyBook {
     for (let i = 0; i < carCount; i++) {
       this.perCar.push([]);
       this.penaltyCounts.push(0);
-      this.reasonCounts.push({ 'track limits': 0, 'yellow flag overtake': 0, 'VSC delta': 0, 'jump start': 0 });
+      this.reasonCounts.push({ 'track limits': 0, 'yellow flag overtake': 0, 'VSC delta': 0, 'jump start': 0, 'ignoring blue flags': 0 });
       this.blackFlagged.push(false);
     }
     this.totals = new Float64Array(carCount);

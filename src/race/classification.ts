@@ -23,6 +23,7 @@ interface CarState {
   lapStart: number | null;
   accSinceCross: number;
   maxSinceCross: number;
+  bonus: number;
   retired: boolean;
   retireSeq: number;
   disq: boolean;
@@ -91,6 +92,7 @@ export class RaceClassification {
         lapStart: null,
         accSinceCross: 0,
         maxSinceCross: 0,
+        bonus: 0,
         retired: false,
         retireSeq: -1,
         disq: false,
@@ -165,7 +167,7 @@ export class RaceClassification {
     }
 
     const s = st.s;
-    s.distance = (s.lap - 1) * L + lapDistance;
+    s.distance = (s.lap - 1 + st.bonus) * L + lapDistance;
     this.recordMarks(st, time);
 
     st.prevDist = lapDistance;
@@ -178,6 +180,13 @@ export class RaceClassification {
   lapStartTime(car: number): number | null {
     this.check(car);
     return this.cars[car].lapStart;
+  }
+
+  /** Whole laps added to the car's race distance (scenarios). */
+  setLapsAhead(car: number, laps: number): void {
+    this.check(car);
+    this.cars[car].bonus = laps;
+    this.dirty = true;
   }
 
   addPenalty(car: number, seconds: number): void {

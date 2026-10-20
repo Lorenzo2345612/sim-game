@@ -11,6 +11,7 @@ export interface RaceHudData {
   laps: number;
   flags: readonly SectorFlag[];
   blue: boolean;
+  blueLapper?: number;
   vscPhase: VscPhase;
   vscDelta: number;
   giveBack?: { passed: number; remaining: number } | null;
@@ -153,6 +154,7 @@ export class RaceHud {
   private alertText = '';
   private readonly flagStates: SectorFlag[] = ['green', 'green', 'green'];
   private blueVisible = false;
+  private blueLapperShown = -2;
   private vscVisible = false;
   private vscText = '';
   private posText = '';
@@ -292,6 +294,11 @@ export class RaceHud {
       if (this.flagStates[i] === s) continue;
       this.flagStates[i] = s;
       this.flagEls[i].dataset.state = s;
+    }
+    const lapper = data.blueLapper ?? -1;
+    if (data.blue && this.blueLapperShown !== lapper) {
+      this.blueLapperShown = lapper;
+      this.blueEl.textContent = `BLUE FLAG · LET AI ${lapper} BY`;
     }
     if (this.blueVisible !== data.blue) {
       this.blueVisible = data.blue;
