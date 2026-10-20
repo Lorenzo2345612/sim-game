@@ -4102,7 +4102,7 @@
     {
       "num": "304",
       "title": "Race results: penalties added, running cars not DNF",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "303"
       ],

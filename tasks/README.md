@@ -305,7 +305,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 301 | No kerb-zone steps on any track | waiting decision | 300 |
 | 302 | Race minimap: all cars and sector flag colours | done | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | done | 302 |
-| 304 | Race results: penalties added, running cars not DNF | in progress | 303 |
+| 304 | Race results: penalties added, running cars not DNF | done | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | pending | 304 |
 | 306 | Timing tower views: gap, tyres, laps | pending | 305 |
 | 307 | Passing cars in trouble under yellow is legal | pending | 305 |
