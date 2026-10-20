@@ -57,7 +57,9 @@ Rules:
 
 ## Acceptance criteria
 
-- [ ] AT1–AT8 pass; 293 and 294 e2e acceptance specs still pass (Verification).
+- [ ] AT1–AT8 pass; 293 and 294 e2e still pass (the orchestrator runs them; do not run them yourself).
+- [ ] Performance (planner, 2026-10-19: per-frame repaint of every sector polyline made 293/294 1 s timing checks flaky): `paintRaceMinimap` runs at most every 50 ms (plus the debug hook); sector strokes are drawn into an offscreen canvas and redrawn only when a sector's `sectorStyle` result changes; per paint only blit + car dots.
+- Work already in the worktree is kept; only add the throttle and the cached sector layer, then run Verification once.
 
 ## Verification
 
