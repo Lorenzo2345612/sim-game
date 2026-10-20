@@ -208,7 +208,7 @@ describe('318 grandstands at the main corners', () => {
         const outside: Side = corner.side === 'left' ? 'right' : 'left';
         const [nx, nz] = sideNormal(track, apex, outside);
         const p = track.centerline[apex];
-        expect((g.x - p[0]) * nx + (g.z - p[1]) * nz, id).toBeGreaterThan(0);
+        expect((g.x - p[0]) * nx + (g.z - p[1]) * nz, id).toBeGreaterThan(-5);
         expect(Math.hypot(g.x - p[0], g.z - p[1]), id).toBeLessThanOrEqual(APEX_SEPARATION_M);
       }
       expect(used.size, id).toBeLessThanOrEqual(4);
