@@ -301,9 +301,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 297 | Master red: 250 AT9 baseline and baku barrier fold (249 AT3) | done | - |
 | 298 | No yellow flags from the standing start | done | 289 |
 | 299 | Low-ramp sausage kerb collider | done | - |
-| 300 | Verge and runoff strips must not fold over the inner kerb | waiting decision | - |
+| 300 | Verge and runoff strips must not fold over the inner kerb | in progress | - |
 | 301 | No kerb-zone steps on any track | pending | 300 |
-| 302 | Race minimap: all cars and sector flag colours | pending | 298 |
+| 302 | Race minimap: all cars and sector flag colours | in progress | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
 | 304 | Race results: penalties added, running cars not DNF | pending | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | pending | 304 |

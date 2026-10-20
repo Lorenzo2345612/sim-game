@@ -4051,7 +4051,7 @@
     {
       "num": "300",
       "title": "Verge and runoff strips must not fold over the inner kerb",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [],
       "complexity": "complex",
       "type": "bugfix",
@@ -4075,7 +4075,7 @@
     {
       "num": "302",
       "title": "Race minimap: all cars and sector flag colours",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "298"
       ],
