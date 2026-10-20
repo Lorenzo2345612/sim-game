@@ -29,6 +29,7 @@ export interface ResolvedTrackStyle {
   floodlights: FloodlightStyle | null;
   props: TrackProp[];
   sky: { hdri: string | null; fogDensityScale: number };
+  cornerGrandstands: boolean;
 }
 
 export const SKY_NAMES: readonly string[] = [
@@ -58,6 +59,7 @@ function makeDefault(): ResolvedTrackStyle {
     floodlights: null,
     props: [],
     sky: { hdri: null, fogDensityScale: 1 },
+    cornerGrandstands: true,
   };
 }
 
@@ -390,12 +392,17 @@ export function parseTrackStyle(raw: unknown, pointCount: number): { style: Reso
     style.sky.fogDensityScale = num(c, sky, 'sky', 'fogDensityScale', 0.25, 4) ?? 1;
   }
 
+  if (raw.cornerGrandstands !== undefined && raw.cornerGrandstands !== null) {
+    if (typeof raw.cornerGrandstands === 'boolean') style.cornerGrandstands = raw.cornerGrandstands;
+    else fail(c, 'cornerGrandstands', 'must be a boolean');
+  }
+
   return done();
 }
 
 const TOP_KEYS: readonly string[] = [
   'version', 'palette', 'edgeLines', 'kerbs', 'runoffPaint', 'barriers', 'pitBuilding',
-  'grandstands', 'extraGrandstands', 'floodlights', 'props', 'sky',
+  'grandstands', 'extraGrandstands', 'floodlights', 'props', 'sky', 'cornerGrandstands',
 ];
 
 export function rangeContains(range: StyleRange, index: number, pointCount: number): boolean {

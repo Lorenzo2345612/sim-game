@@ -1,6 +1,6 @@
 import type { Grandstand, Side, TrackDataV2 } from '../core/types';
 import { footprintGround } from './ground';
-import { halfWidthAt } from './surfaces';
+import { cornerCurvature, halfWidthAt } from './surfaces';
 import { DEFAULT_TRACK_STYLE, type ResolvedTrackStyle } from './trackStyle';
 
 export const GRANDSTAND_ROW_DEPTH = 0.9;
@@ -181,7 +181,7 @@ export function clearGrandstand(track: TrackDataV2, g: Grandstand): Grandstand |
 /** Builder and style stands that clear the track, pushed outward where needed. */
 export function placedGrandstands(track: TrackDataV2, style: ResolvedTrackStyle): Grandstand[] {
   const out: Grandstand[] = [];
-  for (const g of track.grandstands.concat(extraGrandstands(track, style))) {
+  for (const g of track.grandstands.concat(extraGrandstands(track, style)).concat(cornerGrandstands(track, style))) {
     const clear = clearGrandstand(track, g);
     if (clear !== null) out.push(clear);
   }
@@ -219,6 +219,161 @@ export function extraGrandstands(track: TrackDataV2, style: ResolvedTrackStyle):
         rows: e.rows,
         roof: e.roof,
       });
+    }
+  }
+  return out;
+}
+
+const CORNER_RADIUS_M = 120;
+const CORNER_SECTION_M = 40;
+const CORNER_MIN_FRACTION = 0.12;
+const CORNER_MAX_COUNT = 4;
+const CORNER_BARRIER_EXTRA_M = 3;
+const CORNER_ROWS = 10;
+const CORNER_APEX_SEPARATION_M = 150;
+const CORNER_PIECE_SEPARATION_M = 20;
+
+interface Ring { s: number[]; total: number }
+
+/** Cumulative centreline arc lengths and the full lap length. */
+function arcRing(track: TrackDataV2): Ring {
+  const cl = track.centerline;
+  const s: number[] = [0];
+  for (let i = 1; i < cl.length; i++) {
+    s.push(s[i - 1] + Math.hypot(cl[i][0] - cl[i - 1][0], cl[i][1] - cl[i - 1][1]));
+  }
+  const last = cl[cl.length - 1];
+  const total = s[cl.length - 1] + Math.hypot(cl[0][0] - last[0], cl[0][1] - last[1]);
+  return { s, total };
+}
+
+function ringGap(ring: Ring, i: number, j: number): number {
+  const d = Math.abs(ring.s[i] - ring.s[j]);
+  return Math.min(d, ring.total - d);
+}
+
+/** Arc distance from i to the pit range: 0 inside, else the nearer endpoint. */
+function pitGap(ring: Ring, pit: { start: number; end: number }, i: number): number {
+  const span = (((ring.s[pit.end] - ring.s[pit.start]) % ring.total) + ring.total) % ring.total;
+  const fwd = (((ring.s[i] - ring.s[pit.start]) % ring.total) + ring.total) % ring.total;
+  if (fwd <= span) return 0;
+  return Math.min(ringGap(ring, i, pit.start), ringGap(ring, i, pit.end));
+}
+
+/** One apex per circular run of radius < 120 m (the run's minimum), ranked and spread greedily, max 4. */
+function cornerApexes(track: TrackDataV2, ring: Ring): number[] {
+  const cx = track.centerline;
+  const n = cx.length;
+  const radii: number[] = [];
+  const tight: boolean[] = [];
+  for (let i = 0; i < n; i++) {
+    const c = cornerCurvature(cx, i);
+    radii.push(c === null ? Infinity : c.radius);
+    tight.push(c !== null && c.radius < CORNER_RADIUS_M);
+  }
+  const ranked: number[] = [];
+  const pushRun = (run: number[]): void => {
+    if (run.length === 0) return;
+    let best = run[0];
+    for (const i of run) if (radii[i] < radii[best]) best = i;
+    ranked.push(best);
+  };
+  if (tight.every((f) => f)) pushRun(cx.map((_, i) => i));
+  else {
+    const start = tight.findIndex((f) => !f);
+    let run: number[] = [];
+    for (let step = 1; step <= n; step++) {
+      const i = (start + step) % n;
+      if (tight[i]) run.push(i);
+      else {
+        pushRun(run);
+        run = [];
+      }
+    }
+  }
+  ranked.sort((a, b) => radii[a] - radii[b] || a - b);
+  const min = CORNER_MIN_FRACTION * ring.total;
+  const out: number[] = [];
+  for (const i of ranked) {
+    if (out.length === CORNER_MAX_COUNT) break;
+    if (ringGap(ring, i, 0) < min) continue;
+    if (out.some((a) => ringGap(ring, i, a) < min)) continue;
+    if (pitGap(ring, track.pit, i) < min) continue;
+    if (
+      out.some(
+        (a) =>
+          Math.hypot(cx[i][0] - cx[a][0], cx[i][1] - cx[a][1]) < CORNER_APEX_SEPARATION_M,
+      )
+    )
+      continue;
+    out.push(i);
+  }
+  return out;
+}
+
+/** Ring-ordered indices within CORNER_SECTION_M of the apex in either direction. */
+function sectionWalk(track: TrackDataV2, ring: Ring, apex: number): number[] {
+  const n = track.centerline.length;
+  const back = (i: number): number => (((ring.s[apex] - ring.s[i]) % ring.total) + ring.total) % ring.total;
+  const fwd = (i: number): number => (((ring.s[i] - ring.s[apex]) % ring.total) + ring.total) % ring.total;
+  const inside = (i: number): boolean => back(i) <= CORNER_SECTION_M || fwd(i) <= CORNER_SECTION_M;
+  let start = apex;
+  let startBack = -1;
+  for (let i = 0; i < n; i++) {
+    const b = back(i);
+    if (b <= CORNER_SECTION_M && b > startBack) {
+      startBack = b;
+      start = i;
+    }
+  }
+  const walk: number[] = [];
+  let i = start;
+  for (;;) {
+    walk.push(i);
+    const next = (i + 1) % n;
+    if (next === start || !inside(next)) break;
+    i = next;
+  }
+  return walk;
+}
+
+/** Stand pieces on the outside of up to 4 tightest corners, one section per apex. */
+export function cornerGrandstands(track: TrackDataV2, style: ResolvedTrackStyle): Grandstand[] {
+  if (style.cornerGrandstands === false) return [];
+  const ring = arcRing(track);
+  if (ring.total <= 0) return [];
+  const out: Grandstand[] = [];
+  for (const apex of cornerApexes(track, ring)) {
+    const corner = cornerCurvature(track.centerline, apex);
+    if (corner === null) continue;
+    const side: Side = corner.side === 'left' ? 'right' : 'left';
+    const walk = sectionWalk(track, ring, apex);
+    let barrierMax: number | null = null;
+    for (const k of walk) {
+      const b = maxBarrierOffsetAt(track, side, k);
+      if (b !== null && (barrierMax === null || b > barrierMax)) barrierMax = b;
+    }
+    const offsets = walk.map((k) => {
+      const base = halfWidthAt(track, side, k) + EDGE_OFFSET;
+      return barrierMax === null ? base : Math.max(base, barrierMax + CORNER_BARRIER_EXTRA_M);
+    });
+    const pieces: Grandstand[] = [];
+    for (const { pa, pb, len, yaw, nx, nz } of offsetRunPieces(track, side, walk, offsets)) {
+      // Rows go outward on the corner's outside so the front faces the track.
+      const faces = Math.sin(yaw) * nx + Math.cos(yaw) * nz > 0;
+      pieces.push({
+        x: (pa.x + pb.x) / 2,
+        z: (pa.z + pb.z) / 2,
+        yaw: faces ? yaw : yaw + Math.PI,
+        lengthMeters: len,
+        rows: CORNER_ROWS,
+        roof: false,
+      });
+    }
+    const prior = out.slice();
+    for (const p of pieces) {
+      if (prior.some((g) => Math.hypot(g.x - p.x, g.z - p.z) < CORNER_PIECE_SEPARATION_M)) continue;
+      out.push(p);
     }
   }
   return out;
