@@ -40,6 +40,8 @@
 | HDRI kloofendal_48d_partly_cloudy_puresky 2K | `public/hdri/kloofendal_48d_partly_cloudy_puresky_2k.hdr` | Greg Zaal, Jarod Guest, Poly Haven | CC0 1.0 | https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky | no |
 | HDRI kloofendal_overcast_puresky 2K | `public/hdri/kloofendal_overcast_puresky_2k.hdr` | Greg Zaal, Jarod Guest, Poly Haven | CC0 1.0 | https://polyhaven.com/a/kloofendal_overcast_puresky | no |
 | HDRI qwantani_noon_puresky 2K | `public/hdri/qwantani_noon_puresky_2k.hdr` | Greg Zaal, Jarod Guest, Poly Haven | CC0 1.0 | https://polyhaven.com/a/qwantani_noon_puresky | no |
+| HDRI belfast_sunset_puresky 2K (as tod_sunset) | `public/hdri/tod_sunset_2k.hdr` | Dimitrios Savva, Greg Zaal, Jarod Guest, Poly Haven | CC0 1.0 | https://polyhaven.com/a/belfast_sunset_puresky | no |
+| HDRI dikhololo_night 2K (as tod_night) | `public/hdri/tod_night_2k.hdr` | Greg Zaal, Poly Haven | CC0 1.0 | https://polyhaven.com/a/dikhololo_night | no |
 | leaf-oak LeafSet024 (1K, re-encoded) | `public/textures/foliage/leaf-oak/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/LeafSet024 | no |
 | leaf-pine PineNeedles001 (1K, re-encoded) | `public/textures/foliage/leaf-pine/` | ambientCG | CC0 1.0 | https://ambientcg.com/a/PineNeedles001 | no |
 | bark-plane bark_platanus (1K, re-encoded) | `public/textures/bark/plane/` | Dimitrios Savva, Poly Haven | CC0 1.0 | https://polyhaven.com/a/bark_platanus | no |

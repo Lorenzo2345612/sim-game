@@ -14,9 +14,11 @@ AI cars in `RaceGame` drive with `Racecraft` + `LanePlanner` (passing, defence, 
 
 ## Context
 
-Planner diagnosis 2026-10-19 (two heavy coder timeouts): the full `npm test` plus the 262 suite (AT4 alone ~400 s) left no time to iterate. The worktree racecraft path makes 125 contacts in 400 s of the AT4 grid (45 in the first 190 s, then a pile-up 300–330 s); `classicTraffic` makes 3. Iterate with `npx tsx /tmp/plan262/at4.mts $PWD rc 60` and `... classic 60` (60 s of the AT4 grid, ~12 s wall; prints contactCount every 10 s) and AT1–AT3; run the full 262 suite only once at the end. Contacts come from the racecraft intent steering into a car alongside: keep a side-by-side car's lateral gap ≥ 2.2 m (car width + margin) before any attack/defend offset is applied, and fall back to the classic follow cap when no gap exists.
+Planner diagnosis 2026-10-19 (two heavy coder timeouts): the full `npm test` plus the 262 suite (AT4 alone ~400 s) left no time to iterate. The worktree racecraft path makes 125 contacts in 400 s of the AT4 grid (45 in the first 190 s, then a pile-up 300–330 s); `classicTraffic` makes 3. Iterate with `npx tsx scripts/dev/262-at4.mts rc 60` and `... classic 60` (AT4 grid, ~3 s wall per 60 s; prints contactCount every 10 s; 400 s takes ~20 s) and AT1–AT3; run the full 262 suite only once at the end. Contacts come from the racecraft intent steering into a car alongside: keep a side-by-side car's lateral gap ≥ 2.2 m (car width + margin) before any attack/defend offset is applied, and fall back to the classic follow cap when no gap exists.
 
 Design: `docs/design/racing-ai-v2.md`, "Integration". Imports: `buildCorridor, collectNeighbours, corridorAt, isOffTrack, StopTracker` + types `CarView, Neighbour, TrackCorridor, CorridorSample, PlanBias` from `src/ai/raceView.ts` (258); `LanePlanner, PlanOutput` from `src/ai/lanePlanner.ts` (259); `Racecraft` from `src/ai/racecraft.ts` (260); `RaceScenario`/`contactCount` from 261. `src/ai/traffic.ts` stays untouched (frozen tests).
+
+Planner 2026-10-20 (decision 262-coder, three timeouts): `/tmp/plan262` no longer exists; use `scripts/dev/262-at4.mts` (read-only). On current master the classic path makes ~33 contacts in 400 s of the AT4 grid (wheel hitbox), so AT4 is now relative to classic; the acceptance test is updated accordingly. Last state: AT1 A ends 5 m behind B, AT2/AT3 1 contact each. Write the report after at most 25 min of iteration even if rows still fail.
 
 ## Files
 
@@ -49,7 +51,7 @@ Monza, f4, headless `RaceGame` with `scenario` (261). Player (index 0) frozen at
 | AT1 | AI A (scale 1.0) at s 200, AI B (scale 0.85) at s 230, both d = lineD, v 40 | 120 s | A ahead of B by ≥ 10 m at the end; contactCount 0 |
 | AT2 | AI 3 frozen at s 600, d = lineD(600); AIs 1, 2, 4 at s 200, 230, 260, v 40 | 40 s | contactCount 0; AIs 1, 2, 4 all past s 650 |
 | AT3 | two AIs scale 1.0 at s 300, d −2.5 / +2.5, v 50 | 40 s | contactCount 0; each AI offTrack ≤ 1 s total |
-| AT4 | 7 AIs expert, two columns s 100 − 8·row, d ±2, scales 0.90..1.00 with the fastest at the back | 3 laps | contactCount ≤ 6; ≥ 4 position changes among AIs; every AI finishes within 1.3 × the winner's time |
+| AT4 | 7 AIs expert, two columns s 100 − 8·row, d ±2, scales 0.90..1.00 with the fastest at the back | 3 laps | contactCount ≤ contactCount of the same grid run with `classicTraffic: true` for the same duration; ≥ 4 position changes among AIs; every AI finishes within 1.3 × the winner's time |
 | AT5 | `RaceConfig.classicTraffic: true` | AT1 setup | uses `trafficDecision` (old path) and still runs |
 | AT6 | 16 cars, 30 s | wall time | racecraft run ≤ 1.5 × the classicTraffic run |
 | AT7 | `RACECRAFT_AGGRESSION` | read | easy 0.2, medium 0.4, hard 0.7, expert 0.9 |
