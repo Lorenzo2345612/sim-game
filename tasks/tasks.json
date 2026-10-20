@@ -4075,7 +4075,7 @@
     {
       "num": "302",
       "title": "Race minimap: all cars and sector flag colours",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "298"
       ],
