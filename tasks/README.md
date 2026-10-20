@@ -269,7 +269,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
 | 266 | Policy network and learned driver in TS | pending | 263 |
 | 267 | Learned vs racecraft evaluation and difficulty gate | pending | 266 |
-| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | waiting decision | - |
+| 268 | AI driving regressions: barrier climbing, off-track, stuck recovery | in progress | - |
 | 269 | Evolved neural AI opponents (opt-in, experimental) | done | - |
 | 270 | Neural driver v2: kerb line, track limits, tyre inputs, setup genes | done | 269 |
 | 271 | Neural racecraft training: overtakes, defence, contact faults, mixed fields | blocked | 272 |
@@ -316,4 +316,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
 | 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | pending | 305, 309 |
-| 315 | Results: overtakes in their own tab, with a legend | pending | 296 |
+| 315 | Results: overtakes in their own tab, with a legend | in progress | 296 |
