@@ -37,7 +37,7 @@ vol = modal.Volume.from_name("simgame-evolve", create_if_missing=True)
 # gen331 (task 288) used --res-offset 5 --res-up 0.12 and the default pass weight 40, no defend term.
 BASE_ARGS = (
     "--pop 100 --gens 100000 --speed-at 2 --speed-laps 6 --evals 2 --speed-mut 0.15 --line mintime --racecraft --opponents 6 "
-    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 150 --pass-w 120 --def-w 30 --yellow-w 60 --kick-after 40"
+    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 150 --pass-w 120 --def-w 30 --yellow-w 300 --kick-after 40"
 ).split()
 
 
