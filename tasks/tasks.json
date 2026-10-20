@@ -3732,7 +3732,7 @@
     {
       "num": "275",
       "title": "Weekend controller (grid rules, points, standings)",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "274"
       ],
@@ -4128,7 +4128,7 @@
     {
       "num": "306",
       "title": "Timing tower views: gap, tyres, laps",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "305"
       ],
