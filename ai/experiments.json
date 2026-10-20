@@ -99,7 +99,8 @@
       "309",
       "310",
       "314",
-      "321"
+      "321",
+      "323"
     ]
   },
   "taskProviders": {
@@ -269,6 +270,16 @@
       ]
     },
     "321": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "323": {
       "claude": [
         "acceptance",
         "tester-pre",

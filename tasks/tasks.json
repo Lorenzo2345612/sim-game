@@ -3562,7 +3562,7 @@
     {
       "num": "262",
       "title": "Racecraft AI drives the race",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "259",
         "260",
@@ -4088,7 +4088,7 @@
     {
       "num": "303",
       "title": "Yellow-flag alert: flashing lights, banner, sector-clear notice",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "302"
       ],
@@ -4330,6 +4330,17 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/321-blue-flags.md"
+    },
+    {
+      "num": "323",
+      "title": "Master green after the car tyre colliders",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/323-tests-after-tyre-colliders.md"
     }
   ]
 }
