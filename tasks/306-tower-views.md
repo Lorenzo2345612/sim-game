@@ -52,7 +52,7 @@ export type TowerView = 'gap' | 'tyres' | 'laps';
 | AT3 | AT2 | click again, `update` same data | `'LAPS'`; `.last-lap` texts `formatLapTime(92.5)`, `formatLapTime(93.0)`, `'-'`; only the car 1 row has class `fastest` |
 | AT4 | AT3 | `cycleView()` | returns `'gap'`; dataset.view `'gap'` |
 | AT5 | AT2 | `update` called 5 more times | view stays `'tyres'`; tower row element instances unchanged |
-| AT6 | `RaceGame` cleveland, f4, aiCount 3, seed 1, options `{compound:'soft', wear:0, fuel:20}` with AI tune compound `'hard'` | `carCompound(0)`, `carCompound(2)` | `'soft'`, `'hard'`; without compound/tune options both `'medium'` |
+| AT6 | `RaceGame` cleveland, f4, aiCount 3, seed 1, options `{compound:'soft', wear:0, fuel:20}`; second game with no options | `carCompound(0)`, `carCompound(2)` | `'soft'`, `'soft'` (the AI tune is built from the same options); second game both `'medium'` |
 | AT7 | page `/?race=1&track=cleveland&ai=5&laps=3`, 3 s sim after lights out | press `T` | `#race-tower` dataset.view `'tyres'`; ≥ 4 rows with `.tyre` text matching `/^[SMHIW]$/`; press `T` twice more → `'gap'` |
 | AT8 | same page | click `#tower-view` | dataset.view `'tyres'`; the 293 and 294 overlap specs still pass |
 
@@ -72,3 +72,5 @@ npx playwright test 306- 293- 294-
 ## Out of scope
 
 - Pit stops/tyre changes, interval column, sector times, persisting the view between races.
+
+Planner 2026-10-20 (decision 306-acceptance): there is no separate AI compound input; AT6 checks that AI cars report the tune compound built from `options`.
