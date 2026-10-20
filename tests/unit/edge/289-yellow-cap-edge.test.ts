@@ -132,12 +132,12 @@ describe('289 yellow cap edge', () => {
       const game = await RaceGame.create(loadTrack(), loadSpec(), raceConfig(3));
       try {
         stepToGo(game);
-        for (let i = 0; i < steps(3.5); i++) game.step(IDLE);
+        for (let i = 0; i < steps(5.5); i++) game.step(IDLE);
         game.debugStopCar(1);
         const g = internals(game);
         let numberTicks = 0;
         let nanSeen = false;
-        for (let t = 0; t < steps(40); t++) {
+        for (let t = 0; t < steps(60); t++) {
           const y3 = g.yellow[3];
           const cap3 = oracle(g, 3);
           const y2 = g.yellow[2];
@@ -178,12 +178,12 @@ describe('289 yellow cap edge', () => {
       const game = await RaceGame.create(loadTrack(), loadSpec(), raceConfig(3));
       try {
         stepToGo(game);
-        for (let i = 0; i < steps(3.5); i++) game.step(IDLE);
+        for (let i = 0; i < steps(5.5); i++) game.step(IDLE);
         game.debugStopCar(1);
         const g = internals(game);
         let numericTicks = 0;
         let keptVscTicks = 0;
-        for (let t = 0; t < steps(17); t++) {
+        for (let t = 0; t < steps(60); t++) {
           game.step(IDLE);
           if (game.vsc.phase === 'off') continue;
           for (let i = 0; i < g.traffic.length; i++) {

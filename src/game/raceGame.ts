@@ -563,6 +563,8 @@ export class RaceGame {
     if (!this.scenarioMode) this.start.update(FIXED_DT);
     const phase: StartPhase = this.scenarioMode ? 'go' : this.start.phase;
     const goTime = this.scenarioMode ? 0 : this.start.goTime;
+    // Grace window: grid speed below CAUSE_SPEED must not raise a yellow at the launch (298).
+    if (!this.scenarioMode && goTime !== null) this.flags.startAt(goTime);
     const raceTime = goTime === null ? 0 : this.time + FIXED_DT - goTime;
     const before = phase !== 'go';
 

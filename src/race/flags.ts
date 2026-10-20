@@ -13,6 +13,7 @@ const YELLOW_AFTER = 1; // s of continuous cause
 const DOUBLE_AFTER = 3; // s of continuous on-track stop
 const DECAY = 2; // s after the last seen cause
 const BLUE_WINDOW = 200; // m behind on track
+export const START_GRACE_S = 8; // s after go where a not-yet-launched car is not a yellow cause
 
 export class FlagState {
   private readonly bounds: readonly [number, number, number];
@@ -32,10 +33,16 @@ export class FlagState {
   private readonly hadPrev: boolean[] = [];
   private pendOvertaker: number[] = [];
   private pendPassed: number[] = [];
+  private graceUntil = -Infinity;
+  private readonly launched: boolean[] = [];
 
   constructor(sectorBounds: [number, number, number], lapLength: number) {
     this.bounds = [sectorBounds[0], sectorBounds[1], sectorBounds[2]];
     this.lapLength = lapLength;
+  }
+
+  startAt(goTime: number): void {
+    this.graceUntil = goTime + START_GRACE_S;
   }
 
   update(cars: readonly FlagCar[], time: number): void {
@@ -47,6 +54,7 @@ export class FlagState {
     }
     const first = Number.isNaN(this.time);
     this.time = time;
+    const inGrace = time < this.graceUntil;
     for (let i = 0; i < n; i++) {
       const c = cars[i];
       const ok = Number.isFinite(c.distance) && Number.isFinite(c.lapDistance) && Number.isFinite(c.speed);
@@ -61,13 +69,17 @@ export class FlagState {
       this.retired[i] = c.retired;
       const s = this.sectorOf(c.lapDistance);
       this.sector[i] = s;
-      if (c.offTrack || c.speed < CAUSE_SPEED) {
+      const slow = c.speed < CAUSE_SPEED;
+      if (!slow) this.launched[i] = true;
+      // The grace covers grid cars that never got going; a stall after the launch is a cause.
+      const grace = inGrace && !this.launched[i];
+      if (c.offTrack || (slow && !grace)) {
         if (Number.isNaN(this.yellowFrom[i])) this.yellowFrom[i] = time;
         if (time - this.yellowFrom[i] >= YELLOW_AFTER) this.lastYellow[s] = time;
       } else {
         this.yellowFrom[i] = Number.NaN;
       }
-      if (c.speed < CAUSE_SPEED && !c.offTrack) {
+      if (slow && !c.offTrack && !grace) {
         if (Number.isNaN(this.doubleFrom[i])) this.doubleFrom[i] = time;
         if (time - this.doubleFrom[i] >= DOUBLE_AFTER) this.lastDouble[s] = time;
       } else {
@@ -129,6 +141,7 @@ export class FlagState {
       this.doubleFrom.push(Number.NaN);
       this.prevDist.push(Number.NaN);
       this.hadPrev.push(false);
+      this.launched.push(false);
     }
   }
 
