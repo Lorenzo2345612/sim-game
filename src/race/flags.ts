@@ -18,15 +18,19 @@ export const START_GRACE_S = 8; // s after go where a not-yet-launched car is no
 export interface FlagOptions {
   minYellowS?: number;
   causeGapS?: number;
+  countdownS?: number;
 }
 
 export const RACE_MIN_YELLOW_S = 10;
 export const RACE_CAUSE_GAP_S = 2;
+export const RACE_COUNTDOWN_S = 3;
 
 export class FlagState {
   readonly minYellowS: number;
   readonly causeGapS: number;
+  readonly countdownS: number;
   private readonly onset = [Number.NaN, Number.NaN, Number.NaN];
+  private readonly cdStart = [Number.NaN, Number.NaN, Number.NaN];
   private readonly yellowFree: number[] = [];
   private readonly doubleFree: number[] = [];
   private readonly bounds: readonly [number, number, number];
@@ -52,6 +56,7 @@ export class FlagState {
   constructor(sectorBounds: [number, number, number], lapLength: number, options: FlagOptions = {}) {
     this.minYellowS = options.minYellowS ?? 0;
     this.causeGapS = options.causeGapS ?? 0;
+    this.countdownS = options.countdownS ?? 0;
     this.bounds = [sectorBounds[0], sectorBounds[1], sectorBounds[2]];
     this.lapLength = lapLength;
   }
@@ -109,8 +114,20 @@ export class FlagState {
     }
     for (let k = 0; k < 3; k++) {
       const raw = this.rawFlagOf(k);
+      if (!Number.isNaN(this.cdStart[k])) {
+        if (raw === 'green') {
+          this.cdStart[k] = Number.NaN;
+        } else if (time - this.cdStart[k] >= this.countdownS) {
+          this.cdStart[k] = Number.NaN;
+          if (Number.isNaN(this.onset[k])) this.onset[k] = time;
+        }
+      }
+      if (!Number.isNaN(this.cdStart[k])) continue;
       if (raw !== 'green') {
-        if (Number.isNaN(this.onset[k])) this.onset[k] = time;
+        if (Number.isNaN(this.onset[k])) {
+          if (this.countdownS > 0) this.cdStart[k] = time;
+          else this.onset[k] = time;
+        }
       } else if (!(time - this.onset[k] < this.minYellowS)) {
         this.onset[k] = Number.NaN;
       }
@@ -128,6 +145,16 @@ export class FlagState {
       throw new RangeError(`sector ${sector} out of range`);
     }
     return this.flagOf(sector - 1);
+  }
+
+  sectorCountdown(sector: number): number {
+    if (sector !== 1 && sector !== 2 && sector !== 3) {
+      throw new RangeError(`sector ${sector} out of range`);
+    }
+    const start = this.cdStart[sector - 1];
+    if (Number.isNaN(start)) return Number.NaN;
+    const left = start + this.countdownS - this.time;
+    return left > 0 ? left : Number.NaN;
   }
 
   blueFor(car: number): boolean {
@@ -199,6 +226,7 @@ export class FlagState {
   }
 
   private flagOf(sector: number): SectorFlag {
+    if (!Number.isNaN(this.cdStart[sector])) return 'green';
     const raw = this.rawFlagOf(sector);
     if (raw === 'green' && this.time - this.onset[sector] < this.minYellowS) return 'yellow';
     return raw;

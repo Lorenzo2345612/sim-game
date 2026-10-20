@@ -136,12 +136,12 @@ describe('298 start yellow grace acceptance', () => {
   );
 
   it(
-    'AT7: 10.5 s after go the sector of the player grid slot is yellow or double-yellow',
+    'AT7: 13.5 s after go the sector of the player grid slot is yellow or double-yellow',
     async () => {
       const game = await RaceGame.create(loadTrack(), loadSpec(), raceConfig());
       try {
         const goTime = stepToGo(game);
-        while (game.simTime - goTime < 10.5) game.step(BRAKE);
+        while (game.simTime - goTime < 13.5) game.step(BRAKE);
         const playerDistance = (game as unknown as { traffic: { distance: number }[] }).traffic[0]
           .distance;
         const flag = game.flags.sectorFlag(sectorOfDistance(game, playerDistance));

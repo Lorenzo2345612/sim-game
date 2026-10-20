@@ -23,7 +23,14 @@ import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
 import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
-import { FlagState, RACE_CAUSE_GAP_S, RACE_MIN_YELLOW_S, START_GRACE_S, type FlagCar } from '../race/flags';
+import {
+  FlagState,
+  RACE_CAUSE_GAP_S,
+  RACE_COUNTDOWN_S,
+  RACE_MIN_YELLOW_S,
+  START_GRACE_S,
+  type FlagCar,
+} from '../race/flags';
 import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
 import { TroubleTracker } from '../race/trouble';
@@ -384,6 +391,7 @@ export class RaceGame {
     this.flags = new FlagState([0, this.sectorB1, this.sectorB2], this.lapLength, {
       minYellowS: RACE_MIN_YELLOW_S,
       causeGapS: RACE_CAUSE_GAP_S,
+      countdownS: RACE_COUNTDOWN_S,
     });
     this.vsc = new Vsc(speeds, line.dist, this.lapLength, this.count);
     this.flagCars = [];

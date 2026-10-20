@@ -132,7 +132,7 @@ describe('289 yellow cap edge', () => {
       const game = await RaceGame.create(loadTrack(), loadSpec(), raceConfig(3));
       try {
         stepToGo(game);
-        for (let i = 0; i < steps(5.5); i++) game.step(IDLE);
+        for (let i = 0; i < steps(8.5); i++) game.step(IDLE);
         game.debugStopCar(1);
         const g = internals(game);
         let numberTicks = 0;
