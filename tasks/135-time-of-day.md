@@ -16,6 +16,8 @@ The scene supports `day`, `sunset` and `night` presets (HDRI, sun, ambient, fog)
 
 Design: `docs/plans/game-features.md` section 135. Extends `applyEnvironment`, `ENV_TABLE`, `EnvironmentInfo`, `ShadowRig` in `src/render/environment.ts` (099: HDRI + PMREM, `scene.environmentIntensity = 0.7`, fog colour from the HDRI horizon). Tracks `lusail` and `bahrain` are loadable after 106. Assets installed by the planner before this task (do not create): `public/hdri/tod_sunset_2k.hdr` and `public/hdri/tod_night_2k.hdr` (Poly Haven CC0, lines in `ASSETS_LICENSES.md`). `day` uses the track's existing `ENV_TABLE` HDRI. Acceptance e2e: `tests/e2e/acceptance/135-time-of-day.spec.ts`.
 
+Planner 2026-10-20 (decision 135-coder): `public/hdri/tod_sunset_2k.hdr` and `tod_night_2k.hdr` are now on master (CC0, Poly Haven, licensed in ASSETS_LICENSES.md). Accepted: `applyEnvironment` 4th param as an options object; SUN_OFFSET kept; the coder's tod resolution order; `setTimeOfDay` called after the rig is built. 269 AT5 flake is unrelated, ignore it.
+
 ## Files
 
 - `src/core/timeOfDay.ts` — create: `TimeOfDay`, `TRACK_DEFAULT_TOD`, `defaultTimeOfDay`, `parseTimeOfDay` (core, so `src/game` can import the type)
