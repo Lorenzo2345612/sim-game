@@ -32,7 +32,7 @@ const PORT = Number(arg('port', '8770'));
 const RESIDUAL = process.argv.includes('--residual'); // classic AiDriver drives, the net sets offset + pace
 const MAX_FAULTS = Number(arg('max-faults', '5')); // light at-fault touches allowed per race for a saved model (no caused crashes)
 const RES = { offset: Number(arg('res-offset', '3.5')), up: Number(arg('res-up', '0.06')), down: Number(arg('res-down', '0.06')) }; // residual authority: lateral offset (m), pace above/below the classic profile
-const RCW = { pass: Number(arg('pass-w', '40')), def: Number(arg('def-w', '0')), yellow: Number(arg('yellow-w', '0')) }; // racecraft weights: net passes, defended attacks, passes under yellow
+const RCW = { pos: Number(arg('pos-w', '60')), pass: Number(arg('pass-w', '40')), def: Number(arg('def-w', '0')), yellow: Number(arg('yellow-w', '0')) }; // racecraft weights: net passes, defended attacks, passes under yellow
 const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
