@@ -4263,7 +4263,7 @@
     {
       "num": "316",
       "title": "Grandstands follow the track and never sit on it",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
