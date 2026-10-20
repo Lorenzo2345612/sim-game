@@ -1395,6 +1395,9 @@ async function startGame(trackId: string): Promise<void> {
     blue: false,
     vscPhase: 'off',
     vscDelta: 0,
+    playerFlag: 'green',
+    playerSector: 1,
+    time: 0,
     names:
       raceDriverList !== null
         ? ['You', ...raceDriverList.map((d) => d.code)]
@@ -1846,6 +1849,10 @@ async function startGame(trackId: string): Promise<void> {
           raceFlags[1] = raceGame.flags.sectorFlag(2);
           raceFlags[2] = raceGame.flags.sectorFlag(3);
         }
+        const pSector = flagOverride !== null ? flagOverride.playerSector : raceGame.playerSector;
+        raceHudData.playerSector = pSector;
+        raceHudData.playerFlag = raceFlags[Math.min(2, Math.max(0, pSector - 1))];
+        raceHudData.time = raceGame.simTime;
         raceHudData.blue = raceGame.playerBlueFlag;
         raceHudData.vscPhase = raceGame.vsc.phase;
         raceHudData.vscDelta = raceGame.playerVscDelta;

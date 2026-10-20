@@ -946,6 +946,11 @@ export class RaceGame {
     return this.vehicles[0].damage;
   }
 
+  /** Sector (1..3) of the player's lap distance. */
+  get playerSector(): number {
+    return this.sectorOf(this.traffic[0].distance) + 1;
+  }
+
   /** Blue flag on the player this tick (false until the first post-go tick). */
   get playerBlueFlag(): boolean {
     return this.blue0;

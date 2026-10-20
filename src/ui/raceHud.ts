@@ -2,6 +2,7 @@ import './raceHud.css';
 import type { Standing } from '../race/classification';
 import type { SectorFlag } from '../race/flags';
 import type { VscPhase } from '../race/vsc';
+import { YellowAlert } from './yellowAlert';
 import { penaltyTag, type PenaltyAnnouncement } from './raceControl';
 
 export interface RaceHudData {
@@ -12,6 +13,10 @@ export interface RaceHudData {
   blue: boolean;
   vscPhase: VscPhase;
   vscDelta: number;
+  playerFlag?: SectorFlag;
+  playerSector?: number;
+  /** Sim time in seconds. */
+  time?: number;
   /** Tower name per car index (296); missing entries fall back to 'You' / 'AI n'. */
   names?: readonly string[];
 }
@@ -136,6 +141,13 @@ export class RaceHud {
   private readonly blueEl: HTMLDivElement;
   private readonly vscEl: HTMLDivElement;
   private readonly toastsEl: HTMLDivElement;
+  private readonly alertEl: HTMLDivElement;
+  private readonly bannerEl: HTMLDivElement;
+  private readonly lightEls: HTMLElement[] = [];
+  private readonly alert = new YellowAlert();
+  private alertMode = '';
+  private alertLights = '';
+  private alertText = '';
   private readonly flagStates: SectorFlag[] = ['green', 'green', 'green'];
   private blueVisible = false;
   private vscVisible = false;
@@ -164,6 +176,7 @@ export class RaceHud {
     for (let s = 1; s <= 3; s++) {
       const el = doc.createElement('div');
       el.className = `flag-s${s}`;
+      el.id = `flag-s${s}`;
       el.dataset.state = 'green';
       flags.appendChild(el);
       this.flagEls.push(el);
@@ -178,7 +191,25 @@ export class RaceHud {
     this.toastsEl = doc.createElement('div');
     this.toastsEl.id = 'toasts';
 
-    this.root.append(top, this.tower, flags, this.blueEl, this.vscEl, this.toastsEl);
+    this.alertEl = doc.createElement('div');
+    this.alertEl.id = 'yellow-alert';
+    this.alertEl.dataset.mode = 'none';
+    this.alertEl.dataset.lights = 'off';
+    for (const side of ['l', 'r']) {
+      const led = doc.createElement('div');
+      led.className = `led ${side}`;
+      for (let i = 0; i < 4; i++) {
+        const light = doc.createElement('i');
+        light.className = 'light';
+        led.appendChild(light);
+      }
+      this.alertEl.appendChild(led);
+    }
+    this.bannerEl = doc.createElement('div');
+    this.bannerEl.id = 'yellow-banner';
+    this.alertEl.appendChild(this.bannerEl);
+
+    this.root.append(top, this.tower, flags, this.alertEl, this.blueEl, this.vscEl, this.toastsEl);
     parent.appendChild(this.root);
     this.root.style.display = 'none';
   }
@@ -198,6 +229,7 @@ export class RaceHud {
     const lap = Math.min(player === null ? 0 : player.lap, data.laps);
     this.setText(this.lapEl, `Lap ${lap}/${data.laps}`, 'lap');
     this.updateFlags(data);
+    this.updateAlert(data);
 
     const topN = Math.min(TOWER_TOP, total);
     const withPlayer = playerIdx >= TOWER_TOP;
@@ -228,6 +260,23 @@ export class RaceHud {
       this.toastsEl.firstElementChild?.remove();
     }
     window.setTimeout(() => el.remove(), TOAST_MS);
+  }
+
+  private updateAlert(data: RaceHudData): void {
+    const v = this.alert.update(data.playerFlag ?? 'green', data.playerSector ?? 1, data.time ?? 0);
+    if (this.alertMode !== v.mode) {
+      this.alertMode = v.mode;
+      this.alertEl.dataset.mode = v.mode;
+    }
+    const lights = v.lightsOn ? 'on' : 'off';
+    if (this.alertLights !== lights) {
+      this.alertLights = lights;
+      this.alertEl.dataset.lights = lights;
+    }
+    if (this.alertText !== v.text) {
+      this.alertText = v.text;
+      this.bannerEl.textContent = v.text;
+    }
   }
 
   private updateFlags(data: RaceHudData): void {
