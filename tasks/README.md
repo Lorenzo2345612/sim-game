@@ -302,7 +302,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 298 | No yellow flags from the standing start | done | 289 |
 | 299 | Low-ramp sausage kerb collider | done | - |
 | 300 | Verge and runoff strips must not fold over the inner kerb | done | - |
-| 301 | No kerb-zone steps on any track | waiting decision | 300 |
+| 301 | No kerb-zone steps on any track | in progress | 300 |
 | 302 | Race minimap: all cars and sector flag colours | done | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | done | 302 |
 | 304 | Race results: penalties added, running cars not DNF | done | 303 |
@@ -320,7 +320,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 316 | Grandstands follow the track and never sit on it | done | - |
 | 317 | City bake: buildings allowed up to the local barrier, not the lap's farthest one | done | - |
 | 318 | Grandstands at the main corners, not only on the start straight | in progress | 316 |
-| 319 | Surrounding buildings for every circuit | pending | 317 |
+| 319 | Surrounding buildings for every circuit | in progress | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | pending | 314 |
 | 323 | Master green after the car tyre colliders | in progress | - |

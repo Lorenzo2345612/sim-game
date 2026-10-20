@@ -4063,7 +4063,7 @@
     {
       "num": "301",
       "title": "No kerb-zone steps on any track",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "300"
       ],
@@ -4298,7 +4298,7 @@
     {
       "num": "319",
       "title": "Surrounding buildings for every circuit",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "317"
       ],
