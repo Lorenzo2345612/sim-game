@@ -51,7 +51,7 @@ Updates every 1/120 s; B = [0, 1000, 2000], L = 3000; car at lapDistance = dista
 | AT4 | `new FlagState(B, L)` and `{minYellowS: 10, causeGapS: 2}` | 128 AT3 and 308 AT2 scenarios | unchanged results; `countdownS` 0; `sectorCountdown(1)` NaN at every update |
 | AT5 | `{minYellowS: 10, causeGapS: 2, countdownS: 3}`; car off track t ∈ [0, 5), then on track | update to t = 14.3 | `'green'` at 3.9; `'yellow'` at 4.1 and 13.9; `'green'` at 14.1 |
 | AT6 | `RaceGame` cleveland, f4, aiCount 3, seed 1 | read `(g as any).flags.countdownS`, `.minYellowS` | 3 and 10 |
-| AT7 | — | run 128, 130, 289, 298, 305, 307, 308 unit acceptance tests and 128 edge tests | pass |
+| AT7 | — | verification gate: run 128, 130, 289, 298, 305, 307, 308 unit acceptance tests and 128 edge tests | pass |
 
 ## Acceptance criteria
 

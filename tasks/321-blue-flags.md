@@ -59,7 +59,7 @@ Conventions: gap in metres on track behind; `<=` 100 m counts; dt in s; timer to
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| AT1 | `new FlagState([0, 1000, 2000], 3000)`; car 0 lapDistance 1500 race distance 1500; car 1 race distance 4400 (lapDistance 1400); car 2 race distance 1400 | update one step | `blueLapper(0)` 1, `blueFor(0)` true; `blueLapper(1)` −1; `blueLapper(2)` −1 |
+| AT1 | `new FlagState([0, 1000, 2000], 3000)`; car 0 lapDistance 1500 race distance 1500; car 1 race distance 4400 (lapDistance 1400); car 2 race distance 1400 | update one step | `blueLapper(0)` 1, `blueFor(0)` true; `blueLapper(1)` −1; `blueLapper(2)` 1 (same track spot, a full lap behind car 1) |
 | AT2 | `BlueFlagTimer`; `update(1, 50, 1/120)` repeatedly | 12 s | returns true exactly once, at t = 10 s (±1/120); a further 20 s with the same lapper: no more true |
 | AT3 | `BlueFlagTimer`; lapper 1 gap 50 for 6 s, gap 150 for 5 s, gap 50 for 4 s | update | true exactly once, at t = 15 s (±1/120) |
 | AT4 | `BlueFlagTimer`; lapper 1 gap 50 for 6 s, lapper −1 for 3 s, lapper 1 gap 50 for 6 s; then lapper 2 gap 50 for 10 s | update | no true in the first 15 s; true once at t = 25 s (±1/120) |
@@ -85,3 +85,5 @@ npx vitest run 321- 128- 130- 261- 289- 298- 305- 309- 311- 314-
 ## Out of scope
 
 - Unlapping rules, blue flags in practice/qualifying, AI training, sounds.
+
+Planner 2026-10-20 (decision 321-acceptance): AT1 car 2 = 1. Accepted test readings: AI start lateral d = 0; AT6 both runs 40 s, mean speed over 40 s; 'passes' measured on track (wrapped lap-distance gap); AT8 uses a minimal fake DOM like 130 edge tests.
