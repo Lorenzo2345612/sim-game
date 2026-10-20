@@ -263,7 +263,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | done | 258 |
 | 261 | RaceGame scenario starts and contact counter | done | - |
-| 262 | Racecraft AI drives the race | in progress | 259, 260, 261, 268 |
+| 262 | Racecraft AI drives the race | waiting decision | 259, 260, 261, 268, 323 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
@@ -304,7 +304,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 300 | Verge and runoff strips must not fold over the inner kerb | done | - |
 | 301 | No kerb-zone steps on any track | in progress | 300 |
 | 302 | Race minimap: all cars and sector flag colours | done | 298 |
-| 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
+| 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | in progress | 302 |
 | 304 | Race results: penalties added, running cars not DNF | pending | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | pending | 304 |
 | 306 | Timing tower views: gap, tyres, laps | pending | 305 |
@@ -323,3 +323,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 319 | Surrounding buildings for every circuit | pending | 317 |
 | 320 | Ermita river with water (streams stay dry) | in progress | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | pending | 314 |
+| 323 | Master green after the car tyre colliders | in progress | - |
