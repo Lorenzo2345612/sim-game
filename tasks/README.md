@@ -136,7 +136,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
-| 135 | Time of day presets | pending | 093, 099, 106, 130 |
+| 135 | Time of day presets | in progress | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
 | 137 | Rain and track wetness model, wet compounds | done | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
@@ -263,7 +263,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | done | 258 |
 | 261 | RaceGame scenario starts and contact counter | done | - |
-| 262 | Racecraft AI drives the race | waiting decision | 259, 260, 261, 268, 323 |
+| 262 | Racecraft AI drives the race | in progress | 259, 260, 261, 268, 323 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
@@ -276,10 +276,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
 | 273 | Expert AI spin-free in 3-car traffic (silverstone) | done | 252 |
 | 274 | Weekend formats and points tables | done | - |
-| 275 | Weekend controller (grid rules, points, standings) | pending | 274 |
+| 275 | Weekend controller (grid rules, points, standings) | in progress | 274 |
 | 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | done | - |
-| 278 | RaceGame timed sessions (practice, qualifying) | pending | 276, 277 |
+| 278 | RaceGame timed sessions (practice, qualifying) | in progress | 276, 277 |
 | 279 | Session result adapters | pending | 274, 275, 277 |
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | done | - |
@@ -307,9 +307,9 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | done | 302 |
 | 304 | Race results: penalties added, running cars not DNF | done | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | done | 304 |
-| 306 | Timing tower views: gap, tyres, laps | waiting decision | 305 |
+| 306 | Timing tower views: gap, tyres, laps | in progress | 305 |
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
-| 308 | Yellow flags: minimum duration and continuous spin cause | waiting decision | 307 |
+| 308 | Yellow flags: minimum duration and continuous spin cause | in progress | 307 |
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | pending | 308 |
 | 310 | Yellow countdown in race HUD and minimap | pending | 309 |
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
@@ -322,5 +322,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 318 | Grandstands at the main corners, not only on the start straight | done | 316 |
 | 319 | Surrounding buildings for every circuit | done | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
-| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | pending | 314 |
+| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | waiting decision | 305 |
 | 323 | Master green after the car tyre colliders | done | - |

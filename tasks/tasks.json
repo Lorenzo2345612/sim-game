@@ -1858,7 +1858,7 @@
     {
       "num": "135",
       "title": "Time of day presets",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "093",
         "099",
@@ -3732,7 +3732,7 @@
     {
       "num": "275",
       "title": "Weekend controller (grid rules, points, standings)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "274"
       ],
@@ -3767,7 +3767,7 @@
     {
       "num": "278",
       "title": "RaceGame timed sessions (practice, qualifying)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "276",
         "277"
@@ -4322,7 +4322,7 @@
     {
       "num": "321",
       "title": "Blue flags: lapped cars yield without leaving their fight; player penalty",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "305"
       ],
