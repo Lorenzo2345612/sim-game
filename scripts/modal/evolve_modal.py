@@ -1,6 +1,6 @@
 """Residual racecraft training on Modal (CPU): one container per track, outputs in the `simgame-evolve` volume.
 
-Launch (runs on after the local machine disconnects):
+Launch: deploy + scripts/modal/spawn_train.py (independent of this machine). Legacy:
   modal run --detach scripts/modal/evolve_modal.py --tracks monza,mexico,spa --hours 8 \
       --seed public/ai-models/cleveland-f4/expert.json
 Fetch:   modal volume get simgame-evolve models/<track>-f4-<tag> scripts/evolve/models/scratch/
