@@ -89,7 +89,16 @@
       "269",
       "270",
       "271",
-      "272"
+      "272",
+      "302",
+      "303",
+      "304",
+      "305",
+      "307",
+      "308",
+      "309",
+      "310",
+      "314"
     ]
   },
   "taskProviders": {
@@ -159,6 +168,96 @@
       ]
     },
     "272": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "302": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "303": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "304": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "305": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "307": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "308": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "309": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "310": {
+      "claude": [
+        "acceptance",
+        "tester-pre",
+        "coder",
+        "tester",
+        "reviewer",
+        "fixer"
+      ]
+    },
+    "314": {
       "claude": [
         "acceptance",
         "tester-pre",
