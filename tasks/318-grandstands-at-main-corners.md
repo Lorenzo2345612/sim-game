@@ -41,7 +41,7 @@ Conventions: arc distance in metres on the closed ring; threshold `≥` inclusiv
 |---|---|---|---|
 | AT1 | every shipped track with its style | `placedGrandstands` | ≥ 2 stands whose nearest centerline index is ≥ 12 % of the lap (circular) from index 0 |
 | AT2 | every shipped track | `cornerGrandstands` | ≤ 4 distinct corners; each piece belongs to the accepted apex nearest its centre in XZ (not nearest centerline index: at barrier + 3 that lands on another lap stretch); `dot(centre − apex point, outside normal at apex)` > 0 and XZ distance to the apex point ≤ 150 m |
-| AT3 | every shipped track | `placedGrandstands` | all `standClearance ≥ 5` (−1e-6); no two corner-stand pieces from different corners closer than 20 m centre to centre |
+| AT3 | every shipped track | `placedGrandstands` | all `standClearance ≥ 5` (−1e-6); no two corner-stand pieces from different corners (attributed as in AT2) closer than 20 m centre to centre |
 | AT4 | mexico style with `cornerGrandstands: false` | `placedGrandstands` | count equals the 316 count (builder + extras) |
 | AT5 | any track | `cornerGrandstands` twice | deep-equal (deterministic) |
 
