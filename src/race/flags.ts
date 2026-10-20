@@ -15,7 +15,20 @@ const DECAY = 2; // s after the last seen cause
 const BLUE_WINDOW = 200; // m behind on track
 export const START_GRACE_S = 8; // s after go where a not-yet-launched car is not a yellow cause
 
+export interface FlagOptions {
+  minYellowS?: number;
+  causeGapS?: number;
+}
+
+export const RACE_MIN_YELLOW_S = 10;
+export const RACE_CAUSE_GAP_S = 2;
+
 export class FlagState {
+  readonly minYellowS: number;
+  readonly causeGapS: number;
+  private readonly onset = [Number.NaN, Number.NaN, Number.NaN];
+  private readonly yellowFree: number[] = [];
+  private readonly doubleFree: number[] = [];
   private readonly bounds: readonly [number, number, number];
   private readonly lapLength: number;
   private readonly lastYellow = [-Infinity, -Infinity, -Infinity];
@@ -36,7 +49,9 @@ export class FlagState {
   private graceUntil = -Infinity;
   private readonly launched: boolean[] = [];
 
-  constructor(sectorBounds: [number, number, number], lapLength: number) {
+  constructor(sectorBounds: [number, number, number], lapLength: number, options: FlagOptions = {}) {
+    this.minYellowS = options.minYellowS ?? 0;
+    this.causeGapS = options.causeGapS ?? 0;
     this.bounds = [sectorBounds[0], sectorBounds[1], sectorBounds[2]];
     this.lapLength = lapLength;
   }
@@ -62,6 +77,8 @@ export class FlagState {
       if (!ok) {
         this.yellowFrom[i] = Number.NaN;
         this.doubleFrom[i] = Number.NaN;
+        this.yellowFree[i] = Number.NaN;
+        this.doubleFree[i] = Number.NaN;
         continue;
       }
       this.dist[i] = c.distance;
@@ -75,15 +92,27 @@ export class FlagState {
       const grace = inGrace && !this.launched[i];
       if (c.offTrack || (slow && !grace)) {
         if (Number.isNaN(this.yellowFrom[i])) this.yellowFrom[i] = time;
+        this.yellowFree[i] = Number.NaN;
         if (time - this.yellowFrom[i] >= YELLOW_AFTER) this.lastYellow[s] = time;
-      } else {
-        this.yellowFrom[i] = Number.NaN;
+      } else if (!Number.isNaN(this.yellowFrom[i])) {
+        if (Number.isNaN(this.yellowFree[i])) this.yellowFree[i] = time;
+        if (time - this.yellowFree[i] >= this.causeGapS) this.yellowFrom[i] = Number.NaN;
       }
       if (slow && !c.offTrack && !grace) {
         if (Number.isNaN(this.doubleFrom[i])) this.doubleFrom[i] = time;
+        this.doubleFree[i] = Number.NaN;
         if (time - this.doubleFrom[i] >= DOUBLE_AFTER) this.lastDouble[s] = time;
-      } else {
-        this.doubleFrom[i] = Number.NaN;
+      } else if (!Number.isNaN(this.doubleFrom[i])) {
+        if (Number.isNaN(this.doubleFree[i])) this.doubleFree[i] = time;
+        if (time - this.doubleFree[i] >= this.causeGapS) this.doubleFrom[i] = Number.NaN;
+      }
+    }
+    for (let k = 0; k < 3; k++) {
+      const raw = this.rawFlagOf(k);
+      if (raw !== 'green') {
+        if (Number.isNaN(this.onset[k])) this.onset[k] = time;
+      } else if (!(time - this.onset[k] < this.minYellowS)) {
+        this.onset[k] = Number.NaN;
       }
     }
     if (!first) this.detectOvertakes(n);
@@ -139,6 +168,8 @@ export class FlagState {
       this.sector.push(0);
       this.yellowFrom.push(Number.NaN);
       this.doubleFrom.push(Number.NaN);
+      this.yellowFree.push(Number.NaN);
+      this.doubleFree.push(Number.NaN);
       this.prevDist.push(Number.NaN);
       this.hadPrev.push(false);
       this.launched.push(false);
@@ -152,10 +183,16 @@ export class FlagState {
     return 0;
   }
 
-  private flagOf(sector: number): SectorFlag {
+  private rawFlagOf(sector: number): SectorFlag {
     if (this.time - this.lastDouble[sector] < DECAY) return 'double-yellow';
     if (this.time - this.lastYellow[sector] < DECAY) return 'yellow';
     return 'green';
+  }
+
+  private flagOf(sector: number): SectorFlag {
+    const raw = this.rawFlagOf(sector);
+    if (raw === 'green' && this.time - this.onset[sector] < this.minYellowS) return 'yellow';
+    return raw;
   }
 
   private detectOvertakes(n: number): void {
