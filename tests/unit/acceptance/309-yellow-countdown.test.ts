@@ -55,17 +55,15 @@ describe('309 yellow countdown acceptance', () => {
 
   it('AT3: overtakes during the countdown are not yellow overtakes', () => {
     const flags = new FlagState(B, L, { countdownS: 3 });
-    const c1 = car(30, true);
+    const c0 = car(60, false, 2800);
+    const c1 = car(30, true, 500);
     const log: Record<string, { car: number; passed: number }[]> = {};
     for (let k = 0; k <= Math.round(4.5 * HZ); k++) {
       const t = k / HZ;
-      let d2 = 480;
-      let d3 = 490;
-      if ((t >= 2 && t < 3) || t >= 4.5) {
-        d2 = 510;
-        d3 = 490;
-      }
-      flags.update([c1, car(60, false, d2), car(60, false, d3)], t);
+      let d2 = 680;
+      const d3 = 700;
+      if ((t >= 2 && t < 3) || t >= 4.5) d2 = 720;
+      flags.update([c0, c1, car(60, false, d2), car(60, false, d3)], t);
       const o = flags.overtakeUnderYellow();
       if (k === 2 * HZ || k === Math.round(4.5 * HZ)) log[String(t)] = o;
     }
