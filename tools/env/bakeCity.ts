@@ -134,7 +134,7 @@ export function corridorLimits(track: TrackDataV2): Float64Array {
   return limits;
 }
 
-export async function bakeCity(id: string): Promise<BakeResult> {
+export async function bakeCity(id: string, maxBuildings?: number): Promise<BakeResult> {
   const track = JSON.parse(
     readFileSync(join(ROOT, 'public', 'tracks', `${id}.json`), 'utf8'),
   ) as TrackDataV2;
@@ -148,6 +148,7 @@ export async function bakeCity(id: string): Promise<BakeResult> {
     corridorAt: (i) => limits[i],
     keepRadius: KEEP_RADIUS_M,
     bbox,
+    maxBuildings,
   });
   const outPath = join(ROOT, 'public', 'tracks', `${id}-env.json`);
   writeFileSync(outPath, JSON.stringify(env));
@@ -158,9 +159,17 @@ export async function bakeCity(id: string): Promise<BakeResult> {
 }
 
 async function main(): Promise<void> {
-  const ids = process.argv.slice(2);
-  if (ids.length === 0) throw new Error('usage: npm run build:env -- <trackId> [...]');
-  for (const id of ids) await bakeCity(id);
+  const args = process.argv.slice(2);
+  let maxBuildings: number | undefined;
+  const ids: string[] = [];
+  for (const arg of args) {
+    const m = arg.match(/^--max=(\d+)$/);
+    if (m) maxBuildings = Number(m[1]);
+    else if (arg.startsWith('--')) throw new Error(`unknown flag ${arg}`);
+    else ids.push(arg);
+  }
+  if (ids.length === 0) throw new Error('usage: npm run build:env -- <trackId> [...] [--max=N]');
+  for (const id of ids) await bakeCity(id, maxBuildings);
 }
 
 const entry = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';

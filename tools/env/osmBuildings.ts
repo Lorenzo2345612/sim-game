@@ -51,6 +51,8 @@ export interface CityEnvParams {
   corridorAt: (segmentIndex: number) => number;
   keepRadius: number;
   bbox: ExtractBbox;
+  /** Keep only the N buildings closest to the centerline; undefined = unlimited. */
+  maxBuildings?: number;
 }
 
 const WALL_HEIGHT = 8;
@@ -523,5 +525,34 @@ export function buildCityEnv(elements: OverpassElement[], params: CityEnvParams)
   buildings.sort((a, b) => byFirstVertex(a.ring, b.ring));
   walls.sort((a, b) => byFirstVertex(a.line, b.line));
   water.sort(byFirstVertex);
-  return { buildings, walls, water };
+  return { buildings: capBuildings(buildings, centerline, params.maxBuildings), walls, water };
+}
+
+/** Minimum distance from any ring vertex to the nearest centerline segment (metres). */
+function minVertexCenterlineDist(ring: Point2[], centerline: Point2[]): number {
+  let best = Infinity;
+  const n = centerline.length;
+  for (const p of ring) {
+    for (let i = 0; i < n; i++) {
+      const a = centerline[i];
+      const b = centerline[(i + 1) % n];
+      const d = pointSegDist2(p[0], p[1], a[0], a[1], b[0], b[1]);
+      if (d < best) best = d;
+    }
+  }
+  return Math.sqrt(best);
+}
+
+function capBuildings(
+  buildings: Building[],
+  centerline: Point2[],
+  maxBuildings: number | undefined,
+): Building[] {
+  if (maxBuildings === undefined) return buildings;
+  if (maxBuildings <= 0) throw new Error(`maxBuildings must be positive, got ${maxBuildings}`);
+  if (buildings.length <= maxBuildings) return buildings;
+  const scored = buildings.map((b, i) => ({ i, d: minVertexCenterlineDist(b.ring, centerline) }));
+  scored.sort((a, b) => a.d - b.d || a.i - b.i);
+  const keep = new Set(scored.slice(0, maxBuildings).map((s) => s.i));
+  return buildings.filter((_, i) => keep.has(i));
 }
