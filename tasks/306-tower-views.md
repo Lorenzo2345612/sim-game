@@ -60,12 +60,14 @@ export type TowerView = 'gap' | 'tyres' | 'laps';
 
 - [ ] AT1–AT8 pass; existing tower tests unchanged and passing.
 
+Planner 2026-10-20 (decision 306-coder, two timeouts): the work in the worktree already passes 306 acceptance, typecheck and lint; do not run the full `npm test` (the pipeline runs it). Finish, run the commands below once and write the report.
+
 ## Verification
 
 ```
 npm run typecheck
 npm run lint
-npm test
+npx vitest run tests/unit/acceptance/306- tests/unit/acceptance/305- tests/unit/acceptance/130- tests/unit/edge/130-
 npx playwright test 306- 293- 294-
 ```
 
