@@ -4245,6 +4245,19 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/314-incident-car-pass-legal.md"
+    },
+    {
+      "num": "315",
+      "title": "Results: overtakes in their own tab, with a legend",
+      "status": "pending",
+      "deps": [
+        "296"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/315-results-overtakes-tab.md"
     }
   ]
 }
