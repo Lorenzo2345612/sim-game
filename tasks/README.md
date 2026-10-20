@@ -136,7 +136,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
-| 135 | Time of day presets | in progress | 093, 099, 106, 130 |
+| 135 | Time of day presets | waiting decision | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
 | 137 | Rain and track wetness model, wet compounds | done | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
@@ -284,7 +284,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | done | - |
 | 282 | Attack mode rules | done | - |
-| 283 | CarSpec awd + electric block | pending | 281 |
+| 283 | CarSpec awd + electric block | in progress | 281 |
 | 284 | AWD electric drive in VehicleModel | pending | 281, 282, 283 |
 | 285 | Electric voice | done | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
@@ -310,7 +310,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 306 | Timing tower views: gap, tyres, laps | in progress | 305 |
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
 | 308 | Yellow flags: minimum duration and continuous spin cause | done | 307 |
-| 309 | Yellow flags: 3 s countdown before a sector turns yellow | pending | 308 |
+| 309 | Yellow flags: 3 s countdown before a sector turns yellow | in progress | 308 |
 | 310 | Yellow countdown in race HUD and minimap | pending | 309 |
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
 | 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
