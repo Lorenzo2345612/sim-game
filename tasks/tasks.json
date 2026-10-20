@@ -3835,7 +3835,7 @@
     {
       "num": "283",
       "title": "CarSpec awd + electric block",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "281"
       ],
