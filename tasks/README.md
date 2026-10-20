@@ -318,7 +318,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | pending | 305, 309 |
 | 315 | Results: overtakes in their own tab, with a legend | done | 296 |
 | 316 | Grandstands follow the track and never sit on it | done | - |
-| 317 | City bake: buildings allowed up to the local barrier, not the lap's farthest one | in progress | - |
+| 317 | City bake: buildings allowed up to the local barrier, not the lap's farthest one | done | - |
 | 318 | Grandstands at the main corners, not only on the start straight | in progress | 316 |
 | 319 | Surrounding buildings for every circuit | pending | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |

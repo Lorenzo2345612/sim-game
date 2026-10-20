@@ -4274,7 +4274,7 @@
     {
       "num": "317",
       "title": "City bake: buildings allowed up to the local barrier, not the lap's farthest one",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
