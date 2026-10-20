@@ -21,7 +21,7 @@ User report: grandstands sit on the track (e.g. Mexico) and should be contoured,
 - `src/track/placement.ts` — modify: shared run splitter, `extraGrandstands` moves here, new exports below.
 - `src/track/trackStyleWiring.ts` — modify: re-export `extraGrandstands` from `./placement` (no cycle).
 - `src/main.ts` — modify: the two grandstand loops (~1096, ~1104) become one loop over `placedGrandstands(track, trackStyle)`; `stats.grandstands` and `stats.style.extraGrandstands` keep counting inputs (builder stands, style entries).
-- `tests/unit/acceptance/316-grandstands-clear-of-track.test.ts` — create (acceptance worker). Planner-authorised edit (2026-10-19): AT1 count check becomes per track `stands.length ≥ inputs − 1` plus a global sum of `inputs − stands.length` ≤ 1; AT3 drops the yaw assertion (chord-to-chord turn is up to ~2×8°, plus kinks at hairpins). Nothing else.
+- `tests/unit/acceptance/316-grandstands-clear-of-track.test.ts` — create (acceptance worker). Planner-authorised edit (2026-10-19): AT1 count check becomes per track `stands.length ≥ inputs − 1` plus a global sum of `inputs − stands.length` ≤ 1; AT3 drops the yaw assertion (chord-to-chord turn is up to ~2×8°, plus kinks at hairpins). Also (coder applies): `tests/unit/acceptance/180-track-style-wiring.test.ts` AT8 (ring wrap 95→5) expects the multi-piece contract: ≥ 4 pieces, consecutive front-corner gaps ≤ 1 m, midpoints at the expected offset radius ±0.6 m; `tests/unit/edge/234-grounded-stands-props.post.test.ts` POST8 expects 1 `groundedBase(` call in `main.ts` (keeps the `groundHeightAt(` ban). Nothing else.
 
 ## Steps
 
@@ -51,14 +51,14 @@ export function placedGrandstands(track: TrackDataV2, style: ResolvedTrackStyle)
 
 ## Acceptance criteria
 
-- [ ] AT1–AT6 pass; 183, 189, 193, 196, 197, 200, 234, 235, 249 acceptance tests pass.
+- [ ] AT1–AT6 pass; 180, edge 234, 183, 189, 193, 196, 197, 200, 234, 235, 249 acceptance tests pass.
 
 ## Verification
 
 ```
 npm run typecheck
 npm run lint
-npx vitest run tests/unit/acceptance/316- tests/unit/acceptance/183- tests/unit/acceptance/189- tests/unit/acceptance/193- tests/unit/acceptance/196- tests/unit/acceptance/197- tests/unit/acceptance/200- tests/unit/acceptance/234- tests/unit/acceptance/235- tests/unit/acceptance/249-
+npx vitest run tests/unit/acceptance/316- tests/unit/acceptance/180- tests/unit/edge/234- tests/unit/acceptance/183- tests/unit/acceptance/189- tests/unit/acceptance/193- tests/unit/acceptance/196- tests/unit/acceptance/197- tests/unit/acceptance/200- tests/unit/acceptance/234- tests/unit/acceptance/235- tests/unit/acceptance/249-
 ```
 
 ## Out of scope
