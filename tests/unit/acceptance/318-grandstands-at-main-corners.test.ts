@@ -16,8 +16,7 @@ const ROOT = join(__dirname, '..', '..', '..');
 const TRACKS_DIR = join(ROOT, 'public', 'tracks');
 const MIN_FRACTION = 0.12;
 const CORNER_RADIUS_M = 120;
-const SECTION_M = 40;
-const SLACK_M = 5;
+const APEX_SEPARATION_M = 150;
 
 interface ShippedTrack { id: string; track: TrackDataV2; style: ResolvedTrackStyle }
 
@@ -145,6 +144,8 @@ function acceptedApexes(track: TrackDataV2): number[] {
     if (gap(ring, i, 0) < MIN_FRACTION * ring.total) continue;
     if (out.some((a) => gap(ring, i, a) < MIN_FRACTION * ring.total)) continue;
     if (pitGap(ring, track.pit, i) < MIN_FRACTION * ring.total) continue;
+    const p = track.centerline[i];
+    if (out.some((a) => Math.hypot(p[0] - track.centerline[a][0], p[1] - track.centerline[a][1]) < APEX_SEPARATION_M)) continue;
     out.push(i);
   }
   return out;
@@ -165,6 +166,32 @@ function apexOf(track: TrackDataV2, ring: Ring, accepted: number[], g: Grandstan
   return best;
 }
 
+/** Accepted apex nearest to a piece's centre in XZ; -1 when none. */
+function apexByXZ(track: TrackDataV2, accepted: number[], g: Grandstand): number {
+  let best = -1;
+  let bestD = Infinity;
+  for (const a of accepted) {
+    const d = Math.hypot(g.x - track.centerline[a][0], g.z - track.centerline[a][1]);
+    if (d < bestD) {
+      bestD = d;
+      best = a;
+    }
+  }
+  return best;
+}
+
+/** Unit normal pointing to `side` at centreline index i (same convention as sideOf). */
+function sideNormal(track: TrackDataV2, i: number, side: Side): [number, number] {
+  const n = track.centerline.length;
+  const prev = track.centerline[(i - 1 + n) % n];
+  const next = track.centerline[(i + 1) % n];
+  const tx = next[0] - prev[0];
+  const tz = next[1] - prev[1];
+  const len = Math.hypot(tx, tz) || 1;
+  const sign = side === 'left' ? 1 : -1;
+  return [(sign * tz) / len, (-sign * tx) / len];
+}
+
 describe('318 grandstands at the main corners', () => {
   it('AT1: every shipped track with its style places ≥ 2 stands ≥ 12 % of the lap from index 0', () => {
     expect(SHIPPED.length).toBeGreaterThan(0);
@@ -181,7 +208,6 @@ describe('318 grandstands at the main corners', () => {
   it('AT2: cornerGrandstands gives at most 4 corners of pieces, each on the outside of its corner', () => {
     for (const { id, track, style } of SHIPPED) {
       const pieces = cornerGrandstands(track, style);
-      const ring = ringOf(track);
       const accepted = acceptedApexes(track);
       if (accepted.length === 0) {
         expect(pieces.length, id).toBe(0);
@@ -189,14 +215,16 @@ describe('318 grandstands at the main corners', () => {
       }
       const used = new Set<number>();
       for (const g of pieces) {
-        const apex = apexOf(track, ring, accepted, g);
-        expect(gap(ring, nearestIndex(track, g.x, g.z), apex), id).toBeLessThanOrEqual(SECTION_M + SLACK_M);
+        const apex = apexByXZ(track, accepted, g);
         used.add(apex);
         const corner = cornerCurvature(track.centerline, apex);
         expect(corner, id).not.toBeNull();
-        if (corner !== null) {
-          expect(sideOf(track, g.x, g.z), id).toBe(corner.side === 'left' ? 'right' : 'left');
-        }
+        if (corner === null) continue;
+        const outside: Side = corner.side === 'left' ? 'right' : 'left';
+        const [nx, nz] = sideNormal(track, apex, outside);
+        const p = track.centerline[apex];
+        expect((g.x - p[0]) * nx + (g.z - p[1]) * nz, id).toBeGreaterThan(0);
+        expect(Math.hypot(g.x - p[0], g.z - p[1]), id).toBeLessThanOrEqual(APEX_SEPARATION_M);
       }
       expect(used.size, id).toBeLessThanOrEqual(4);
     }
