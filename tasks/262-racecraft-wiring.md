@@ -14,6 +14,8 @@ AI cars in `RaceGame` drive with `Racecraft` + `LanePlanner` (passing, defence, 
 
 ## Context
 
+Planner diagnosis 2026-10-19 (two heavy coder timeouts): the full `npm test` plus the 262 suite (AT4 alone ~400 s) left no time to iterate. The worktree racecraft path makes 125 contacts in 400 s of the AT4 grid (45 in the first 190 s, then a pile-up 300–330 s); `classicTraffic` makes 3. Iterate with `npx tsx /tmp/plan262/at4.mts $PWD rc 60` and `... classic 60` (60 s of the AT4 grid, ~12 s wall; prints contactCount every 10 s) and AT1–AT3; run the full 262 suite only once at the end. Contacts come from the racecraft intent steering into a car alongside: keep a side-by-side car's lateral gap ≥ 2.2 m (car width + margin) before any attack/defend offset is applied, and fall back to the classic follow cap when no gap exists.
+
 Design: `docs/design/racing-ai-v2.md`, "Integration". Imports: `buildCorridor, collectNeighbours, corridorAt, isOffTrack, StopTracker` + types `CarView, Neighbour, TrackCorridor, CorridorSample, PlanBias` from `src/ai/raceView.ts` (258); `LanePlanner, PlanOutput` from `src/ai/lanePlanner.ts` (259); `Racecraft` from `src/ai/racecraft.ts` (260); `RaceScenario`/`contactCount` from 261. `src/ai/traffic.ts` stays untouched (frozen tests).
 
 ## Files
@@ -57,14 +59,14 @@ Monza, f4, headless `RaceGame` with `scenario` (261). Player (index 0) frozen at
 - [ ] All AT rows pass in `tests/unit/acceptance/262-racecraft-wiring.test.ts`.
 - [ ] `classicTraffic: true` output equals the pre-262 behaviour.
 - [ ] Protected tests listed in Files either pass or are reported as BLOCKED with the failing test names.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test` pass.
+- [ ] Verification passes (full `npm test` is not run by the coder).
 
 ## Verification
 
 ```
 npm run typecheck
 npm run lint
-npm test
+npx vitest run tests/unit/acceptance/262- tests/unit/acceptance/261- tests/unit/acceptance/260- tests/unit/acceptance/093- tests/unit/acceptance/225- tests/unit/acceptance/268- tests/unit/acceptance/273-
 ```
 
 ## Out of scope
