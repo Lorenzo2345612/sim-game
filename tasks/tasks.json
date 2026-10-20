@@ -4063,7 +4063,7 @@
     {
       "num": "301",
       "title": "No kerb-zone steps on any track",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "300"
       ],
