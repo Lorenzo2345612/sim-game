@@ -24,7 +24,7 @@ An overtake under yellow no longer books an immediate penalty: the overtaker get
 - `src/race/giveBack.ts` — create — pure, no `three`.
 - `src/game/raceGame.ts` — modify.
 - `src/ui/raceHud.ts`, `src/ui/raceHud.css` — modify — banner.
-- `src/main.ts` — modify — debug hook.
+- `src/main.ts` — modify — debug hook, `grid=pole`.
 - `tests/unit/acceptance/305-give-back.test.ts` — create (acceptance worker).
 - `tests/e2e/acceptance/305-give-back.spec.ts` — create (acceptance worker).
 
@@ -55,9 +55,10 @@ get playerGiveBack(): { passed: number; remaining: number } | null  // reused ob
 - Entries are per (car, passed) pair; `open` on an already-open pair is ignored. A car may owe several cars.
 - `update`: an entry closes `'returned'` when `distances[car] < distances[passed]` (strictly); `'void'` when `out[passed]` is true; `'penalty'` when `time >= openTime + GIVE_BACK_S` (1e-9 s tolerance). Checked in that order. No allocations in `update`.
 - `RaceGame`: each tick call `giveBack.update(totalDist, out, time)` with `out[j] = stopped[j] === 1 || finished[j] === 1` (retired counts as stopped); on `'penalty'` book `penalty`, `GIVE_BACK_PENALTY_S`, `'yellow flag overtake'`.
-- AI that owes (car >= 1; autopilot does not apply to car 0): speed cap = `max(0, speed of the owed car - 3 m/s)` while it owes, combined by minimum with the other caps.
+- AI that owes (car >= 1; autopilot does not apply to car 0), with gap g = `totalDist[car] - totalDist[owed]`: speed cap = `0.5 * speed of the owed car` while g > 15 m, `max(0, speed of the owed car - 6 m/s)` while g <= 15 m, combined by minimum with the other caps. Measured: a fixed -3 m/s cap closes only 30 m in 10 s, so AT6 never returned.
 - HUD: while `giveBack` is non-null show `#giveback-banner` with text `GIVE THE POSITION BACK TO AI ${passed} · ${Math.ceil(remaining)} s`, orange `#ff9f1a` background, top centre directly below `#yellow-banner` (no overlap with it, `.minimap`, `#race-tower`, `.race-hud-top`); hidden otherwise.
 - Debug hook `window.__SIMGAME__.debugGiveBack(car, passed)` in `main.ts`.
+- URL `grid=pole` in `raceConfigFromQuery` (`src/main.ts`) sets `gridOrder = [0, 1, ..., aiCount]` (player on pole); any other value or absent = current default. Needed by AT9: from the default last slot the player is behind car 3, so the entry closes 'returned' at once.
 - No loop (user rule): returning the position is not an overtake. `RaceGame` calls `giveBack.update` before reading `overtakeUnderYellow()` in the same tick, and skips (no `open`, no penalty) every reported pass `{car, passed}` with `giveBack.isGiveBack(car, passed, time)`. Remember closed-'returned' pairs in a fixed-size buffer (no allocations).
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
@@ -69,10 +70,10 @@ get playerGiveBack(): { passed: number; remaining: number } | null  // reused ob
 | AT3 | `open(0, 1, 100)` | `update([1010, 1000, 0], [false, true, false], 103)` | exactly `[{0, 1, 'void'}]` |
 | AT4 | `open(0, 1, 100)`, `open(0, 1, 101)`, `open(0, 2, 102)` | `owes(0)` at 102; then `update([1010, 1000, 1005], all false, 111)` | `owes(0)` = 1 before (oldest open entry's passed car); events: `[{0,1,'penalty'}]` only (pair 0–2, due at 112, still open); `owes(0)` = 2 after |
 | AT5 | `open(0, 1, 100)`, distances equal `[1000, 1000, 0]` | `update` at 105 | no event (strictly behind required) |
-| AT6 | `RaceGame` cleveland, f4, aiCount 3, expert, seed 1, `setPlayerAutopilot(true)`, step to 40 s after go | pick AI cars a, b with a directly ahead of b in `standings()` (both ≥ 1, gap ≤ 150 m); `debugGiveBack(a, b)`; step 10 s | at some tick within the 10 s, `standings()` distance of b > distance of a; `penalties.forCar(a)` has no `'yellow flag overtake'` entry |
+| AT6 | `RaceGame` cleveland, f4, aiCount 3, expert, seed 1, `setPlayerAutopilot(true)`, step to 40 s after go | pick AI cars a, b with a directly ahead of b in `standings()` (both ≥ 1, gap ≤ 80 m); `debugGiveBack(a, b)`; step 10 s | at some tick within the 10 s, `standings()` distance of b > distance of a; `penalties.forCar(a)` has no `'yellow flag overtake'` entry |
 | AT7 | `new GiveBack(3)`, `open(0, 1, 100)` | `isGiveBack(1, 0, 101)`; `update([995, 1000, 0], all false, 105.5)`; then `isGiveBack(1, 0, 105.5)`, `isGiveBack(1, 0, 107.4)`, `isGiveBack(1, 0, 107.6)`, `isGiveBack(0, 1, 105.5)`, `isGiveBack(2, 0, 105.5)` | true; then true, true, false, false, false |
 | AT8 | as AT6 at 40 s after go | `debugGiveBack(0, c)` with c the last car in `standings()`; step 10.5 s, recording whether car 0 stayed ahead of c at every tick | `playerGiveBack` non-null right after the call with `passed` = c and `remaining` 10 (±0.01); if car 0 stayed ahead: exactly one `'yellow flag overtake'` penalty of 5 s for car 0, else none; `playerGiveBack` null at the end |
-| AT9 | page `/?race=1&track=cleveland&ai=3&laps=3`, viewport 1280×720, 3 s sim after lights out | `debugGiveBack(0, 3)` | within 0.5 s `#giveback-banner` visible, text matches `/^GIVE THE POSITION BACK TO AI 3 · (10\|9) s$/`; no overlap with `.minimap`, `#race-tower`, `.race-hud-top` |
+| AT9 | page `/?race=1&track=cleveland&ai=3&laps=3&grid=pole`, viewport 1280×720, `debugAutopilot(true)` at lights out, 3 s sim after lights out | `debugGiveBack(0, 3)` | within 0.5 s `#giveback-banner` visible, text matches `/^GIVE THE POSITION BACK TO AI 3 · (10\|9) s$/`; no overlap with `.minimap`, `#race-tower`, `.race-hud-top` |
 | AT10 | — (regression, no new test file: the acceptance worker writes nothing for it) | run 128, 130, 289, 298 unit tests and 294, 303 e2e acceptance specs | pass |
 
 ## Acceptance criteria
@@ -92,3 +93,5 @@ npx playwright test 305- 294- 303-
 ## Out of scope
 
 - Give-back for track-limits or contact overtakes, changing the 5 s value elsewhere, sounds.
+
+Planner 2026-10-19 (decision 305-coder): AT6 gap ≤ 80 m and owing-AI cap changed (measured: −3 m/s never closes 150 m in 10 s); AT9 uses `grid=pole` + autopilot (player last on the default grid closes the entry at once). The acceptance worker updates AT6 (gap 80) and AT9 (URL, autopilot) in the test files; 093 GAPS6-2/POST10 belong to task 323, ignore them here. `ArrayLike` in `update`/`isGiveBack` and optional `RaceHudData.giveBack` are accepted.
