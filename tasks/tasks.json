@@ -4075,7 +4075,7 @@
     {
       "num": "302",
       "title": "Race minimap: all cars and sector flag colours",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "298"
       ],
@@ -4269,6 +4269,54 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/316-grandstands-clear-of-track.md"
+    },
+    {
+      "num": "317",
+      "title": "City bake: buildings allowed up to the local barrier, not the lap's farthest one",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/317-city-bake-local-corridor.md"
+    },
+    {
+      "num": "318",
+      "title": "Grandstands at the main corners, not only on the start straight",
+      "status": "pending",
+      "deps": [
+        "316"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/318-grandstands-at-main-corners.md"
+    },
+    {
+      "num": "319",
+      "title": "Surrounding buildings for every circuit",
+      "status": "pending",
+      "deps": [
+        "317"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/319-city-env-all-circuits.md"
+    },
+    {
+      "num": "320",
+      "title": "Ermita river with water (streams stay dry)",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/320-ermita-river-water.md"
     }
   ]
 }
