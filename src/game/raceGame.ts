@@ -115,6 +115,7 @@ function probeContact(manifold: RAPIER.TempContactManifold): void {
 // speed to the car in front so the driver never closes on it.
 const NEAR_ALONGSIDE_M = 6;
 const NEAR_AHEAD_M = 20;
+const FOLLOW_MIN_GAP_M = 3; // closer than this the car is alongside: braking would not clear it
 const NEAR_LATERAL_M = 3;
 
 // Wrapped, signed advance along the lap into (-L/2, L/2]
@@ -224,6 +225,7 @@ export class RaceGame {
   private readonly halfLeft: number[];
   private readonly halfRight: number[];
   private readonly traffic: CarTrafficState[];
+  private readonly followSelf: CarTrafficState = { distance: 0, lateral: 0, speed: 0 };
   private readonly othersByCar: CarTrafficState[][];
   private readonly indices: Int32Array;
   private readonly observations: AiObservation[];
@@ -692,8 +694,18 @@ export class RaceGame {
             pts[2 * ahead], pts[2 * ahead + 1],
             pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
           );
+          // The follow cap pins the AI to the leader's speed, which would hide the
+          // leader from the blocker test (closing speed); pass as if still closing.
+          this.updateTrafficCaution(i);
+          const selfState = this.followSelf;
+          selfState.distance = this.traffic[i].distance;
+          selfState.lateral = this.traffic[i].lateral;
+          selfState.speed =
+            this.aheadSpeedCap === null
+              ? this.traffic[i].speed
+              : Math.max(this.traffic[i].speed, this.aheadSpeedCap + 1);
           const decision = trafficDecision(
-            this.traffic[i],
+            selfState,
             this.othersByCar[i],
             this.lapLength,
             this.halfWidth,
@@ -1038,7 +1050,7 @@ export class RaceGame {
 
   // Neighbour alongside or close ahead of car index i, and the target-speed cap
   // of the closest car ahead so the driver never drives into it (task 273).
-  private updateTrafficCaution(i: number): void {
+  private updateTrafficCaution(i: number, minGap = FOLLOW_MIN_GAP_M): void {
     const self = this.traffic[i];
     const others = this.othersByCar[i];
     this.nearTraffic = false;
@@ -1055,7 +1067,7 @@ export class RaceGame {
         // queue to join: the yellow cap governs and the field must roll on (289).
         const t = this.traffic.indexOf(other);
         const incident = yellow && t >= 0 && (this.stopped[t] === 1 || this.finished[t] === 1);
-        if (!incident && gap < bestGap) {
+        if (!incident && gap >= minGap && gap < bestGap) {
           bestGap = gap;
           this.aheadSpeedCap = other.speed;
         }
@@ -1201,7 +1213,7 @@ export class RaceGame {
 
   // Learned drivers have no traffic awareness: brake to the speed of a car right ahead.
   private followForNeural(i: number): void {
-    this.updateTrafficCaution(i);
+    this.updateTrafficCaution(i, 0);
     const cap = this.aheadSpeedCap;
     if (cap === null) return;
     const over = this.current[i].forwardSpeed - cap;
@@ -1332,7 +1344,7 @@ export class RaceGame {
     if (this.yellow[i] === 1 && this.yellowHold[i] === 1) driver.setLateralOffset(0);
     else if (this.time <= this.blueUntil[i]) driver.setLateralOffset(this.ruleOffset[i]);
     const ruleCap = this.ruleCap[i];
-    driver.setBrakeGain(Number.isNaN(ruleCap) ? AI_BRAKE_KB : RULE_BRAKE_KB);
+    driver.setBrakeGain(Number.isNaN(ruleCap) && this.aheadSpeedCap === null ? AI_BRAKE_KB : RULE_BRAKE_KB);
     // Several caps (traffic, blue, yellow, VSC) combine as the minimum.
     if (Number.isNaN(ruleCap)) driver.setSpeedCap(trafficCap);
     else driver.setSpeedCap(trafficCap === null ? ruleCap : Math.min(trafficCap, ruleCap));
