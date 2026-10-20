@@ -54,7 +54,7 @@ carVisible(car: number): boolean   // car >= 1: aiCars[car-1].root.visible; 0: p
 | AT5 | `new Results(document.body)` | `show` a row `{status:'dsq', totalTime:null, …}` | time cell `'DSQ'` |
 | AT6 | page `/?race=1&track=cleveland&ai=3&laps=3`, 3 s sim after lights out | `forceTrackLimits(7, 2)` | within 2 s wall: race-control panel text contains `'BLACK FLAG'` and `'BLACK AND WHITE FLAG'`; `carVisible(2)` false; `carVisible(1)` true |
 | AT7 | same page | `forceTrackLimits(7)` (player) | `#results` visible within 2 s wall; last results row time cell `'DSQ'`; announcement title `'BLACK FLAG'` was shown |
-| AT8 | — | run 294 and 304 unit and e2e acceptance | pass |
+| AT8 | — | verification gate: run 294 and 304 unit and e2e acceptance | pass |
 
 ## Acceptance criteria
 
