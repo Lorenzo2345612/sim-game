@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../../../src/physics/physicsWorld';
+import { SURFACE_COLLISION_GROUPS } from '../../../src/physics/trackColliders';
 import { Vehicle } from '../../../src/physics/vehicle';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
 import { DebrisField } from '../../../src/physics/debris';
@@ -95,7 +96,9 @@ describe('147 debris acceptance', () => {
       const spec = loadSpec();
       const world = createPhysicsWorld();
       try {
-        world.createCollider(RAPIER.ColliderDesc.cuboid(200, 0.5, 200).setTranslation(0, -0.5, 0));
+        world.createCollider(RAPIER.ColliderDesc.cuboid(200, 0.5, 200)
+            .setTranslation(0, -0.5, 0)
+            .setCollisionGroups(SURFACE_COLLISION_GROUPS));
         const field = new DebrisField(world, 4);
         const spawn: SpawnPose = { position: { x: 0, y: 0.35, z: 20 }, yaw: 0 };
         const car = new Vehicle(world, spec, spawn);
@@ -112,9 +115,10 @@ describe('147 debris acceptance', () => {
           queue.drainContactForceEvents((event) => {
             const h1 = event.collider1();
             const h2 = event.collider2();
+            const carSide = (h: number): boolean =>
+              world.getCollider(h)?.parent()?.handle === car.body.handle;
             const pair =
-              (h1 === car.chassisCollider.handle && h2 === debrisCol.handle) ||
-              (h2 === car.chassisCollider.handle && h1 === debrisCol.handle);
+              (carSide(h1) && h2 === debrisCol.handle) || (carSide(h2) && h1 === debrisCol.handle);
             if (pair) {
               contact = true;
               if (!Number.isFinite(event.totalForceMagnitude())) badForce = true;

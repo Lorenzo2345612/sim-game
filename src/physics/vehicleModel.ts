@@ -36,11 +36,10 @@ const MASS_EPSILON = 0.05; // kg; Rapier mass properties are re-applied only on 
 // wheel can never ride up an armco. The environment keeps the default (all groups).
 const CHASSIS_GROUP = 0x0002;
 const CHASSIS_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | 0xffff;
-// Car-car colliders (wheel cylinders, body box): members of group 2 only, they touch
-// chassis and each other but never the environment, and wheel rays skip them.
-const CARCAR_GROUP = BARRIER_GROUP; // shared bit: barriers also touch car-car colliders, rays skip both
-export const CAR_CONTACT_COLLISION_GROUPS = (CARCAR_GROUP << 16) | CHASSIS_GROUP | CARCAR_GROUP;
-export const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | CARCAR_GROUP));
+// Car-car colliders (wheel cylinders, body box): members of group 2 only and they only touch
+// group 2 (chassis, each other, debris): never the environment or barriers; wheel rays skip them.
+export const CAR_CONTACT_COLLISION_GROUPS = (CHASSIS_GROUP << 16) | CHASSIS_GROUP;
+export const WHEEL_RAY_FILTER_GROUPS = 0xffff0000 | (0xffff & ~(CHASSIS_GROUP | BARRIER_GROUP));
 // Body/nose box for car-car contact: bottom stays at the chassis slab bottom.
 const BODY_EXTRA_HALF_HEIGHT = 0.25;
 // Wheel cylinders are skipped when the body slab already covers the tyre's outer edge.
@@ -271,6 +270,7 @@ export class VehicleModel {
           .setTranslation(0, bodyHalfH - he.y, 0)
           .setDensity(0)
           .setCollisionGroups(CAR_CONTACT_COLLISION_GROUPS)
+          .setFriction(0)
           .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
           .setContactForceEventThreshold(1000),
         this.body,
@@ -286,6 +286,7 @@ export class VehicleModel {
             .setRotation({ x: 0, y: 0, z: SQRT_HALF, w: SQRT_HALF })
             .setDensity(0)
             .setCollisionGroups(CAR_CONTACT_COLLISION_GROUPS)
+            .setFriction(0)
             .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
             .setContactForceEventThreshold(1000),
           this.body,

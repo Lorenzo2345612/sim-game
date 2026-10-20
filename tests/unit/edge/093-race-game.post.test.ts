@@ -277,7 +277,7 @@ describe('093 race game post-code gaps', () => {
     const world = createPhysicsWorld();
     try {
       const a = new VehicleModel(world, spec, SPAWN);
-      const b = new VehicleModel(world, spec, { position: { x: 0, y: 0.75, z: 0 }, yaw: 0 });
+      const b = new VehicleModel(world, spec, { position: { x: 0, y: 1.3, z: 0 }, yaw: 0 });
       const sa = createVehicleState(4);
       const sb = createVehicleState(4);
       for (let i = 0; i < steps(1.5); i++) {
@@ -289,7 +289,7 @@ describe('093 race game post-code gaps', () => {
         a.getState(sa);
         b.getState(sb);
         if (i >= steps(0.5)) {
-          // Chassis half-extents.y is 0.05 m, so a resting stack sits 0.10 m centre to centre.
+          // Cars rest on each other's car-car colliders, well above the 0.08 m chassis-only offset.
           expect(sb.position.y - sa.position.y, 'the stacked car stays on top').toBeGreaterThan(0.08);
         }
       }

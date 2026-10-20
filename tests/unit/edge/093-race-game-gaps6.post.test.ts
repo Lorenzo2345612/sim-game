@@ -157,14 +157,14 @@ describe('093 race game post-code gaps (tune on every car and wheel-ray groups)'
       const car = new VehicleModel(w, loadSpec(), { position: { x: 0, y: 0.6, z: 0 }, yaw: 0 });
       settle(w, car);
       expect([...car.getWheelSurfaces()]).toEqual(['grass', 'grass', 'grass', 'grass']);
-      // Slabs in the wheel-ray path: z = -1.469 is the front axle, z = 1.251 the rear one.
+      // Slabs top 0.5 mm above the ground, clear of the tyre colliders; in the wheel-ray path: z = -1.469 is the front axle, z = 1.251 the rear one.
       const front = w.createCollider(
-        RAPIER.ColliderDesc.cuboid(1.2, 0.05, 0.4).setTranslation(0, 0.15, -1.469),
+        RAPIER.ColliderDesc.cuboid(1.2, 0.05, 0.4).setTranslation(0, -0.0495, -1.469),
       );
       registerSurface(front, 'gravel');
       const rear = w.createCollider(
         RAPIER.ColliderDesc.cuboid(1.2, 0.05, 0.4)
-          .setTranslation(0, 0.15, 1.251)
+          .setTranslation(0, -0.0495, 1.251)
           .setCollisionGroups((CHASSIS_GROUP << 16) | 0xffff),
       );
       registerSurface(rear, 'gravel');

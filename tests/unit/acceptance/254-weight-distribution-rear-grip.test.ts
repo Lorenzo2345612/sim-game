@@ -123,13 +123,13 @@ describe('254 weight distribution and rear grip acceptance', () => {
     // Baselines recorded on master at test-writing time (acceptance worker, task 254).
     const BASE: Record<string, { px: number; py: number; pz: number; vx: number; vy: number; vz: number; yaw: number }> = {
       f4: {
-        px: -50.537574768066406,
-        py: 0.26661914587020874,
-        pz: -84.34544372558594,
-        vx: -22.631492614746094,
-        vy: -0.04648231714963913,
-        vz: 2.3186025619506836,
-        yaw: -2.5178889873609545,
+        px: -50.53156661987305,
+        py: 0.2664341330528259,
+        pz: -84.34928894042969,
+        vx: -22.587812423706055,
+        vy: -0.048482734709978104,
+        vz: 2.274357557296753,
+        yaw: -2.517884875940575,
       },
       'gt3-a': {
         px: -49.1705322265625,
