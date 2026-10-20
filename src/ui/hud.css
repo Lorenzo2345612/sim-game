@@ -112,3 +112,29 @@ canvas.minimap {
   z-index: 10;
   pointer-events: none;
 }
+
+/* Race-only key under the 260 px map (302). */
+.minimap-legend {
+  position: absolute;
+  top: calc(12px + var(--minimap-size) + 2px);
+  right: 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ui-text-dim);
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ml-dot.ml-you {
+  color: #2f7dff;
+}
+
+.ml-dot.ml-ai {
+  color: #9aa4b2;
+}
+
+.ml-dot.ml-stopped {
+  color: #ff3b30;
+}

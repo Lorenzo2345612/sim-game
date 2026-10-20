@@ -92,7 +92,8 @@
 
 #race-control {
   position: fixed;
-  top: calc(12px + var(--minimap-size, 160px) + 12px);
+  /* Below the minimap legend (302): map + ~18 px legend + gap. */
+  top: calc(12px + var(--minimap-size, 160px) + 30px);
   right: 12px;
   max-width: clamp(200px, 26vw, 340px);
   padding: 0.4em 0.9em;

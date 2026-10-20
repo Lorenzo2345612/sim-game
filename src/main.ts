@@ -86,7 +86,7 @@ import { HudTyres, type HudTyresData } from './ui/hudTyres';
 import { HudErs, type HudErsData } from './ui/hudErs';
 import { CAR_IDS, CAR_STORAGE_KEY, Menu, TRACK_CHOICES, type QuickRaceOptions } from './ui/menu';
 import { LiveryEditor, type LiveryPreview } from './ui/liveryEditor';
-import { Minimap } from './ui/minimap';
+import { Minimap, type MinimapCar } from './ui/minimap';
 import { FpsOverlay } from './ui/fpsOverlay';
 import { SetupPanel } from './ui/setupPanel';
 import { SetupHud } from './ui/setupHud';
@@ -203,6 +203,10 @@ declare global {
       /** 152: yaw the chase camera about world Y around its position; 0 restores the rig pose. */
       debugCameraYaw(rad: number): void;
       debugScene?(): unknown;
+      /** Race only: replaces the sector flags (and player sector, 303) fed to the HUD and minimap. */
+      debugFlagOverride(o: { flags: SectorFlag[]; playerSector: number } | null): void;
+      /** Counts drawn by the last race minimap update (302). */
+      minimapStats(): { size: number; ai: number; player: number; stopped: number };
     };
   }
 }
@@ -389,6 +393,19 @@ function toastText(e: PenaltyEntry, entries: readonly PenaltyEntry[], index: num
     if (w.car === e.car && w.kind === 'warning' && w.reason === e.reason) n++;
   }
   return `Track limits ${n}/3`;
+}
+
+/** Race-only key for the minimap dots (302). */
+function createMinimapLegend(container: HTMLElement): HTMLElement {
+  const doc = container.ownerDocument;
+  const el = doc.createElement('div');
+  el.className = 'minimap-legend';
+  el.innerHTML =
+    'you <span class="ml-dot ml-you">●</span> &nbsp; ' +
+    'AI <span class="ml-dot ml-ai">●</span> &nbsp; ' +
+    'stopped <span class="ml-dot ml-stopped">✕</span>';
+  container.appendChild(el);
+  return el;
 }
 
 let menu: Menu | null = null;
@@ -1335,7 +1352,28 @@ async function startGame(trackId: string): Promise<void> {
     compound: tune.compound,
     pressureKpa: gameSpec.tyres.pressureKpa,
   };
-  const minimap = new Minimap(document.body, track.centerline);
+  const minimap = new Minimap(document.body, track.centerline, raceGame !== null ? 260 : 160);
+  // Race: a legend under the 260 px map keys the dots (302).
+  const minimapLegend = raceGame !== null ? createMinimapLegend(document.body) : null;
+  const minimapCars: MinimapCar[] = [];
+  const mapOut = { x: 0, z: 0, stopped: false };
+  // Repaints the race minimap once. The debug flag hook calls it too, so an
+  // override lands without waiting for the next (possibly slow) frame.
+  const paintRaceMinimap = (): void => {
+    if (raceGame === null) return;
+    const n = raceGame.carCount;
+    while (minimapCars.length < n) minimapCars.push({ x: 0, z: 0, player: false, stopped: false });
+    if (minimapCars.length > n) minimapCars.length = n;
+    for (let i = 0; i < n; i++) {
+      raceGame.carMapState(i, mapOut);
+      const c = minimapCars[i];
+      c.x = mapOut.x;
+      c.z = mapOut.z;
+      c.player = i === 0;
+      c.stopped = mapOut.stopped;
+    }
+    minimap.updateRace(minimapCars, raceFlags, sim.simTime);
+  };
   const fpsOverlay = new FpsOverlay(document.body, window);
 
   const setupHud = new SetupHud(document.body);
@@ -1347,6 +1385,8 @@ async function startGame(trackId: string): Promise<void> {
   const raceHud = new RaceHud(document.body);
   raceHud.setVisible(raceGame !== null);
   const raceFlags: SectorFlag[] = ['green', 'green', 'green'];
+  // Debug-only sector override (302): feeds the HUD and the minimap, never the simulation.
+  let flagOverride: { flags: SectorFlag[]; playerSector: number } | null = null;
   const raceHudData: RaceHudData = {
     standings: [],
     playerCar: 0,
@@ -1540,6 +1580,8 @@ async function startGame(trackId: string): Promise<void> {
   let lastRenderMs = 0;
   // HUD tower/standings refresh at 10 Hz.
   let hudNextMs = 0;
+  // Race minimap repaints at most every 50 ms (302 perf).
+  let minimapNextMs = 0;
   let rafId = 0;
   let fpsAvg = 0;
   const frameStats = { fps: 0, drawCalls: 0 };
@@ -1566,7 +1608,7 @@ async function startGame(trackId: string): Promise<void> {
     preset === 'low' ? null : await loadGradeLut(),
   );
 
-  const qaHudSelector = '#hud, .tyres, .ers, .minimap, #fps-overlay, #setup-hud';
+  const qaHudSelector = '#hud, .tyres, .ers, .minimap, .minimap-legend, #fps-overlay, #setup-hud';
   const qaHidden: { el: HTMLElement; prev: string }[] = [];
   let qaTopCam: THREE.OrthographicCamera | null = null;
   let qaViewCam: THREE.PerspectiveCamera | null = null;
@@ -1795,9 +1837,15 @@ async function startGame(trackId: string): Promise<void> {
         if (hudDue) hudNextMs = now + 100;
         if (hudDue) raceHudData.standings = raceGame.standings();
         raceHudData.laps = raceGame.config.laps;
-        raceFlags[0] = raceGame.flags.sectorFlag(1);
-        raceFlags[1] = raceGame.flags.sectorFlag(2);
-        raceFlags[2] = raceGame.flags.sectorFlag(3);
+        if (flagOverride !== null) {
+          raceFlags[0] = flagOverride.flags[0] ?? 'green';
+          raceFlags[1] = flagOverride.flags[1] ?? 'green';
+          raceFlags[2] = flagOverride.flags[2] ?? 'green';
+        } else {
+          raceFlags[0] = raceGame.flags.sectorFlag(1);
+          raceFlags[1] = raceGame.flags.sectorFlag(2);
+          raceFlags[2] = raceGame.flags.sectorFlag(3);
+        }
         raceHudData.blue = raceGame.playerBlueFlag;
         raceHudData.vscPhase = raceGame.vsc.phase;
         raceHudData.vscDelta = raceGame.playerVscDelta;
@@ -1854,7 +1902,12 @@ async function startGame(trackId: string): Promise<void> {
       if (qaCam !== null) treeField?.update(qaCam.position);
       else treeField?.update(camera.position);
       city?.update(sim.simTime);
-      minimap.update(interp.position.x, interp.position.z);
+      if (raceGame !== null) {
+        if (now >= minimapNextMs) {
+          minimapNextMs = now + 50;
+          paintRaceMinimap();
+        }
+      } else minimap.update(interp.position.x, interp.position.z);
       drivingLine.update(
         lineProgress.update(interp.position.x, interp.position.z).distance,
         Math.abs(interp.forwardSpeed),
@@ -2102,6 +2155,7 @@ async function startGame(trackId: string): Promise<void> {
     hudTyres.dispose();
     hudErs.dispose();
     minimap.dispose();
+    minimapLegend?.remove();
     fpsOverlay.dispose();
     mirror.dispose();
     setupHud.dispose();
@@ -2224,6 +2278,16 @@ async function startGame(trackId: string): Promise<void> {
       if (rad !== 0 && qaCam === null) applyDebugYaw();
     },
     debugScene: () => ({ scene, camera, renderer: handle.renderer }),
+    debugFlagOverride: (o) => {
+      flagOverride = o === null ? null : { flags: [...o.flags], playerSector: o.playerSector };
+      if (flagOverride !== null) {
+        raceFlags[0] = flagOverride.flags[0] ?? 'green';
+        raceFlags[1] = flagOverride.flags[1] ?? 'green';
+        raceFlags[2] = flagOverride.flags[2] ?? 'green';
+      }
+      paintRaceMinimap();
+    },
+    minimapStats: () => ({ ...minimap.stats }),
     setLivery: (l: Partial<Livery>) => {
       const prevNumber = playerLivery.number;
       playerLivery = { ...playerLivery, ...l };

@@ -23,7 +23,7 @@ import { RaceClassification, type Standing } from '../race/classification';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
 import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
-import { FlagState, type FlagCar } from '../race/flags';
+import { FlagState, START_GRACE_S, type FlagCar } from '../race/flags';
 import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
@@ -914,6 +914,24 @@ export class RaceGame {
 
   get carCount(): number {
     return this.count;
+  }
+
+  /** Minimap state for car i: map position and whether it counts as stopped (302). */
+  carMapState(i: number, out: { x: number; z: number; stopped: boolean }): void {
+    if (!Number.isInteger(i) || i < 0 || i >= this.count) {
+      throw new RangeError(`car ${i} out of range`);
+    }
+    const s = this.current[i];
+    out.x = s.position.x;
+    out.z = s.position.z;
+    const go = this.scenarioMode ? 0 : this.start.goTime;
+    // Signed on purpose, like FlagState CAUSE_SPEED: a reversing car counts as stopped.
+    out.stopped =
+      this.stopped[i] === 1 ||
+      (this.finished[i] !== 1 &&
+        go !== null &&
+        this.time - go >= START_GRACE_S &&
+        s.forwardSpeed < 5);
   }
 
   get debrisField(): DebrisField {
