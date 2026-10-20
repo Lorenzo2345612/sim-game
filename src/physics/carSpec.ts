@@ -3,6 +3,7 @@ import {
   parseEngineSynth,
   type EngineSynthSpec,
 } from '../audio/soundSpec';
+import type { MotorSpec } from './electric';
 import type { ActiveAeroSpec, HybridSpec } from './hybridTypes';
 
 export type Vec3 = { x: number; y: number; z: number };
@@ -94,12 +95,21 @@ export interface CockpitSpec {
 
 export const DEFAULT_COCKPIT_EYE: Vec3 = { x: 0, y: 0.75, z: -0.2 };
 
+export interface ElectricSpec {
+  front: MotorSpec;
+  rear: MotorSpec;
+  batteryJ: number;
+  efficiency: number;
+  modes: { race: number; attack: number };
+  attack: { activations: number; durationS: number };
+}
+
 export interface CarSpec {
   id: string;
   name: string;
   category: CarCategory;
   model: { url: string };
-  drive: 'rwd';
+  drive: 'rwd' | 'awd';
   chassis: {
     massKg: number;
     cgHeight: number;
@@ -167,6 +177,7 @@ export interface CarSpec {
   cockpit: CockpitSpec;
   hybrid?: HybridSpec;
   activeAero?: ActiveAeroSpec;
+  electric?: ElectricSpec;
   setup: SetupRanges;
   presets: Record<PresetName, PresetSetup>;
 }
@@ -390,6 +401,43 @@ function activeAeroSpec(root: unknown): ActiveAeroSpec | undefined {
   return { dragScale, downforceScale, transitionS };
 }
 
+function motor(root: unknown, path: string): MotorSpec {
+  return {
+    maxPowerW: posNum(root, `${path}.maxPowerW`),
+    maxTorqueNm: posNum(root, `${path}.maxTorqueNm`),
+    maxRpm: posNum(root, `${path}.maxRpm`),
+    ratio: posNum(root, `${path}.ratio`),
+    regenMaxW: posNum(root, `${path}.regenMaxW`),
+  };
+}
+
+function electricSpec(root: unknown, drive: 'rwd' | 'awd'): ElectricSpec | undefined {
+  const raw = pick(root, 'electric');
+  if (drive === 'rwd') {
+    if (raw !== undefined) fail('electric');
+    return undefined;
+  }
+  if (raw === undefined || typeof raw !== 'object' || raw === null) fail('electric');
+  const front = motor(root, 'electric.front');
+  const rear = motor(root, 'electric.rear');
+  const batteryJ = posNum(root, 'electric.batteryJ');
+  const efficiency = num(root, 'electric.efficiency');
+  if (!(efficiency > 0 && efficiency <= 1)) fail('electric.efficiency');
+  const race = posNum(root, 'electric.modes.race');
+  const attack = posNum(root, 'electric.modes.attack');
+  const activations = num(root, 'electric.attack.activations');
+  if (!Number.isInteger(activations) || activations < 1) fail('electric.attack.activations');
+  const durationS = posNum(root, 'electric.attack.durationS');
+  return {
+    front,
+    rear,
+    batteryJ,
+    efficiency,
+    modes: { race, attack },
+    attack: { activations, durationS },
+  };
+}
+
 function boxInertia(massKg: number, half: Vec3): Vec3 {
   const w = half.x * 2;
   const h = half.y * 2;
@@ -415,7 +463,7 @@ export function parseCarSpec(json: unknown): CarSpec {
   const name = str(json, 'name');
   const category = enumStr(json, 'category', CATEGORIES);
   const modelUrl = str(json, 'model.url');
-  const drive = enumStr(json, 'drive', ['rwd']);
+  const drive = enumStr(json, 'drive', ['rwd', 'awd']);
 
   const massKg = num(json, 'chassis.massKg');
   const cgHeight = num(json, 'chassis.cgHeight');
@@ -518,6 +566,7 @@ export function parseCarSpec(json: unknown): CarSpec {
   const cockpit = cockpitSpec(json);
   const hybrid = hybridSpec(json);
   const activeAero = activeAeroSpec(json);
+  const electric = electricSpec(json, drive);
 
   const setup = {
     frontWing: range(json, 'setup.frontWing'),
@@ -557,6 +606,7 @@ export function parseCarSpec(json: unknown): CarSpec {
     cockpit,
     ...(hybrid ? { hybrid } : {}),
     ...(activeAero ? { activeAero } : {}),
+    ...(electric ? { electric } : {}),
     setup,
     presets,
   };
