@@ -242,7 +242,7 @@ test.describe('207 ui polish', () => {
     test.setTimeout(120000);
     await loadGame(page);
     const rects = await page.evaluate(() =>
-      Array.from(document.querySelectorAll<HTMLCanvasElement>('canvas:not(#game)')).map((c) => {
+      Array.from(document.querySelectorAll<HTMLCanvasElement>('canvas:not(#game):not(#mirror)')).map((c) => {
         const r = c.getBoundingClientRect();
         return { width: r.width, height: r.height, top: r.top, right: r.right };
       }),

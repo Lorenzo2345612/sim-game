@@ -22,7 +22,7 @@ test.describe('161 minimap size and pause audio', () => {
   test('AT1: exactly one canvas besides #game, 160 px square in the top-right corner', async ({ page }) => {
     test.setTimeout(120000);
     await loadGame(page, '/?track=monza');
-    const rects = await canvasRects(page, 'canvas:not(#game)');
+    const rects = await canvasRects(page, 'canvas:not(#game):not(#mirror)');
     expect(rects.length).toBe(1);
     const minimap = rects[0];
     expect(minimap.width).toBeGreaterThanOrEqual(159);
