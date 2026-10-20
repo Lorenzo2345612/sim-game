@@ -26,6 +26,7 @@ import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/track
 import { FlagState, START_GRACE_S, type FlagCar } from '../race/flags';
 import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
+import { TroubleTracker } from '../race/trouble';
 import { GiveBack, GIVE_BACK_PENALTY_S } from '../race/giveBack';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
 import { OvertakeLog, type OvertakeCar } from '../race/overtakeLog';
@@ -278,6 +279,7 @@ export class RaceGame {
   private blue0 = false;
   private vscDelta0 = 0;
   private readonly giveBack: GiveBack;
+  private readonly trouble: TroubleTracker;
   private readonly giveBackOut: boolean[];
   private readonly owedMask: Uint8Array;
   private readonly playerGiveBackView = { passed: 0, remaining: 0 };
@@ -378,6 +380,7 @@ export class RaceGame {
     this.ruleOffset = new Float64Array(this.count);
     this.ruleCap = new Float64Array(this.count).fill(Number.NaN);
     this.giveBack = new GiveBack(this.count);
+    this.trouble = new TroubleTracker(this.count);
     this.giveBackOut = new Array<boolean>(this.count).fill(false);
     this.owedMask = new Uint8Array(this.count);
     this.yellow = new Uint8Array(this.count);
@@ -980,6 +983,15 @@ export class RaceGame {
     return this.vscDelta0;
   }
 
+  debugRespawn(car: number): void {
+    if (!Number.isInteger(car) || car < 1 || car > this.ais.length) throw new RangeError(`debugRespawn: bad car ${car}`);
+    this.respawnOnLine(car - 1);
+  }
+
+  isInTrouble(car: number): boolean {
+    return this.trouble.inTrouble(car, this.time);
+  }
+
   debugGiveBack(car: number, passed: number): void {
     this.giveBack.open(car, passed, this.time);
   }
@@ -1359,9 +1371,10 @@ export class RaceGame {
       fc.speed = this.current[i].forwardSpeed;
       fc.offTrack = this.wheelsOff[i] >= 4;
       fc.retired = this.finished[i] === 1;
+      this.trouble.update(i, fc.offTrack, fc.speed, t);
     }
     this.flags.update(this.flagCars, t);
-    for (let j = 0; j < n; j++) this.giveBackOut[j] = this.stopped[j] === 1 || this.finished[j] === 1;
+    for (let j = 0; j < n; j++) this.giveBackOut[j] = this.stopped[j] === 1 || this.finished[j] === 1 || this.trouble.inTrouble(j, t);
     this.giveBack.update(this.totalDist, this.giveBackOut, t);
     const gbEvents = this.giveBack.drainEvents();
     for (let k = 0; k < gbEvents.length; k++) {
@@ -1374,6 +1387,7 @@ export class RaceGame {
       const p = overtakes[k].passed;
       // Passing a stationary or retired car under yellow is legal (289).
       if (this.stopped[p] === 1 || this.finished[p] === 1) continue;
+      if (this.trouble.inTrouble(p, t)) continue;
       if (!(this.traffic[p].speed >= YELLOW_FOLLOW_MIN_MS)) continue;
       if (this.giveBack.isGiveBack(overtakes[k].car, p, t)) continue;
       this.giveBack.open(overtakes[k].car, p, t);
@@ -1480,6 +1494,7 @@ export class RaceGame {
     const p = cl[idx];
     const next = cl[(idx + 1) % n];
     const ground = this.track.elevation[idx] ?? 0;
+    this.trouble.mark(k + 1, this.time);
     this.ais[k].vehicle.reset({
       position: { x: p[0], y: ground + SPAWN_HEIGHT_M, z: p[1] },
       yaw: Math.atan2(-(next[0] - p[0]), -(next[1] - p[1])),
