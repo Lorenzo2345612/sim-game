@@ -320,7 +320,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 316 | Grandstands follow the track and never sit on it | done | - |
 | 317 | City bake: buildings allowed up to the local barrier, not the lap's farthest one | done | - |
 | 318 | Grandstands at the main corners, not only on the start straight | in progress | 316 |
-| 319 | Surrounding buildings for every circuit | in progress | 317 |
+| 319 | Surrounding buildings for every circuit | done | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | pending | 314 |
 | 323 | Master green after the car tyre colliders | done | - |

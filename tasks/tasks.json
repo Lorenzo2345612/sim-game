@@ -4298,7 +4298,7 @@
     {
       "num": "319",
       "title": "Surrounding buildings for every circuit",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "317"
       ],
