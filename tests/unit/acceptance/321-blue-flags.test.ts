@@ -205,7 +205,7 @@ describe('321 blue flags acceptance', () => {
     const corridor = corridorOf(loadTrack());
     const { game, lap } = await makeGame(
       [
-        { s: 1500, d: -(sampleAt(corridor, 1500).halfLeft + 8), v: 0 },
+        { s: 5000, d: -(sampleAt(corridor, 5000).halfLeft + 8), v: 0 },
         { s: 300, d: 0, v: 50 },
         { s: 380, d: 0, v: 40 },
       ],
@@ -238,13 +238,13 @@ describe('321 blue flags acceptance', () => {
 
   it('AT6: a lapper passes two battling cars without slowing them', async () => {
     const corridor = corridorOf(loadTrack());
-    const pd = -(sampleAt(corridor, 1500).halfLeft + 8);
+    const pd = -(sampleAt(corridor, 5000).halfLeft + 8);
     const seconds = 40;
     const ticks = Math.round(seconds / DT);
 
     const withLapper = await makeGame(
       [
-        { s: 1500, d: pd, v: 0 },
+        { s: 5000, d: pd, v: 0 },
         { s: 300, d: 0, v: 50 },
         { s: 380, d: 0, v: 40 },
         { s: 400, d: 0, v: 40 },
@@ -255,7 +255,7 @@ describe('321 blue flags acceptance', () => {
     );
     const without = await makeGame(
       [
-        { s: 1500, d: pd, v: 0 },
+        { s: 5000, d: pd, v: 0 },
         { s: 380, d: 0, v: 40 },
         { s: 400, d: 0, v: 40 },
       ],
