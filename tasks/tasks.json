@@ -4063,7 +4063,7 @@
     {
       "num": "301",
       "title": "No kerb-zone steps on any track",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "300"
       ],
@@ -4102,7 +4102,7 @@
     {
       "num": "304",
       "title": "Race results: penalties added, running cars not DNF",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "303"
       ],
