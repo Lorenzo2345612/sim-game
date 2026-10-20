@@ -136,7 +136,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 132 | Telemetry screen (charts and delta) | pending | 044, 095, 126, 130, 131 |
 | 133 | Replay recorder (all cars) | done | - |
 | 134 | Replay player and TV cameras | pending | 047, 093, 095, 132, 133 |
-| 135 | Time of day presets | in progress | 093, 099, 106, 130 |
+| 135 | Time of day presets | done | 093, 099, 106, 130 |
 | 136 | Night lighting: floodlights, headlights | pending | 102, 103, 135 |
 | 137 | Rain and track wetness model, wet compounds | done | 058, 115 |
 | 138 | Wet visuals: rain, wet road, spray | pending | 080, 136, 137 |
