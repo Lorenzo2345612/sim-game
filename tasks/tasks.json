@@ -4322,7 +4322,7 @@
     {
       "num": "321",
       "title": "Blue flags: lapped cars yield without leaving their fight; player penalty",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "305"
       ],

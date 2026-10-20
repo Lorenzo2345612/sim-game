@@ -322,5 +322,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 318 | Grandstands at the main corners, not only on the start straight | done | 316 |
 | 319 | Surrounding buildings for every circuit | done | 317 |
 | 320 | Ermita river with water (streams stay dry) | done | - |
-| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | in progress | 305 |
+| 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | done | 305 |
 | 323 | Master green after the car tyre colliders | done | - |
