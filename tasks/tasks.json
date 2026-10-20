@@ -4154,7 +4154,7 @@
     {
       "num": "308",
       "title": "Yellow flags: minimum duration and continuous spin cause",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "307"
       ],

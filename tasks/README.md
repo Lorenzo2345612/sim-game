@@ -309,7 +309,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 305 | Yellow overtake: 10 s to give the position back | done | 304 |
 | 306 | Timing tower views: gap, tyres, laps | waiting decision | 305 |
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
-| 308 | Yellow flags: minimum duration and continuous spin cause | pending | 307 |
+| 308 | Yellow flags: minimum duration and continuous spin cause | waiting decision | 307 |
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | pending | 308 |
 | 310 | Yellow countdown in race HUD and minimap | pending | 309 |
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
