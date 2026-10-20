@@ -21,14 +21,14 @@ import { N_HID } from '../../src/ai/neuralPolicy';
 import { trackLimits } from './limits.mts';
 import { applySetup, defaultSetup } from '../../src/physics/setup';
 import { padGenome } from '../../src/ai/neuralPolicy';
-import { RacecraftTracker, racecraftFitness, type RaceCar } from './racecraft.mts';
+import { RacecraftTracker, racecraftFitness, RC_W, type RaceCar } from './racecraft.mts';
 import type { Telemetry } from '../../src/physics/vehicleModel';
 import { AiDriver, type AiObservation } from '../../src/ai/aiDriver';
 import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { NEURAL_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 } } = workerData as { root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {} } = workerData as { rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -45,6 +45,7 @@ for (let i = 0; i < n; i++) { hwL.push(halfWidthAt(track, 'left', i)); hwR.push(
 const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : null;
 const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
   : line === 'racing' ? { points: racingTargetPoints(cl, hwL, hwR, kL, kR) } : undefined;
+Object.assign(RC_W, rcw);
 const features = new NeuralFeatures(cl, hwL, hwR, lineArg);
 // Residual mode: the classic AiDriver drives (as in RaceGame); the network only sets its lateral offset and pace.
 const cLine = computeRacingLine(cl, track.widthMeters / 2);
@@ -339,18 +340,18 @@ parentPort!.on('message', (msg: any) => {
   const genomes: Float64Array[] = [...split.map((s: any) => s.weights), ...opp.map((o) => padGenome(o.weights)!)];
   const extras: Float64Array[] = [...split.map((s: any) => s.extra), ...opp.map((o) => { const e = new Float64Array(N_XW); if (o.extra) e.set(o.extra.slice(0, N_XW)); return e; })];
   const setups = [...split.map((s: any) => s.setup), ...opp.map((o) => o.setup ?? defaultSetup(spec))];
-  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0) };
+  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0), defends: new Array(nT).fill(0), yellowFaults: new Array(nT).fill(0) };
   let invalidLaps: number[] = [];
   const fitness = new Array(nT).fill(0), dist = new Array(nT).fill(0);
   let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
   const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
-    const rc = racecraft ? new RacecraftTracker(genomes.length) : null;
+    const rc = racecraft ? new RacecraftTracker(genomes.length, L) : null;
     const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc);
     for (let k = 0; k < nT; k++) {
       const base = r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
-      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k]) : base;
-      if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; }
+      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k]) : base;
+      if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; rcStats.defends[k] += rc.defends[k]; rcStats.yellowFaults[k] += rc.yellowFaults[k]; }
       if (e === 0) dist[k] = r.best[k];
     }
     if (e === 0) { const c = (a: ArrayLike<number>) => Array.from(a).slice(0, nT); lapT = c(r.lapT); laps = c(r.laps); finishT = c(r.finishT); invalidLaps = c(r.invalidLaps); }
