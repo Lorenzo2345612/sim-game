@@ -1,4 +1,4 @@
-# 314 — Passing the incident car under yellow is legal
+# 314 — Incident car may be passed under yellow; yellow clears 3 s after the threat
 
 Status: pending
 Phase: 2
@@ -10,11 +10,11 @@ Roles: acceptance, coder, reviewer
 
 ## Goal
 
-Overtaking the car that caused the yellow (spinning, off track or slow) never opens a give-back or penalty; a spinning car is itself a yellow cause.
+Overtaking the car that caused the yellow (spinning, off track or slow) is legal for as long as that yellow lasts; a spinning car is itself a yellow cause; in races a yellow lasts 3 s after the last cause (was 2 s).
 
 ## Context
 
-User report: penalised for passing a car that was spinning. `RaceGame` (~raceGame.ts:1130) only exempts passed cars that are stopped, finished or slower than `YELLOW_FOLLOW_MIN_MS`; a car spinning at speed is not exempt, and it is not a yellow cause in `FlagState` (`src/race/flags.ts`: cause = `offTrack` or speed < `CAUSE_SPEED`). Tasks 305 (give-back) and 309 (countdown) land first and touch the same code; keep their behaviour.
+User reports: penalised for passing a car that was spinning; the yellow should stay ~3 s after the threat ends. `RaceGame` (~raceGame.ts:1130) only exempts passed cars that are stopped, finished or slower than `YELLOW_FOLLOW_MIN_MS`; a car spinning at speed is not exempt, and it is not a yellow cause in `FlagState` (`src/race/flags.ts`: cause = `offTrack` or speed < `CAUSE_SPEED`). Tasks 305 (give-back) and 309 (countdown) land first and touch the same code; keep their behaviour.
 
 ## Files
 
@@ -26,27 +26,30 @@ User report: penalised for passing a car that was spinning. `RaceGame` (~raceGam
 
 ```ts
 // FlagCar gains: spinning?: boolean   (absent = false)
+// FlagOptions (308/309) gains: decayS?: number   // default 2 = DECAY today
+export const RACE_DECAY_S = 3;
 // FlagState gains:
-lastCauseAt(car: number): number;   // sim time of the last update where the car was a cause; NaN if never
-export const INCIDENT_EXEMPT_S = 5;
-export function isIncidentPass(lastCauseAt: number, time: number): boolean; // time - lastCauseAt <= 5 + 1e-9; false for NaN
+isIncidentCar(car: number): boolean; // true from the first update where the car is a cause until the sector where it last was a cause is green again
 ```
-1. In `FlagState.update` a car is a cause when `offTrack`, or `spinning`, or slow (existing rule incl. start grace). `spinning` feeds the same single-yellow timer as `offTrack` (not double yellow). `lastCauseAt` is set on every update where the car is a cause, including during the grace-free countdown of 309.
-2. `RaceGame` sets `spinning` for car i when speed > 2 m/s and (|yaw rate| > 1.2 rad/s or the angle between the car's heading and the track tangent at its position > 0.6 rad). Reuse existing per-step yaw-rate/heading data; no allocations.
-3. In the overtake loop, skip (no give-back, no penalty) when `isIncidentPass(flags.lastCauseAt(passed), time)` is true, in addition to the existing exemptions.
+1. In `FlagState.update` a car is a cause when `offTrack`, or `spinning`, or slow (existing rule incl. start grace). `spinning` feeds the same single-yellow timer as `offTrack` (not double yellow).
+2. Incident mark: set when a car is a cause (even before its 1 s `YELLOW_AFTER` or 309 countdown completes); remember the sector of its latest cause tick; clear it on the first update where that sector's flag is `'green'` and the car is not a cause.
+3. `decayS` replaces the `DECAY` constant (default 2 keeps every existing test); `RaceGame` passes `decayS: RACE_DECAY_S` with the 308/309 options.
+4. `RaceGame` sets `spinning` for car i when speed > 2 m/s and (|yaw rate| > 1.2 rad/s or the angle between heading and track tangent > 0.6 rad). Reuse existing per-step data; no allocations.
+5. In the overtake loop, skip (no give-back, no penalty) when `flags.isIncidentCar(passed)`, in addition to the existing exemptions.
 
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |
 |---|---|---|---|
-| AT1 | — | `isIncidentPass(NaN, 10)`, `(5, 10)`, `(5.5, 10)`, `(4.99, 10)` | false, true, true, false |
-| AT2 | `new FlagState([0, 1000, 2000], 3000)`; car 0 lapDistance 500, speed 15, on track, `spinning: true`; car 1 lapDistance 300, speed 40 | update every 1/120 s from t = 0 to t = 1.2 | `sectorFlag(1)` `'yellow'` at t = 1.1 (one step tolerance); `lastCauseAt(0)` = 1.2 ± 1e-9; `lastCauseAt(1)` NaN |
-| AT3 | same FlagState; car 0 off track at lapDistance 500 for t ∈ [0, 2), then on track at speed 20, not spinning, lapDistance 500 for t < 2, then 500 + 20 (t − 2); car 1 on track, speed 40, lapDistance 410 + 40 t | update every 1/120 s to t = 2.6 (car 1 passes car 0 at t = 2.5; sector still yellow by DECAY) | `overtakeUnderYellow()` reports `{car: 1, passed: 0}` and `isIncidentPass(lastCauseAt(0), 2.5)` is true |
-| AT4 | same FlagState, no `spinning` field on any car | 128 AT3 scenario | unchanged results (yellow/green times identical to 128) |
+| AT1 | `new FlagState([0, 1000, 2000], 3000)`; car 0 lapDistance 500, speed 15, on track, `spinning: true`; car 1 lapDistance 300, speed 40 | update every 1/120 s to t = 1.2 | `sectorFlag(1)` `'yellow'` at t = 1.1 (one step); `isIncidentCar(0)` true from t = 0; `isIncidentCar(1)` false |
+| AT2 | same FlagState; car 0 off track at lapDistance 500 for t ∈ [0, 2), then on track, speed 20, lapDistance 500 + 20 (t − 2); car 1 on track, speed 40, lapDistance 410 + 40 t | update every 1/120 s to t = 2.6 | `overtakeUnderYellow()` reports `{car: 1, passed: 0}` at t ≈ 2.5; `isIncidentCar(0)` true at 2.5 |
+| AT3 | as AT2, continue to t = 4.5 | update | `sectorFlag(1)` `'green'` at 4.1; `isIncidentCar(0)` false at 4.1 and after |
+| AT4 | as AT2 with options `{decayS: 3}` | update to t = 5.2 | `'yellow'` at 4.9, `'green'` at 5.1 (one step) |
+| AT5 | FlagState without `spinning` or `decayS` | 128 AT3 scenario | unchanged results (yellow/green times identical to 128) |
 
 ## Acceptance criteria
 
-- [ ] AT1–AT4 pass; 128, 130, 289, 298, 305, 308, 309 tests still pass.
+- [ ] AT1–AT5 pass; 128, 130, 289, 298, 305, 308, 309 tests still pass.
 
 ## Verification
 

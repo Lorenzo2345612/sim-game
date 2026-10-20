@@ -4234,7 +4234,7 @@
     },
     {
       "num": "314",
-      "title": "Passing the incident car under yellow is legal",
+      "title": "Incident car may be passed under yellow; yellow clears 3 s after the threat",
       "status": "pending",
       "deps": [
         "305",

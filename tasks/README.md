@@ -315,4 +315,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
 | 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
-| 314 | Passing the incident car under yellow is legal | pending | 305, 309 |
+| 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | pending | 305, 309 |
