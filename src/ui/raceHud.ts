@@ -13,6 +13,7 @@ export interface RaceHudData {
   blue: boolean;
   vscPhase: VscPhase;
   vscDelta: number;
+  giveBack?: { passed: number; remaining: number } | null;
   playerFlag?: SectorFlag;
   playerSector?: number;
   /** Sim time in seconds. */
@@ -139,6 +140,8 @@ export class RaceHud {
   private readonly rows: TowerRow[] = [];
   private readonly flagEls: HTMLDivElement[] = [];
   private readonly blueEl: HTMLDivElement;
+  private readonly giveBackEl: HTMLDivElement;
+  private giveBackText = '';
   private readonly vscEl: HTMLDivElement;
   private readonly toastsEl: HTMLDivElement;
   private readonly alertEl: HTMLDivElement;
@@ -209,7 +212,11 @@ export class RaceHud {
     this.bannerEl.id = 'yellow-banner';
     this.alertEl.appendChild(this.bannerEl);
 
-    this.root.append(top, this.tower, flags, this.alertEl, this.blueEl, this.vscEl, this.toastsEl);
+    this.giveBackEl = doc.createElement('div');
+    this.giveBackEl.id = 'giveback-banner';
+    this.giveBackEl.style.display = 'none';
+
+    this.root.append(top, this.tower, flags, this.alertEl, this.giveBackEl, this.blueEl, this.vscEl, this.toastsEl);
     parent.appendChild(this.root);
     this.root.style.display = 'none';
   }
@@ -289,6 +296,13 @@ export class RaceHud {
     if (this.blueVisible !== data.blue) {
       this.blueVisible = data.blue;
       this.blueEl.style.display = data.blue ? 'block' : 'none';
+    }
+    const gb = data.giveBack ?? null;
+    const gbText = gb === null ? '' : `GIVE THE POSITION BACK TO AI ${gb.passed} · ${Math.ceil(gb.remaining)} s`;
+    if (this.giveBackText !== gbText) {
+      this.giveBackText = gbText;
+      this.giveBackEl.textContent = gbText;
+      this.giveBackEl.style.display = gb === null ? 'none' : 'block';
     }
     const vscOn = data.vscPhase !== 'off';
     if (this.vscVisible !== vscOn) {

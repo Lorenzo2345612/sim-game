@@ -26,6 +26,7 @@ import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/track
 import { FlagState, START_GRACE_S, type FlagCar } from '../race/flags';
 import { yellowCap, YELLOW_FOLLOW_MIN_MS } from '../race/yellowCap';
 import { Vsc } from '../race/vsc';
+import { GiveBack, GIVE_BACK_PENALTY_S } from '../race/giveBack';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
 import { OvertakeLog, type OvertakeCar } from '../race/overtakeLog';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
@@ -276,6 +277,10 @@ export class RaceGame {
   private readonly sectorB2: number;
   private blue0 = false;
   private vscDelta0 = 0;
+  private readonly giveBack: GiveBack;
+  private readonly giveBackOut: boolean[];
+  private readonly owedMask: Uint8Array;
+  private readonly playerGiveBackView = { passed: 0, remaining: 0 };
   private readonly scenarioMode: boolean;
   private readonly frozen: boolean[];
   /** Last sim time each car pair (i·count + j, i < j) was counted, −∞ = never. */
@@ -372,6 +377,9 @@ export class RaceGame {
     this.blueUntil = new Float64Array(this.count).fill(Number.NEGATIVE_INFINITY);
     this.ruleOffset = new Float64Array(this.count);
     this.ruleCap = new Float64Array(this.count).fill(Number.NaN);
+    this.giveBack = new GiveBack(this.count);
+    this.giveBackOut = new Array<boolean>(this.count).fill(false);
+    this.owedMask = new Uint8Array(this.count);
     this.yellow = new Uint8Array(this.count);
     this.yellowHold = new Uint8Array(this.count);
     this.yellowLapDist = new Float64Array(this.count);
@@ -745,12 +753,14 @@ export class RaceGame {
           }
           this.updateTrafficCaution(i);
           ai.driver.setTrafficNear(this.nearTraffic);
-          ai.driver.setFollowCap(this.aheadSpeedCap);
+          // A car owed a position must be free to pass its debtor, so it ignores follow/traffic caps.
+          const owedPos = this.owedMask[i] === 1;
+          ai.driver.setFollowCap(owedPos ? null : this.aheadSpeedCap);
           const st = ai.steering;
           ai.driver.setMaxSteerAngle(
             st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / st.fullSpeed),
           );
-          this.applyRulesReaction(i, ai.driver, decision.speedCap);
+          this.applyRulesReaction(i, ai.driver, owedPos ? null : decision.speedCap);
           ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }
         if (ai.neural) {
@@ -968,6 +978,19 @@ export class RaceGame {
   /** Player's last VSC delta in seconds (0 while VSC is off). */
   get playerVscDelta(): number {
     return this.vscDelta0;
+  }
+
+  debugGiveBack(car: number, passed: number): void {
+    this.giveBack.open(car, passed, this.time);
+  }
+
+  /** Car 0's oldest open give-back (reused object), null when it owes nothing. */
+  get playerGiveBack(): { passed: number; remaining: number } | null {
+    const p = this.giveBack.owes(0);
+    if (p < 0) return null;
+    this.playerGiveBackView.passed = p;
+    this.playerGiveBackView.remaining = this.giveBack.remaining(0, this.time);
+    return this.playerGiveBackView;
   }
 
   setPlayerAutopilot(on: boolean): void {
@@ -1338,13 +1361,22 @@ export class RaceGame {
       fc.retired = this.finished[i] === 1;
     }
     this.flags.update(this.flagCars, t);
+    for (let j = 0; j < n; j++) this.giveBackOut[j] = this.stopped[j] === 1 || this.finished[j] === 1;
+    this.giveBack.update(this.totalDist, this.giveBackOut, t);
+    const gbEvents = this.giveBack.drainEvents();
+    for (let k = 0; k < gbEvents.length; k++) {
+      if (gbEvents[k].kind === 'penalty') {
+        this.book(gbEvents[k].car, 'penalty', GIVE_BACK_PENALTY_S, 'yellow flag overtake');
+      }
+    }
     const overtakes = this.flags.overtakeUnderYellow();
     for (let k = 0; k < overtakes.length; k++) {
       const p = overtakes[k].passed;
       // Passing a stationary or retired car under yellow is legal (289).
       if (this.stopped[p] === 1 || this.finished[p] === 1) continue;
       if (!(this.traffic[p].speed >= YELLOW_FOLLOW_MIN_MS)) continue;
-      this.book(overtakes[k].car, 'penalty', 5, 'yellow flag overtake');
+      if (this.giveBack.isGiveBack(overtakes[k].car, p, t)) continue;
+      this.giveBack.open(overtakes[k].car, p, t);
     }
     let maxStopped = 0;
     for (let i = 0; i < n; i++) {
@@ -1378,6 +1410,11 @@ export class RaceGame {
       this.yellowSpeed[j] = this.traffic[j].speed;
       this.yellowOut[j] = this.stopped[j] === 1 || this.finished[j] === 1 ? 1 : 0;
     }
+    this.owedMask.fill(0);
+    for (let i = 1; i < n; i++) {
+      const o = this.giveBack.owes(i);
+      if (o >= 0) this.owedMask[o] = 1;
+    }
     for (let i = 0; i < n; i++) {
       this.yellow[i] = 0;
       this.yellowHold[i] = 0;
@@ -1400,6 +1437,13 @@ export class RaceGame {
         this.ruleOffset[i] = right >= left ? 2 : -2;
         const blueCap = 0.95 * this.speeds[idx];
         cap = Number.isNaN(cap) ? blueCap : Math.min(cap, blueCap);
+      }
+      const owed = i >= 1 ? this.giveBack.owes(i) : -1;
+      if (owed >= 0) {
+        const g = this.totalDist[i] - this.totalDist[owed];
+        const v = this.current[owed].forwardSpeed;
+        const gbCap = g > 15 ? 0.5 * v : Math.max(0, v - 6);
+        cap = Number.isNaN(cap) ? gbCap : Math.min(cap, gbCap);
       }
       this.ruleCap[i] = cap;
     }

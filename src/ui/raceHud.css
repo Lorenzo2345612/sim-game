@@ -330,3 +330,18 @@
   background: var(--ui-good);
   color: #06180d;
 }
+
+#giveback-banner {
+  position: absolute;
+  top: 118px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.3em 1.1em;
+  border-radius: var(--ui-radius);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  background: #ff9f1a;
+  color: #14100a;
+}

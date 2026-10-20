@@ -194,6 +194,7 @@ declare global {
       /** Race only: ends the race immediately and shows the results overlay (095). */
       finishRaceNow?(): void;
       debugAutopilot?(on: boolean): void;
+      debugGiveBack?(car: number, passed: number): void;
       /** Merges a patch into the player's damage state (148). */
       debugDamage(patch: Partial<DamageState>): void;
       /** Race only: penalty book entries in insertion order (130). */
@@ -286,14 +287,18 @@ function intFromQuery(
 
 function raceConfigFromQuery(params: URLSearchParams, trackId: string, carId: string): RaceConfig {
   const diff = params.get('diff');
-  return {
+  const aiCount = intFromQuery(params, 'ai', 11, 0, 15);
+  const cfg: RaceConfig = {
     trackId,
     carId,
     laps: intFromQuery(params, 'laps', 5, 1, 50),
-    aiCount: intFromQuery(params, 'ai', 11, 0, 15),
+    aiCount,
     difficulty: RACE_DIFFICULTIES.includes(diff as Difficulty) ? (diff as Difficulty) : 'medium',
     seed: intFromQuery(params, 'seed', 1),
   };
+  // grid=pole puts the player first (305 AT9); any other value keeps the default grid.
+  if (params.get('grid') === 'pole') cfg.gridOrder = Array.from({ length: aiCount + 1 }, (_, i) => i);
+  return cfg;
 }
 
 // Fetches the exported model for the race difficulty; empty (AI stays classic) when absent.
@@ -1393,6 +1398,7 @@ async function startGame(trackId: string): Promise<void> {
     blue: false,
     vscPhase: 'off',
     vscDelta: 0,
+    giveBack: null,
     playerFlag: 'green',
     playerSector: 1,
     time: 0,
@@ -1856,6 +1862,7 @@ async function startGame(trackId: string): Promise<void> {
         raceHudData.blue = raceGame.playerBlueFlag;
         raceHudData.vscPhase = raceGame.vsc.phase;
         raceHudData.vscDelta = raceGame.playerVscDelta;
+        raceHudData.giveBack = raceGame.playerGiveBack;
         if (hudDue) raceHud.update(raceHudData);
         damageHud?.update(raceGame.playerDamage);
         syncToasts(raceGame);
@@ -2284,6 +2291,7 @@ async function startGame(trackId: string): Promise<void> {
     carCount: () => (raceGame !== null ? raceGame.carCount : 1),
     startLights: () => (raceGame !== null ? raceGame.startLights() : 0),
     debugAutopilot: raceGame !== null ? (on: boolean) => raceGame?.setPlayerAutopilot(on) : undefined,
+    debugGiveBack: raceGame !== null ? (car: number, passed: number) => raceGame?.debugGiveBack(car, passed) : undefined,
     finishRaceNow: raceGame !== null ? () => showResults() : undefined,
     debugDamage: (patch) => {
       if (raceGame === null) return;
