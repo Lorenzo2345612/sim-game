@@ -151,21 +151,6 @@ function acceptedApexes(track: TrackDataV2): number[] {
   return out;
 }
 
-/** Nearest accepted apex to a piece's nearest centreline index; -1 when no apex was accepted. */
-function apexOf(track: TrackDataV2, ring: Ring, accepted: number[], g: Grandstand): number {
-  const gi = nearestIndex(track, g.x, g.z);
-  let best = -1;
-  let bestGap = Infinity;
-  for (const a of accepted) {
-    const d = gap(ring, gi, a);
-    if (d < bestGap) {
-      bestGap = d;
-      best = a;
-    }
-  }
-  return best;
-}
-
 /** Accepted apex nearest to a piece's centre in XZ; -1 when none. */
 function apexByXZ(track: TrackDataV2, accepted: number[], g: Grandstand): number {
   let best = -1;
@@ -235,15 +220,14 @@ describe('318 grandstands at the main corners', () => {
       for (const g of placedGrandstands(track, style)) {
         expect(standClearance(track, g), id).toBeGreaterThanOrEqual(5 - 1e-6);
       }
-      const ring = ringOf(track);
       const accepted = acceptedApexes(track);
       const cornerPieces = cornerGrandstands(track, style)
         .map((g: Grandstand) => clearGrandstand(track, g))
         .filter((g: Grandstand | null): g is Grandstand => g !== null);
       for (let a = 0; a < cornerPieces.length; a++) {
         for (let b = a + 1; b < cornerPieces.length; b++) {
-          const apexA = apexOf(track, ring, accepted, cornerPieces[a]);
-          const apexB = apexOf(track, ring, accepted, cornerPieces[b]);
+          const apexA = apexByXZ(track, accepted, cornerPieces[a]);
+          const apexB = apexByXZ(track, accepted, cornerPieces[b]);
           if (apexA === apexB) continue;
           const d = Math.hypot(
             cornerPieces[a].x - cornerPieces[b].x,
