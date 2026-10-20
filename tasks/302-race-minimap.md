@@ -64,8 +64,8 @@ Rules:
 ```
 npm run typecheck
 npm run lint
-npm test
-npx playwright test 302- 293- 294- 161- 207-
+npx vitest run tests/unit/acceptance/302- tests/unit/acceptance/049- tests/unit/acceptance/161-
+npx playwright test 302- 161- 207-   # 161 AT1/207 AT8 ignore #mirror (fixed on master); the orchestrator runs the full suites
 ```
 
 ## Out of scope
