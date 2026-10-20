@@ -20,7 +20,7 @@ No `three`, no DOM. Types `SessionSpec`, `WeekendFormat`, `PointsTable` come fro
 
 - `src/career/weekend.ts` — create
 - `tests/unit/acceptance/275-weekend-controller.test.ts` — create (acceptance worker); edge tests by tester-pre.
-- No protected tests change.
+- Planner-authorised edit: `tests/unit/edge/275-weekend-controller-edge.test.ts` w2 case (lines ~87-89) expectation becomes `[0,2,0,0]` (pole to `order[0]` per step 3); no other protected test changes.
 
 ## Steps
 
@@ -60,6 +60,8 @@ Conventions: positions 1-based; invalid input throws, never clamps; stored resul
 | AT9 | format {race 3 laps standard10} 3 cars | gridFor | [0,1,2] |
 | AT10 | `standard`, 3 cars, Q bestLaps all null, order [2,1,0] | race gridFor | [0,1,2] |
 | AT11 | format [race grid sprint-result] | constructor | throws |
+
+Planner 2026-10-20 (decision 275-coder): step 3 is authoritative over fastest lap. Accepted readings: standings tie-break uses points sessions only; `gridFor()` returns [] when done.
 
 ## Acceptance criteria
 

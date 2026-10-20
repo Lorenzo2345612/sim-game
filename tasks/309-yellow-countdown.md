@@ -47,11 +47,13 @@ Updates every 1/120 s; B = [0, 1000, 2000], L = 3000; car at lapDistance = dista
 |---|---|---|---|
 | AT1 | options `{countdownS: 3}`; car off track for all t | update to t = 4.2 | `sectorFlag(1)` `'green'` at t = 3.9, `'yellow'` at 4.1; `sectorCountdown(1)` NaN at 0.9, 2.9 (±0.02) at 1.1, 0.1 (±0.02) at 3.9, NaN at 4.1 |
 | AT2 | `{countdownS: 3}`; car off track t ∈ [0, 1.5), then on track | update to t = 8 | `'green'` at every update; `sectorCountdown(1)` NaN at every update with t ≥ 3.6 |
-| AT3 | `{countdownS: 3}`; car 1 off track at 500 for all t; cars 2 and 3 on track in sector 1, car 2 behind car 3 | car 2 moves ahead of car 3 at t = 2, back behind at t = 3, ahead again at t = 4.5; drain `overtakeUnderYellow()` after each update | overtakes recorded at t = 2: none; at t = 4.5: exactly `[{car: 2, passed: 3}]` (car/passed fields as in 128) |
+| AT3 | `{countdownS: 3}`, lap 3000, sectors [0, 1000, 2000]; car 0 on track at 2800 for all t; car 1 off track at 500 for all t; cars 2 and 3 on track between 600 and 900 (sector 1, never passing car 1), car 2 behind car 3 | car 2 moves ahead of car 3 at t = 2, back behind at t = 3, ahead again at t = 4.5; drain `overtakeUnderYellow()` after each update | overtakes recorded at t = 2: none; at t = 4.5: exactly `[{car: 2, passed: 3}]` (car/passed fields as in 128) |
 | AT4 | `new FlagState(B, L)` and `{minYellowS: 10, causeGapS: 2}` | 128 AT3 and 308 AT2 scenarios | unchanged results; `countdownS` 0; `sectorCountdown(1)` NaN at every update |
 | AT5 | `{minYellowS: 10, causeGapS: 2, countdownS: 3}`; car off track t ∈ [0, 5), then on track | update to t = 14.3 | `'green'` at 3.9; `'yellow'` at 4.1 and 13.9; `'green'` at 14.1 |
 | AT6 | `RaceGame` cleveland, f4, aiCount 3, seed 1 | read `(g as any).flags.countdownS`, `.minYellowS` | 3 and 10 |
 | AT7 | — | verification gate: run 128, 130, 289, 298, 305, 307, 308 unit acceptance tests and 128 edge tests | pass |
+
+Planner 2026-10-20 (decision 309-coder): AT3 rewritten with 4 cars so no swap involves the off-track car; acceptance test AT3 may be updated to match this row exactly. The 298 AT7 edit (10.5 → 13.5 s) stays authorised.
 
 ## Acceptance criteria
 
