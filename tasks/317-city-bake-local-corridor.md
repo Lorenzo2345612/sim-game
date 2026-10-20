@@ -22,7 +22,7 @@ User report: scenery only near the main straight. `bakeCity` (`tools/env/bakeCit
 - `tools/env/bakeCity.ts` — modify: compute the per-segment corridor.
 - `public/tracks/{baku,singapore,lasvegas}-env.json` — regenerate from the cached `assets/source/osm/<id>-city.json` (no network) and commit.
 - `tests/unit/acceptance/317-city-bake-local-corridor.test.ts` — create (acceptance worker).
-- Planner-authorised edit (2026-10-19): `tests/unit/acceptance/157-city-bake.test.ts` AT2 drops the lap-wide corridor intrusion check (replaced by 317 AT3); building count, heights, walls and water stay. The `segSegDist2` fix in `tools/env/osmBuildings.ts` is accepted. Nothing else.
+- Planner-authorised edit (2026-10-19): `tests/unit/acceptance/157-city-bake.test.ts` AT2 drops the lap-wide corridor intrusion check (replaced by 317 AT3); building count, heights, walls and water stay. The `segSegDist2` fix in `tools/env/osmBuildings.ts` is accepted. `tests/unit/acceptance/242-village-buildings.test.ts` AT12: parse both JSONs and compare every top-level key except `buildings` with master (deep equal). Nothing else.
 
 ## Steps
 
