@@ -35,6 +35,8 @@ export function buildArroyoWater(line: [number, number][], width: number, terrai
 
 Conventions: `src/` must not import from `tools/`; add a local `const ARROYO_DEPTH = 2` in `bridgeRenderer.ts` (same value as the builder's). Arroyos without `water` are dry; a line with < 2 points yields no mesh.
 
+Planner-authorised test edits (reviewer/coder round 2026-10-19), nothing else: in `tests/unit/acceptance/247-sausage-fit-corner.test.ts`, `248-pit-clears-runoff.test.ts` and `250-bollard-placement.test.ts`, where shipped track JSONs are compared with the merge-base, also delete `water` from every `arroyos[]` entry of the shipped copy before comparing. Failures that also occur on master (147, 254, 269, 270, 224, 093) are not this task's.
+
 ## Acceptance tests (defined by the planner with Opus, before coding)
 
 | ID | Given | When | Then (expected, tolerance) |
