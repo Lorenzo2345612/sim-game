@@ -4062,7 +4062,7 @@
     {
       "num": "301",
       "title": "No kerb-zone steps on any track",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "300"
       ],
@@ -4231,6 +4231,20 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/313-black-flag-ui.md"
+    },
+    {
+      "num": "314",
+      "title": "Passing the incident car under yellow is legal",
+      "status": "pending",
+      "deps": [
+        "305",
+        "309"
+      ],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/314-incident-car-pass-legal.md"
     }
   ]
 }

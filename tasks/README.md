@@ -302,7 +302,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 298 | No yellow flags from the standing start | done | 289 |
 | 299 | Low-ramp sausage kerb collider | done | - |
 | 300 | Verge and runoff strips must not fold over the inner kerb | done | - |
-| 301 | No kerb-zone steps on any track | pending | 300 |
+| 301 | No kerb-zone steps on any track | in progress | 300 |
 | 302 | Race minimap: all cars and sector flag colours | in progress | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
 | 304 | Race results: penalties added, running cars not DNF | pending | 303 |
@@ -315,3 +315,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
 | 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
+| 314 | Passing the incident car under yellow is legal | pending | 305, 309 |
