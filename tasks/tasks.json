@@ -3562,7 +3562,7 @@
     {
       "num": "262",
       "title": "Racecraft AI drives the race",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "259",
         "260",
@@ -4075,7 +4075,7 @@
     {
       "num": "302",
       "title": "Race minimap: all cars and sector flag colours",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "298"
       ],
@@ -4258,6 +4258,17 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/315-results-overtakes-tab.md"
+    },
+    {
+      "num": "316",
+      "title": "Grandstands follow the track and never sit on it",
+      "status": "in progress",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 2,
+      "spec": "tasks/316-grandstands-clear-of-track.md"
     }
   ]
 }

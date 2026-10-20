@@ -263,7 +263,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | done | 258 |
 | 261 | RaceGame scenario starts and contact counter | done | - |
-| 262 | Racecraft AI drives the race | pending | 259, 260, 261, 268 |
+| 262 | Racecraft AI drives the race | in progress | 259, 260, 261, 268 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
@@ -303,7 +303,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 299 | Low-ramp sausage kerb collider | done | - |
 | 300 | Verge and runoff strips must not fold over the inner kerb | done | - |
 | 301 | No kerb-zone steps on any track | in progress | 300 |
-| 302 | Race minimap: all cars and sector flag colours | in progress | 298 |
+| 302 | Race minimap: all cars and sector flag colours | waiting decision | 298 |
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | pending | 302 |
 | 304 | Race results: penalties added, running cars not DNF | pending | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | pending | 304 |
@@ -317,3 +317,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
 | 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | pending | 305, 309 |
 | 315 | Results: overtakes in their own tab, with a legend | in progress | 296 |
+| 316 | Grandstands follow the track and never sit on it | in progress | - |
