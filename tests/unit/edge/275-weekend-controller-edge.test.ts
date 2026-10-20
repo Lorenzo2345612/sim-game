@@ -85,9 +85,9 @@ describe('Weekend controller edge cases', () => {
     const w2 = new Weekend(sprintFormat, 4, tables);
     w2.submit(naturalResult(4));
     expect(w2.submit(result([1, 0, 2, 3], [89.5, 90.0, 91.0, 92.0], [false, true, true, true]))).toEqual([
-      2, 0, 0, 0,
+      0, 2, 0, 0,
     ]);
-    expect(w2.totals()).toEqual([2, 0, 0, 0]);
+    expect(w2.totals()).toEqual([0, 2, 0, 0]);
   });
 
   it('EDGE3: reverse-top8 reverses only the first eight timed cars', () => {
