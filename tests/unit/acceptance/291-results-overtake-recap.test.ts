@@ -25,7 +25,7 @@ describe('291 results overtake recap acceptance', () => {
   it("AT3: recapLine clean / contact / gift with lap, km and names", () => {
     expect(recapLine(E(10, 2, 1234, 1, 0, 3, 'clean'), name)).toBe('L2 · 1.23 km · AI 1 passes You for P3');
     expect(recapLine(E(10, 2, 1234, 1, 0, 3, 'contact'), name)).toBe('L2 · 1.23 km · AI 1 passes You for P3 (contact)');
-    expect(recapLine(E(10, 2, 1234, 1, 0, 3, 'gift'), name)).toBe('L2 · 1.23 km · AI 1 passes You for P3 (gift)');
+    expect(recapLine(E(10, 2, 1234, 1, 0, 3, 'gift'), name)).toBe('L2 · 1.23 km · AI 1 passes You for P3 (rival slow or off track)');
   });
 
   it('AT4: recapFor sorts chronologically; car filter keeps only its events', () => {
