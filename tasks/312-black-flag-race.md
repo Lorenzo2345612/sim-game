@@ -51,7 +51,7 @@ Conventions: out-of-range car throws `RangeError`; no per-tick allocations.
 | AT6 | laps 1, autopilot, step until car 0 finished | `debugForceTrackLimits(0, 7)` | `penalties.forCar(0).length` unchanged; `isDisqualified(0)` false |
 | AT7 | as AT2 (car 2 disqualified, seed 1) | step 15 s | race flag state reports no yellow sector caused by car 2 (no yellow sector during the 15 s) |
 | AT8 | any RaceGame | `isDisqualified(4)` with aiCount 3 | `RangeError` |
-| AT9 | — | run 127, 130, 290 unit acceptance tests | pass |
+| AT9 | — | verification gate: run 127, 130, 290 unit acceptance tests | pass |
 
 ## Acceptance criteria
 

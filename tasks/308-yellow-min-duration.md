@@ -50,7 +50,7 @@ All updates every 1/120 s unless stated; B = [0, 1000, 2000], L = 3000; one car 
 | AT5 | options `{minYellowS: 10, causeGapS: 2}`; car off track t ∈ [0, 0.5), on track at 60 m/s t ∈ [0.5, 2.6), off track t ∈ [2.6, 3.4), then on track | update to t = 3.4 | `'green'` at every update (gap 2.1 s ≥ causeGapS resets the timer; neither stint reaches 1 s) |
 | AT6 | options `{minYellowS: 10, causeGapS: 2}`; car on track at speed 0 for t ∈ [0, 3.5), then 60 m/s | update to t = 11.2 | `'double-yellow'` at 3.1 and 5.4; `'yellow'` at 5.6 and 10.9; `'green'` at 11.1 |
 | AT7 | `RaceGame` cleveland, f4, aiCount 3, seed 1 | read `(g as any).flags.minYellowS`, `.causeGapS` | 10 and 2 |
-| AT8 | — | regression only, no new test: run 128, 130, 289, 298, 305, 307 unit acceptance tests and 128 edge tests | pass |
+| AT8 | — | verification gate (regression only, no new test): run 128, 130, 289, 298, 305, 307 unit acceptance tests and 128 edge tests | pass |
 
 ## Acceptance criteria
 

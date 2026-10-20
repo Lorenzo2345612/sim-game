@@ -52,7 +52,7 @@ Rules:
 | AT6 | e2e race page, after go | `debugFlagOverride({flags:['green','green','green'], playerSector:2, countdowns:[NaN, 2.5, NaN]})`, wait 0.5 s | `#yellow-countdown` visible, `.cd-digit` text `'3'`, `#yellow-alert` `dataset.lights` `'slow'`; minimap canvas pixels within ±12 per channel of (255,212,0) ≥ 60 |
 | AT7 | after AT6 | override `{flags:['green','yellow','green'], playerSector:2}`, wait 0.5 s | `#yellow-countdown` hidden; `#yellow-alert` `dataset.mode` `'yellow'` |
 | AT8 | new YellowAlert | `update('green', 1, 10, [NaN, 1.5, NaN])` | text `'YELLOW FLAG IN 2 · SECTOR 2'`, digit 2 |
-| AT9 | — | run 302, 303, 293, 294 e2e and 303 unit acceptance tests | pass |
+| AT9 | — | verification gate: run 302, 303, 293, 294 e2e and 303 unit acceptance tests | pass |
 
 ## Acceptance criteria
 
