@@ -4128,7 +4128,7 @@
     {
       "num": "306",
       "title": "Timing tower views: gap, tyres, laps",
-      "status": "in progress",
+      "status": "waiting decision",
       "deps": [
         "305"
       ],
