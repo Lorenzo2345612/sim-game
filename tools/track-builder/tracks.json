@@ -662,8 +662,8 @@
       "density": 0.12
     },
     "grandstands": [
-      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 14, "roof": true },
-      { "atMeters": 350, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false },
+      { "atMeters": 0, "side": "right", "offsetMeters": 45, "lengthMeters": 120, "rows": 14, "roof": true },
+      { "atMeters": 350, "side": "right", "offsetMeters": 45, "lengthMeters": 80, "rows": 10, "roof": false },
       { "atMeters": 1800, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 8, "roof": false }
     ],
     "pit": { "fromMeters": 20, "toMeters": 440, "side": "left" }
@@ -682,7 +682,7 @@
     "biome": { "species": [{ "name": "oak", "weight": 1.0 }], "density": 0.02 },
     "grandstands": [
       { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
-      { "atMeters": 450, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 450, "side": "right", "offsetMeters": 45, "lengthMeters": 80, "rows": 12, "roof": false },
       { "atMeters": 5000, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -286, "toMeters": 387, "side": "left" }
@@ -702,7 +702,7 @@
     "grandstands": [
       { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
       { "atMeters": 450, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
-      { "atMeters": 3800, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+      { "atMeters": 3800, "side": "left", "offsetMeters": 45, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
   }

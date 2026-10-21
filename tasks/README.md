@@ -331,3 +331,4 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 328 | RaceConfig per-AI pace | pending | 262 |
 | 329 | Season hub view model | pending | 326 |
 | 330 | Career menu, season hub and event flow | pending | 280, 324, 325, 326, 327, 328, 329 |
+| 331 | Bathurst, Jeddah and Miami in game | pending | - |

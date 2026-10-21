@@ -4437,6 +4437,17 @@
       "models": "heavy",
       "phase": 3,
       "spec": "tasks/330-career-season-ui.md"
+    },
+    {
+      "num": "331",
+      "title": "Bathurst, Jeddah and Miami in game",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/331-bathurst-jeddah-miami-in-game.md"
     }
   ]
 }
