@@ -4180,7 +4180,7 @@
     {
       "num": "310",
       "title": "Yellow countdown in race HUD and minimap",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "309"
       ],
