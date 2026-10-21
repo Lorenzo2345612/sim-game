@@ -4236,7 +4236,7 @@
     {
       "num": "314",
       "title": "Incident car may be passed under yellow; yellow clears 3 s after the threat",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "305",
         "309"
