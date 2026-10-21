@@ -641,5 +641,69 @@
       { "atMeters": 1035, "side": "left", "offsetMeters": 30, "lengthMeters": 70, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
+  },
+  {
+    "id": "bathurst",
+    "name": "Mount Panorama",
+    "country": "Australia",
+    "geojson": "au-bathurst",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/bathurst.json",
+    "maxGrade": 0.2,
+    "widthMeters": 11,
+    "environment": "parkland",
+    "reverse": false,
+    "walls": true,
+    "biome": {
+      "species": [
+        { "name": "ash", "weight": 0.6 },
+        { "name": "oak", "weight": 0.4 }
+      ],
+      "density": 0.12
+    },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 14, "roof": true },
+      { "atMeters": 350, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false },
+      { "atMeters": 1800, "side": "left", "offsetMeters": 30, "lengthMeters": 60, "rows": 8, "roof": false }
+    ],
+    "pit": { "fromMeters": 20, "toMeters": 440, "side": "left" }
+  },
+  {
+    "id": "jeddah",
+    "name": "Jeddah",
+    "country": "Saudi Arabia",
+    "geojson": "sa-jeddah",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/jeddah.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "city",
+    "reverse": false,
+    "biome": { "species": [{ "name": "oak", "weight": 1.0 }], "density": 0.02 },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 450, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 5000, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -286, "toMeters": 387, "side": "left" }
+  },
+  {
+    "id": "miami",
+    "name": "Miami",
+    "country": "United States",
+    "geojson": "us-miami",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/miami.json",
+    "maxGrade": 0.03,
+    "widthMeters": 14,
+    "environment": "city",
+    "reverse": false,
+    "biome": { "species": [{ "name": "oak", "weight": 1.0 }], "density": 0.03 },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 30, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 450, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 3800, "side": "right", "offsetMeters": 30, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
   }
 ]
