@@ -23,7 +23,7 @@ const MAX_LAPS = Number(arg('laps', '10')), GENS = Number(arg('gens', '1000'));
 const LINE = (['racing', 'mintime'] as const).find((l) => l === arg('line', 'center')) ?? 'center'; // look-ahead targets + speed profile source
 const SPEED_AT = Number(arg('speed-at', '4')); // mean grid distance (laps, 5-gen average) that switches fitness to speed
 const SPEED_LAPS = Number(arg('speed-laps', String(MAX_LAPS))); // shorter races in the speed phase = more selections per hour
-const EVALS = Number(arg('evals', '1')); // independent evaluations per generation (fresh conditions), fitness summed
+const EVALS = Number(arg('evals', '1')), FIX_COMPOUND = process.argv.includes('--fix-compound'); // independent evaluations per generation (fresh conditions), fitness summed
 const MUT = { growth: 0.3, speed: Number(arg('speed-mut', '0.3')) }; // fraction of weights mutated per child
 const RACE = { growth: { laps: MAX_LAPS, speedW: 30, overW: 2, lapW: 20 }, speed: { laps: SPEED_LAPS, speedW: 120, overW: 0, lapW: 100 } };
 const tag = `${trackId}-${carId}${LINE === 'center' ? '' : `-${LINE}`}`;
@@ -117,7 +117,7 @@ setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(posit
 // Workers
 const workers: Worker[] = [];
 await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => {
-  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT, residual: RESIDUAL, res: RES, rcw: RCW } });
+  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT, residual: RESIDUAL, res: RES, rcw: RCW, oppFront: Number(arg('opp-front', '0')) } });
   wk.on('message', (m: any) => {
     if (m.type === 'ready') { lapLength = m.lapLength; ok(); }
     if (m.type === 'pos') { positions.set(m.pos, w * per * 4); if (w === 0) simT = m.t; }
@@ -141,7 +141,8 @@ function opponents(): { weights: number[]; setup?: unknown; extra?: number[] }[]
 const KEYS = ['fitness', 'best', 'lapT', 'laps', 'finishT', 'invalidLaps', 'passes', 'lost', 'faults', 'crashFaults', 'defends', 'yellowFaults'] as const;
 type EvalR = Record<(typeof KEYS)[number], number[]>;
 let perm: number[] = []; // slot -> pop index (genomes shuffled across worlds every generation)
-function evalAll(): Promise<EvalR> {
+const COMPOUNDS = ['soft', 'medium', 'hard'] as const;
+function evalAll(compound?: string): Promise<EvalR> {
   perm = pop.map((_, i) => i);
   for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
   eliteSlots = perm.map((p, slot) => (p < ELITE ? slot : -1)).filter((x) => x >= 0);
@@ -150,7 +151,7 @@ function evalAll(): Promise<EvalR> {
     const batch = shuffled.slice(w * per, (w + 1) * per);
     const h = (m: any) => { if (m.type === 'done') { wk.off('message', h); ok(m); } };
     wk.on('message', h);
-    wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)), opponents: opponents() });
+    wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)), opponents: opponents(), compound });
   }))).then((rs) => {
     const un = (a: number[]) => { const o = new Array(POP).fill(0); perm.forEach((p, slot) => { o[p] = a[slot] ?? 0; }); return o; };
     return Object.fromEntries(KEYS.map((k) => [k, un(rs.flatMap((r) => r[k] ?? []))])) as EvalR;
@@ -185,8 +186,9 @@ const raceLaps = () => (speedPhase ? SPEED_LAPS : MAX_LAPS);
 // EVALS > 1: fitness summed, distance averaged, fastest lap kept, race time/laps only when every run finished (worst case)
 async function evalN() {
   let acc: EvalR | null = null;
+  const c0 = Math.floor(rand() * 3);
   for (let e = 0; e < EVALS; e++) {
-    const r = await evalAll();
+    const r = await evalAll(FIX_COMPOUND ? COMPOUNDS[(c0 + e) % 3] : undefined); // --fix-compound: whole population on one compound per eval
     if (!acc) { acc = r; continue; }
     for (let i = 0; i < POP; i++) {
       acc.fitness[i] += r.fitness[i]; acc.best[i] = (acc.best[i] * e + r.best[i]) / (e + 1);

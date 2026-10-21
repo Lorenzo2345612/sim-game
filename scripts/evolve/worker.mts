@@ -28,7 +28,7 @@ import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { NEURAL_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {} } = workerData as { rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {}, oppFront = 0 } = workerData as { oppFront?: number; rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -75,11 +75,12 @@ let FUEL_MIN_L = 18; // set after the lap length is known: measured ~0.225 L/km 
 const carMu = new Float64Array(slots), carFuel0 = new Float64Array(slots);
 const carSpec: any[] = Array.from({ length: slots }, () => spec); // per-slot setup applied
 const carCompound: (typeof COMPOUNDS[number])[] = new Array(slots).fill('medium');
+let evalCompound: (typeof COMPOUNDS[number]) | null = null; // set per eval: every car on the same compound (fair ranking)
 function makeCar(pose: any, k: number): VehicleModel {
   const startL = FUEL_MIN_L + Math.random() * (spec.fuel.capacityL - FUEL_MIN_L);
   const v = new VehicleModel(world, { ...carSpec[k], fuel: { ...spec.fuel, startL } }, pose);
   configureVehicle(v, track.id);
-  const c = COMPOUNDS[Math.floor(Math.random() * 3)];
+  const c = evalCompound ?? COMPOUNDS[Math.floor(Math.random() * 3)];
   v.setCompound(c);
   carCompound[k] = c;
   v.setMultipliers(1 + Math.random() * 4, 1);
@@ -126,8 +127,14 @@ const grid = gridSlots(track, slots);
 FUEL_MIN_L = Math.min(spec.fuel.capacityL, Math.max(18, (0.25 * L) / 1000 * 12));
 // Start poses in random order: grid slots, or a staggered two-abreast pack behind a random point.
 const startOff = new Float64Array(slots); // race distance at the start (pack rows behind the leader)
-function startPoses(start: number): any[] {
-  const order = Array.from({ length: slots }, (_, k) => k).sort(() => Math.random() - 0.5);
+// oppFront: with that probability the frozen opponents start ahead of every trainee (overtaking practice).
+function startPoses(start: number, nT: number, m: number): any[] {
+  let order = Array.from({ length: slots }, (_, k) => k).sort(() => Math.random() - 0.5);
+  if (m > nT && Math.random() < oppFront) {
+    const nO = m - nT, shuf = (a: number, b: number) => Array.from({ length: b - a }, (_, i) => a + i).sort(() => Math.random() - 0.5);
+    const ro = shuf(0, nO), rt = shuf(nO, m), rp = shuf(m, slots);
+    order = Array.from({ length: slots }, (_, k) => (k < nT ? rt[k] : k < m ? ro[k - nT] : rp[k - m]));
+  }
   order.forEach((r, k) => { startOff[k] = start === 0 ? -r : -(r >> 1) * 9 - (r & 1) * 0.1; });
   return order.map((r) => (start === 0 ? grid[r] : poseAt(start - (r >> 1) * 9, r & 1 ? 2.5 : -2.5)));
 }
@@ -167,8 +174,8 @@ const carState: NeuralCarState = {
   others,
 };
 
-function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number, rc: RacecraftTracker | null) {
-  const poses = startPoses(start);
+function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number, rc: RacecraftTracker | null, nT: number) {
+  const poses = startPoses(start, nT, genomes.length);
   const m = genomes.length;
   const wk = genomes.map((g) => Float64Array.from(g));
   lastOut.fill(0);
@@ -336,6 +343,7 @@ parentPort!.on('message', (msg: any) => {
   const split = msg.genomes.map((g: number[]) => splitGenome(g, spec));
   const nT = split.length; // trainees first, then frozen opponents (racecraft)
   nShow = nT;
+  evalCompound = msg.compound ?? null;
   const opp = (msg.opponents ?? []).slice(0, slots - nT) as { weights: number[]; setup?: any; extra?: number[] }[];
   const genomes: Float64Array[] = [...split.map((s: any) => s.weights), ...opp.map((o) => padGenome(o.weights)!)];
   const extras: Float64Array[] = [...split.map((s: any) => s.extra), ...opp.map((o) => { const e = new Float64Array(N_XW); if (o.extra) e.set(o.extra.slice(0, N_XW)); return e; })];
@@ -347,7 +355,7 @@ parentPort!.on('message', (msg: any) => {
   const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
     const rc = racecraft ? new RacecraftTracker(genomes.length, L) : null;
-    const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc);
+    const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc, nT);
     for (let k = 0; k < nT; k++) {
       const base = r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
       fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k]) : base;
