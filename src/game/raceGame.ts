@@ -319,6 +319,7 @@ export class RaceGame {
   private readonly trouble: TroubleTracker;
   private readonly giveBackOut: boolean[];
   private readonly owedMask: Uint8Array;
+  private readonly owedAnyMask: Uint8Array;
   private readonly playerGiveBackView = { passed: 0, remaining: 0 };
   private readonly scenarioMode: boolean;
   private readonly frozen: boolean[];
@@ -434,6 +435,7 @@ export class RaceGame {
     this.trouble = new TroubleTracker(this.count);
     this.giveBackOut = new Array<boolean>(this.count).fill(false);
     this.owedMask = new Uint8Array(this.count);
+    this.owedAnyMask = new Uint8Array(this.count);
     this.yellow = new Uint8Array(this.count);
     this.yellowHold = new Uint8Array(this.count);
     this.yellowLapDist = new Float64Array(this.count);
@@ -1580,6 +1582,11 @@ export class RaceGame {
       const o = this.giveBack.owes(i);
       if (o >= 0) this.owedMask[o] = 1;
     }
+    this.owedAnyMask.fill(0);
+    for (let j = 0; j < n; j++) {
+      const o = this.giveBack.owes(j);
+      if (o >= 0) this.owedAnyMask[o] = 1;
+    }
     for (let i = 0; i < n; i++) {
       this.yellow[i] = 0;
       this.yellowHold[i] = 0;
@@ -1588,7 +1595,11 @@ export class RaceGame {
       let cap = vscOn ? 0.6 * this.speeds[idx] : Number.NaN;
       if (flag !== 'green') {
         this.yellow[i] = 1;
+        // A car owed a position ignores its debtor so it can retake the place.
+        const owed = this.owedAnyMask[i] === 1;
+        if (owed) for (let j = 0; j < n; j++) if (this.yellowOut[j] === 0 && this.giveBack.owes(j) === i) this.yellowOut[j] = 2;
         const ahead = yellowCap(i, this.yellowLapDist, this.yellowSpeed, this.yellowOut, this.lapLength);
+        if (owed) for (let j = 0; j < n; j++) if (this.yellowOut[j] === 2) this.yellowOut[j] = 0;
         if (Number.isFinite(ahead)) {
           this.yellowHold[i] = 1;
           cap = Number.isNaN(cap) ? ahead : Math.min(cap, ahead);
