@@ -276,7 +276,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 272 | Neural trainer: reference-lap target line and speed profile | blocked | 270 |
 | 273 | Expert AI spin-free in 3-car traffic (silverstone) | done | 252 |
 | 274 | Weekend formats and points tables | done | - |
-| 275 | Weekend controller (grid rules, points, standings) | in progress | 274 |
+| 275 | Weekend controller (grid rules, points, standings) | done | 274 |
 | 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | done | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | in progress | 276, 277 |

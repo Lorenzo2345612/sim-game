@@ -3732,7 +3732,7 @@
     {
       "num": "275",
       "title": "Weekend controller (grid rules, points, standings)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "274"
       ],
