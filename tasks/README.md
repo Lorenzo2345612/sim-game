@@ -263,7 +263,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 259 | Sampling lane planner | done | 258 |
 | 260 | Racecraft intents (attack, defend, rejoin) | done | 258 |
 | 261 | RaceGame scenario starts and contact counter | done | - |
-| 262 | Racecraft AI drives the race | in progress | 259, 260, 261, 268, 323 |
+| 262 | Racecraft AI drives the race | waiting decision | 259, 260, 261, 268, 323 |
 | 263 | RL race environment over RaceGame | pending | 262 |
 | 264 | RL env server (Node) and Python client | pending | 263 |
 | 265 | PPO trainer with behaviour-cloning warm start | pending | 264, 266 |
@@ -280,7 +280,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | done | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | in progress | 276, 277 |
-| 279 | Session result adapters | pending | 274, 275, 277 |
+| 279 | Session result adapters | in progress | 274, 275, 277 |
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | done | - |
 | 282 | Attack mode rules | done | - |
