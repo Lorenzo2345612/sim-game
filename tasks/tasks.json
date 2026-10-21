@@ -3767,7 +3767,7 @@
     {
       "num": "278",
       "title": "RaceGame timed sessions (practice, qualifying)",
-      "status": "in progress",
+      "status": "done",
       "deps": [
         "276",
         "277"

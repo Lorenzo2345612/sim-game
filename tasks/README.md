@@ -279,7 +279,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 275 | Weekend controller (grid rules, points, standings) | done | 274 |
 | 276 | RaceConfig gridOrder | done | - |
 | 277 | Qualifying classification | done | - |
-| 278 | RaceGame timed sessions (practice, qualifying) | in progress | 276, 277 |
+| 278 | RaceGame timed sessions (practice, qualifying) | done | 276, 277 |
 | 279 | Session result adapters | done | 274, 275, 277 |
 | 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | done | - |
