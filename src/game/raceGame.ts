@@ -523,13 +523,18 @@ export class RaceGame {
     let residualNet: ((w: Float64Array, phase: number) => ResidualNet) | null = null;
     const residualModel = neuralWeights ? options?.neuralResidual?.[config.difficulty] : undefined;
     let compoundGrip = 0;
-    const neuralSpeeds = residualModel
-      ? speedProfile(line, {
-          ...limits,
-          muLat: limits.muLat * NEURAL_GRIP_MARGIN,
-          muLong: limits.muLong * NEURAL_GRIP_MARGIN,
-        })
-      : speeds;
+    // Residual cars use the trainer's line and profile (no margin, start-fuel mass) for parity.
+    let residualLine = line;
+    let neuralSpeeds = speeds;
+    if (residualModel) {
+      residualLine = computeRacingLine(track.centerline, track.widthMeters / 2);
+      const tl = carLimitsFromSpec(spec, spec.fuel.startL * spec.fuel.densityKgL);
+      neuralSpeeds = speedProfile(residualLine, {
+        ...tl,
+        muLat: tl.muLat * NEURAL_GRIP_MARGIN,
+        muLong: tl.muLong * NEURAL_GRIP_MARGIN,
+      });
+    }
     if (neuralWeights) {
       const n = track.centerline.length;
       const halfLeft: number[] = [], halfRight: number[] = [], kerbLeft: boolean[] = [], kerbRight: boolean[] = [];
@@ -562,7 +567,7 @@ export class RaceGame {
       const jitter = (rng() * 2 - 1) * 0.01;
       const baseSpeedScale = (speedScale + jitter) * (config.scenario?.speedScales?.[k + 1] ?? 1);
       const vehicle = vehicles[k + 1];
-      const driver = new AiDriver(line, neuralSpeeds, { speedScale: baseSpeedScale, kp: AI_THROTTLE_KP, kb: AI_BRAKE_KB });
+      const driver = new AiDriver(residualModel ? residualLine : line, residualModel ? neuralSpeeds : speeds, { speedScale: baseSpeedScale, kp: AI_THROTTLE_KP, kb: AI_BRAKE_KB });
       driver.setSteerCurve(
         spec.steering.maxAngleLow,
         spec.steering.maxAngleHigh,
@@ -613,7 +618,11 @@ export class RaceGame {
         else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
       }
       ais.push(car);
-      observations.push({ x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 });
+      observations.push(
+        car.residual
+          ? { x: 0, z: 0, yaw: 0, speed: 0 }
+          : { x: 0, z: 0, yaw: 0, speed: 0, rearSlip: 0, yawRate: 0, steerAngle: 0 },
+      );
     }
     const traffic: CarTrafficState[] = [];
     for (let i = 0; i < count; i++) traffic.push({ distance: 0, lateral: 0, speed: 0 });
@@ -805,7 +814,7 @@ export class RaceGame {
         if (ai.neural) {
           this.keepOnTrack(i, NEURAL_EDGE_BAND_M);
           this.followForNeural(i);
-        } else this.keepOnTrack(i);
+        } else if (!ai.residual) this.keepOnTrack(i);
         ai.vehicle.setInput(this.aiCmd);
         ai.vehicle.prePhysicsStep(FIXED_DT);
       }
@@ -1226,6 +1235,7 @@ export class RaceGame {
   private updateAiDynamics(): void {
     const dt = FIXED_DT;
     for (let k = 0; k < this.ais.length; k++) {
+      if (this.ais[k].residual) continue;
       const p = this.prev[k + 1];
       const c = this.current[k + 1];
       const q = c.rotation;
