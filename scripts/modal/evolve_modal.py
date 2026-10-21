@@ -36,10 +36,11 @@ vol = modal.Volume.from_name("simgame-evolve", create_if_missing=True)
 # Aggressive racecraft (2026-10-19): wider residual authority, double pass reward, defend reward, yellow-pass fault.
 # aggr5 (2026-10-20): --fix-compound (whole population on one compound per eval) and --opp-front 0.8 (opponents start ahead: overtaking practice), pos-w 250, pass-w 300 (overtaking over pace), incident-w 250 (each spin, about one pass).
 # aggr9 (2026-10-21): --line-w 1 (penalty per metre·second short of the racing line where it runs near an edge, only with no car within 30 m: use the full track width).
+# aggr10 (2026-10-21): aggr9 was ~2 s/lap slower than gen551 in-game; --line-w 0.3, seed gen551.
 # gen331 (task 288) used --res-offset 5 --res-up 0.12 and the default pass weight 40, no defend term.
 BASE_ARGS = (
     "--pop 100 --gens 100000 --speed-at 2 --speed-laps 6 --evals 2 --speed-mut 0.15 --line mintime --racecraft --opponents 6 "
-    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 250 --pass-w 300 --def-w 30 --yellow-w 300 --kick-after 40 --fix-compound --opp-front 0.8 --incident-w 250 --line-w 1"
+    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 250 --pass-w 300 --def-w 30 --yellow-w 300 --kick-after 40 --fix-compound --opp-front 0.8 --incident-w 250 --line-w 0.3"
 ).split()
 
 
