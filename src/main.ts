@@ -209,7 +209,9 @@ declare global {
       debugCameraYaw(rad: number): void;
       debugScene?(): unknown;
       /** Race only: replaces the sector flags (and player sector, 303) fed to the HUD and minimap. */
-      debugFlagOverride(o: { flags: SectorFlag[]; playerSector: number } | null): void;
+      debugFlagOverride(
+        o: { flags: SectorFlag[]; playerSector: number; countdowns?: number[] } | null,
+      ): void;
       /** Counts drawn by the last race minimap update (302). */
       minimapStats(): { size: number; ai: number; player: number; stopped: number };
     };
@@ -1385,7 +1387,7 @@ async function startGame(trackId: string): Promise<void> {
       c.player = i === 0;
       c.stopped = mapOut.stopped;
     }
-    minimap.updateRace(minimapCars, raceFlags, sim.simTime);
+    minimap.updateRace(minimapCars, raceFlags, sim.simTime, raceCountdowns);
   };
   const fpsOverlay = new FpsOverlay(document.body, window);
 
@@ -1398,8 +1400,14 @@ async function startGame(trackId: string): Promise<void> {
   const raceHud = new RaceHud(document.body);
   raceHud.setVisible(raceGame !== null);
   const raceFlags: SectorFlag[] = ['green', 'green', 'green'];
+  // Sector countdowns to yellow (310): index i = sector i+1, NaN = none.
+  const raceCountdowns: number[] = [Number.NaN, Number.NaN, Number.NaN];
   // Debug-only sector override (302): feeds the HUD and the minimap, never the simulation.
-  let flagOverride: { flags: SectorFlag[]; playerSector: number } | null = null;
+  let flagOverride: {
+    flags: SectorFlag[];
+    playerSector: number;
+    countdowns?: number[];
+  } | null = null;
   const raceHudData: RaceHudData = {
     standings: [],
     playerCar: 0,
@@ -1413,6 +1421,7 @@ async function startGame(trackId: string): Promise<void> {
     playerFlag: 'green',
     playerSector: 1,
     time: 0,
+    countdowns: raceCountdowns,
     names:
       raceDriverList !== null
         ? ['You', ...raceDriverList.map((d) => d.code)]
@@ -1861,10 +1870,13 @@ async function startGame(trackId: string): Promise<void> {
           raceFlags[0] = flagOverride.flags[0] ?? 'green';
           raceFlags[1] = flagOverride.flags[1] ?? 'green';
           raceFlags[2] = flagOverride.flags[2] ?? 'green';
+          const oc = flagOverride.countdowns;
+          for (let k = 0; k < 3; k++) raceCountdowns[k] = oc?.[k] ?? Number.NaN;
         } else {
           raceFlags[0] = raceGame.flags.sectorFlag(1);
           raceFlags[1] = raceGame.flags.sectorFlag(2);
           raceFlags[2] = raceGame.flags.sectorFlag(3);
+          for (let k = 0; k < 3; k++) raceCountdowns[k] = raceGame.flags.sectorCountdown(k + 1);
         }
         const pSector = flagOverride !== null ? flagOverride.playerSector : raceGame.playerSector;
         raceHudData.playerSector = pSector;
@@ -2326,11 +2338,20 @@ async function startGame(trackId: string): Promise<void> {
     },
     debugScene: () => ({ scene, camera, renderer: handle.renderer }),
     debugFlagOverride: (o) => {
-      flagOverride = o === null ? null : { flags: [...o.flags], playerSector: o.playerSector };
+      flagOverride =
+        o === null
+          ? null
+          : {
+              flags: [...o.flags],
+              playerSector: o.playerSector,
+              countdowns: o.countdowns === undefined ? undefined : [...o.countdowns],
+            };
       if (flagOverride !== null) {
         raceFlags[0] = flagOverride.flags[0] ?? 'green';
         raceFlags[1] = flagOverride.flags[1] ?? 'green';
         raceFlags[2] = flagOverride.flags[2] ?? 'green';
+        const oc = flagOverride.countdowns;
+        for (let k = 0; k < 3; k++) raceCountdowns[k] = oc?.[k] ?? Number.NaN;
       }
       paintRaceMinimap();
     },

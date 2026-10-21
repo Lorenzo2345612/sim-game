@@ -19,6 +19,8 @@ export interface RaceHudData {
   playerSector?: number;
   /** Sim time in seconds. */
   time?: number;
+  /** Per-sector countdown to yellow (310): countdowns[i] = sector i+1, NaN = none. */
+  countdowns?: readonly number[];
   /** Tower name per car index (296); missing entries fall back to 'You' / 'AI n'. */
   names?: readonly string[];
 }
@@ -147,11 +149,15 @@ export class RaceHud {
   private readonly toastsEl: HTMLDivElement;
   private readonly alertEl: HTMLDivElement;
   private readonly bannerEl: HTMLDivElement;
+  private readonly cdEl: HTMLDivElement;
+  private readonly cdDigitEl: HTMLSpanElement;
+  private readonly cdLabelEl: HTMLSpanElement;
   private readonly lightEls: HTMLElement[] = [];
   private readonly alert = new YellowAlert();
   private alertMode = '';
   private alertLights = '';
   private alertText = '';
+  private alertDigit = '';
   private readonly flagStates: SectorFlag[] = ['green', 'green', 'green'];
   private blueVisible = false;
   private blueLapperShown = -2;
@@ -213,6 +219,20 @@ export class RaceHud {
     this.bannerEl = doc.createElement('div');
     this.bannerEl.id = 'yellow-banner';
     this.alertEl.appendChild(this.bannerEl);
+    this.cdEl = doc.createElement('div');
+    this.cdEl.id = 'yellow-countdown';
+    this.cdDigitEl = doc.createElement('span');
+    this.cdDigitEl.className = 'cd-digit';
+    this.cdLabelEl = doc.createElement('span');
+    this.cdLabelEl.className = 'cd-label';
+    const cdHint = doc.createElement('small');
+    cdHint.className = 'cd-hint';
+    cdHint.textContent = 'incident ahead — prepare to slow, no overtaking from 0';
+    const cdText = doc.createElement('span');
+    cdText.className = 'cd-text';
+    cdText.append(this.cdLabelEl, cdHint);
+    this.cdEl.append(this.cdDigitEl, cdText);
+    this.alertEl.appendChild(this.cdEl);
 
     this.giveBackEl = doc.createElement('div');
     this.giveBackEl.id = 'giveback-banner';
@@ -272,12 +292,17 @@ export class RaceHud {
   }
 
   private updateAlert(data: RaceHudData): void {
-    const v = this.alert.update(data.playerFlag ?? 'green', data.playerSector ?? 1, data.time ?? 0);
+    const v = this.alert.update(
+      data.playerFlag ?? 'green',
+      data.playerSector ?? 1,
+      data.time ?? 0,
+      data.countdowns,
+    );
     if (this.alertMode !== v.mode) {
       this.alertMode = v.mode;
       this.alertEl.dataset.mode = v.mode;
     }
-    const lights = v.lightsOn ? 'on' : 'off';
+    const lights = v.mode === 'countdown' ? 'slow' : v.lightsOn ? 'on' : 'off';
     if (this.alertLights !== lights) {
       this.alertLights = lights;
       this.alertEl.dataset.lights = lights;
@@ -285,6 +310,12 @@ export class RaceHud {
     if (this.alertText !== v.text) {
       this.alertText = v.text;
       this.bannerEl.textContent = v.text;
+      this.cdLabelEl.textContent = v.text;
+    }
+    const digit = v.mode === 'countdown' ? String(v.digit) : '';
+    if (this.alertDigit !== digit) {
+      this.alertDigit = digit;
+      this.cdDigitEl.textContent = digit;
     }
   }
 

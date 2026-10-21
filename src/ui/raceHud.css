@@ -331,6 +331,93 @@
   color: #06180d;
 }
 
+#yellow-alert[data-mode='countdown'] {
+  display: block;
+}
+
+#yellow-alert[data-mode='countdown'] #yellow-banner {
+  display: none;
+}
+
+#yellow-alert[data-mode='countdown'] .led {
+  display: flex;
+}
+
+#yellow-alert[data-lights='slow'] .light {
+  animation: cd-slow 1s ease-in-out infinite;
+}
+
+@keyframes cd-slow {
+  0%,
+  100% {
+    background: #5a4a08;
+  }
+  50% {
+    background: #b39400;
+  }
+}
+
+/* Countdown pill (310, approved mockup state=0) */
+#yellow-countdown {
+  display: none;
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 14px;
+  padding: 0.3em 1.1em 0.3em 0.5em;
+  border-radius: var(--ui-radius);
+  background: rgba(20, 16, 10, 0.8);
+  border: 3px solid #ffd400;
+  color: #ffd400;
+  font-size: 21px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+#yellow-alert[data-mode='countdown'] #yellow-countdown {
+  display: flex;
+}
+
+#yellow-countdown .cd-digit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #ffd400;
+  color: #14100a;
+  font-size: 30px;
+  font-style: normal;
+  animation: cd-tick 1s ease-out infinite;
+}
+
+@keyframes cd-tick {
+  0% {
+    transform: scale(1.35);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+#yellow-countdown .cd-text {
+  display: block;
+}
+
+#yellow-countdown .cd-hint {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e8edf3;
+  font-style: normal;
+  letter-spacing: 0.03em;
+}
+
 #giveback-banner {
   position: absolute;
   top: 118px;

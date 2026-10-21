@@ -77,6 +77,11 @@ export function sectorStyle(flag: SectorFlag, timeS: number): { color: string; w
   return fillSectorStyle(flag, timeS, { color: GREEN_COLOR, width: 5 });
 }
 
+/** Dashed yellow overlay for a sector counting down to yellow (310); same object every call. */
+export function countdownStyle(): { color: string; width: number; dash: readonly number[] } {
+  return COUNTDOWN_STYLE;
+}
+
 /** Uniform scale to fit points in width×height with `padding` px on each side, centred; north-up. */
 export function fitMinimap(
   points: readonly [number, number][],
@@ -142,6 +147,7 @@ const CROSS_HALF = 5;
 const GREEN_COLOR = '#e8edf3';
 const YELLOW_ON = '#ffd400';
 const YELLOW_OFF = '#a08600';
+const COUNTDOWN_STYLE = { color: YELLOW_ON, width: 8, dash: [10, 8] as readonly number[] };
 
 export class Minimap {
   private readonly canvas: HTMLCanvasElement;
@@ -158,6 +164,7 @@ export class Minimap {
   private sectorCtx: CanvasRenderingContext2D | null = null;
   private readonly sectorColors: string[] = ['', '', ''];
   private readonly sectorWidths = [0, 0, 0];
+  private readonly sectorCd = [false, false, false];
   private sectorCacheN = -1;
   private readonly styleTmp = { color: GREEN_COLOR, width: 5 };
   /** Counts from the last updateRace (debug hook 302). */
@@ -287,12 +294,17 @@ export class Minimap {
     start: number[],
     flags: readonly SectorFlag[],
     timeS: number,
+    countdowns?: readonly number[],
   ): void {
     const nSec = Math.min(3, flags.length, sectors.length);
     let changed = nSec !== this.sectorCacheN;
     for (let s = 0; s < nSec && !changed; s++) {
-      fillSectorStyle(flags[s], timeS, this.styleTmp);
-      changed = this.sectorColors[s] !== this.styleTmp.color || this.sectorWidths[s] !== this.styleTmp.width;
+      const cd = countdowns !== undefined && Number.isFinite(countdowns[s]);
+      fillSectorStyle(cd ? 'green' : flags[s], timeS, this.styleTmp);
+      changed =
+        this.sectorColors[s] !== this.styleTmp.color ||
+        this.sectorWidths[s] !== this.styleTmp.width ||
+        this.sectorCd[s] !== cd;
     }
     if (!changed) return;
     const sctx = this.sectorCtx;
@@ -302,17 +314,31 @@ export class Minimap {
     sctx.fillRect(0, 0, this.size, this.size);
     sctx.lineJoin = 'round';
     sctx.lineCap = 'round';
+    const cdStyle = countdownStyle();
     for (let s = 0; s < nSec; s++) {
-      fillSectorStyle(flags[s], timeS, this.styleTmp);
+      const cd = countdowns !== undefined && Number.isFinite(countdowns[s]);
+      fillSectorStyle(cd ? 'green' : flags[s], timeS, this.styleTmp);
       this.sectorColors[s] = this.styleTmp.color;
       this.sectorWidths[s] = this.styleTmp.width;
+      this.sectorCd[s] = cd;
       const pts = sectors[s];
+      sctx.setLineDash([]);
       sctx.lineWidth = this.styleTmp.width;
       sctx.strokeStyle = this.styleTmp.color;
       sctx.beginPath();
       sctx.moveTo(pts[0], pts[1]);
       for (let i = 2; i < pts.length; i += 2) sctx.lineTo(pts[i], pts[i + 1]);
       sctx.stroke();
+      if (cd) {
+        sctx.setLineDash(cdStyle.dash as number[]);
+        sctx.lineWidth = cdStyle.width;
+        sctx.strokeStyle = cdStyle.color;
+        sctx.beginPath();
+        sctx.moveTo(pts[0], pts[1]);
+        for (let i = 2; i < pts.length; i += 2) sctx.lineTo(pts[i], pts[i + 1]);
+        sctx.stroke();
+        sctx.setLineDash([]);
+      }
     }
     this.sectorCacheN = nSec;
     sctx.lineWidth = 3;
@@ -324,13 +350,18 @@ export class Minimap {
   }
 
   /** Race mode: sector polylines coloured by flag, then every car. No allocations per call. */
-  updateRace(cars: readonly MinimapCar[], flags: readonly SectorFlag[], timeS: number): void {
+  updateRace(
+    cars: readonly MinimapCar[],
+    flags: readonly SectorFlag[],
+    timeS: number,
+    countdowns?: readonly number[],
+  ): void {
     this.prepareRace();
     const sectors = this.sectorPx;
     const start = this.startPx;
     const layer = this.sectorLayer;
     if (sectors === null || start === null || layer === null) return;
-    this.syncSectorLayer(sectors, start, flags, timeS);
+    this.syncSectorLayer(sectors, start, flags, timeS, countdowns);
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.size, this.size);
     ctx.drawImage(layer, 0, 0);
