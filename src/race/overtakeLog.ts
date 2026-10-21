@@ -87,6 +87,7 @@ export class OvertakeLog {
         this.ahead[ij] = kAhead;
         this.ahead[j * n + i] = 1 - kAhead;
         this.flipT[ij] = -1;
+        if (!cars[kAhead ? i : j].running) continue; // finished/stopped passer: silent re-order
         const passer = kAhead ? i : j;
         const passed = kAhead ? j : i;
         this.commit(t, flipStart, passer, passed, cars[passer], cars[passed]);

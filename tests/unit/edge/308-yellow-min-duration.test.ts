@@ -47,7 +47,7 @@ describe('308 edge', () => {
   it('EDGE4: a gap shorter than causeGapS keeps the yellow start time', () => {
     const f = run(
       new FlagState(B, L, { causeGapS: 2 }),
-      (t) => (t < 0.5 || t >= 2.3 ? car(30, true) : car(60, false)),
+      (t) => (t < 0.5 || t >= 2.3 ? car(3, true) : car(60, false)),
       2.5,
     );
     expect(at(f, 2.4)).toBe('yellow');
@@ -57,7 +57,7 @@ describe('308 edge', () => {
     const opts = { minYellowS: 10, causeGapS: 2 };
     const f = run(
       new FlagState(B, L, opts),
-      (t) => (t < 1.5 || (t >= 15 && t < 16.5) ? car(30, true) : car(60, false)),
+      (t) => (t < 1.5 || (t >= 15 && t < 16.5) ? car(3, true) : car(60, false)),
       27,
     );
     expect(at(f, 12)).toBe('green');
@@ -68,14 +68,14 @@ describe('308 edge', () => {
   it('EDGE6: the minimum applies only to the affected sector', () => {
     const opts = { minYellowS: 10, causeGapS: 2 };
     const g = new FlagState(B, L, opts);
-    for (let k = 0; k <= 5 * HZ; k++) g.update([car(30, true)], k / HZ);
+    for (let k = 0; k <= 5 * HZ; k++) g.update([car(3, true)], k / HZ);
     expect(g.sectorFlag(1)).toBe('yellow');
     expect(g.sectorFlag(2)).toBe('green');
     expect(g.sectorFlag(3)).toBe('green');
   });
 
   it('EDGE7: causeGapS alone does not impose a minimum', () => {
-    const f = run(new FlagState(B, L, { causeGapS: 2 }), (t) => (t < 1.5 ? car(30, true) : car(60, false)), 3.7);
+    const f = run(new FlagState(B, L, { causeGapS: 2 }), (t) => (t < 1.5 ? car(3, true) : car(60, false)), 3.7);
     expect(at(f, 3.3)).toBe('yellow');
     expect(at(f, 3.6)).toBe('green');
   });
@@ -83,7 +83,7 @@ describe('308 edge', () => {
   it('EDGE8: minYellowS alone does not bridge cause gaps', () => {
     const f = run(
       new FlagState(B, L, { minYellowS: 10 }),
-      (t) => (Math.floor(Math.round(t * HZ) / 72) % 2 === 0 ? car(30, true) : car(30, false)),
+      (t) => (Math.floor(Math.round(t * HZ) / 72) % 2 === 0 ? car(3, true) : car(30, false)),
       10,
     );
     for (let k = 0; k < f.length; k++) expect(f[k], `t=${k / HZ}`).toBe('green');

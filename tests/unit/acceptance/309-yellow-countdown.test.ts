@@ -36,7 +36,7 @@ function at(s: Sample[], t: number): Sample {
 
 describe('309 yellow countdown acceptance', () => {
   it('AT1: sector stays green during the 3 s countdown, then turns yellow', () => {
-    const s = run(new FlagState(B, L, { countdownS: 3 }), () => car(30, true), 4.2);
+    const s = run(new FlagState(B, L, { countdownS: 3 }), () => car(3, true), 4.2);
     expect(at(s, 3.9).flag).toBe('green');
     expect(at(s, 4.1).flag).toBe('yellow');
     expect(at(s, 0.9).countdown).toBeNaN();
@@ -46,7 +46,7 @@ describe('309 yellow countdown acceptance', () => {
   });
 
   it('AT2: a cause that clears during the countdown cancels it and the sector stays green', () => {
-    const s = run(new FlagState(B, L, { countdownS: 3 }), (t) => (t < 1.5 ? car(30, true) : car(60, false)), 8);
+    const s = run(new FlagState(B, L, { countdownS: 3 }), (t) => (t < 1.5 ? car(3, true) : car(60, false)), 8);
     for (let k = 0; k < s.length; k++) {
       expect(s[k].flag, `t=${k / HZ}`).toBe('green');
       if (k / HZ >= 3.6) expect(s[k].countdown, `t=${k / HZ}`).toBeNaN();
@@ -56,7 +56,7 @@ describe('309 yellow countdown acceptance', () => {
   it('AT3: overtakes during the countdown are not yellow overtakes', () => {
     const flags = new FlagState(B, L, { countdownS: 3 });
     const c0 = car(60, false, 2800);
-    const c1 = car(30, true, 500);
+    const c1 = car(3, true, 500);
     const log: Record<string, { car: number; passed: number }[]> = {};
     for (let k = 0; k <= Math.round(4.5 * HZ); k++) {
       const t = k / HZ;
@@ -90,7 +90,7 @@ describe('309 yellow countdown acceptance', () => {
 
     const opts = new FlagState(B, L, { minYellowS: 10, causeGapS: 2 });
     expect(opts.countdownS).toBe(0);
-    const s = run(opts, (t) => (t < 1.5 ? car(30, true) : car(60, false)), 11.2);
+    const s = run(opts, (t) => (t < 1.5 ? car(3, true) : car(60, false)), 11.2);
     expect(at(s, 1.1).flag).toBe('yellow');
     expect(at(s, 10.9).flag).toBe('yellow');
     expect(at(s, 11.1).flag).toBe('green');
@@ -100,7 +100,7 @@ describe('309 yellow countdown acceptance', () => {
   it('AT5: minimum yellow duration counts from activation, not from countdown start', () => {
     const s = run(
       new FlagState(B, L, { minYellowS: 10, causeGapS: 2, countdownS: 3 }),
-      (t) => (t < 5 ? car(30, true) : car(60, false)),
+      (t) => (t < 5 ? car(3, true) : car(60, false)),
       14.3,
     );
     expect(at(s, 3.9).flag).toBe('green');

@@ -33,7 +33,7 @@ function at(flags: SectorFlag[], t: number): SectorFlag {
 function alternating(t: number): FlagCar {
   if (t >= 20) return car(60, false);
   const off = Math.floor(Math.round(t * HZ) / 72) % 2 === 0;
-  return off ? car(30, true) : car(30, false);
+  return off ? car(3, true) : car(30, false);
 }
 
 describe('308 yellow min duration acceptance', () => {
@@ -50,7 +50,7 @@ describe('308 yellow min duration acceptance', () => {
   });
 
   it('AT2: yellow holds at least 10 s after onset', () => {
-    const f = run(new FlagState(B, L, OPTS), (t) => (t < 1.5 ? car(30, true) : car(60, false)), 11.2);
+    const f = run(new FlagState(B, L, OPTS), (t) => (t < 1.5 ? car(3, true) : car(60, false)), 11.2);
     expect(at(f, 1.1)).toBe('yellow');
     expect(at(f, 10.9)).toBe('yellow');
     expect(at(f, 11.1)).toBe('green');
@@ -72,7 +72,7 @@ describe('308 yellow min duration acceptance', () => {
   it('AT5: a cause-free gap of 2.1 s resets the timers', () => {
     const f = run(
       new FlagState(B, L, OPTS),
-      (t) => (t < 0.5 || (t >= 2.6 && t < 3.4) ? car(30, true) : car(60, false)),
+      (t) => (t < 0.5 || (t >= 2.6 && t < 3.4) ? car(3, true) : car(60, false)),
       3.4,
     );
     for (let k = 0; k < f.length; k++) expect(f[k], `t=${k / HZ}`).toBe('green');

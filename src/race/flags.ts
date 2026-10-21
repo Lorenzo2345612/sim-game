@@ -10,6 +10,7 @@ export interface FlagCar {
 export type SectorFlag = 'green' | 'yellow' | 'double-yellow';
 
 const CAUSE_SPEED = 5; // m/s
+const OFF_CAUSE_SPEED = 15; // m/s: off track faster than this (running wide) is not a yellow cause
 const YELLOW_AFTER = 1; // s of continuous cause
 const DOUBLE_AFTER = 3; // s of continuous on-track stop
 const DECAY = 2; // s after the last seen cause
@@ -103,7 +104,7 @@ export class FlagState {
       if (!slow) this.launched[i] = true;
       // The grace covers grid cars that never got going; a stall after the launch is a cause.
       const grace = inGrace && !this.launched[i];
-      const cause = c.offTrack || c.spinning === true || (slow && !grace);
+      const cause = (c.offTrack && c.speed < OFF_CAUSE_SPEED) || c.spinning === true || (slow && !grace);
       if (cause) {
         this.incident[i] = true;
         this.incSector[i] = s;
@@ -146,7 +147,7 @@ export class FlagState {
     for (let i = 0; i < n; i++) {
       if (!this.incident[i] || !this.valid[i]) continue;
       const c = cars[i];
-      const stillCause = c.offTrack || c.spinning === true || (c.speed < CAUSE_SPEED && !(inGrace && !this.launched[i]));
+      const stillCause = (c.offTrack && c.speed < OFF_CAUSE_SPEED) || c.spinning === true || (c.speed < CAUSE_SPEED && !(inGrace && !this.launched[i]));
       const k = this.incSector[i];
       if (!stillCause && Number.isNaN(this.cdStart[k]) && this.flagOf(k) === 'green') this.incident[i] = false;
     }

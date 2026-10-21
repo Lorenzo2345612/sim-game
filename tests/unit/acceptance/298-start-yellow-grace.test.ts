@@ -95,7 +95,7 @@ describe('298 start yellow grace acceptance', () => {
   it('AT4: an off-track cause inside the grace still raises yellow after 1 s', () => {
     const flags = new FlagState(BOUNDS, LAPS);
     flags.startAt(GO);
-    const cars = [car(500, 500, 20, true)];
+    const cars = [car(500, 500, 3, true)];
     const k111 = Math.round((11.1 - GO) * TICKS_PER_S);
     const last = Math.round((11.2 - GO) * TICKS_PER_S);
     for (let k = 0; k <= last; k++) {

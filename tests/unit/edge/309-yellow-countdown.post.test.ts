@@ -41,7 +41,7 @@ describe('309 yellow countdown post-code edges', () => {
 
   it('only the sector with the cause counts down', () => {
     const f = new FlagState(B, L, { countdownS: 3 });
-    sim(f, () => car(30, true, 500), 2, () => {});
+    sim(f, () => car(3, true, 500), 2, () => {});
     expect(f.sectorCountdown(1)).toBeGreaterThan(0);
     expect(f.sectorCountdown(2)).toBeNaN();
     expect(f.sectorCountdown(3)).toBeNaN();
@@ -51,7 +51,7 @@ describe('309 yellow countdown post-code edges', () => {
   it('a new cause after the yellow expired starts a full new countdown', () => {
     const f = new FlagState(B, L, { countdownS: 3, minYellowS: 10, causeGapS: 2 });
     const flag: Record<string, string> = {};
-    sim(f, (t) => (t < 5 || t >= 20 ? car(30, true) : car(60, false)), 24.5, (t) => {
+    sim(f, (t) => (t < 5 || t >= 20 ? car(3, true) : car(60, false)), 24.5, (t) => {
       for (const p of [19.9, 22.9, 24.1]) if (Math.abs(t - p) < 1e-9) flag[String(p)] = f.sectorFlag(1);
     });
     expect(flag['19.9']).toBe('green');
@@ -62,7 +62,7 @@ describe('309 yellow countdown post-code edges', () => {
   it('a cause that clears and returns restarts the countdown from the full duration', () => {
     const f = new FlagState(B, L, { countdownS: 3 });
     let cd = Number.NaN;
-    sim(f, (t) => (t >= 2 && t < 4 ? car(60, false) : car(30, true)), 5.05, (t) => {
+    sim(f, (t) => (t >= 2 && t < 4 ? car(60, false) : car(3, true)), 5.05, (t) => {
       if (Math.abs(t - 5.05) < 1e-9) cd = f.sectorCountdown(1);
     });
     expect(cd).toBeGreaterThan(2.5);
@@ -71,16 +71,16 @@ describe('309 yellow countdown post-code edges', () => {
 
   it('a large time jump with the cause present publishes the flag in one update', () => {
     const f = new FlagState(B, L, { countdownS: 3 });
-    f.update([car(30, true)], 0);
-    f.update([car(30, true)], 1);
-    f.update([car(30, true)], 100);
+    f.update([car(3, true)], 0);
+    f.update([car(3, true)], 1);
+    f.update([car(3, true)], 100);
     expect(f.sectorFlag(1)).toBe('yellow');
     expect(f.sectorCountdown(1)).toBeNaN();
   });
 
   it('countdownS 0 with the 308 options publishes yellow without any countdown', () => {
     const f = new FlagState(B, L, { minYellowS: 10, causeGapS: 2 });
-    sim(f, () => car(30, true), 1.5, () => expect(f.sectorCountdown(1)).toBeNaN());
+    sim(f, () => car(3, true), 1.5, () => expect(f.sectorCountdown(1)).toBeNaN());
     expect(f.sectorFlag(1)).toBe('yellow');
   });
 

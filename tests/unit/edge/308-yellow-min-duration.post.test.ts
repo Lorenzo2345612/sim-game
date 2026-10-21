@@ -25,7 +25,7 @@ describe('308 post', () => {
   it('POST1: an invalid-data tick resets the cause timers even with causeGapS', () => {
     const f = run(
       new FlagState(B, L, OPT),
-      (t) => (t >= 0.8 && t < 0.9 ? car(30, true, true) : car(30, true)),
+      (t) => (t >= 0.8 && t < 0.9 ? car(3, true, true) : car(3, true)),
       1.6,
     );
     expect(at(f, 1.5)).toBe('green');
@@ -33,8 +33,8 @@ describe('308 post', () => {
 
   it('POST2: a single large time step keeps the minimum from the recorded onset', () => {
     const fs = new FlagState(B, L, OPT);
-    fs.update([car(30, true)], 0);
-    fs.update([car(30, true)], 1.5);
+    fs.update([car(3, true)], 0);
+    fs.update([car(3, true)], 1.5);
     fs.update([car(60, false)], 5);
     expect(fs.sectorFlag(1)).toBe('yellow');
     fs.update([car(60, false)], 100);
@@ -42,7 +42,7 @@ describe('308 post', () => {
   });
 
   it('POST3: a repeated cause refreshes yellow beyond the minimum', () => {
-    const f = run(new FlagState(B, L, OPT), (t) => (t < 15 ? car(30, true) : car(60, false)), 18);
+    const f = run(new FlagState(B, L, OPT), (t) => (t < 15 ? car(3, true) : car(60, false)), 18);
     expect(at(f, 14.9)).toBe('yellow');
     expect(at(f, 16.5)).toBe('yellow');
     expect(at(f, 17.2)).toBe('green');
@@ -51,7 +51,7 @@ describe('308 post', () => {
   it('POST4: causeGapS 0 with a one-tick gap resets the timer', () => {
     const f = run(
       new FlagState(B, L, { minYellowS: 10 }),
-      (t) => (Math.abs(t - 0.5) < 1e-9 ? car(60, false) : car(30, true)),
+      (t) => (Math.abs(t - 0.5) < 1e-9 ? car(60, false) : car(3, true)),
       1.3,
     );
     expect(at(f, 1.2)).toBe('green');

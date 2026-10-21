@@ -41,7 +41,7 @@ describe('309 yellow countdown edge cases', () => {
   it('EDGE2: countdowns run independently per sector', () => {
     const s = run(
       new FlagState(B, L, { countdownS: 3 }),
-      (t) => [car(30, true, 500), t >= 2 ? car(30, true, 1500) : car(60, false, 1500)],
+      (t) => [car(3, true, 500), t >= 2 ? car(3, true, 1500) : car(60, false, 1500)],
       6.2,
     );
     expect(at(s, 2.5).cd[1]).toBeNaN();
@@ -59,7 +59,7 @@ describe('309 yellow countdown edge cases', () => {
   it('EDGE3: a new cause after a cancelled countdown starts a fresh full countdown', () => {
     const s = run(
       new FlagState(B, L, { countdownS: 3 }),
-      (t) => [t < 1.5 || t >= 5 ? car(30, true) : car(60, false)],
+      (t) => [t < 1.5 || t >= 5 ? car(3, true) : car(60, false)],
       9.2,
     );
     expect(at(s, 4.5).flags[0]).toBe('green');
@@ -72,7 +72,7 @@ describe('309 yellow countdown edge cases', () => {
   it('EDGE4: no new countdown while the minimum-yellow hold keeps the sector yellow', () => {
     const s = run(
       new FlagState(B, L, { minYellowS: 10, causeGapS: 2, countdownS: 3 }),
-      (t) => [t < 5 || (t >= 8 && t < 9) ? car(30, true) : car(60, false)],
+      (t) => [t < 5 || (t >= 8 && t < 9) ? car(3, true) : car(60, false)],
       14.3,
     );
     expect(at(s, 3.9).flags[0]).toBe('green');
@@ -87,8 +87,8 @@ describe('309 yellow countdown edge cases', () => {
     const f = new FlagState(B, L, { countdownS: 3 });
     for (let k = 0; k <= 2 * HZ; k++) {
       const t = k / HZ;
-      f.update([car(30, true)], t);
-      f.update([car(30, true)], t);
+      f.update([car(3, true)], t);
+      f.update([car(3, true)], t);
     }
     expect(Math.abs(f.sectorCountdown(1) - 2)).toBeLessThanOrEqual(0.02);
     expect(f.sectorFlag(1)).toBe('green');
