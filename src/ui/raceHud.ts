@@ -2,8 +2,16 @@ import './raceHud.css';
 import type { Standing } from '../race/classification';
 import type { SectorFlag } from '../race/flags';
 import type { VscPhase } from '../race/vsc';
+import type { TyreName } from '../physics/carSpec';
 import { YellowAlert } from './yellowAlert';
+import { formatLapTime } from './formatTime';
 import { penaltyTag, type PenaltyAnnouncement } from './raceControl';
+
+export type TowerView = 'gap' | 'tyres' | 'laps';
+
+const NEXT_VIEW: Record<TowerView, TowerView> = { gap: 'tyres', tyres: 'laps', laps: 'gap' };
+const VIEW_LABEL: Record<TowerView, string> = { gap: 'GAP', tyres: 'TYRES', laps: 'LAPS' };
+const COMPOUND_LETTER: Record<TyreName, string> = { soft: 'S', medium: 'M', hard: 'H', inter: 'I', wet: 'W' };
 
 export interface RaceHudData {
   standings: readonly Standing[];
@@ -23,6 +31,8 @@ export interface RaceHudData {
   countdowns?: readonly number[];
   /** Tower name per car index (296); missing entries fall back to 'You' / 'AI n'. */
   names?: readonly string[];
+  /** Compound per car index (306); missing entries fall back to 'medium'. */
+  compounds?: readonly TyreName[];
 }
 
 const TOWER_TOP = 10;
@@ -122,11 +132,19 @@ interface TowerRow {
   name: HTMLSpanElement;
   gap: HTMLSpanElement;
   pen: HTMLSpanElement;
+  tyre: HTMLSpanElement;
+  tyreLaps: HTMLSpanElement;
+  lastLap: HTMLSpanElement;
   posText: string;
   nameText: string;
   gapText: string;
   penText: string;
+  tyreText: string;
+  tyreClass: string;
+  lapsText: string;
+  lastLapText: string;
   player: boolean;
+  fastest: boolean;
 }
 
 function gapText(st: Standing): string {
@@ -140,6 +158,8 @@ export class RaceHud {
   private readonly posEl: HTMLSpanElement;
   private readonly lapEl: HTMLSpanElement;
   private readonly tower: HTMLDivElement;
+  private readonly viewBtn: HTMLButtonElement;
+  private viewState: TowerView = 'gap';
   private readonly rows: TowerRow[] = [];
   private readonly flagEls: HTMLDivElement[] = [];
   private readonly blueEl: HTMLDivElement;
@@ -181,6 +201,16 @@ export class RaceHud {
 
     this.tower = doc.createElement('div');
     this.tower.id = 'race-tower';
+
+    const head = doc.createElement('div');
+    head.className = 'race-tower-head';
+    this.viewBtn = doc.createElement('button');
+    this.viewBtn.id = 'tower-view';
+    this.viewBtn.type = 'button';
+    this.viewBtn.addEventListener('click', () => this.cycleView());
+    head.appendChild(this.viewBtn);
+    this.tower.appendChild(head);
+    this.applyView('gap');
 
     const flags = doc.createElement('div');
     flags.id = 'flags';
@@ -260,18 +290,41 @@ export class RaceHud {
     this.updateFlags(data);
     this.updateAlert(data);
 
+    let fastestCar = -1;
+    let best = Infinity;
+    for (const st of standings) {
+      if (st.bestLap !== null && st.bestLap < best) {
+        best = st.bestLap;
+        fastestCar = st.car;
+      }
+    }
     const topN = Math.min(TOWER_TOP, total);
     const withPlayer = playerIdx >= TOWER_TOP;
     const count = Math.min(topN + (withPlayer ? 1 : 0), MAX_ROWS);
     this.ensureRows(count);
     for (let i = 0; i < count; i++) {
       const st = i < topN ? standings[i] : player!;
-      this.fillRow(this.rows[i], st, data.playerCar, data.names);
+      this.fillRow(this.rows[i], st, data, fastestCar);
     }
   }
 
   setVisible(visible: boolean): void {
     this.root.style.display = visible ? 'block' : 'none';
+  }
+
+  get view(): TowerView {
+    return this.viewState;
+  }
+
+  cycleView(): TowerView {
+    this.applyView(NEXT_VIEW[this.viewState]);
+    return this.viewState;
+  }
+
+  private applyView(v: TowerView): void {
+    this.viewState = v;
+    this.tower.dataset.view = v;
+    this.viewBtn.textContent = VIEW_LABEL[v];
   }
 
   clearToasts(): void {
@@ -390,23 +443,34 @@ export class RaceHud {
     gap.className = 'race-row-gap';
     const pen = doc.createElement('span');
     pen.className = 'race-row-pen';
-    el.append(pos, name, gap, pen);
+    const tyre = doc.createElement('span');
+    tyre.className = 'tyre';
+    const tyreLaps = doc.createElement('span');
+    tyreLaps.className = 'tyre-laps';
+    const lastLap = doc.createElement('span');
+    lastLap.className = 'last-lap';
+    el.append(pos, name, gap, tyre, tyreLaps, lastLap, pen);
     this.tower.appendChild(el);
-    return { el, pos, name, gap, pen, posText: '', nameText: '', gapText: '', penText: '', player: false };
+    return {
+      el, pos, name, gap, pen, tyre, tyreLaps, lastLap,
+      posText: '', nameText: '', gapText: '', penText: '',
+      tyreText: '', tyreClass: '', lapsText: '', lastLapText: '',
+      player: false, fastest: false,
+    };
   }
 
   private fillRow(
     row: TowerRow,
     st: Standing,
-    playerCar: number,
-    names?: readonly string[],
+    data: RaceHudData,
+    fastestCar: number,
   ): void {
-    const isPlayer = st.car === playerCar;
+    const isPlayer = st.car === data.playerCar;
     if (row.posText !== String(st.position)) {
       row.posText = String(st.position);
       row.pos.textContent = row.posText;
     }
-    const name = names?.[st.car] ?? (isPlayer ? 'You' : `AI ${st.car}`);
+    const name = data.names?.[st.car] ?? (isPlayer ? 'You' : `AI ${st.car}`);
     if (row.nameText !== name) {
       row.nameText = name;
       row.name.textContent = name;
@@ -422,9 +486,37 @@ export class RaceHud {
       row.pen.textContent = pen;
     }
     row.pen.style.display = pen === '' ? 'none' : '';
-    if (row.player !== isPlayer) {
-      row.player = isPlayer;
-      row.el.className = isPlayer ? 'race-row player' : 'race-row';
+    const compound = data.compounds?.[st.car] ?? 'medium';
+    const letter = COMPOUND_LETTER[compound];
+    if (row.tyreText !== letter) {
+      row.tyreText = letter;
+      row.tyre.textContent = letter;
     }
+    const tyreClass = `tyre compound-${compound}`;
+    if (row.tyreClass !== tyreClass) {
+      row.tyreClass = tyreClass;
+      row.tyre.className = tyreClass;
+    }
+    const laps = `${Math.max(0, st.lap - 1)} L`;
+    if (row.lapsText !== laps) {
+      row.lapsText = laps;
+      row.tyreLaps.textContent = laps;
+    }
+    const last = st.lastLap === null ? '-' : formatLapTime(st.lastLap);
+    if (row.lastLapText !== last) {
+      row.lastLapText = last;
+      row.lastLap.textContent = last;
+    }
+    const fastest = st.car === fastestCar;
+    if (row.player !== isPlayer || row.fastest !== fastest) {
+      row.player = isPlayer;
+      row.fastest = fastest;
+      this.syncRowClass(row);
+    }
+  }
+
+  private syncRowClass(row: TowerRow): void {
+    const text = `race-row${row.player ? ' player' : ''}${row.fastest ? ' fastest' : ''}`;
+    if (row.el.className !== text) row.el.className = text;
   }
 }

@@ -41,7 +41,7 @@ import { GiveBack, GIVE_BACK_PENALTY_S } from '../race/giveBack';
 import { PenaltyBook, type PenaltyReason } from '../race/penalties';
 import { OvertakeLog, type OvertakeCar } from '../race/overtakeLog';
 import { initPhysics, createPhysicsWorld, RAPIER } from '../physics/physicsWorld';
-import type { CarSpec } from '../physics/carSpec';
+import type { CarSpec, TyreName } from '../physics/carSpec';
 import { VehicleModel, type Telemetry } from '../physics/vehicleModel';
 import { damageSpeedScale, type DamageState } from '../physics/damage';
 import { processContactEvents, type DamageCar, type DamageMode } from '../physics/contactEvents';
@@ -331,6 +331,8 @@ export class RaceGame {
   private readonly overtakeCars: OvertakeCar[];
   private readonly gridPos: Int32Array;
   private contactTotal = 0;
+  private playerCompound: TyreName = 'medium';
+  private aiCompound: TyreName = 'medium';
   private time = 0;
   private stepIndex = 0;
   private disposed = false;
@@ -464,6 +466,10 @@ export class RaceGame {
       this.vehicles[i].damageMode = mode;
       this.damageCars[i].damageMode = mode;
     }
+  }
+
+  carCompound(car: number): TyreName {
+    return car === 0 ? this.playerCompound : this.aiCompound;
   }
 
   static async create(
@@ -705,6 +711,8 @@ export class RaceGame {
     );
     game.refreshProgress();
     game.gridPos.set(gridPos);
+    game.playerCompound = options?.compound ?? 'medium';
+    game.aiCompound = tune?.compound ?? 'medium';
     return game;
   }
 

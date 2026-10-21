@@ -1408,6 +1408,7 @@ async function startGame(trackId: string): Promise<void> {
     playerSector: number;
     countdowns?: number[];
   } | null = null;
+  const hudGame = raceGame;
   const raceHudData: RaceHudData = {
     standings: [],
     playerCar: 0,
@@ -1422,6 +1423,10 @@ async function startGame(trackId: string): Promise<void> {
     playerSector: 1,
     time: 0,
     countdowns: raceCountdowns,
+    compounds:
+      hudGame === null
+        ? []
+        : Array.from({ length: hudGame.carCount }, (_, i) => hudGame.carCompound(i)),
     names:
       raceDriverList !== null
         ? ['You', ...raceDriverList.map((d) => d.code)]
@@ -2198,6 +2203,10 @@ async function startGame(trackId: string): Promise<void> {
         break;
       case 'KeyI':
         toggleSetupHud();
+        break;
+      case 'KeyT':
+        if (paused || resultsShown || (menu?.visible ?? false)) break;
+        raceHud.cycleView();
         break;
     }
   };

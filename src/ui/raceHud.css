@@ -90,6 +90,68 @@
   font-weight: 700;
 }
 
+.race-tower-head {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.3em 0.8em;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+#tower-view {
+  pointer-events: auto;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.05em 0.5em;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+#tower-view:hover {
+  border-color: var(--ui-accent);
+}
+
+#race-tower .tyre,
+#race-tower .tyre-laps,
+#race-tower .last-lap {
+  display: none;
+}
+
+#race-tower[data-view='tyres'] .tyre {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 0.2em;
+  border-radius: 2px;
+  text-align: center;
+  font-weight: 800;
+  color: #111;
+}
+
+#race-tower[data-view='tyres'] .tyre-laps {
+  min-width: 3em;
+  text-align: right;
+  color: var(--ui-text-dim);
+}
+
+#race-tower[data-view='laps'] .last-lap {
+  min-width: 5.2em;
+  text-align: right;
+}
+
+#race-tower .compound-soft { background: #ff3b30; }
+#race-tower .compound-medium { background: #ffd400; }
+#race-tower .compound-hard { background: #f2f2f2; }
+#race-tower .compound-inter { background: #2ecc40; }
+#race-tower .compound-wet { background: #2f7dff; }
+
+#race-tower[data-view='laps'] .race-row.fastest,
+#race-tower[data-view='laps'] .race-row.fastest *:not(.race-row-pen) {
+  color: #b05cff;
+}
+
 #race-control {
   position: fixed;
   /* Below the minimap legend (302): map + ~18 px legend + gap. */
