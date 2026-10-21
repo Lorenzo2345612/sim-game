@@ -796,6 +796,15 @@
       ]
     },
     {
+      "id": "M1.13",
+      "title": "Bathurst, Jeddah and Miami: in game, styles, visual QA",
+      "tasks": [
+        "331",
+        "332"
+      ],
+      "status": "open"
+    },
+    {
       "id": "M7.1",
       "title": "Electric open-wheel car (AWD, battery, regen, attack mode)",
       "tasks": [

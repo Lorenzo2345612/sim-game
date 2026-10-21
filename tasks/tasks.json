@@ -4448,6 +4448,17 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/331-bathurst-jeddah-miami-in-game.md"
+    },
+    {
+      "num": "332",
+      "title": "Escape road height follows the track on steep slopes",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "bugfix",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/332-escape-road-height-on-slopes.md"
     }
   ]
 }
