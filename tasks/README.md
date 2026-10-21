@@ -313,7 +313,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | done | 308 |
 | 310 | Yellow countdown in race HUD and minimap | done | 309 |
 | 311 | Penalty caps and disqualification in PenaltyBook and RaceClassification | done | - |
-| 312 | Race: black-flagged cars are disqualified and leave the track | pending | 311, 304, 305, 306, 309 |
+| 312 | Race: black-flagged cars are disqualified and leave the track | in progress | 311, 304, 305, 306, 309 |
 | 313 | Black flag in race control, announcements and results | pending | 312, 296, 304 |
 | 314 | Incident car may be passed under yellow; yellow clears 3 s after the threat | done | 305, 309 |
 | 315 | Results: overtakes in their own tab, with a legend | done | 296 |
@@ -324,3 +324,10 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 320 | Ermita river with water (streams stay dry) | done | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | done | 305 |
 | 323 | Master green after the car tyre colliders | done | - |
+| 324 | Series data and parser | pending | - |
+| 325 | Season creation, AI pace, event seed | pending | 324 |
+| 326 | Season controller and standings | pending | 325 |
+| 327 | Season save codec and stores | pending | 325 |
+| 328 | RaceConfig per-AI pace | pending | 262 |
+| 329 | Season hub view model | pending | 326 |
+| 330 | Career menu, season hub and event flow | pending | 280, 324, 325, 326, 327, 328, 329 |

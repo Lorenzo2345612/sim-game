@@ -4204,7 +4204,7 @@
     {
       "num": "312",
       "title": "Race: black-flagged cars are disqualified and leave the track",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "311",
         "304",
@@ -4342,6 +4342,101 @@
       "models": "standard",
       "phase": 2,
       "spec": "tasks/323-tests-after-tyre-colliders.md"
+    },
+    {
+      "num": "324",
+      "title": "Series data and parser",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/324-series-data.md"
+    },
+    {
+      "num": "325",
+      "title": "Season creation, AI pace, event seed",
+      "status": "pending",
+      "deps": [
+        "324"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/325-season-create.md"
+    },
+    {
+      "num": "326",
+      "title": "Season controller and standings",
+      "status": "pending",
+      "deps": [
+        "325"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/326-season-control.md"
+    },
+    {
+      "num": "327",
+      "title": "Season save codec and stores",
+      "status": "pending",
+      "deps": [
+        "325"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/327-season-save.md"
+    },
+    {
+      "num": "328",
+      "title": "RaceConfig per-AI pace",
+      "status": "pending",
+      "deps": [
+        "262"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/328-race-ai-pace.md"
+    },
+    {
+      "num": "329",
+      "title": "Season hub view model",
+      "status": "pending",
+      "deps": [
+        "326"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 3,
+      "spec": "tasks/329-season-hub-view.md"
+    },
+    {
+      "num": "330",
+      "title": "Career menu, season hub and event flow",
+      "status": "pending",
+      "deps": [
+        "280",
+        "324",
+        "325",
+        "326",
+        "327",
+        "328",
+        "329"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 3,
+      "spec": "tasks/330-career-season-ui.md"
     }
   ]
 }

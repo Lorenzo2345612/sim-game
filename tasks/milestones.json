@@ -773,6 +773,20 @@
       "status": "open"
     },
     {
+      "id": "M3.2",
+      "title": "Career C1: single season (series, standings, save/resume)",
+      "tasks": [
+        "324",
+        "325",
+        "326",
+        "327",
+        "328",
+        "329",
+        "330"
+      ],
+      "status": "open"
+    },
+    {
       "id": "M7.1",
       "title": "Electric open-wheel car (AWD, battery, regen, attack mode)",
       "tasks": [
