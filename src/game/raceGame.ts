@@ -21,6 +21,7 @@ import { cumulativeLengths } from '../track/centerline';
 import type { Setup } from '../physics/setup';
 import { AutoReverse, configureVehicle, type GameTune, type LapInfo } from './game';
 import { RaceClassification, type Standing } from '../race/classification';
+import { QualifyingClassification, type QualiStanding } from '../race/qualifying';
 import { gridSlots } from '../race/grid';
 import { isJumpStart, StartSequence, type StartPhase } from '../race/startSequence';
 import { countWheelsOff, TrackLimits, type TrackLimitEvent } from '../race/trackLimits';
@@ -57,6 +58,11 @@ export interface RaceScenario {
   lapsAhead?: number[]; // by car index, whole laps added to race distance at start
 }
 
+export interface RaceSessionConfig {
+  kind: 'race' | 'practice' | 'qualifying';
+  minutes?: number;
+}
+
 export interface RaceConfig {
   trackId: string;
   carId: string;
@@ -69,6 +75,8 @@ export interface RaceConfig {
   scenario?: RaceScenario;
   /** Scene time of day (135); absent = the track's default preset. */
   timeOfDay?: TimeOfDay;
+  /** Absent = a race session. Timed kinds require minutes > 0. */
+  session?: RaceSessionConfig;
 }
 
 // Tune fields stay optional so the neural driver can be selected without a tune.
@@ -238,6 +246,11 @@ export class RaceGame {
   private readonly ais: AiCar[];
   private readonly start: StartSequence;
   private readonly classification: RaceClassification;
+  /** Timed session (practice/qualifying): the qualifying classification replaces the race one. */
+  private readonly timed: boolean;
+  /** Session length in seconds (0 on a race). */
+  private readonly sessionS: number;
+  private readonly quali: QualifyingClassification | null;
   private readonly autoReverse = new AutoReverse();
   private readonly steering: CarSpec['steering'];
   private playerAuto = false;
@@ -373,6 +386,12 @@ export class RaceGame {
     this.linePoints = line.points.length / 2;
     this.halfWidth = track.widthMeters / 2;
     this.lapLength = progresses[0].length;
+    const session = config.session ?? { kind: 'race' as const };
+    this.timed = session.kind !== 'race';
+    this.sessionS = (session.minutes ?? 0) * 60;
+    this.quali = this.timed
+      ? new QualifyingClassification(this.count, this.lapLength, this.sessionS)
+      : null;
     this.penalised = new Array<boolean>(this.count).fill(false);
     this.indices = new Int32Array(this.count);
     this.events = new RAPIER.EventQueue(true);
@@ -451,6 +470,13 @@ export class RaceGame {
     config: RaceConfig,
     options?: RaceGameOptions,
   ): Promise<RaceGame> {
+    const session = config.session;
+    if (session !== undefined && session.kind !== 'race') {
+      const m = session.minutes;
+      if (typeof m !== 'number' || !Number.isFinite(m) || m <= 0) {
+        throw new Error(`session.minutes must be > 0 for a ${session.kind} session`);
+      }
+    }
     const aiCount = Number.isFinite(config.aiCount)
       ? Math.min(MAX_AI, Math.max(0, Math.floor(config.aiCount)))
       : 0;
@@ -684,8 +710,9 @@ export class RaceGame {
     if (this.disposed) throw new Error('RaceGame disposed');
     for (let i = 0; i < this.count; i++) copyVehicleState(this.current[i], this.prev[i]);
     // A scenario race is at go from the first tick: the sequence never runs (task 261).
-    if (!this.scenarioMode) this.start.update(FIXED_DT);
-    const phase: StartPhase = this.scenarioMode ? 'go' : this.start.phase;
+    // A timed session is at go from t=0 and staggers the launch by grid position instead.
+    if (!this.scenarioMode && !this.timed) this.start.update(FIXED_DT);
+    const phase: StartPhase = this.scenarioMode || this.timed ? 'go' : this.start.phase;
     const goTime = this.scenarioMode ? 0 : this.start.goTime;
     // Grace window: grid speed below CAUSE_SPEED must not raise a yellow at the launch (298).
     if (!this.scenarioMode && goTime !== null) this.flags.startAt(goTime);
@@ -693,9 +720,11 @@ export class RaceGame {
     const before = phase !== 'go';
 
     // Player: before go the brake is forced, steering ignored, throttle passes.
+    // A grid-held timed-session car is pinned fully (throttle 0, brake 1, steer 0).
     const cmd = this.playerCmd;
     const frozenPlayer = this.frozen[0];
-    if (frozenPlayer) {
+    const heldPlayer = this.isGridHeld(0);
+    if (frozenPlayer || heldPlayer) {
       cmd.throttle = 0;
       cmd.brake = 1;
       cmd.steer = 0;
@@ -706,11 +735,11 @@ export class RaceGame {
     }
     cmd.overtake = playerInput.overtake;
     cmd.ersCycle = playerInput.ersCycle;
-    const auto = (this.playerAuto || this.finished[0] === 1) && !before && !frozenPlayer;
+    const auto = (this.playerAuto || this.finished[0] === 1) && !before && !frozenPlayer && !heldPlayer;
     if (auto) this.driveAutopilot(cmd);
     // AutoReverse is post-go UX only: a pre-go brake hold (waiting for the lights)
     // must not engage reverse, which would turn the forced start brake into throttle.
-    if (!before && !frozenPlayer && !auto) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
+    if (!before && !frozenPlayer && !heldPlayer && !auto) this.autoReverse.update(this.vehicles[0], playerInput, this.current[0].forwardSpeed);
     this.vehicles[0].setInput(cmd);
     this.vehicles[0].prePhysicsStep(FIXED_DT);
 
@@ -732,7 +761,7 @@ export class RaceGame {
           this.holdStopped(ai);
           continue;
         }
-        if (this.frozen[i]) {
+        if (this.frozen[i] || this.isGridHeld(i)) {
           this.aiCmd.throttle = 0;
           this.aiCmd.brake = 1;
           this.aiCmd.steer = 0;
@@ -837,8 +866,22 @@ export class RaceGame {
       this.updateContacts();
     }
     this.updateAiDynamics();
-    for (let i = 0; i < this.count; i++) {
-      this.classification.update(i, this.traffic[i].distance, raceTime);
+    if (this.quali !== null) {
+      for (let i = 0; i < this.count; i++) {
+        const d = this.traffic[i].distance;
+        const lapDist = d >= 0 && d < this.lapLength ? d : ((d % this.lapLength) + this.lapLength) % this.lapLength;
+        this.quali.update(
+          i,
+          lapDist,
+          this.time,
+          countWheelsOff(this.vehicles[i].getWheelSurfaces()),
+          FIXED_DT,
+        );
+      }
+    } else {
+      for (let i = 0; i < this.count; i++) {
+        this.classification.update(i, this.traffic[i].distance, raceTime);
+      }
     }
     if (!before) {
       this.applyRules();
@@ -953,8 +996,34 @@ export class RaceGame {
     return this.classification.finished;
   }
 
+  /** Session over: race finish, or every car done in a timed session. */
+  get sessionFinished(): boolean {
+    return this.quali !== null ? this.quali.finished : this.classification.finished;
+  }
+
+  /** Seconds left on a timed session clock; null on a race. Never negative. */
+  get timeLeft(): number | null {
+    if (this.quali === null) return null;
+    return Math.max(0, this.sessionS - this.time);
+  }
+
+  get startPhase(): StartPhase {
+    return this.scenarioMode || this.quali !== null ? 'go' : this.start.phase;
+  }
+
+  /** Fresh copy of the qualifying classification (timed sessions only). */
+  qualiStandings(): QualiStanding[] {
+    return this.quali === null ? [] : this.quali.standings().slice();
+  }
+
+  /** Timed sessions hold grid position p until simTime 2·p (staggered release). */
+  private isGridHeld(car: number): boolean {
+    if (!this.timed) return false;
+    return this.time < 2 * (this.gridPos[car] - 1);
+  }
+
   startLights(): number {
-    return this.scenarioMode ? 0 : this.start.lights;
+    return this.scenarioMode || this.timed ? 0 : this.start.lights;
   }
 
   /** Car–car contacts since go; a pair counts at most once per 0.5 s (task 261). */
@@ -1341,7 +1410,8 @@ export class RaceGame {
 
   private book(car: number, kind: 'warning' | 'penalty', seconds: number, reason: PenaltyReason): void {
     this.penalties.add(car, kind, seconds, reason, this.time);
-    if (kind === 'penalty') this.classification.addPenalty(car, seconds);
+    // Timed sessions have no race penalties on the race classification.
+    if (kind === 'penalty' && !this.timed) this.classification.addPenalty(car, seconds);
   }
 
   private bookStrike(car: number, ev: TrackLimitEvent): void {
