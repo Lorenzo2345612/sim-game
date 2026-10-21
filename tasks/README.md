@@ -281,7 +281,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 277 | Qualifying classification | done | - |
 | 278 | RaceGame timed sessions (practice, qualifying) | done | 276, 277 |
 | 279 | Session result adapters | done | 274, 275, 277 |
-| 280 | Quick weekend UI (menu, hub, session HUD) | pending | 274, 275, 276, 278, 279 |
+| 280 | Quick weekend UI (menu, hub, session HUD) | in progress | 274, 275, 276, 278, 279 |
 | 281 | Electric powertrain math | done | - |
 | 282 | Attack mode rules | done | - |
 | 283 | CarSpec awd + electric block | done | 281 |
@@ -307,7 +307,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 303 | Yellow-flag alert: flashing lights, banner, sector-clear notice | done | 302 |
 | 304 | Race results: penalties added, running cars not DNF | done | 303 |
 | 305 | Yellow overtake: 10 s to give the position back | done | 304 |
-| 306 | Timing tower views: gap, tyres, laps | waiting decision | 305 |
+| 306 | Timing tower views: gap, tyres, laps | in progress | 305 |
 | 307 | Passing cars in trouble under yellow is legal | done | 305 |
 | 308 | Yellow flags: minimum duration and continuous spin cause | done | 307 |
 | 309 | Yellow flags: 3 s countdown before a sector turns yellow | done | 308 |

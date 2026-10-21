@@ -3796,7 +3796,7 @@
     {
       "num": "280",
       "title": "Quick weekend UI (menu, hub, session HUD)",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "274",
         "275",
@@ -4128,7 +4128,7 @@
     {
       "num": "306",
       "title": "Timing tower views: gap, tyres, laps",
-      "status": "waiting decision",
+      "status": "in progress",
       "deps": [
         "305"
       ],
