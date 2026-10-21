@@ -28,6 +28,7 @@ import {
   FlagState,
   RACE_CAUSE_GAP_S,
   RACE_COUNTDOWN_S,
+  RACE_DECAY_S,
   RACE_MIN_YELLOW_S,
   START_GRACE_S,
   type FlagCar,
@@ -395,6 +396,7 @@ export class RaceGame {
       minYellowS: RACE_MIN_YELLOW_S,
       causeGapS: RACE_CAUSE_GAP_S,
       countdownS: RACE_COUNTDOWN_S,
+      decayS: RACE_DECAY_S,
     });
     this.vsc = new Vsc(speeds, line.dist, this.lapLength, this.count);
     this.flagCars = [];
@@ -1410,6 +1412,7 @@ export class RaceGame {
       fc.speed = this.current[i].forwardSpeed;
       fc.offTrack = this.wheelsOff[i] >= 4;
       fc.retired = this.finished[i] === 1;
+      fc.spinning = this.isSpinning(i);
       this.trouble.update(i, fc.offTrack, fc.speed, t);
     }
     this.flags.update(this.flagCars, t);
@@ -1427,6 +1430,7 @@ export class RaceGame {
       // Passing a stationary or retired car under yellow is legal (289).
       if (this.stopped[p] === 1 || this.finished[p] === 1) continue;
       if (this.trouble.inTrouble(p, t)) continue;
+      if (this.flags.isIncidentCar(p)) continue;
       if (!(this.traffic[p].speed >= YELLOW_FOLLOW_MIN_MS)) continue;
       if (this.giveBack.isGiveBack(overtakes[k].car, p, t)) continue;
       this.giveBack.open(overtakes[k].car, p, t);
@@ -1450,6 +1454,33 @@ export class RaceGame {
       this.book(vscEvents[k].car, 'penalty', vscEvents[k].seconds, 'VSC delta');
     }
     this.updateRuleReactions();
+  }
+
+  // Spin = heading far off the track tangent, or a fast yaw with a clear heading error
+  // (hard cornering alone reaches 1.2 rad/s with the car still aligned to the track).
+  private isSpinning(i: number): boolean {
+    const c = this.current[i];
+    if (!(c.forwardSpeed > 2)) return false;
+    const q = c.rotation;
+    const fx = -2 * (q.w * q.y + q.x * q.z);
+    const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
+    const heading = Math.atan2(-fx, -fz);
+    const pq = this.prev[i].rotation;
+    const pfx = -2 * (pq.w * pq.y + pq.x * pq.z);
+    const pfz = -1 + 2 * (pq.x * pq.x + pq.y * pq.y);
+    let dYaw = heading - Math.atan2(-pfx, -pfz);
+    if (dYaw > Math.PI) dYaw -= 2 * Math.PI;
+    else if (dYaw < -Math.PI) dYaw += 2 * Math.PI;
+    const cl = this.track.centerline;
+    const n = cl.length;
+    const idx = ((this.indices[i] % n) + n) % n;
+    const a = cl[idx];
+    const b = cl[(idx + 1) % n];
+    let dA = heading - Math.atan2(-(b[0] - a[0]), -(b[1] - a[1]));
+    if (dA > Math.PI) dA -= 2 * Math.PI;
+    else if (dA < -Math.PI) dA += 2 * Math.PI;
+    const err = Math.abs(dA);
+    return err > 0.6 || (Math.abs(dYaw / FIXED_DT) > 1.2 && err > 0.3);
   }
 
   // Reaction data for the next tick's AI commands: VSC and yellow caps take the

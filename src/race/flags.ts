@@ -4,6 +4,7 @@ export interface FlagCar {
   speed: number;
   offTrack: boolean;
   retired: boolean;
+  spinning?: boolean;
 }
 
 export type SectorFlag = 'green' | 'yellow' | 'double-yellow';
@@ -19,16 +20,19 @@ export interface FlagOptions {
   minYellowS?: number;
   causeGapS?: number;
   countdownS?: number;
+  decayS?: number;
 }
 
 export const RACE_MIN_YELLOW_S = 10;
 export const RACE_CAUSE_GAP_S = 2;
 export const RACE_COUNTDOWN_S = 3;
+export const RACE_DECAY_S = 3;
 
 export class FlagState {
   readonly minYellowS: number;
   readonly causeGapS: number;
   readonly countdownS: number;
+  readonly decayS: number;
   private readonly onset = [Number.NaN, Number.NaN, Number.NaN];
   private readonly cdStart = [Number.NaN, Number.NaN, Number.NaN];
   private readonly yellowFree: number[] = [];
@@ -47,16 +51,20 @@ export class FlagState {
   private readonly yellowFrom: number[] = [];
   private readonly doubleFrom: number[] = [];
   private readonly prevDist: number[] = [];
+  private readonly tieOrder = new Map<number, number>();
   private readonly hadPrev: boolean[] = [];
   private pendOvertaker: number[] = [];
   private pendPassed: number[] = [];
   private graceUntil = -Infinity;
   private readonly launched: boolean[] = [];
+  private readonly incident: boolean[] = [];
+  private readonly incSector: number[] = [];
 
   constructor(sectorBounds: [number, number, number], lapLength: number, options: FlagOptions = {}) {
     this.minYellowS = options.minYellowS ?? 0;
     this.causeGapS = options.causeGapS ?? 0;
     this.countdownS = options.countdownS ?? 0;
+    this.decayS = options.decayS ?? DECAY;
     this.bounds = [sectorBounds[0], sectorBounds[1], sectorBounds[2]];
     this.lapLength = lapLength;
   }
@@ -95,7 +103,10 @@ export class FlagState {
       if (!slow) this.launched[i] = true;
       // The grace covers grid cars that never got going; a stall after the launch is a cause.
       const grace = inGrace && !this.launched[i];
-      if (c.offTrack || (slow && !grace)) {
+      const cause = c.offTrack || c.spinning === true || (slow && !grace);
+      if (cause) {
+        this.incident[i] = true;
+        this.incSector[i] = s;
         if (Number.isNaN(this.yellowFrom[i])) this.yellowFrom[i] = time;
         this.yellowFree[i] = Number.NaN;
         if (time - this.yellowFrom[i] >= YELLOW_AFTER) this.lastYellow[s] = time;
@@ -132,6 +143,13 @@ export class FlagState {
         this.onset[k] = Number.NaN;
       }
     }
+    for (let i = 0; i < n; i++) {
+      if (!this.incident[i] || !this.valid[i]) continue;
+      const c = cars[i];
+      const stillCause = c.offTrack || c.spinning === true || (c.speed < CAUSE_SPEED && !(inGrace && !this.launched[i]));
+      const k = this.incSector[i];
+      if (!stillCause && Number.isNaN(this.cdStart[k]) && this.flagOf(k) === 'green') this.incident[i] = false;
+    }
     if (!first) this.detectOvertakes(n);
     for (let i = 0; i < n; i++) {
       this.hadPrev[i] = this.valid[i];
@@ -155,6 +173,10 @@ export class FlagState {
     if (Number.isNaN(start)) return Number.NaN;
     const left = start + this.countdownS - this.time;
     return left > 0 ? left : Number.NaN;
+  }
+
+  isIncidentCar(car: number): boolean {
+    return car >= 0 && car < this.incident.length && this.incident[car] === true;
   }
 
   blueFor(car: number): boolean {
@@ -209,6 +231,8 @@ export class FlagState {
       this.prevDist.push(Number.NaN);
       this.hadPrev.push(false);
       this.launched.push(false);
+      this.incident.push(false);
+      this.incSector.push(0);
     }
   }
 
@@ -220,8 +244,8 @@ export class FlagState {
   }
 
   private rawFlagOf(sector: number): SectorFlag {
-    if (this.time - this.lastDouble[sector] < DECAY) return 'double-yellow';
-    if (this.time - this.lastYellow[sector] < DECAY) return 'yellow';
+    if (this.time - this.lastDouble[sector] < this.decayS) return 'double-yellow';
+    if (this.time - this.lastYellow[sector] < this.decayS) return 'yellow';
     return 'green';
   }
 
@@ -237,9 +261,17 @@ export class FlagState {
       if (!this.valid[i] || !this.hadPrev[i] || this.retired[i]) continue;
       for (let j = i + 1; j < n; j++) {
         if (!this.valid[j] || !this.hadPrev[j] || this.retired[j]) continue;
-        const before = this.prevDist[i] - this.prevDist[j];
+        const key = i * 65536 + j;
+        let before = this.prevDist[i] - this.prevDist[j];
         const now = this.dist[i] - this.dist[j];
-        if (before === 0 || now === 0 || (before > 0) === (now > 0)) continue;
+        // An exact tie is neither side of the pass: carry the order from before it.
+        if (now === 0) {
+          if (before !== 0) this.tieOrder.set(key, before);
+          continue;
+        }
+        if (before === 0) before = this.tieOrder.get(key) ?? 0;
+        this.tieOrder.delete(key);
+        if (before === 0 || (before > 0) === (now > 0)) continue;
         if (this.flagOf(this.sector[i]) === 'green' || this.flagOf(this.sector[j]) === 'green') continue;
         this.pendOvertaker.push(before > 0 ? j : i);
         this.pendPassed.push(before > 0 ? i : j);
