@@ -37,6 +37,7 @@ vol = modal.Volume.from_name("simgame-evolve", create_if_missing=True)
 # aggr5 (2026-10-20): --fix-compound (whole population on one compound per eval) and --opp-front 0.8 (opponents start ahead: overtaking practice), pos-w 250, pass-w 300 (overtaking over pace), incident-w 250 (each spin, about one pass).
 # aggr9 (2026-10-21): --line-w 1 (penalty per metre·second short of the racing line where it runs near an edge, only with no car within 30 m: use the full track width).
 # aggr10 (2026-10-21): aggr9 was ~2 s/lap slower than gen551 in-game; --line-w 0.3, seed gen551.
+# aggr11 (2026-10-21): line penalty measured against the K1999 line, not the mintime line the cars follow (fixed in worker.mts); same args, seed gen551.
 # gen331 (task 288) used --res-offset 5 --res-up 0.12 and the default pass weight 40, no defend term.
 BASE_ARGS = (
     "--pop 100 --gens 100000 --speed-at 2 --speed-laps 6 --evals 2 --speed-mut 0.15 --line mintime --racecraft --opponents 6 "

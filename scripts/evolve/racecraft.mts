@@ -41,6 +41,8 @@ export class RacecraftTracker {
   private readonly lastFaultBy: Int32Array; // per victim: car at fault in its latest episode
   private readonly lastFaultT: Float64Array;
   private readonly lastHit: Float64Array; // per car: last contact with any car
+  // Optional order-change log (bench --log): counted passes and close silent re-orders with their cause.
+  events: { t: number; winner: number; loser: number; kind: string; vw: number; vl: number }[] | null = null;
 
   constructor(n: number, lapLen = 0) {
     this.n = n; this.lapLen = lapLen;
@@ -73,12 +75,16 @@ export class RacecraftTracker {
           && this.t - this.lastHit[k] > PASS_CLEAN_S && this.t - this.lastHit[j] > PASS_CLEAN_S;
         if (this.flipT[kj] < 0) {
           if (this.lapLen > 0 && Math.abs(a.dist - b.dist) <= PASS_GAP) this.checkYellowPass(kAhead ? k : j, kAhead ? j : k, kAhead ? a : b, kAhead ? b : a);
-          if (!ok || Math.abs(a.dist - b.dist) > PASS_GAP) { this.ahead[kj] = kAhead; this.ahead[j * n + k] = 1 - kAhead; continue; } // silent re-order
+          if (!ok || Math.abs(a.dist - b.dist) > PASS_GAP) {
+            if (this.events && Math.abs(a.dist - b.dist) <= PASS_GAP) this.logFlip(kAhead ? k : j, kAhead ? j : k, cars);
+            this.ahead[kj] = kAhead; this.ahead[j * n + k] = 1 - kAhead; continue;
+          } // silent re-order
           this.flipT[kj] = this.t;
         }
         if (this.t - this.flipT[kj] >= PASS_HOLD - 1e-9) {
           this.ahead[kj] = kAhead; this.ahead[j * n + k] = 1 - kAhead; this.flipT[kj] = -1;
           if (kAhead) { this.passes[k]++; this.lost[j]++; } else { this.passes[j]++; this.lost[k]++; }
+          if (this.events) { const w = kAhead ? k : j, l = kAhead ? j : k; this.events.push({ t: this.t, winner: w, loser: l, kind: 'pass', vw: cars[w].speed, vl: cars[l].speed }); }
         }
       }
     }
@@ -130,6 +136,13 @@ export class RacecraftTracker {
   }
 
   // passer just moved ahead of passed: fault when the passer is inside an active zone not caused by the passed car.
+  private logFlip(w: number, l: number, cars: ReadonlyArray<RaceCar>): void {
+    const a = cars[w], b = cars[l];
+    const kind = !b.running ? 'out' : !a.running ? 'winner-out' : b.speed < PASS_MIN_V ? 'stopped'
+      : Math.min(a.speed, b.speed) < PASS_REL_V * Math.max(a.speed, b.speed) ? 'slow'
+      : this.t - this.lastHit[w] <= PASS_CLEAN_S || this.t - this.lastHit[l] <= PASS_CLEAN_S ? 'contact' : 'other';
+    this.events!.push({ t: this.t, winner: w, loser: l, kind, vw: a.speed, vl: b.speed });
+  }
   private checkYellowPass(passer: number, passed: number, pa: RaceCar, pb: RaceCar): void {
     if (!pa.running || !pb.running || this.yelUntil[passed] > this.t) return;
     const p = this.lapPos(pa.dist);

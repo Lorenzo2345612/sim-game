@@ -43,6 +43,12 @@ const hwL: number[] = [], hwR: number[] = [], kL: boolean[] = [], kR: boolean[] 
 for (let i = 0; i < n; i++) { hwL.push(halfWidthAt(track, 'left', i)); hwR.push(halfWidthAt(track, 'right', i)); kL.push(hasKerb(track, 'left', i)); kR.push(hasKerb(track, 'right', i)); }
 // Speed profile (brake cue) and lookups: same extraction the in-game neural AI uses (task 269).
 const mt = line === 'mintime' ? await minTimeFor(root, track, spec, carId) : null;
+// Signed lateral offset (+ right) of the line the cars actually follow, for the --line-w penalty (was the K1999 line, not mintime).
+const lineOff = Float64Array.from(cl, (c: [number, number], i: number) => {
+  if (!mt) return 0;
+  const n = cl.length, a = cl[(i - 1 + n) % n], b = cl[(i + 1) % n], tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1;
+  return (mt.pts[i][0] - c[0]) * (-tz / l) + (mt.pts[i][1] - c[1]) * (tx / l);
+});
 const lineArg = mt ? { points: mt.pts, mintimeSpeed: mt.v }
   : line === 'racing' ? { points: racingTargetPoints(cl, hwL, hwR, kL, kR) } : undefined;
 Object.assign(RC_W, rcw);
@@ -307,7 +313,7 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
       dist[k] += ds;
       over[k] += Math.max(0, st.forwardSpeed - features.speedAt(p.index) - 3) * FIXED_DT;
       // --line-w: metres short of the racing line where it runs near an edge (|offset| > 4 m), only with no car within 30 m.
-      if (lineW > 0) { const lo = cLine.offsets[p.index]; if (Math.abs(lo) > 4 && !carNear(k, m, dist, alive)) lineShort[k] += Math.max(0, Math.abs(lo) - Math.sign(lo) * p.lateral) * FIXED_DT; }
+      if (lineW > 0) { const lo = mt ? lineOff[p.index] : cLine.offsets[p.index]; if (Math.abs(lo) > 4 && !carNear(k, m, dist, alive)) lineShort[k] += Math.max(0, Math.abs(lo) - Math.sign(lo) * p.lateral) * FIXED_DT; }
       if (dist[k] >= (laps[k] + 1) * L) { // lap completed: fastest single lap and a bonus per lap (faster = more)
         const lt = t - lapStart[k];
         lapStart[k] = t; laps[k]++;

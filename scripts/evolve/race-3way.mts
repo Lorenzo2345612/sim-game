@@ -1,5 +1,5 @@
 // 3-way headless race: front = model A, middle = model B (each with its own weights/setup/residual), back = classic AiDriver.
-// Usage: npx tsx scripts/evolve/race-3way.mts <front.json> <mid.json> [--n 4,4,3] [--track cleveland] [--laps 5] [--seed 1] [--compound hard]
+// Usage: npx tsx scripts/evolve/race-3way.mts <front.json> <mid.json> [--n 4,4,3] [--track cleveland] [--laps 5] [--seed 1] [--compound hard] [--layout AAAABBBBCCC] [--log]
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RaceGame } from '../../src/game/raceGame';
@@ -23,7 +23,8 @@ const root = join(import.meta.dirname, '../..');
 const j = (p: string) => JSON.parse(readFileSync(join(root, p), 'utf8'));
 const loadM = (p: string) => { const m = JSON.parse(readFileSync(p, 'utf8')); const r = parseResidualModel(m); if (!r) throw new Error('not a residual model'); return { m, w: padGenome(m.weights)!, r, name: p.split('/').pop()! }; };
 const A = loadM(argv[0]), B = loadM(argv[1]);
-const NS = arg('n', '4,4,3').split(',').map(Number), AI = NS[0] + NS[1] + NS[2];
+const LAYOUT = arg('layout', ''); // per grid slot: A = front model, B = mid model, C = classic (overrides --n)
+const NS = LAYOUT ? [...'ABC'].map((c) => [...LAYOUT].filter((x) => x === c).length) : arg('n', '4,4,3').split(',').map(Number), AI = NS[0] + NS[1] + NS[2];
 const LAPS = Number(arg('laps', '5')), SEED = Number(arg('seed', '1')), COMPOUND = arg('compound', 'hard');
 const trackId = arg('track', A.m.track ?? 'cleveland'), carId = A.m.car ?? 'f4';
 const track = parseTrackData(j(`public/tracks/${trackId}.json`));
@@ -34,7 +35,7 @@ const g: any = await RaceGame.create(track, spec, { trackId, carId, laps: LAPS, 
   { compound: COMPOUND as any, wear: 1, fuel: 1, aiDriver: 'neural', neuralModels: { expert: A.w }, neuralSetups: { expert: A.m.setup },
     neuralResidual: { expert: A.r }, neuralLine: { kind: 'mintime', pts: mt.pts, v: mt.v } });
 const cl = track.centerline, n = cl.length;
-const grp = (k: number) => (k < NS[0] ? 0 : k < NS[0] + NS[1] ? 1 : 2);
+const grp = (k: number) => (LAYOUT ? 'ABC'.indexOf(LAYOUT[k]) : k < NS[0] ? 0 : k < NS[0] + NS[1] ? 1 : 2);
 const GN = ['front:' + A.name, 'mid:' + B.name, 'back:classic'];
 // Per-car setup: replace the vehicle (same slot pose, same tune) with one built from the group's own spec.
 function swapVehicle(k: number, carSpec: any): void {
@@ -68,7 +69,9 @@ void classicLimits;
 const isRes = (k: number) => grp(k) < 2;
 
 // Racecraft stats over the AI cars (car index i = k + 1).
-const rc = new RacecraftTracker(AI), cars: RaceCar[] = Array.from({ length: AI }, () => ({ dist: 0, speed: 0, running: true }));
+const rc = new RacecraftTracker(AI), LOG = argv.includes('--log'), evLog: any[] = [];
+if (LOG) rc.events = [];
+const cars: RaceCar[] = Array.from({ length: AI }, () => ({ dist: 0, speed: 0, running: true }));
 const cinfo = { fwdGap: 0, latGap: 0, closing: 0 };
 let touching = false;
 const onManifold = (mf: any) => { for (let i = 0, c = mf.numContacts(); i < c; i++) if (mf.contactDist(i) < 0.01) { touching = true; return; } };
@@ -109,7 +112,13 @@ for (let s = 0; s < maxSteps && !g.raceFinished; s++) {
     if (gone && !out_[k]) { out_[k] = 1; rc.noteElimination(k); }
     cars[k].dist = g.traffic[i].distance; cars[k].speed = g.current[i].forwardSpeed; cars[k].running = !out_[k];
   }
+  const ev0 = rc.events?.length ?? 0;
   rc.step(FIXED_DT, cars);
+  if (rc.events) for (let e = ev0; e < rc.events.length; e++) {
+    const x = rc.events[e], w = x.winner + 1;
+    evLog.push({ t: +x.t.toFixed(1), idx: ((g.indices[w] % n) + n) % n, kind: x.kind,
+      winner: `${GN[grp(x.winner)].split(':')[0]}${x.winner + 1}`, loser: `${GN[grp(x.loser)].split(':')[0]}${x.loser + 1}`, vw: +x.vw.toFixed(1), vl: +x.vl.toFixed(1) });
+  }
   for (let a = 1; a <= AI; a++) for (let b = a + 1; b <= AI; b++) {
     const pa = g.current[a].position, pb = g.current[b].position, dx = pb.x - pa.x, dz = pb.z - pa.z;
     if (dx * dx + dz * dz > 36) continue;
@@ -126,4 +135,4 @@ const rows = g.standings().filter((r: any) => r.car > 0).map((r: any) => {
   return { pos: r.position, car: r.car, grp: GN[grp(k)].split(':')[0], lap: r.lap, fin: r.finished, time: r.totalTime && +r.totalTime.toFixed(1), best: r.bestLap && +r.bestLap.toFixed(2),
     touch: touches[k], passes: rc.passes[k], lost: rc.lost[k], faults: rc.faults[k], crashF: rc.crashFaults[k], out: !!out_[k], wings: +(dm.frontWing + dm.rearWing).toFixed(2) };
 });
-console.log(JSON.stringify({ groups: GN, track: trackId, seed: SEED, laps: LAPS, simT: +g.simTime.toFixed(0), rows }));
+console.log(JSON.stringify({ groups: GN, layout: LAYOUT || null, track: trackId, seed: SEED, laps: LAPS, simT: +g.simTime.toFixed(0), rows, ...(LOG ? { events: evLog } : {}) }));
