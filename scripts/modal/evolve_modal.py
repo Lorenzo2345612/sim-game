@@ -34,11 +34,11 @@ app = modal.App("simgame-evolve", image=image)
 vol = modal.Volume.from_name("simgame-evolve", create_if_missing=True)
 
 # Aggressive racecraft (2026-10-19): wider residual authority, double pass reward, defend reward, yellow-pass fault.
-# aggr5 (2026-10-20): --fix-compound (whole population on one compound per eval) and --opp-front 0.8 (opponents start ahead: overtaking practice), pos-w 250, pass-w 300 (overtaking over pace).
+# aggr5 (2026-10-20): --fix-compound (whole population on one compound per eval) and --opp-front 0.8 (opponents start ahead: overtaking practice), pos-w 250, pass-w 300 (overtaking over pace), incident-w 1000 (each spin or caused yellow).
 # gen331 (task 288) used --res-offset 5 --res-up 0.12 and the default pass weight 40, no defend term.
 BASE_ARGS = (
     "--pop 100 --gens 100000 --speed-at 2 --speed-laps 6 --evals 2 --speed-mut 0.15 --line mintime --racecraft --opponents 6 "
-    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 250 --pass-w 300 --def-w 30 --yellow-w 300 --kick-after 40 --fix-compound --opp-front 0.8"
+    "--residual --max-faults 5 --res-offset 5 --res-up 0.12 --res-down 0.15 --pos-w 250 --pass-w 300 --def-w 30 --yellow-w 300 --kick-after 40 --fix-compound --opp-front 0.8 --incident-w 1000"
 ).split()
 
 

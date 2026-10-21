@@ -174,6 +174,13 @@ const carState: NeuralCarState = {
   others,
 };
 
+// Body sideslip angle (rad, 0..π) above 5 m/s; 0 when slower.
+function sideslip(k: number): number {
+  const q = state[k].rotation, v = cars[k].body.linvel();
+  if (v.x * v.x + v.z * v.z < 25) return 0;
+  const fx = -2 * (q.x * q.z + q.w * q.y), fz = -(1 - 2 * (q.x * q.x + q.y * q.y)), rx = 1 - 2 * (q.y * q.y + q.z * q.z), rz = 2 * (q.x * q.z - q.w * q.y);
+  return Math.atan2(Math.abs(v.x * rx + v.z * rz), v.x * fx + v.z * fz);
+}
 function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[], start: number, secs: number, epi: number, raceLaps: number, lapW: number, rc: RacecraftTracker | null, nT: number) {
   const poses = startPoses(start, nT, genomes.length);
   const m = genomes.length;
@@ -315,7 +322,7 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
       }
     }
     if (rc) {
-      for (let k = 0; k < m; k++) { const c = raceCars[k]; c.dist = startOff[k] + dist[k]; c.speed = state[k].forwardSpeed; c.running = alive[k]; }
+      for (let k = 0; k < m; k++) { const c = raceCars[k]; c.dist = startOff[k] + dist[k]; c.speed = state[k].forwardSpeed; c.running = alive[k]; c.slip = alive[k] ? sideslip(k) : 0; }
       rc.step(FIXED_DT, raceCars);
     }
     const now = performance.now();
@@ -348,7 +355,7 @@ parentPort!.on('message', (msg: any) => {
   const genomes: Float64Array[] = [...split.map((s: any) => s.weights), ...opp.map((o) => padGenome(o.weights)!)];
   const extras: Float64Array[] = [...split.map((s: any) => s.extra), ...opp.map((o) => { const e = new Float64Array(N_XW); if (o.extra) e.set(o.extra.slice(0, N_XW)); return e; })];
   const setups = [...split.map((s: any) => s.setup), ...opp.map((o) => o.setup ?? defaultSetup(spec))];
-  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0), defends: new Array(nT).fill(0), yellowFaults: new Array(nT).fill(0) };
+  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0), defends: new Array(nT).fill(0), yellowFaults: new Array(nT).fill(0), incidents: new Array(nT).fill(0), spins: new Array(nT).fill(0) };
   let invalidLaps: number[] = [];
   const fitness = new Array(nT).fill(0), dist = new Array(nT).fill(0);
   let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
@@ -358,8 +365,8 @@ parentPort!.on('message', (msg: any) => {
     const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc, nT);
     for (let k = 0; k < nT; k++) {
       const base = r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
-      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k]) : base;
-      if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; rcStats.defends[k] += rc.defends[k]; rcStats.yellowFaults[k] += rc.yellowFaults[k]; }
+      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k], rc.incidents[k]) : base;
+      if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; rcStats.defends[k] += rc.defends[k]; rcStats.yellowFaults[k] += rc.yellowFaults[k]; rcStats.incidents[k] += rc.incidents[k]; rcStats.spins[k] += rc.spins[k]; }
       if (e === 0) dist[k] = r.best[k];
     }
     if (e === 0) { const c = (a: ArrayLike<number>) => Array.from(a).slice(0, nT); lapT = c(r.lapT); laps = c(r.laps); finishT = c(r.finishT); invalidLaps = c(r.invalidLaps); }

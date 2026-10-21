@@ -1,7 +1,8 @@
 // Racecraft scoring for the trainer (task 271): committed position changes, at-fault contacts, crash faults.
 export const POS_W = 60, PASS_W = 40, CONTACT_W = 80, CRASH_W = 200;
 // Trainer-tunable weights (--pass-w, --def-w): def rewards holding off a sustained attack.
-export const RC_W = { pos: POS_W, pass: PASS_W, contact: CONTACT_W, crash: CRASH_W, def: 0, yellow: 0 };
+export const RC_W = { pos: POS_W, pass: PASS_W, contact: CONTACT_W, crash: CRASH_W, def: 0, yellow: 0, incident: 0 };
+// Incident (--incident-w): each spin (body sideslip > SPIN_SLIP rad above 5 m/s after it got going, 2 s debounce) and each yellow the car causes (new slow-car or elimination episode).
 // Yellow (--yellow-w): a car slower than YEL_V after it got going, or just eliminated, waves yellow from YEL_BEHIND m before
 // to YEL_AHEAD m past it, lingering YEL_LINGER s; passing a car other than the cause inside a zone is a yellow fault.
 const YEL_V = 8, YEL_MOVED_V = 20, YEL_ELIM_S = 5, YEL_LINGER = 3, YEL_BEHIND = 150, YEL_AHEAD = 30;
@@ -10,7 +11,8 @@ const PASS_GAP = 20, PASS_MIN_V = 2, PASS_HOLD = 1.0, PASS_REL_V = 0.8, PASS_CLE
 const FAULT_CLOSING = 3.0, EPISODE_GAP = 0.5, CRASH_WINDOW = 3.0;
 
 export interface ContactInfo { fwdGap: number; latGap: number; closing: number }
-export interface RaceCar { dist: number; speed: number; running: boolean }
+export interface RaceCar { dist: number; speed: number; running: boolean; slip?: number }
+const SPIN_SLIP = 0.5, SPIN_DEBOUNCE = 2.0;
 
 export class RacecraftTracker {
   readonly passes: Int32Array;
@@ -19,6 +21,9 @@ export class RacecraftTracker {
   readonly crashFaults: Int32Array;
   readonly defends: Int32Array;
   readonly yellowFaults: Int32Array;
+  readonly incidents: Int32Array;
+  readonly spins: Int32Array;
+  private readonly spinUntil: Float64Array;
   private readonly yelUntil: Float64Array; // per car: yellow it causes is active until this time
   private readonly yelPos: Float64Array; // lap position of the cause
   private readonly moved: Uint8Array;
@@ -40,6 +45,7 @@ export class RacecraftTracker {
   constructor(n: number, lapLen = 0) {
     this.n = n; this.lapLen = lapLen;
     this.yellowFaults = new Int32Array(n); this.yelUntil = new Float64Array(n).fill(-1); this.yelPos = new Float64Array(n);
+    this.incidents = new Int32Array(n); this.spins = new Int32Array(n); this.spinUntil = new Float64Array(n).fill(-1);
     this.moved = new Uint8Array(n); this.elimT = new Float64Array(n).fill(-1e9);
     this.passes = new Int32Array(n); this.lost = new Int32Array(n);
     this.faults = new Int32Array(n); this.crashFaults = new Int32Array(n);
@@ -115,6 +121,11 @@ export class RacecraftTracker {
       const car = cars[c];
       if (car.speed > YEL_MOVED_V) this.moved[c] = 1;
       const cause = (car.running && this.moved[c] === 1 && car.speed < YEL_V) || this.t - this.elimT[c] <= YEL_ELIM_S;
+      if (cause && this.yelUntil[c] < this.t) this.incidents[c]++;
+      if (car.running && this.moved[c] === 1 && (car.slip ?? 0) > SPIN_SLIP) {
+        if (this.spinUntil[c] < this.t) { this.incidents[c]++; this.spins[c]++; }
+        this.spinUntil[c] = this.t + SPIN_DEBOUNCE;
+      }
       if (cause) { this.yelUntil[c] = this.t + YEL_LINGER; this.yelPos[c] = this.lapPos(car.dist); }
     }
   }
@@ -140,8 +151,8 @@ export class RacecraftTracker {
   tick(dt: number): void { this.t += dt; }
 }
 
-export function racecraftFitness(base: number, finishPos: number, n: number, passes: number, lost: number, faults: number, crashFaults: number, defends = 0, yellowFaults = 0): number {
-  return base + RC_W.pos * (n - 1 - finishPos) + RC_W.pass * (passes - lost) - RC_W.contact * faults - RC_W.crash * crashFaults + RC_W.def * defends - RC_W.yellow * yellowFaults;
+export function racecraftFitness(base: number, finishPos: number, n: number, passes: number, lost: number, faults: number, crashFaults: number, defends = 0, yellowFaults = 0, incidents = 0): number {
+  return base + RC_W.pos * (n - 1 - finishPos) + RC_W.pass * (passes - lost) - RC_W.contact * faults - RC_W.crash * crashFaults + RC_W.def * defends - RC_W.yellow * yellowFaults - RC_W.incident * incidents;
 }
 
 export function pickOpponents<T extends { avgLap: number }>(hof: readonly T[], bestAvg: number, count: number, rand: () => number): T[] {

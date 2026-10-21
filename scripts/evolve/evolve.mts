@@ -32,7 +32,7 @@ const PORT = Number(arg('port', '8770'));
 const RESIDUAL = process.argv.includes('--residual'); // classic AiDriver drives, the net sets offset + pace
 const MAX_FAULTS = Number(arg('max-faults', '5')); // light at-fault touches allowed per race for a saved model (no caused crashes)
 const RES = { offset: Number(arg('res-offset', '3.5')), up: Number(arg('res-up', '0.06')), down: Number(arg('res-down', '0.06')) }; // residual authority: lateral offset (m), pace above/below the classic profile
-const RCW = { pos: Number(arg('pos-w', '60')), pass: Number(arg('pass-w', '40')), def: Number(arg('def-w', '0')), yellow: Number(arg('yellow-w', '0')) }; // racecraft weights: net passes, defended attacks, passes under yellow
+const RCW = { pos: Number(arg('pos-w', '60')), pass: Number(arg('pass-w', '40')), def: Number(arg('def-w', '0')), yellow: Number(arg('yellow-w', '0')), incident: Number(arg('incident-w', '0')) }; // racecraft weights: net passes, defended attacks, passes under yellow
 const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
 const rand = mulberry32(Date.now() & 0xffffffff);
@@ -138,7 +138,7 @@ function opponents(): { weights: number[]; setup?: unknown; extra?: number[] }[]
     return oppCache.get(m.file)!;
   });
 }
-const KEYS = ['fitness', 'best', 'lapT', 'laps', 'finishT', 'invalidLaps', 'passes', 'lost', 'faults', 'crashFaults', 'defends', 'yellowFaults'] as const;
+const KEYS = ['fitness', 'best', 'lapT', 'laps', 'finishT', 'invalidLaps', 'passes', 'lost', 'faults', 'crashFaults', 'defends', 'yellowFaults', 'incidents', 'spins'] as const;
 type EvalR = Record<(typeof KEYS)[number], number[]>;
 let perm: number[] = []; // slot -> pop index (genomes shuffled across worlds every generation)
 const COMPOUNDS = ['soft', 'medium', 'hard'] as const;
@@ -195,7 +195,7 @@ async function evalN() {
       acc.lapT[i] = acc.lapT[i] > 0 && r.lapT[i] > 0 ? Math.min(acc.lapT[i], r.lapT[i]) : 0;
       acc.laps[i] = Math.min(acc.laps[i], r.laps[i]);
       acc.invalidLaps[i] += r.invalidLaps[i];
-      for (const k of ['passes', 'lost', 'faults', 'crashFaults', 'defends', 'yellowFaults'] as const) acc[k][i] += r[k][i];
+      for (const k of ['passes', 'lost', 'faults', 'crashFaults', 'defends', 'yellowFaults', 'incidents', 'spins'] as const) acc[k][i] += r[k][i];
       acc.finishT[i] = acc.finishT[i] > 0 && r.finishT[i] > 0 ? Math.max(acc.finishT[i], r.finishT[i]) : 0;
     }
   }
@@ -220,7 +220,7 @@ for (; gen < GENS; ) {
   if (!speedPhase && meanLaps.length >= 5 && avg5 >= SPEED_AT) { speedPhase = true; allTimeBest = -Infinity; console.log(`speed phase from gen ${gen + 1} (mean ${avg5.toFixed(1)} laps)`); }
   const finishers = r.finishT.map((t, i) => [t, i]).filter(([t, i]) => t > 0 && r.invalidLaps[i] === 0 && r.faults[i] <= MAX_FAULTS * EVALS && r.crashFaults[i] === 0).sort((a, b) => a[0] - b[0]);
   const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
-  const rcLine = RACECRAFT ? ` passes ${sum(r.passes)} faults ${sum(r.faults)} crash ${sum(r.crashFaults)} def ${sum(r.defends)} yel ${sum(r.yellowFaults)} champ ${r.passes[bestI]}/${r.faults[bestI]}` : '';
+  const rcLine = RACECRAFT ? ` passes ${sum(r.passes)} faults ${sum(r.faults)} crash ${sum(r.crashFaults)} def ${sum(r.defends)} yel ${sum(r.yellowFaults)} inc ${sum(r.incidents)} spin ${sum(r.spins)} champ ${r.passes[bestI]}/${r.faults[bestI]}` : '';
   if (finishers.length) saveModel(finishers[0][1], finishers[0][0]);
   const anyFin = r.finishT.map((t, i) => [t, i]).filter(([t]) => t > 0).sort((a, b) => a[0] - b[0]);
   const sortedLaps = [...laps].sort((a, b) => a - b);
