@@ -285,7 +285,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 281 | Electric powertrain math | done | - |
 | 282 | Attack mode rules | done | - |
 | 283 | CarSpec awd + electric block | done | 281 |
-| 284 | AWD electric drive in VehicleModel | waiting decision | 281, 282, 283 |
+| 284 | AWD electric drive in VehicleModel | in progress | 281, 282, 283 |
 | 285 | Electric voice | done | - |
 | 286 | Electric OW car, HUD and AI power | pending | 284, 285 |
 | 287 | Decouple 269 POST9 from published models | done | 269 |
