@@ -28,7 +28,7 @@ import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { NEURAL_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {}, oppFront = 0 } = workerData as { oppFront?: number; rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {}, oppFront = 0, lineW = 0 } = workerData as { lineW?: number; oppFront?: number; rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -174,6 +174,11 @@ const carState: NeuralCarState = {
   others,
 };
 
+function carNear(k: number, m: number, dist: Float64Array, alive: boolean[]): boolean {
+  const dk = startOff[k] + dist[k];
+  for (let j = 0; j < m; j++) if (j !== k && alive[j] && Math.abs(startOff[j] + dist[j] - dk) < 30) return true;
+  return false;
+}
 // Body sideslip angle (rad, 0..π) above 5 m/s; 0 when slower.
 function sideslip(k: number): number {
   const q = state[k].rotation, v = cars[k].body.linvel();
@@ -188,7 +193,7 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
   lastOut.fill(0);
   const alive = new Array(m).fill(true);
   const dist = new Float64Array(m), lastS = new Float64Array(m), best = new Float64Array(m), stallT = new Float64Array(m);
-  const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), over = new Float64Array(m), invalidLaps = new Float64Array(m);
+  const finishT = new Float64Array(m), lapT = new Float64Array(m).fill(0), laps = new Float64Array(m), lapStart = new Float64Array(m), lapBonus = new Float64Array(m), over = new Float64Array(m), invalidLaps = new Float64Array(m), lineShort = new Float64Array(m);
   for (let k = 0; k < slots; k++) {
     dropCar(cars[k]);
     carSpec[k] = k < m ? applySetup(spec, setups[k]) : spec;
@@ -301,6 +306,8 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
       lastS[k] = p.distance;
       dist[k] += ds;
       over[k] += Math.max(0, st.forwardSpeed - features.speedAt(p.index) - 3) * FIXED_DT;
+      // --line-w: metres short of the racing line where it runs near an edge (|offset| > 4 m), only with no car within 30 m.
+      if (lineW > 0) { const lo = cLine.offsets[p.index]; if (Math.abs(lo) > 4 && !carNear(k, m, dist, alive)) lineShort[k] += Math.max(0, Math.abs(lo) - Math.sign(lo) * p.lateral) * FIXED_DT; }
       if (dist[k] >= (laps[k] + 1) * L) { // lap completed: fastest single lap and a bonus per lap (faster = more)
         const lt = t - lapStart[k];
         lapStart[k] = t; laps[k]++;
@@ -342,7 +349,7 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
   const order = Array.from({ length: m }, (_, k) => k).sort((a, b) => (finishT[a] > 0 && finishT[b] > 0 ? finishT[a] - finishT[b] : finishT[a] > 0 ? -1 : finishT[b] > 0 ? 1 : raceD[b] - raceD[a]));
   const finishPos = new Int32Array(m);
   order.forEach((k, i) => { finishPos[k] = i; });
-  return { best, lapT, over, laps, lapBonus, finishT, invalidLaps, finishPos };
+  return { best, lapT, over, laps, lapBonus, finishT, invalidLaps, finishPos, lineShort };
 }
 
 parentPort!.on('message', (msg: any) => {
@@ -355,7 +362,7 @@ parentPort!.on('message', (msg: any) => {
   const genomes: Float64Array[] = [...split.map((s: any) => s.weights), ...opp.map((o) => padGenome(o.weights)!)];
   const extras: Float64Array[] = [...split.map((s: any) => s.extra), ...opp.map((o) => { const e = new Float64Array(N_XW); if (o.extra) e.set(o.extra.slice(0, N_XW)); return e; })];
   const setups = [...split.map((s: any) => s.setup), ...opp.map((o) => o.setup ?? defaultSetup(spec))];
-  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0), defends: new Array(nT).fill(0), yellowFaults: new Array(nT).fill(0), incidents: new Array(nT).fill(0), spins: new Array(nT).fill(0) };
+  const rcStats = { passes: new Array(nT).fill(0), lost: new Array(nT).fill(0), faults: new Array(nT).fill(0), crashFaults: new Array(nT).fill(0), defends: new Array(nT).fill(0), yellowFaults: new Array(nT).fill(0), incidents: new Array(nT).fill(0), spins: new Array(nT).fill(0), lineShort: new Array(nT).fill(0) };
   let invalidLaps: number[] = [];
   const fitness = new Array(nT).fill(0), dist = new Array(nT).fill(0);
   let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
@@ -364,9 +371,10 @@ parentPort!.on('message', (msg: any) => {
     const rc = racecraft ? new RacecraftTracker(genomes.length, L) : null;
     const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc, nT);
     for (let k = 0; k < nT; k++) {
-      const base = r.best[k] - race.overW * r.over[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
+      const base = r.best[k] - race.overW * r.over[k] - lineW * r.lineShort[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
       fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k], rc.incidents[k]) : base;
       if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; rcStats.defends[k] += rc.defends[k]; rcStats.yellowFaults[k] += rc.yellowFaults[k]; rcStats.incidents[k] += rc.incidents[k]; rcStats.spins[k] += rc.spins[k]; }
+      rcStats.lineShort[k] += r.lineShort[k];
       if (e === 0) dist[k] = r.best[k];
     }
     if (e === 0) { const c = (a: ArrayLike<number>) => Array.from(a).slice(0, nT); lapT = c(r.lapT); laps = c(r.laps); finishT = c(r.finishT); invalidLaps = c(r.invalidLaps); }
