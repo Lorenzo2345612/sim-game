@@ -338,3 +338,16 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 335 | Miami style file (data only) | pending | 331 |
 | 336 | Long Beach in game | pending | 331 |
 | 337 | Long Beach style file (data only) | pending | 336 |
+| 338 | DRS rules module | pending | - |
+| 339 | DRS zones from the track | pending | 338 |
+| 340 | CarSpec `activeAero.drs` flag and DRS telemetry | pending | - |
+| 341 | RaceGame DRS integration | pending | 338, 339, 340 |
+| 342 | DRS HUD indicator | pending | 341, 345 |
+| 343 | AI cars use DRS | pending | 341 |
+| 344 | `ow3` car data, menu entry and voice | pending | 340 |
+| 345 | `ow2` car data, menu entry and voice | pending | 344 |
+| 346 | Ladder lap-time calibration | pending | 344, 345 |
+| 347 | Reverse-top10 and reverse-top12 grid rules | pending | - |
+| 348 | Feeder points tables and weekend formats | pending | 347 |
+| 349 | Mandatory stop rules | pending | - |
+| 350 | OW ladder series data | pending | 324, 344, 345, 348 |

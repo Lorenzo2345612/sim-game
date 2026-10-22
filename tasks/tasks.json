@@ -4524,6 +4524,174 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/337-longbeach-style.md"
+    },
+    {
+      "num": "338",
+      "title": "DRS rules module",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/338-drs-rules.md"
+    },
+    {
+      "num": "339",
+      "title": "DRS zones from the track",
+      "status": "pending",
+      "deps": [
+        "338"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/339-drs-zones-from-track.md"
+    },
+    {
+      "num": "340",
+      "title": "CarSpec `activeAero.drs` flag and DRS telemetry",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/340-carspec-drs-flag.md"
+    },
+    {
+      "num": "341",
+      "title": "RaceGame DRS integration",
+      "status": "pending",
+      "deps": [
+        "338",
+        "339",
+        "340"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "heavy",
+      "phase": 7,
+      "spec": "tasks/341-racegame-drs.md"
+    },
+    {
+      "num": "342",
+      "title": "DRS HUD indicator",
+      "status": "pending",
+      "deps": [
+        "341",
+        "345"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/342-drs-hud.md"
+    },
+    {
+      "num": "343",
+      "title": "AI cars use DRS",
+      "status": "pending",
+      "deps": [
+        "341"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/343-ai-drs-use.md"
+    },
+    {
+      "num": "344",
+      "title": "`ow3` car data, menu entry and voice",
+      "status": "pending",
+      "deps": [
+        "340"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/344-ow3-car.md"
+    },
+    {
+      "num": "345",
+      "title": "`ow2` car data, menu entry and voice",
+      "status": "pending",
+      "deps": [
+        "344"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/345-ow2-car.md"
+    },
+    {
+      "num": "346",
+      "title": "Ladder lap-time calibration",
+      "status": "pending",
+      "deps": [
+        "344",
+        "345"
+      ],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/346-ow-ladder-calibration.md"
+    },
+    {
+      "num": "347",
+      "title": "Reverse-top10 and reverse-top12 grid rules",
+      "status": "pending",
+      "deps": [],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/347-reverse-top-n-grid.md"
+    },
+    {
+      "num": "348",
+      "title": "Feeder points tables and weekend formats",
+      "status": "pending",
+      "deps": [
+        "347"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/348-feeder-formats-data.md"
+    },
+    {
+      "num": "349",
+      "title": "Mandatory stop rules",
+      "status": "pending",
+      "deps": [],
+      "complexity": "complex",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/349-mandatory-stop-rules.md"
+    },
+    {
+      "num": "350",
+      "title": "OW ladder series data",
+      "status": "pending",
+      "deps": [
+        "324",
+        "344",
+        "345",
+        "348"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 7,
+      "spec": "tasks/350-ow-ladder-series-data.md"
     }
   ]
 }
