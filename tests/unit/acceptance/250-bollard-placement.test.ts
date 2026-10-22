@@ -365,13 +365,19 @@ describe('250 bollard placement acceptance — built tracks and parser', () => {
   it('AT9: rebuilt track JSONs differ from the pre-task JSON only by the added bollards key', () => {
     const baseRev = '59057fa^';
     for (const { id, track } of builtTracks()) {
-      const prev = JSON.parse(
-        execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], {
-          cwd: ROOT,
-          encoding: 'utf8',
-          maxBuffer: 64 * 1024 * 1024,
-        }),
-      ) as TrackDataV2;
+      let prev: TrackDataV2;
+      try {
+        prev = JSON.parse(
+          execFileSync('git', ['show', `${baseRev}:public/tracks/${id}.json`], {
+            cwd: ROOT,
+            encoding: 'utf8',
+            maxBuffer: 64 * 1024 * 1024,
+            stdio: ['ignore', 'pipe', 'ignore'],
+          }),
+        ) as TrackDataV2;
+      } catch {
+        continue; // track added after the base revision (task 331)
+      }
       const pin: Record<string, unknown> = { ...track };
       delete pin.bollards;
       // 320 adds water to river arroyos.

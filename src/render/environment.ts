@@ -30,6 +30,9 @@ export const FOG_TABLE: Record<string, { density: number }> = {
   'ermita-mixto': { density: 0.0004 },
   'ermita-poniente': { density: 0.0004 },
   'ermita-veloz': { density: 0.0004 },
+  bathurst: { density: 0.0004 },
+  jeddah: { density: 0.0003 },
+  miami: { density: 0.0004 },
 };
 
 export const ENV_TABLE: Record<string, string> = {
@@ -58,6 +61,9 @@ export const ENV_TABLE: Record<string, string> = {
   'ermita-mixto': 'qwantani_noon_puresky',
   'ermita-poniente': 'qwantani_noon_puresky',
   'ermita-veloz': 'qwantani_noon_puresky',
+  bathurst: 'kloofendal_48d_partly_cloudy_puresky',
+  jeddah: 'qwantani_noon_puresky',
+  miami: 'kloofendal_48d_partly_cloudy_puresky',
 };
 
 export interface TodPreset {
