@@ -167,7 +167,7 @@ describe('241 ermita tracks acceptance', () => {
     for (const e of block) {
       expect(e.country, `${e.id}: country`).toBe('Mexico');
     }
-    const preexisting = entries.filter((e) => !e.id.startsWith('ermita-'));
+    const preexisting = entries.filter((e) => !e.id.startsWith('ermita-') && !['bathurst', 'jeddah', 'miami', 'longbeach'].includes(e.id));
     expect(preexisting.map((e) => e.id)).toEqual(PREEXISTING_IDS);
     const hash = createHash('sha256').update(JSON.stringify(preexisting)).digest('hex');
     expect(hash, 'pre-existing entries byte-equivalent').toBe(PREEXISTING_HASH);

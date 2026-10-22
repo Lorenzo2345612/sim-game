@@ -146,18 +146,18 @@ function bilinearAt(buf: Buffer, w: number, h: number, stride: number, cx: numbe
 describe('241 ermita tracks post-code gaps', () => {
   it('GAPS1: the 6 ermita entries are the last entries of tracks.json, index.json and TRACK_CHOICES', () => {
     const registry = readJson<RegistryEntry[]>('tools/track-builder/tracks.json');
-    expect(registry.length).toBe(25);
-    expect(registry.slice(-IDS.length).map((e) => e.id)).toEqual([...IDS]);
+    expect(registry.length).toBe(29);
+    expect(registry.slice(-(IDS.length + 4), -4).map((e) => e.id)).toEqual([...IDS]);
     const index = readJson<IndexRow[]>('public/tracks/index.json');
-    expect(index.length).toBe(25);
-    expect(index.slice(-IDS.length).map((e) => e.id)).toEqual([...IDS]);
-    expect(TRACK_CHOICES.length).toBe(25);
-    expect(TRACK_CHOICES.slice(-IDS.length).map((c) => c.id)).toEqual([...IDS]);
+    expect(index.length).toBe(29);
+    expect(index.slice(-(IDS.length + 4), -4).map((e) => e.id)).toEqual([...IDS]);
+    expect(TRACK_CHOICES.length).toBe(29);
+    expect(TRACK_CHOICES.slice(-(IDS.length + 4), -4).map((c) => c.id)).toEqual([...IDS]);
   });
 
   it('GAPS2: every non-ermita tracks.json entry is unchanged from master', () => {
     const registry = readJson<RegistryEntry[]>('tools/track-builder/tracks.json');
-    const non = registry.filter((e) => !e.id.startsWith('ermita-'));
+    const non = registry.filter((e) => !e.id.startsWith('ermita-') && !['bathurst', 'jeddah', 'miami', 'longbeach'].includes(e.id));
     expect(non.length).toBe(19);
     expect(createHash('sha256').update(JSON.stringify(non)).digest('hex')).toBe(MASTER_REGISTRY_SHA);
   });

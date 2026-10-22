@@ -31,6 +31,10 @@ export const TRACK_CONDITIONS: Record<string, TrackConditions> = {
   'ermita-mixto': { abrasion: 1.2, trackTempC: 40 },
   'ermita-poniente': { abrasion: 1.2, trackTempC: 40 },
   'ermita-veloz': { abrasion: 1.2, trackTempC: 40 },
+  bathurst: { abrasion: 1.2, trackTempC: 25 },
+  jeddah: { abrasion: 0.85, trackTempC: 35 },
+  miami: { abrasion: 0.9, trackTempC: 45 },
+  longbeach: { abrasion: 0.9, trackTempC: 40 },
 };
 
 export function conditionsFor(id: string): TrackConditions {

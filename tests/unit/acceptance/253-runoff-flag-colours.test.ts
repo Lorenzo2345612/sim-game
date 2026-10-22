@@ -118,7 +118,7 @@ describe('253 runoff flag colours', () => {
     expect(malaysia).not.toContain('#FFCC00');
   });
 
-  it('AT8: flag-palettes equals exactly the 12 official palettes', () => {
+  it('AT8: flag-palettes equals exactly the 14 official palettes', () => {
     expect(palettes).toEqual({
       Italy: ['#008C45', '#F4F5F0', '#CD212A'],
       Belgium: ['#FDDA24', '#EF3340'],
@@ -132,6 +132,8 @@ describe('253 runoff flag colours', () => {
       Hungary: ['#CE2939', '#FFFFFF', '#477050'],
       Singapore: ['#EF3340', '#FFFFFF'],
       Austria: ['#C8102E', '#FFFFFF'],
+      Australia: ['#00008B', '#FFFFFF', '#E4002B'],
+      'Saudi Arabia': ['#006C35', '#FFFFFF'],
     });
   });
 });

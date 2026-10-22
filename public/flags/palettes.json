@@ -10,5 +10,7 @@
   "Azerbaijan": ["#00B5E2", "#EF3340", "#509E2F"],
   "Hungary": ["#CE2939", "#FFFFFF", "#477050"],
   "Singapore": ["#EF3340", "#FFFFFF"],
-  "Austria": ["#C8102E", "#FFFFFF"]
+  "Austria": ["#C8102E", "#FFFFFF"],
+  "Australia": ["#00008B", "#FFFFFF", "#E4002B"],
+  "Saudi Arabia": ["#006C35", "#FFFFFF"]
 }

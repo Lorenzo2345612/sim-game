@@ -70,3 +70,9 @@ npx playwright test 336-   # this task's e2e files only; never the full e2e suit
 ## Out of scope
 
 - Track JSON rebuilds, `-env.json` city bakes, landmarks, ground textures, OSM area data, `tracks.json`, banking, grandstands, credits screen.
+
+## Planner resolutions 2026-10-22
+
+- 331 AT6 and 336 AT6 compare only files that exist at the base revision (79c5aaff).
+- 331 AT4 (unit) and AT1 (e2e) now locate the three tracks by position after the base entries instead of the last three, so appending longbeach keeps them valid.
+- e2e AT3 reads `sceneStats().environmentType` (the `environment` field holds the HDRI name).

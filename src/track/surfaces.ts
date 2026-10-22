@@ -576,6 +576,56 @@ function roadLateral(points: [number, number][], i: number): [number, number] {
   return [nx / len, nz / len];
 }
 
+const COLUMN_WINDOW = 1;
+
+/**
+ * Elevation + RUNOFF_Y at (px, pz) from the nearest centerline segment (closed loop):
+ * elevation and bank tan lerped at the projection, lifted by the signed offset
+ * along the lerped right normal times the bank tan.
+ */
+function runoffHeightAt(track: TrackDataV2, px: number, pz: number, qx: number, qz: number): number {
+  const cl = track.centerline;
+  const n = cl.length;
+  const nearest = (x: number, z: number, from: number, count: number): [number, number] => {
+    let seg = 0;
+    let segT = 0;
+    let bestD2 = Infinity;
+    for (let c = 0; c < count; c++) {
+      const k = (((from + c) % n) + n) % n;
+      const k2 = (k + 1) % n;
+      const ex = cl[k2][0] - cl[k][0];
+      const ez = cl[k2][1] - cl[k][1];
+      const l2 = ex * ex + ez * ez;
+      let t = l2 < 1e-12 ? 0 : ((x - cl[k][0]) * ex + (z - cl[k][1]) * ez) / l2;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = cl[k][0] + ex * t - x;
+      const dz = cl[k][1] + ez * t - z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        seg = k;
+        segT = t;
+      }
+    }
+    return [seg, segT];
+  };
+  // The road centre picks the track section; the column then refines locally.
+  const [cSeg] = nearest(qx, qz, 0, n);
+  const [seg, segT] = nearest(px, pz, cSeg - COLUMN_WINDOW, 2 * COLUMN_WINDOW + 1);
+  const seg2 = (seg + 1) % n;
+  const [n0x, n0z] = rightNormal(cl, seg);
+  const [n1x, n1z] = rightNormal(cl, seg2);
+  const brx = n0x + (n1x - n0x) * segT;
+  const brz = n0z + (n1z - n0z) * segT;
+  const bx = cl[seg][0] + (cl[seg2][0] - cl[seg][0]) * segT;
+  const bz = cl[seg][1] + (cl[seg2][1] - cl[seg][1]) * segT;
+  const e0 = track.elevation[seg] ?? 0;
+  const e1 = track.elevation[seg2] ?? 0;
+  const tb0 = bankTanAt(track, seg);
+  const tanB = tb0 + (bankTanAt(track, seg2) - tb0) * segT;
+  return e0 + (e1 - e0) * segT + RUNOFF_Y + ((px - bx) * brx + (pz - bz) * brz) * tanB;
+}
+
 export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
   const roads = track.escapeRoads;
   if (!roads || roads.length === 0) return [];
@@ -593,23 +643,6 @@ export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
           road.points[i][1] - road.points[i - 1][1],
         );
       }
-      // Vertex y follows the elevation and cross-slope of the nearest centerline
-      // point by XZ distance, at the vertex's signed offset from that centerline.
-      let best = 0;
-      let bestD2 = Infinity;
-      for (let k = 0; k < track.centerline.length; k++) {
-        const dx = track.centerline[k][0] - road.points[i][0];
-        const dz = track.centerline[k][1] - road.points[i][1];
-        const d2 = dx * dx + dz * dz;
-        if (d2 < bestD2) {
-          bestD2 = d2;
-          best = k;
-        }
-      }
-      const [brx, brz] = rightNormal(track.centerline, best);
-      const [bx, bz] = track.centerline[best];
-      const base = (track.elevation[best] ?? 0) + RUNOFF_Y;
-      const tanB = bankTanAt(track, best);
       const [rx, rz] = roadLateral(road.points, i);
       const [x, z] = road.points[i];
       const v = s / UV_SCALE;
@@ -620,8 +653,7 @@ export function escapeRoadStrips(track: TrackDataV2): SurfaceStrip[] {
       rows.push(
         cols.map(([vx, vz, lat]) => ({
           x: vx,
-          // Each column lifts by its own signed offset from the centerline.
-          y: base + ((vx - bx) * brx + (vz - bz) * brz) * tanB,
+          y: runoffHeightAt(track, vx, vz, x, z),
           z: vz,
           u: lat / UV_SCALE,
           v,

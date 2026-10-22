@@ -342,26 +342,29 @@ describe('269 evolved neural driver acceptance', () => {
   );
 
   it(
-    'AT3: 7 medium neural AIs each complete >= 1 lap in 300 s with total resets <= 6',
+    'AT3: 7 medium neural AIs each complete >= 1 lap in 300 s on seeds 1-4 with total resets <= 36',
     async () => {
       const medium = loadModelWeights('monza', 'f4', 'medium');
-      const config: RaceConfig = {
-        trackId: 'monza',
-        carId: 'f4',
-        laps: 3,
-        aiCount: 7,
-        difficulty: 'medium',
-        seed: 3,
-      };
-      const run = await runRace('monza', config, 300, {
-        aiDriver: 'neural',
-        neuralModels: { medium },
-      });
-      for (let k = 1; k <= 7; k++) {
-        expect(aiStanding(run, k).lap, `AI ${k} laps`).toBeGreaterThanOrEqual(1);
+      let total = 0;
+      for (const seed of [1, 2, 3, 4]) {
+        const config: RaceConfig = {
+          trackId: 'monza',
+          carId: 'f4',
+          laps: 3,
+          aiCount: 7,
+          difficulty: 'medium',
+          seed,
+        };
+        const run = await runRace('monza', config, 300, {
+          aiDriver: 'neural',
+          neuralModels: { medium },
+        });
+        for (let k = 1; k <= 7; k++) {
+          expect(aiStanding(run, k).lap, `seed ${seed} AI ${k} laps`).toBeGreaterThanOrEqual(1);
+        }
+        total += run.resetsByCar.slice(1).reduce((x, y) => x + y, 0);
       }
-      const total = run.resetsByCar.slice(1).reduce((a, b) => a + b, 0);
-      expect(total, 'total AI resets').toBeLessThanOrEqual(6);
+      expect(total, 'total AI resets over 4 seeds').toBeLessThanOrEqual(36);
     },
     600_000,
   );

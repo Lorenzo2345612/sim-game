@@ -151,6 +151,7 @@ describe('301 no kerb-zone steps on any track acceptance', () => {
     const expectCounts: Record<string, [number, number]> = {
       bahrain: [5420, 3718],
       baku: [5973, 4324],
+      bathurst: [6198, 4734],
       braselton: [4090, 4200],
       budapest: [4366, 4428],
       cleveland: [3426, 2804],
@@ -163,6 +164,9 @@ describe('301 no kerb-zone steps on any track acceptance', () => {
       'ermita-norte': [4200, 4206],
       'ermita-poniente': [2736, 4430],
       'ermita-veloz': [4355, 5094],
+      jeddah: [6192, 7596],
+      miami: [5412, 5052],
+      longbeach: [3208, 3554],
       'fontana-roval': [4547, 4216],
       fontana: [2421, 2510],
       lasvegas: [6213, 4728],

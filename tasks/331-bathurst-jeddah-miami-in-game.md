@@ -70,3 +70,10 @@ npx playwright test 331-   # this task's e2e files only; never the full e2e suit
 ## Out of scope
 
 - Track JSON rebuilds, `-env.json` city bakes, landmarks, ground textures, OSM area data, `tracks.json`, banking, grandstands, credits screen.
+
+## Planner resolutions 2026-10-22
+
+- `public/flags/palettes.json` gains `Australia` `["#00008B","#FFFFFF","#E4002B"]` and `Saudi Arabia` `["#006C35","#FFFFFF"]` (253 AT1 needs a palette per index country); 253 AT8 expected palettes become 14 (both added).
+- 250 AT9: tracks whose json does not exist at the base revision (`git show` fails) are skipped instead of failing.
+- AT6 authorised: only files that exist at the base revision (79c5aaff) are compared; files added later by other tasks (longbeach.json, longbeach-env.json) are ignored.
+- e2e AT3 reads `sceneStats().environmentType` (the `environment` field holds the HDRI name).
