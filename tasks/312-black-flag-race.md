@@ -49,13 +49,12 @@ Conventions: out-of-range car throws `RangeError`; no per-tick allocations.
 | AT4 | as AT1 | `debugForceTrackLimits(0, 7)`, step 10 s with input throttle 1 | `isDisqualified(0)` true; car 0 moves < 0.01 m; `raceFinished` false |
 | AT5 | as AT1 with laps 1, `debugForceTrackLimits(3, 7)` at 10 s, `setPlayerAutopilot(true)` | step until `raceFinished` (cap 500 s sim) | `raceFinished` true; cars 0-2 finished; car 3 last |
 | AT6 | laps 1, autopilot, step until car 0 finished | `debugForceTrackLimits(0, 7)` | `penalties.forCar(0).length` unchanged; `isDisqualified(0)` false |
-| AT7 | as AT2 (car 2 disqualified, seed 1) | step 15 s | race flag state reports no yellow sector caused by car 2 (no yellow sector during the 15 s) |
+| AT7 | as AT2 (car 2 disqualified, seed 1) | step 15 s, checking every tick | `flags.isIncidentCar(2)` false at every tick (a disqualified, stopped car is never a yellow cause; yellows from other cars are allowed) |
 | AT8 | any RaceGame | `isDisqualified(4)` with aiCount 3 | `RangeError` |
-| AT9 | — | verification gate: run 127, 130, 290 unit acceptance tests | pass |
 
 ## Acceptance criteria
 
-- [ ] AT1–AT9 pass.
+- [ ] AT1–AT8 pass; 127, 130, 290 acceptance tests still pass.
 - [ ] `npm test` passes, including protected tests 093, 130, 261, 289, 290, 294 (acceptance, edge, post) and e2e 093/130/294 unchanged.
 
 ## Verification

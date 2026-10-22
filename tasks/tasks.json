@@ -4459,6 +4459,45 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/332-escape-road-height-on-slopes.md"
+    },
+    {
+      "num": "333",
+      "title": "Bathurst style file (data only)",
+      "status": "pending",
+      "deps": [
+        "331"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/333-bathurst-style.md"
+    },
+    {
+      "num": "334",
+      "title": "Jeddah style file (data only)",
+      "status": "pending",
+      "deps": [
+        "331"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/334-jeddah-style.md"
+    },
+    {
+      "num": "335",
+      "title": "Miami style file (data only)",
+      "status": "pending",
+      "deps": [
+        "331"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/335-miami-style.md"
     }
   ]
 }

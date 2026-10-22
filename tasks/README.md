@@ -333,3 +333,6 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 330 | Career menu, season hub and event flow | pending | 280, 324, 325, 326, 327, 328, 329 |
 | 331 | Bathurst, Jeddah and Miami in game | pending | - |
 | 332 | Escape road height follows the track on steep slopes | pending | - |
+| 333 | Bathurst style file (data only) | pending | 331 |
+| 334 | Jeddah style file (data only) | pending | 331 |
+| 335 | Miami style file (data only) | pending | 331 |
