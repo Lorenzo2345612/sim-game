@@ -23,11 +23,11 @@ test.describe('331 bathurst, jeddah, miami in game', () => {
     const ids = await buttons.evaluateAll((els) =>
       els.map((el) => (el as HTMLButtonElement).getAttribute('data-track') ?? ''),
     );
-    expect(ids.length, 'total buttons').toBe(PREVIOUS_COUNT + 3);
+    expect(ids.length, 'total buttons').toBeGreaterThanOrEqual(PREVIOUS_COUNT + 3);
     expect(ids[PREVIOUS_COUNT - 1], 'button before the new ones').toBe('ermita-veloz');
-    expect(ids.slice(PREVIOUS_COUNT), 'new ids').toEqual([...NEW_IDS]);
+    expect(ids.slice(PREVIOUS_COUNT, PREVIOUS_COUNT + 3), 'new ids').toEqual([...NEW_IDS]);
     const names = await page.locator('#menu button[data-track] .track-name').allTextContents();
-    expect(names.slice(PREVIOUS_COUNT), 'new names').toEqual([...NEW_NAMES]);
+    expect(names.slice(PREVIOUS_COUNT, PREVIOUS_COUNT + 3), 'new names').toEqual([...NEW_NAMES]);
   });
 
   test('AT2: each new track loads with its id, no console errors, over 30 km/h after 3 s of throttle', async ({

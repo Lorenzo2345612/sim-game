@@ -97,9 +97,9 @@ describe('211 fontana sports car course acceptance', () => {
     expect(length).toBeLessThanOrEqual(4770);
   });
 
-  it('AT2: index.json has 28 entries with fontana "Fontana Interior" right before fontana-roval "Fontana Sports Car Course"', () => {
+  it('AT2: index.json has 29 entries with fontana "Fontana Interior" right before fontana-roval "Fontana Sports Car Course"', () => {
     const entries = readJson<IndexEntry[]>('public/tracks/index.json');
-    expect(entries).toHaveLength(28);
+    expect(entries).toHaveLength(29);
     const fi = entries.findIndex((e) => e.id === 'fontana');
     expect(fi).toBeGreaterThanOrEqual(0);
     expect(entries[fi].name).toBe('Fontana Interior');

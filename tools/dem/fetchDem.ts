@@ -89,6 +89,7 @@ const TRACKS = [
   { id: 'bathurst', source: 'au-bathurst' },
   { id: 'jeddah', source: 'sa-jeddah' },
   { id: 'miami', source: 'us-miami' },
+  { id: 'longbeach', source: 'us-longbeach' },
 ];
 
 function expandedBbox(source: string): Bbox {

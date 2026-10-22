@@ -38,6 +38,7 @@ export const TRACK_CHOICES: TrackChoice[] = [
   { id: 'bathurst', name: 'Mount Panorama' },
   { id: 'jeddah', name: 'Jeddah' },
   { id: 'miami', name: 'Miami' },
+  { id: 'longbeach', name: 'Long Beach' },
 ];
 
 export const LAST_TRACK_KEY = 'lastTrack';

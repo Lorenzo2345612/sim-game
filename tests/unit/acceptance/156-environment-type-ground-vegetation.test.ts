@@ -14,6 +14,7 @@ const EXPECTED: Record<string, string> = {
   bathurst: 'parkland',
   jeddah: 'city',
   miami: 'city',
+  longbeach: 'city',
   bahrain: 'desert',
   lusail: 'desert',
   fontana: 'desert',

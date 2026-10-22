@@ -33,6 +33,7 @@ export const FOG_TABLE: Record<string, { density: number }> = {
   bathurst: { density: 0.0004 },
   jeddah: { density: 0.0003 },
   miami: { density: 0.0004 },
+  longbeach: { density: 0.0004 },
 };
 
 export const ENV_TABLE: Record<string, string> = {
@@ -64,6 +65,7 @@ export const ENV_TABLE: Record<string, string> = {
   bathurst: 'kloofendal_48d_partly_cloudy_puresky',
   jeddah: 'qwantani_noon_puresky',
   miami: 'kloofendal_48d_partly_cloudy_puresky',
+  longbeach: 'kloofendal_48d_partly_cloudy_puresky',
 };
 
 export interface TodPreset {

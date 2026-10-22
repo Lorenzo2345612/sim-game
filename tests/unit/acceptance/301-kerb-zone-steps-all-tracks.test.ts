@@ -166,6 +166,7 @@ describe('301 no kerb-zone steps on any track acceptance', () => {
       'ermita-veloz': [4355, 5094],
       jeddah: [6192, 7596],
       miami: [5412, 5052],
+      longbeach: [3208, 3554],
       'fontana-roval': [4547, 4216],
       fontana: [2421, 2510],
       lasvegas: [6213, 4728],

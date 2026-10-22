@@ -18,12 +18,12 @@ function git(...args: string[]): string {
 describe('331 bathurst, jeddah, miami in game', () => {
   it('AT4: index.json ends with the three new tracks and earlier entries equal the base revision', () => {
     const index = readJson<Array<{ id: string; name: string; country: string }>>('public/tracks/index.json');
-    const last = index.slice(-3);
+    const base = JSON.parse(git('show', `${BASE}:public/tracks/index.json`)) as unknown[];
+    const last = index.slice(base.length, base.length + 3);
     expect(last.map((e) => e.id)).toEqual(IDS);
     expect(last.map((e) => e.name)).toEqual(['Mount Panorama', 'Jeddah', 'Miami']);
     expect(last.map((e) => e.country)).toEqual(['Australia', 'Saudi Arabia', 'United States']);
-    const base = JSON.parse(git('show', `${BASE}:public/tracks/index.json`)) as unknown[];
-    expect(JSON.stringify(index.slice(0, -3))).toBe(JSON.stringify(base));
+    expect(JSON.stringify(index.slice(0, base.length))).toBe(JSON.stringify(base));
   });
 
   it('AT5: fetchDem TRACKS contains the three new sources', () => {
