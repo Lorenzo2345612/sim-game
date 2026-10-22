@@ -1,0 +1,23 @@
+{
+  "id": "f4-latam",
+  "name": "Latin F4 Cup",
+  "carId": "f4",
+  "gridsSeries": "f4-latam",
+  "formats": ["short", "standard", "sprint"],
+  "teams": [
+    { "id": "aurora", "name": "Aurora Motorsport", "colour": "#E10600", "perf": 1.0 },
+    { "id": "condor", "name": "Condor Racing", "colour": "#00A3E0", "perf": 0.995 },
+    { "id": "andes", "name": "Andes Competición", "colour": "#003DA5", "perf": 0.99 },
+    { "id": "volcan", "name": "Volcan Team", "colour": "#FFB300", "perf": 0.985 },
+    { "id": "marea", "name": "Marea GP", "colour": "#00843D", "perf": 0.98 },
+    { "id": "selva", "name": "Selva Racing", "colour": "#9B2D8B", "perf": 0.975 }
+  ],
+  "calendar": [
+    { "trackId": "mexico", "name": "Altiplano Cup" },
+    { "trackId": "braselton", "name": "Peachtree Round" },
+    { "trackId": "ermita-federal", "name": "Capital Trophy" },
+    { "trackId": "elkhart", "name": "Lakeshore Challenge" },
+    { "trackId": "cleveland", "name": "North Shore Cup" },
+    { "trackId": "ermita-centro", "name": "City Lights Finale" }
+  ]
+}
