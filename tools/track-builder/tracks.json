@@ -705,5 +705,24 @@
       { "atMeters": 3800, "side": "left", "offsetMeters": 45, "lengthMeters": 80, "rows": 10, "roof": false }
     ],
     "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
+  },
+  {
+    "id": "longbeach",
+    "name": "Long Beach",
+    "country": "United States",
+    "geojson": "us-longbeach",
+    "source": { "dataset": "OpenStreetMap", "license": "ODbL 1.0", "url": "https://www.openstreetmap.org/copyright" },
+    "dem": "assets/source/dem/longbeach.json",
+    "maxGrade": 0.03,
+    "widthMeters": 12,
+    "environment": "city",
+    "reverse": false,
+    "biome": { "species": [{ "name": "oak", "weight": 1.0 }], "density": 0.02 },
+    "grandstands": [
+      { "atMeters": 0, "side": "right", "offsetMeters": 45, "lengthMeters": 120, "rows": 16, "roof": true },
+      { "atMeters": 300, "side": "right", "offsetMeters": 45, "lengthMeters": 80, "rows": 12, "roof": false },
+      { "atMeters": 2400, "side": "left", "offsetMeters": 45, "lengthMeters": 80, "rows": 10, "roof": false }
+    ],
+    "pit": { "fromMeters": -150, "toMeters": 250, "side": "left" }
   }
 ]
