@@ -102,18 +102,18 @@ describe('141 escape road and foam edge cases', () => {
     expect(escapeRoadStrips({ ...base, escapeRoads: [] })).toEqual([]);
   });
 
-  it('EDGE2: escape strip of a cornered polyline is width/2 from the path at every point, along end-segment normals with the corner normal averaged, at elevation of the nearest-by-XZ centerline index plus 0.01', () => {
+  it('EDGE2: escape strip of a cornered polyline is width/2 from the path at every point, along end-segment normals with the corner normal averaged, at the elevation interpolated on the nearest centerline segment (grade 0.5 m per metre) plus 0.01', () => {
     const strips = escapeRoadStrips(lShapedTrack());
     expect(strips).toHaveLength(1);
     expect(strips[0].surface).toBe('runoff');
     const pos = strips[0].positions;
     expect(pos.length).toBe(18);
-    const yExp = [1.01, 1.01, 5.01];
     const bisect = 3 / Math.SQRT2;
     for (let i = 0; i < 3; i++) {
       const a = i * 6;
       for (const v of [0, 1]) {
-        expect(Math.abs(pos[a + v * 3 + 1] - yExp[i])).toBeLessThanOrEqual(1e-6);
+        const yExp = Math.min(Math.max(-pos[a + v * 3 + 2] / 2, 0), 11) + 0.01;
+        expect(Math.abs(pos[a + v * 3 + 1] - yExp)).toBeLessThanOrEqual(1e-6);
       }
       const dx0 = pos[a] - CORNER_PTS[i][0];
       const dz0 = pos[a + 2] - CORNER_PTS[i][1];
