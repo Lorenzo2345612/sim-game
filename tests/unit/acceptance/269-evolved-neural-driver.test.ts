@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { FIXED_DT } from '../../../src/core/constants';
 import { createVehicleState } from '../../../src/core/interpolation';
 import type { DriverInput, TrackDataV2 } from '../../../src/core/types';
-import { N_IN, N_W, forward, parseNeuralModel } from '../../../src/ai/neuralPolicy';
+import { N_IN, N_HID, N_W, N_W_V1, forward, parseNeuralModel } from '../../../src/ai/neuralPolicy';
 import type { NeuralCarState, NeuralFeatures } from '../../../src/ai/neuralFeatures';
 import { NeuralDriver } from '../../../src/ai/neuralDriver';
 import {
@@ -154,8 +154,12 @@ describe('269 evolved neural driver acceptance', () => {
       for (let i = nInOld; i < N_IN; i++) expect(padded[h * N_IN + i]).toBe(0);
     }
     const tailOld = nInOld * 16;
-    const tail = N_IN * 16;
-    for (let i = 0; i < 16 + 32 + 2; i++) expect(padded[tail + i]).toBe(old[tailOld + i]);
+    const tail = N_IN * N_HID;
+    for (let h = 0; h < 16; h++) expect(padded[tail + h]).toBe(old[tailOld + h]);
+    for (let k = 0; k < 2; k++) {
+      for (let h = 0; h < 16; h++) expect(padded[tail + N_HID + k * N_HID + h]).toBe(old[tailOld + 16 + k * 16 + h]);
+      expect(padded[tail + N_HID + 2 * N_HID + k]).toBe(old[tailOld + 16 + 32 + k]);
+    }
 
     const x21 = new Float64Array(21);
     for (let i = 0; i < 21; i++) x21[i] = ((i * 13) % 7) / 10;
@@ -234,7 +238,7 @@ describe('269 evolved neural driver acceptance', () => {
         const file = join(ROOT, `public/ai-models/${key}/${d}.json`);
         expect(existsSync(file), file).toBe(true);
         const json = JSON.parse(readFileSync(file, 'utf8')) as { weights: number[] };
-        expect(json.weights.length, file).toBe(N_W);
+        expect([N_W, N_W_V1], file).toContain(json.weights.length); // published v1 files stay valid
       }
     }
   });

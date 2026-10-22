@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from '../../../src/core/constants';
 import { createVehicleState } from '../../../src/core/interpolation';
 import type { DriverInput, TrackDataV2 } from '../../../src/core/types';
-import { N_IN, N_W, parseNeuralModel } from '../../../src/ai/neuralPolicy';
+import { N_IN, N_IN_V1, N_HID, N_W, parseNeuralModel } from '../../../src/ai/neuralPolicy';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../../src/ai/neuralFeatures';
 import { NeuralDriver } from '../../../src/ai/neuralDriver';
 import { RaceGame, type RaceConfig, type RaceGameOptions } from '../../../src/game/raceGame';
@@ -325,7 +325,7 @@ describe('269 evolved neural driver post-code gaps', () => {
     feats.fill(good, makeState({ progress: { index: 19, distance: 190, lateral: 0 } }));
     feats.fill(stale, makeState({ progress: { index: 0, distance: 190, lateral: 0 } }));
     for (let i = 0; i < N_IN; i++) {
-      if (i === 13 || i === 15 || i === 16 || i === 17) continue; // vProf/halfWidth at p.index by design
+      if (i === 13 || i === 15 || i === 16 || i === 17 || i >= N_IN_V1 + 4) continue; // also corner/brake cues // vProf/halfWidth at p.index by design
       expect(stale[i], `slot ${i}`).toBe(good[i]);
     }
     expect(good[1]).not.toBe(good[3]); // +5 m still straight, +20 m already turning
@@ -362,7 +362,11 @@ describe('269 evolved neural driver post-code gaps', () => {
     expect(padded.length).toBe(N_W);
     expect(padded[0]).toBe(0.25);
     for (let i = 1; i < 16; i++) expect(padded[i], `row0 slot ${i}`).toBe(0);
-    for (let i = 0; i < nIn1 - 16; i++) expect(padded[16 * N_IN + i]).toBe(old[16 + i]);
+    for (let h = 0; h < 16; h++) expect(padded[N_IN * N_HID + h]).toBe(old[16 + h]);
+    for (let k = 0; k < 2; k++) {
+      for (let h = 0; h < 16; h++) expect(padded[N_IN * N_HID + N_HID + k * N_HID + h]).toBe(old[32 + k * 16 + h]);
+      expect(padded[N_IN * N_HID + N_HID + 2 * N_HID + k]).toBe(old[64 + k]);
+    }
   });
 
   it('POST17: two drivers sharing one features instance stay independent under interleaving', () => {

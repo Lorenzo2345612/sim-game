@@ -1,4 +1,4 @@
-import { LOOK, PROD, N_NEAR } from './neuralPolicy';
+import { LOOK, PROD, N_NEAR, N_IN_V1 } from './neuralPolicy';
 import { cumulativeLengths } from '../track/centerline';
 import { KERB_WIDTH } from '../core/constants';
 import { computeRacingLine } from './racingLine';
@@ -57,6 +57,9 @@ export function racingTargetPoints(
 
 const MU_G = 1.5 * 9.81;
 const DECEL = 11;
+const CORNER_AHEAD = 150; // m scanned for the next corner
+const BRAKE_AHEAD = 300; // m scanned for the next braking zone
+const BRAKE_DV = 0.05; // m/s drop per centerline segment that counts as braking
 const MAX_CARS = 64; // neighbour buffer size (matches the trainer worlds)
 
 // Per-track feature extraction for the neural policy: centerline speed profile,
@@ -71,6 +74,8 @@ export class NeuralFeatures {
   private readonly hwL: Float64Array;
   private readonly hwR: Float64Array;
   private readonly vProf: Float64Array;
+  private readonly corner: Float64Array; // signed curvature of the strongest corner within CORNER_AHEAD m (right turn > 0)
+  private readonly brakeD: Float64Array; // m to the next braking zone (0 inside one)
   private readonly nd = new Float64Array(MAX_CARS);
   private readonly ni = new Int32Array(MAX_CARS);
   private px = 0;
@@ -118,6 +123,38 @@ export class NeuralFeatures {
     }
     const mt = line?.mintimeSpeed;
     if (mt) for (let i = 0; i < n; i++) this.vProf[i] = Math.min(90, mt[i] * 0.97);
+    // v2 combat cues: signed centerline curvature (right > 0) and distance to the next braking zone.
+    const kap = new Float64Array(n);
+    const cl = centerline;
+    for (let i = 0; i < n; i++) {
+      this.sampleAt(this.cum[i] - 10, i, cl);
+      const ax = this.px, az = this.pz;
+      const b = cl[i];
+      this.sampleAt(this.cum[i] + 10, i, cl);
+      const cx = this.px, cz = this.pz;
+      const ab = Math.hypot(b[0] - ax, b[1] - az);
+      const bc = Math.hypot(cx - b[0], cz - b[1]);
+      const ca = Math.hypot(ax - cx, az - cz);
+      kap[i] = (2 * ((b[0] - ax) * (cz - az) - (b[1] - az) * (cx - ax))) / Math.max(ab * bc * ca, 1e-6);
+    }
+    this.corner = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let best = 0;
+      for (let k = 0; k < n; k++) {
+        const j = (i + k) % n, d = this.cum[i + k >= n ? j : i + k] + (i + k >= n ? this.L : 0) - this.cum[i];
+        if (d > CORNER_AHEAD) break;
+        if (Math.abs(kap[j]) > Math.abs(best)) best = kap[j];
+      }
+      this.corner[i] = best;
+    }
+    this.brakeD = new Float64Array(n).fill(BRAKE_AHEAD);
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = n - 1; i >= 0; i--) {
+        const j = (i + 1) % n;
+        const ds = this.cum[i + 1] - this.cum[i];
+        this.brakeD[i] = this.vProf[j] < this.vProf[i] - BRAKE_DV ? 0 : Math.min(BRAKE_AHEAD, this.brakeD[j] + ds);
+      }
+    }
   }
 
   /** Centerline speed-profile value at a centerline index (brake cue / overspeed penalty). */
@@ -162,6 +199,39 @@ export class NeuralFeatures {
     out[o + 1] = (s.tempRearC - s.optTempC) / s.tempWindowC;
     out[o + 2] = s.wearMean;
     out[o + 3] = s.offWheels / 4;
+    this.combat(out, s, fx, fz, vf, N_IN_V1, i);
+  }
+
+  // v2 combat inputs (N_COMBAT, all in about [-1, 1]).
+  private combat(out: Float64Array, s: NeuralCarState, fx: number, fz: number, vf: number, o: number, i: number): void {
+    const cr = Math.max(-1, Math.min(1, this.corner[i] * 50)); // radius 20 m = 1; right > 0
+    const sg = Math.abs(cr) > 0.02 ? (cr > 0 ? 1 : -1) : 0;
+    const px = s.position.x, pz = s.position.z;
+    let ovL = 0, ovR = 0, bGap = 1e9, bLat = 0, bVf = 0, aGap = 1e9, aLat = 0;
+    for (let j = 0; j < s.others.length; j++) {
+      const op = s.others[j].position;
+      const dx = op.x - px, dz = op.z - pz;
+      const d = dx * fx + dz * fz, lat = dx * -fz + dz * fx, ad = Math.abs(d), al = Math.abs(lat);
+      if (al > 8 || ad > 30) continue;
+      if (ad < 6) {
+        const ov = 1 - ad / 6;
+        if (lat < 0) { if (ov > ovL) ovL = ov; } else if (ov > ovR) ovR = ov;
+      }
+      if (d < -2.5 && -d < bGap) {
+        bGap = -d; bLat = lat;
+        const lv = s.others[j].linvel;
+        bVf = lv.x * fx + lv.z * fz;
+      } else if (d > 2.5 && d < 25 && d < aGap) { aGap = d; aLat = lat; }
+    }
+    const behind = bGap <= 30;
+    out[o] = ovL;
+    out[o + 1] = ovR;
+    out[o + 2] = behind ? 1 - bGap / 30 : 0;
+    out[o + 3] = behind ? Math.max(-1, Math.min(1, (bVf - vf) / 20)) : 0; // > 0: it is closing in
+    out[o + 4] = cr;
+    out[o + 5] = this.brakeD[i] / BRAKE_AHEAD;
+    out[o + 6] = bGap <= 15 ? Math.max(-1, Math.min(1, (bLat / 4) * sg)) : 0; // > 0: attacker on the inside line
+    out[o + 7] = aGap <= 25 ? Math.max(-1, Math.min(1, (-aLat / 4) * sg)) : 0; // > 0: I am on the inside of the car ahead
   }
 
   // Nearest N_NEAR cars within 60 m → forward gap/50, lateral gap/10, closing speed/20 (zeros if none).

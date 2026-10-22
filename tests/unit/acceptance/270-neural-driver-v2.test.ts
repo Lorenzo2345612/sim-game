@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { KERB_WIDTH } from '../../../src/core/constants';
 import type { TrackDataV2 } from '../../../src/core/types';
-import { N_IN, N_W, forward, padGenome, parseNeuralModel, neuralCarSpec } from '../../../src/ai/neuralPolicy';
+import { N_IN, N_W, forward, padGenome, parseNeuralModel, neuralCarSpec, N_IN_V1, N_W_V1 } from '../../../src/ai/neuralPolicy';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState } from '../../../src/ai/neuralFeatures';
 import { RaceGame } from '../../../src/game/raceGame';
 import { parseCarSpec, type CarSpec } from '../../../src/physics/carSpec';
@@ -56,8 +56,8 @@ describe('270 neural driver v2 acceptance', () => {
   });
 
   it('AT2: features 35..38 encode front/rear tyre temperature, wear and off-track wheels', () => {
-    expect(N_IN).toBe(39);
-    expect(N_W).toBe(674);
+    expect(N_IN_V1).toBe(39); // v1 layout; combat inputs follow
+    expect(N_W_V1).toBe(674);
     const spec = loadSpec();
     const c = spec.tyres.compounds.medium;
     const centerline: [number, number][] = [];
@@ -91,7 +91,7 @@ describe('270 neural driver v2 acceptance', () => {
     const old = new Array<number>(610);
     for (let i = 0; i < 610; i++) old[i] = ((i * 13) % 7 - 3) / 20;
     const padded = parseNeuralModel({ weights: old });
-    expect(padded.length).toBe(674);
+    expect(padded.length).toBe(N_W);
     const x35 = new Float64Array(N_IN);
     for (let i = 0; i < 35; i++) x35[i] = ((i * 5) % 11) / 10 - 0.5;
     const a = new Float64Array(2);
@@ -102,10 +102,11 @@ describe('270 neural driver v2 acceptance', () => {
     forward(ref!, x35, b);
     for (let k = 0; k < 2; k++) expect(Math.abs(a[k] - b[k])).toBeLessThanOrEqual(1e-12);
     for (let h = 0; h < 16; h++) {
-      for (let i = 0; i < 35; i++) expect(padded[h * 39 + i]).toBe(old[h * 35 + i]);
-      for (let i = 35; i < 39; i++) expect(padded[h * 39 + i]).toBe(0);
+      for (let i = 0; i < 35; i++) expect(padded[h * N_IN + i]).toBe(old[h * 35 + i]);
+      for (let i = 35; i < N_IN; i++) expect(padded[h * N_IN + i]).toBe(0);
     }
-    expect(parseNeuralModel({ weights: new Array<number>(674).fill(0.1) }).length).toBe(674);
+    expect(parseNeuralModel({ weights: new Array<number>(674).fill(0.1) }).length).toBe(N_W);
+    expect(parseNeuralModel({ weights: new Array<number>(N_W).fill(0.1) }).length).toBe(N_W);
     expect(() => parseNeuralModel({ weights: new Array<number>(675).fill(0) })).toThrow(
       /Invalid neural model/,
     );
