@@ -4357,7 +4357,7 @@
     {
       "num": "325",
       "title": "Season creation, AI pace, event seed",
-      "status": "pending",
+      "status": "waiting decision",
       "deps": [
         "324"
       ],
@@ -4396,7 +4396,7 @@
     {
       "num": "328",
       "title": "RaceConfig per-AI pace",
-      "status": "pending",
+      "status": "in progress",
       "deps": [
         "262"
       ],
@@ -4441,7 +4441,7 @@
     {
       "num": "331",
       "title": "Bathurst, Jeddah and Miami in game",
-      "status": "pending",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
@@ -4452,7 +4452,7 @@
     {
       "num": "332",
       "title": "Escape road height follows the track on steep slopes",
-      "status": "pending",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "bugfix",
@@ -4502,7 +4502,7 @@
     {
       "num": "336",
       "title": "Long Beach in game",
-      "status": "pending",
+      "status": "done",
       "deps": [
         "331"
       ],
