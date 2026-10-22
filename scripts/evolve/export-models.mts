@@ -60,6 +60,7 @@ for (const [key, list] of groups) {
     const padded = padGenome(genome.weights);
     if (!padded) throw new Error(`Invalid genome length ${genome.weights.length} in ${dir}/${file}`);
     const out = {
+      net: 2,
       nIn: genome.nIn,
       line,
       avgLap: genome.avgLap,

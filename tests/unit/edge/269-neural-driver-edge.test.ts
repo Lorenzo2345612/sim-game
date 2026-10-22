@@ -7,6 +7,8 @@ import type { DriverInput, TrackDataV2 } from '../../../src/core/types';
 import {
   N_HID,
   N_IN,
+  N_IN_V1,
+  N_HID_V1,
   N_OUT,
   N_W,
   parseNeuralModel,
@@ -52,19 +54,23 @@ function stubFeatures(f: (out: Float64Array, s: NeuralCarState) => void): Neural
 describe('269 neural driver edge cases', () => {
   it('EDGE1: parseNeuralModel pads a paddable shorter genome (nIn 34) and throws on shorter non-paddable lengths', () => {
     const nInOld = 34;
-    const lenOld = nInOld * N_HID + N_HID + N_HID * N_OUT + N_OUT;
+    const lenOld = nInOld * N_HID_V1 + N_HID_V1 + N_HID_V1 * N_OUT + N_OUT;
     expect(lenOld).toBe(594);
     const old = new Float64Array(lenOld);
     for (let i = 0; i < lenOld; i++) old[i] = ((i * 11) % 13 - 6) / 30;
     const padded = parseNeuralModel({ weights: Array.from(old) });
     expect(padded.length).toBe(N_W);
-    for (let h = 0; h < N_HID; h++) {
+    for (let h = 0; h < N_HID_V1; h++) {
       for (let i = 0; i < nInOld; i++) expect(padded[h * N_IN + i]).toBe(old[h * nInOld + i]);
       expect(padded[h * N_IN + nInOld]).toBe(0);
     }
-    const tailOld = nInOld * N_HID;
+    const tailOld = nInOld * N_HID_V1;
     const tail = N_IN * N_HID;
-    for (let i = 0; i < N_HID + N_HID * N_OUT + N_OUT; i++) expect(padded[tail + i]).toBe(old[tailOld + i]);
+    for (let h = 0; h < N_HID_V1; h++) expect(padded[tail + h]).toBe(old[tailOld + h]);
+    for (let k = 0; k < 2; k++) {
+      for (let h = 0; h < N_HID_V1; h++) expect(padded[tail + N_HID + k * N_HID + h]).toBe(old[tailOld + N_HID_V1 + k * N_HID_V1 + h]);
+      expect(padded[tail + N_HID + 2 * N_HID + k]).toBe(old[tailOld + N_HID_V1 + 32 + k]);
+    }
 
     for (const bad of [600, 609]) {
       expect(() => parseNeuralModel({ weights: new Array<number>(bad).fill(0) }), `len ${bad}`).toThrow(
@@ -182,10 +188,10 @@ describe('269 neural driver edge cases', () => {
     expect(out[23]).toBeCloseTo(1.2, 12); // exactly 60 m ahead: 60 / 50
     expect(out[24]).toBeCloseTo(0, 12);
     expect(out[25]).toBeCloseTo(0, 12);
-    for (let i = 26; i < N_IN; i++) expect(out[i], `slot ${i}`).toBeCloseTo(0, 12);
+    for (let i = 26; i < N_IN_V1; i++) expect(out[i], `slot ${i}`).toBeCloseTo(0, 12);
 
     feats.fill(out, makeState({ others: [other(0, -60.0001)] }));
-    for (let i = 23; i < N_IN; i++) expect(out[i], `beyond 60 m slot ${i}`).toBeCloseTo(0, 12);
+    for (let i = 23; i < N_IN_V1; i++) expect(out[i], `beyond 60 m slot ${i}`).toBeCloseTo(0, 12);
 
     feats.fill(
       out,
