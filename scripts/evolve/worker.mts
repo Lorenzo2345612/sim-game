@@ -28,7 +28,7 @@ import { computeRacingLine } from '../../src/ai/racingLine';
 import { speedProfile, carLimitsFromSpec } from '../../src/ai/speedProfile';
 import { NEURAL_GRIP_MARGIN } from '../../src/game/raceGame';
 
-const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {}, oppFront = 0, lineW = 0 } = workerData as { lineW?: number; oppFront?: number; rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
+const { root, trackId, carId, slots, line = 'center', racecraft = false, residual = false, res = { offset: 3.5, up: 0.06, down: 0.06 }, rcw = {}, oppFront = 0, lineW = 0, faultSplit = false, seeded = false } = workerData as { faultSplit?: boolean; seeded?: boolean; lineW?: number; oppFront?: number; rcw?: Partial<typeof RC_W>; root: string; trackId: string; carId: string; slots: number; line?: string; racecraft?: boolean; residual?: boolean; res?: { offset: number; up: number; down: number } };
 const track: any = parseTrackData(JSON.parse(readFileSync(join(root, `public/tracks/${trackId}.json`), 'utf8')));
 const parsed: any = parseCarSpec(JSON.parse(readFileSync(join(root, `public/cars/${carId}.json`), 'utf8')));
 const spec = parsed.spec ?? parsed;
@@ -147,7 +147,7 @@ function startPoses(start: number, nT: number, m: number): any[] {
 // Racecraft: preallocated per-step race state and contact probe.
 const raceCars: RaceCar[] = Array.from({ length: slots }, () => ({ dist: 0, speed: 0, running: false }));
 let nShow = slots; // cars posted to the viewer (trainees only)
-const cinfo = { fwdGap: 0, latGap: 0, closing: 0 };
+const cinfo: { fwdGap: number; latGap: number; closing: number; latToward?: number; otherLatToward?: number } = { fwdGap: 0, latGap: 0, closing: 0 };
 let touching = false;
 const onManifold = (mf: any) => { for (let i = 0, c = mf.numContacts(); i < c; i++) if (mf.contactDist(i) < 0.01) { touching = true; return; } };
 function relInfo(k: number, j: number, vk: any, vj: any): void { // j relative to k in k's frame (forward = local -Z)
@@ -157,6 +157,10 @@ function relInfo(k: number, j: number, vk: any, vj: any): void { // j relative t
   const dx = pj.x - pk.x, dz = pj.z - pk.z;
   cinfo.fwdGap = dx * fx + dz * fz; cinfo.latGap = dx * rx + dz * rz;
   cinfo.closing = (vk.x - vj.x) * fx + (vk.z - vj.z) * fz;
+  if (faultSplit) { // lateral speed of each car towards the other, along k's right axis
+    const sg = cinfo.latGap >= 0 ? 1 : -1;
+    cinfo.latToward = (vk.x * rx + vk.z * rz) * sg; cinfo.otherLatToward = -(vj.x * rx + vj.z * rz) * sg;
+  }
 }
 
 // Reused per-decision state: the others list holds the nearest alive cars, self excluded.
@@ -223,7 +227,7 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
       anyAlive = true;
       if (step % 4 === 0) {
         const st = state[k];
-        const p = progress[k].update(st.position.x, st.position.z);
+        const p = progress[k].current; // same pose as the last post-step update (setup or previous step)
         const body: any = v.body;
         const lv = body.linvel(), av = body.angvel();
         carState.position = st.position;
@@ -358,8 +362,17 @@ function episode(genomes: Float64Array[], extras: Float64Array[], setups: any[],
   return { best, lapT, over, laps, lapBonus, finishT, invalidLaps, finishPos, lineShort };
 }
 
+// --seed: Math.random (fuel, compound, start order) is reseeded from the batch content, so a batch gives the same result on any worker.
+function seedFrom(genomes: number[][], compound?: string): void {
+  let h = 2166136261 >>> 0;
+  for (const g of genomes) for (let i = 0; i < g.length; i += 7) h = Math.imul(h ^ Math.round(g[i] * 1e6), 16777619) >>> 0;
+  for (const ch of compound ?? '') h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  h = (h ^ genomes.length) >>> 0;
+  Math.random = () => { h = (h + 0x6d2b79f5) >>> 0; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
 parentPort!.on('message', (msg: any) => {
   if (msg.type !== 'eval') return;
+  if (seeded) seedFrom(msg.genomes, msg.compound);
   const split = msg.genomes.map((g: number[]) => splitGenome(g, spec));
   const nT = split.length; // trainees first, then frozen opponents (racecraft)
   nShow = nT;
@@ -374,11 +387,11 @@ parentPort!.on('message', (msg: any) => {
   let lapT: number[] = [], laps: number[] = [], finishT: number[] = [];
   const race = msg.race as { laps: number; speedW: number; overW: number; lapW: number };
   msg.episodes.forEach((ep: { start: number; secs: number }, e: number) => {
-    const rc = racecraft ? new RacecraftTracker(genomes.length, L) : null;
+    const rc = racecraft ? new RacecraftTracker(genomes.length, L, faultSplit) : null;
     const r = episode(genomes, extras, setups, ep.start, ep.secs, e, e === 0 ? race.laps : 0, race.lapW, rc, nT);
     for (let k = 0; k < nT; k++) {
       const base = r.best[k] - race.overW * r.over[k] - lineW * r.lineShort[k] + r.lapBonus[k] + (r.finishT[k] > 0 ? (ep.secs - r.finishT[k]) * race.speedW : 0);
-      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faults[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k], rc.incidents[k]) : base;
+      fitness[k] += rc ? racecraftFitness(base, r.finishPos[k], genomes.length, rc.passes[k], rc.lost[k], rc.faultCost[k], rc.crashFaults[k], rc.defends[k], rc.yellowFaults[k], rc.incidentCost[k]) : base;
       if (rc) { rcStats.passes[k] += rc.passes[k]; rcStats.lost[k] += rc.lost[k]; rcStats.faults[k] += rc.faults[k]; rcStats.crashFaults[k] += rc.crashFaults[k]; rcStats.defends[k] += rc.defends[k]; rcStats.yellowFaults[k] += rc.yellowFaults[k]; rcStats.incidents[k] += rc.incidents[k]; rcStats.spins[k] += rc.spins[k]; }
       rcStats.lineShort[k] += r.lineShort[k];
       if (e === 0) dist[k] = r.best[k];

@@ -10,7 +10,15 @@ const ATTACK_GAP = 12, ATTACK_HOLD = 2.0, ATTACK_RELEASE = 30; // m behind / s h
 const PASS_GAP = 20, PASS_MIN_V = 2, PASS_HOLD = 1.0, PASS_REL_V = 0.8, PASS_CLEAN_S = 3.0; // no credit for passing a slow, crashed or just-hit car
 const FAULT_CLOSING = 3.0, EPISODE_GAP = 0.5, CRASH_WINDOW = 3.0;
 
-export interface ContactInfo { fwdGap: number; latGap: number; closing: number }
+// latToward / otherLatToward (optional, --fault-split): own / other car's lateral speed (m/s) towards the other / own car.
+export interface ContactInfo { fwdGap: number; latGap: number; closing: number; latToward?: number; otherLatToward?: number }
+// --fault-split: the at-fault car carries the full penalty, the victim at most VICTIM_SHARE of it.
+// Fault rule: (1) rear hit: k is >1 m behind j, within 1.2 m laterally, closing > FAULT_CLOSING -> k at fault (as without the flag);
+// (2) alongside (|fwdGap| <= 1 m): the car whose own lateral speed towards the other is > LAT_FAULT_V and larger than the other's
+// moved into it -> at fault. A spin or elimination of the victim within CRASH_WINDOW of the fault is charged in full to the
+// at-fault car (extra incident) and only VICTIM_SHARE to the victim.
+export const VICTIM_SHARE = 0.2;
+const LAT_FAULT_V = 0.5;
 export interface RaceCar { dist: number; speed: number; running: boolean; slip?: number }
 const SPIN_SLIP = 0.5, SPIN_DEBOUNCE = 2.0;
 
@@ -22,6 +30,9 @@ export class RacecraftTracker {
   readonly defends: Int32Array;
   readonly yellowFaults: Int32Array;
   readonly incidents: Int32Array;
+  readonly faultCost: Float64Array; // weighted fault count used by the fitness (== faults without --fault-split)
+  readonly incidentCost: Float64Array; // weighted incident count used by the fitness (== incidents without --fault-split)
+  private readonly split: boolean;
   readonly spins: Int32Array;
   private readonly spinUntil: Float64Array;
   private readonly yelUntil: Float64Array; // per car: yellow it causes is active until this time
@@ -44,8 +55,9 @@ export class RacecraftTracker {
   // Optional order-change log (bench --log): counted passes and close silent re-orders with their cause.
   events: { t: number; winner: number; loser: number; kind: string; vw: number; vl: number }[] | null = null;
 
-  constructor(n: number, lapLen = 0) {
-    this.n = n; this.lapLen = lapLen;
+  constructor(n: number, lapLen = 0, split = false) {
+    this.n = n; this.lapLen = lapLen; this.split = split;
+    this.faultCost = new Float64Array(n); this.incidentCost = new Float64Array(n);
     this.yellowFaults = new Int32Array(n); this.yelUntil = new Float64Array(n).fill(-1); this.yelPos = new Float64Array(n);
     this.incidents = new Int32Array(n); this.spins = new Int32Array(n); this.spinUntil = new Float64Array(n).fill(-1);
     this.moved = new Uint8Array(n); this.elimT = new Float64Array(n).fill(-1e9);
@@ -98,9 +110,12 @@ export class RacecraftTracker {
     this.lastHit[k] = this.t; this.lastHit[j] = this.t;
     const kj = k * this.n + j;
     if (this.faultedEp[kj]) return;
-    if (info.fwdGap > 1.0 && Math.abs(info.latGap) < 1.2 && info.closing > FAULT_CLOSING) {
+    const rear = info.fwdGap > 1.0 && Math.abs(info.latGap) < 1.2 && info.closing > FAULT_CLOSING;
+    const lat = this.split && !rear && Math.abs(info.fwdGap) <= 1.0 && (info.latToward ?? 0) > LAT_FAULT_V && (info.latToward ?? 0) > (info.otherLatToward ?? 0);
+    if (rear || lat) {
       this.faultedEp[kj] = 1;
-      this.faults[k]++;
+      this.faults[k]++; this.faultCost[k]++;
+      if (this.split) { this.faultedEp[j * this.n + k] = 1; this.faultCost[j] += VICTIM_SHARE; }
       this.lastFaultBy[j] = k; this.lastFaultT[j] = this.t;
     }
   }
@@ -128,7 +143,11 @@ export class RacecraftTracker {
       if (car.speed > YEL_MOVED_V) this.moved[c] = 1;
       const cause = (car.running && this.moved[c] === 1 && car.speed < YEL_V) || this.t - this.elimT[c] <= YEL_ELIM_S;
       if (car.running && this.moved[c] === 1 && (car.slip ?? 0) > SPIN_SLIP) {
-        if (this.spinUntil[c] < this.t) { this.incidents[c]++; this.spins[c]++; }
+        if (this.spinUntil[c] < this.t) {
+          this.incidents[c]++; this.spins[c]++;
+          const f = this.split ? this.lastFaultBy[c] : -1;
+          if (f >= 0 && this.t - this.lastFaultT[c] <= CRASH_WINDOW) { this.incidentCost[c] += VICTIM_SHARE; this.incidents[f]++; this.incidentCost[f]++; } else this.incidentCost[c]++;
+        }
         this.spinUntil[c] = this.t + SPIN_DEBOUNCE;
       }
       if (cause) { this.yelUntil[c] = this.t + YEL_LINGER; this.yelPos[c] = this.lapPos(car.dist); }
@@ -163,6 +182,7 @@ export class RacecraftTracker {
   tick(dt: number): void { this.t += dt; }
 }
 
+// faults / incidents: pass tracker.faultCost / incidentCost (equal to the raw counts without --fault-split).
 export function racecraftFitness(base: number, finishPos: number, n: number, passes: number, lost: number, faults: number, crashFaults: number, defends = 0, yellowFaults = 0, incidents = 0): number {
   return base + RC_W.pos * (n - 1 - finishPos) + RC_W.pass * (passes - lost) - RC_W.contact * faults - RC_W.crash * crashFaults + RC_W.def * defends - RC_W.yellow * yellowFaults - RC_W.incident * incidents;
 }

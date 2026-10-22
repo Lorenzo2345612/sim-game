@@ -1,5 +1,5 @@
 // Neuroevolution trainer with a live viewer at http://127.0.0.1:8770
-// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing|mintime] [--resume path] [--racecraft [--opponents 6]]
+// npx tsx scripts/evolve/evolve.mts [--track monza] [--car f4] [--pop 100] [--workers 10] [--secs 60] [--laps 10] [--gens 1000] [--line center|racing|mintime] [--resume path] [--racecraft [--opponents 6]] [--seed N] [--chunk N] [--fault-split] [--league K]
 // Grid episode grows with progress up to --laps laps; random-start episodes last --secs.
 import { Worker } from 'node:worker_threads';
 import { createServer, type ServerResponse } from 'node:http';
@@ -35,7 +35,10 @@ const RES = { offset: Number(arg('res-offset', '3.5')), up: Number(arg('res-up',
 const RCW = { pos: Number(arg('pos-w', '60')), pass: Number(arg('pass-w', '40')), def: Number(arg('def-w', '0')), yellow: Number(arg('yellow-w', '0')), incident: Number(arg('incident-w', '0')) }; // racecraft weights: net passes, defended attacks, passes under yellow
 const RACECRAFT = process.argv.includes('--racecraft'), OPP = RACECRAFT ? Number(arg('opponents', '6')) : 0; // pack starts, frozen hall-of-fame opponents, racecraft fitness
 const ELITE = Math.max(2, Math.round(POP * 0.05)), PARENTS = Math.max(4, Math.round(POP * 0.2));
-const rand = mulberry32(Date.now() & 0xffffffff);
+const SEED = arg('seed', ''); // --seed N: deterministic run (trainer rng + per-batch worker rng); default time-seeded
+const rand = mulberry32(SEED ? Number(SEED) >>> 0 : Date.now() & 0xffffffff);
+const FAULT_SPLIT = process.argv.includes('--fault-split'); // racecraft: at-fault car takes the full contact/incident penalty, the victim <= 20 %
+const LEAGUE = Number(arg('league', '0')), LEAGUE_EVERY = 25; // --league K: opponents also drawn from the current elite and the last K best-genome snapshots (one per 25 gens)
 const runDir = join(here, 'runs', `${tag}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 mkdirSync(runDir, { recursive: true });
 
@@ -99,6 +102,8 @@ let sigma = Number(arg('sigma', '0.25')), lapLength = 0, allTimeBest = 0, simT =
 const KICK_AFTER = Number(arg('kick-after', '0')), KICK_SIGMA = Number(arg('kick-sigma', '0.2'));
 let bestAvg = Infinity, lastImprove = -1;
 const per = Math.ceil(POP / W);
+const CHUNK = Math.max(1, Math.min(POP, Number(arg('chunk', String(per))))); // genomes per world; --chunk < pop/workers gives more tasks than workers (dynamic queue)
+const NCH = Math.ceil(POP / CHUNK);
 const positions = new Float32Array(POP * 4);
 const send = (ev: string, data: unknown) => { const s = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const c of clients) c.write(s); };
 createServer((req, res) => {
@@ -116,11 +121,12 @@ setInterval(() => send('pos', { gen, t: simT, e: eliteSlots, p: Array.from(posit
 
 // Workers
 const workers: Worker[] = [];
+const curChunk: number[] = new Array(W).fill(0); // chunk each worker is evaluating (viewer slot offset)
 await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => {
-  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: per + OPP, line: LINE, racecraft: RACECRAFT, residual: RESIDUAL, res: RES, rcw: RCW, oppFront: Number(arg('opp-front', '0')), lineW: Number(arg('line-w', '0')) } });
+  const wk = new Worker(join(here, 'worker.mts'), { execArgv: ['--import', 'tsx'], workerData: { root, trackId, carId, slots: CHUNK + OPP, faultSplit: FAULT_SPLIT, seeded: !!SEED, line: LINE, racecraft: RACECRAFT, residual: RESIDUAL, res: RES, rcw: RCW, oppFront: Number(arg('opp-front', '0')), lineW: Number(arg('line-w', '0')) } });
   wk.on('message', (m: any) => {
     if (m.type === 'ready') { lapLength = m.lapLength; ok(); }
-    if (m.type === 'pos') { positions.set(m.pos, w * per * 4); if (w === 0) simT = m.t; }
+    if (m.type === 'pos') { const o = (curChunk[w] * CHUNK) * 4; if (o + m.pos.length <= positions.length) positions.set(m.pos, o); if (w === 0) simT = m.t; }
   });
   wk.on('error', (e) => { console.error('worker', w, e); process.exit(1); });
   workers.push(wk);
@@ -128,7 +134,21 @@ await Promise.all(Array.from({ length: W }, (_, w) => new Promise<void>((ok) => 
 console.log(`${W} workers ready, pop ${POP}, ${N_W} weights + ${N_SET} setup genes, lap ${lapLength.toFixed(0)} m, line ${LINE}${RACECRAFT ? `, racecraft (${OPP} opponents per world)` : ''}`);
 
 const oppCache = new Map<string, { weights: number[]; setup?: unknown; extra?: number[] }>();
-function opponents(): { weights: number[]; setup?: unknown; extra?: number[] }[] { // frozen hall-of-fame models within 3 s of the fastest
+type Opp = { weights: number[]; setup?: unknown; extra?: number[] };
+const league: Opp[] = []; // last LEAGUE best-genome snapshots
+const asOpp = (g: Float64Array): Opp => { const sp = splitGenome(g, carSpec); return { weights: Array.from(sp.weights), setup: sp.setup, extra: Array.from(sp.extra) }; };
+function opponents(): Opp[] {
+  const base = hofOpponents();
+  if (!OPP || !LEAGUE) return base;
+  // --league: each slot comes from the hall of fame / classic list, the current elite (pop[0..ELITE-1] are last gen's elites) or a snapshot, equally likely among non-empty groups.
+  const elite = pop.slice(0, ELITE);
+  return base.map((b) => {
+    const groups = [0, 1, ...(league.length ? [2] : [])];
+    const g = groups[Math.floor(rand() * groups.length)];
+    return g === 0 ? b : g === 1 ? asOpp(elite[Math.floor(rand() * elite.length)]) : league[Math.floor(rand() * league.length)];
+  });
+}
+function hofOpponents(): Opp[] { // frozen hall-of-fame models within 3 s of the fastest
   if (!OPP) return [];
   const all = Object.values(hof) as any[];
   if (!all.length) return RESIDUAL ? Array.from({ length: OPP }, () => ({ weights: new Array(N_W).fill(0) })) : []; // plain classic drivers
@@ -147,13 +167,25 @@ function evalAll(compound?: string): Promise<EvalR> {
   for (let i = perm.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
   eliteSlots = perm.map((p, slot) => (p < ELITE ? slot : -1)).filter((x) => x >= 0);
   const shuffled = perm.map((i) => pop[i]);
-  return Promise.all(workers.map((wk, w) => new Promise<any>((ok) => {
-    const batch = shuffled.slice(w * per, (w + 1) * per);
-    const h = (m: any) => { if (m.type === 'done') { wk.off('message', h); ok(m); } };
-    wk.on('message', h);
-    wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: batch.map((g) => Array.from(g)), opponents: opponents(), compound });
-  }))).then((rs) => {
+  // Dynamic queue: each worker pulls the next chunk when it finishes one. Chunk contents and opponents are fixed up front
+  // (in chunk order), so results do not depend on which worker runs what.
+  const chunks = Array.from({ length: NCH }, (_, c) => ({ batch: shuffled.slice(c * CHUNK, (c + 1) * CHUNK), opp: opponents() }));
+  const results: any[] = new Array(NCH);
+  let next = 0;
+  const run = (wk: Worker, w: number) => new Promise<void>((ok) => {
+    const pull = () => {
+      if (next >= NCH) { ok(); return; }
+      const c = next++, ch = chunks[c];
+      curChunk[w] = c;
+      const h = (m: any) => { if (m.type === 'done') { wk.off('message', h); results[c] = m; pull(); } };
+      wk.on('message', h);
+      wk.postMessage({ type: 'eval', episodes, race: speedPhase ? RACE.speed : RACE.growth, genomes: ch.batch.map((g) => Array.from(g)), opponents: ch.opp, compound });
+    };
+    pull();
+  });
+  return Promise.all(workers.map(run)).then(() => {
     const un = (a: number[]) => { const o = new Array(POP).fill(0); perm.forEach((p, slot) => { o[p] = a[slot] ?? 0; }); return o; };
+    const rs = results;
     return Object.fromEntries(KEYS.map((k) => [k, un(rs.flatMap((r) => r[k] ?? []))])) as EvalR;
   });
 }
@@ -234,6 +266,7 @@ for (; gen < GENS; ) {
     sigma, secs: (Date.now() - t0) / 1000, speed: speedPhase, bestGen,
   });
   console.log(`gen ${gen} best ${r.best[bestI].toFixed(0)} m mean ${mean.toFixed(0)} m laps ${laps.length} topLaps ${topLaps}${bestLap ? ` bestLap ${bestLap.toFixed(2)} s` : ''} finished ${finishers.length}${finishers.length ? ` raceT ${finishers[0][0].toFixed(0)} s` : ''}${speedPhase ? ' SPEED' : ''} grid ${gridSecs.toFixed(0)} s${rcLine} sigma ${sigma.toFixed(3)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+  if (process.env.EVO_FITNESS_LOG) writeFileSync(process.env.EVO_FITNESS_LOG, JSON.stringify(r.fitness) + '\n', { flag: 'a' });
   const champ = { gen, phase: speedPhase ? 'speed' : 'growth', nIn: N_IN, line: LINE, track: trackId, car: carId, distance: r.best[bestI], lapTime: r.lapT[bestI], laps: r.laps[bestI], fitness: r.fitness[bestI], weights: Array.from(pop[bestI]) };
   writeFileSync(join(runDir, `gen-${String(gen).padStart(4, '0')}.json`), JSON.stringify(champ));
   if (r.fitness[bestI] >= allTimeBest) { allTimeBest = r.fitness[bestI]; writeFileSync(join(runDir, 'best.json'), JSON.stringify(champ)); }
@@ -244,6 +277,11 @@ for (; gen < GENS; ) {
   while (next.length < POP) {
     const a = pop[order[Math.floor(rand() * PARENTS)]], b = pop[order[Math.floor(rand() * PARENTS)]];
     next.push(mutate(rand() < 0.5 ? cross(a, b) : a, sigma, speedPhase ? MUT.speed : MUT.growth));
+  }
+  if (LEAGUE && OPP && gen % LEAGUE_EVERY === 0) {
+    league.push(asOpp(pop[bestI])); if (league.length > LEAGUE) league.shift();
+    writeFileSync(join(runDir, 'league.json'), JSON.stringify({ gen, snapshots: league }));
+    console.log(`league: snapshot of gen ${gen} best (${league.length}/${LEAGUE})`);
   }
   pop = next;
   sigma = Math.max(0.06, sigma * 0.985);
