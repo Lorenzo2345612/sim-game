@@ -324,7 +324,7 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 320 | Ermita river with water (streams stay dry) | done | - |
 | 321 | Blue flags: lapped cars yield without leaving their fight; player penalty | done | 305 |
 | 323 | Master green after the car tyre colliders | done | - |
-| 324 | Series data and parser | in progress | - |
+| 324 | Series data and parser | done | - |
 | 325 | Season creation, AI pace, event seed | pending | 324 |
 | 326 | Season controller and standings | pending | 325 |
 | 327 | Season save codec and stores | pending | 325 |

@@ -4346,7 +4346,7 @@
     {
       "num": "324",
       "title": "Series data and parser",
-      "status": "in progress",
+      "status": "done",
       "deps": [],
       "complexity": "simple",
       "type": "feature",
