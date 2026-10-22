@@ -4498,6 +4498,32 @@
       "models": "standard",
       "phase": 1,
       "spec": "tasks/335-miami-style.md"
+    },
+    {
+      "num": "336",
+      "title": "Long Beach in game",
+      "status": "pending",
+      "deps": [
+        "331"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/336-longbeach-in-game.md"
+    },
+    {
+      "num": "337",
+      "title": "Long Beach style file (data only)",
+      "status": "pending",
+      "deps": [
+        "336"
+      ],
+      "complexity": "simple",
+      "type": "feature",
+      "models": "standard",
+      "phase": 1,
+      "spec": "tasks/337-longbeach-style.md"
     }
   ]
 }

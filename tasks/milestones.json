@@ -797,13 +797,15 @@
     },
     {
       "id": "M1.13",
-      "title": "Bathurst, Jeddah and Miami: in game, styles, visual QA",
+      "title": "Bathurst, Jeddah, Miami and Long Beach: in game, styles, visual QA",
       "tasks": [
         "331",
         "332",
         "333",
         "334",
-        "335"
+        "335",
+        "336",
+        "337"
       ],
       "status": "open",
       "prefetch": [

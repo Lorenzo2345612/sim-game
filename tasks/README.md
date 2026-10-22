@@ -336,3 +336,5 @@ Generated from `tasks/tasks.json` by `orchestrator.py readme`; do not edit by ha
 | 333 | Bathurst style file (data only) | pending | 331 |
 | 334 | Jeddah style file (data only) | pending | 331 |
 | 335 | Miami style file (data only) | pending | 331 |
+| 336 | Long Beach in game | pending | 331 |
+| 337 | Long Beach style file (data only) | pending | 336 |
