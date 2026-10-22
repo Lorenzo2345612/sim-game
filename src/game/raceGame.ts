@@ -14,6 +14,20 @@ import {
 } from '../ai/traffic';
 import { NeuralFeatures, racingTargetPoints, type NeuralCarState, type NeuralLine } from '../ai/neuralFeatures';
 import { NeuralDriver } from '../ai/neuralDriver';
+import {
+  buildCorridor,
+  collectNeighbours,
+  corridorAt,
+  isOffTrack,
+  StopTracker,
+  type CarView,
+  type CorridorSample,
+  type Neighbour,
+  type PlanBias,
+  type TrackCorridor,
+} from '../ai/raceView';
+import { LanePlanner, type PlanOutput } from '../ai/lanePlanner';
+import { Racecraft } from '../ai/racecraft';
 import { halfWidthAt, hasKerb } from '../track/surfaces';
 import { neuralCarSpec } from '../ai/neuralPolicy';
 import { ResidualNet, type ResidualModel } from '../ai/residualPolicy';
@@ -77,6 +91,8 @@ export interface RaceConfig {
   timeOfDay?: TimeOfDay;
   /** Absent = a race session. Timed kinds require minutes > 0. */
   session?: RaceSessionConfig;
+  /** true = the pre-262 trafficDecision path (default: Racecraft + LanePlanner). */
+  classicTraffic?: boolean;
 }
 
 // Tune fields stay optional so the neural driver can be selected without a tune.
@@ -94,6 +110,14 @@ type World = ReturnType<typeof createPhysicsWorld>;
 
 export const AI_GRIP_MARGIN: number = 0.75;
 export const NEURAL_GRIP_MARGIN = 0.82; // residual nets were trained against this profile
+
+/** Racecraft aggression by difficulty (task 262). */
+export const RACECRAFT_AGGRESSION: Record<Difficulty, number> = {
+  easy: 0.2,
+  medium: 0.4,
+  hard: 0.7,
+  expert: 0.9,
+};
 
 const RESIDUAL_THROTTLE_KP = 0.5;
 const RESIDUAL_BRAKE_KB = 0.25;
@@ -129,6 +153,30 @@ const CONTACT_NEAR_S = 8; // m, wrapped arc-length window for the pair test
 const CONTACT_NEAR_D = 4; // m, lateral window for the pair test
 const OVERTAKE_CONTACT_M = 6; // m, Euclidean chassis proximity for the overtake contact time
 const OVERTAKE_CONTACT_GAP_M = 0.01; // m, contact distance below which a pair counts as touching
+const RACECRAFT_PLAN_TICKS = 12; // replan interval; Racecraft dt is one interval of FIXED_DT
+const RACECRAFT_PLAN_DT = 0.1;
+const RACECRAFT_SNAP_M = 0.45;
+const RACECRAFT_CREEP_BELOW_MS = 1.5; // a car this slow ahead counts as stopped
+const RACECRAFT_CREEP_STOP_M = 7; // m, bumper-to-bumper stop distance behind a stopped car
+const RACECRAFT_CREEP_MS = 2.5; // m/s, speed kept so the car can roll past
+const RACECRAFT_CREEP_DECEL = 8; // m/s^2, approach braking budget
+const RACECRAFT_PLAN_V_MIN = 10; // m/s
+// AiDriver slews its path offset at 1.5 m/s, slower than the planner's default 1.2 s lateral
+// move, so the planner is told a longer move time and a longer horizon.
+const RACECRAFT_LA_T = 0.3;
+const RACECRAFT_LA_MIN = 4;
+const RACECRAFT_LA_MAX = 15;
+const RACECRAFT_OFF_MAX = 3.5;
+const RACECRAFT_PLANNER_PARAMS = { lateralTime: 3.5, horizon: 4 };
+// One driver.update with this dt snaps its path offset to the spawn lateral: the only
+// use of dt inside AiDriver.update is the offset slew, so a big dt is a no-op elsewhere.
+const RACECRAFT_PRIME_DT = 10;
+// Side-by-side clearance (262): an applied offset must keep this lateral gap from a
+// car alongside or about to be; with no room the move is dropped (classic follow cap).
+const RACECRAFT_SIDE_GAP_M = 2.5; // car width + margin
+const RACECRAFT_SIDE_LONG_M = 2.0; // extra along-s beyond the chassis overlap
+const RACECRAFT_SIDE_LAT_T = 1.2; // lane-planner lateral move time (s)
+const RACECRAFT_SIDE_V_MIN = 10; // closing-speed floor: room to leave from a standstill
 
 // contactPair callback: a named module function keeps the tick loop allocation-free.
 // One probe fills both flags so a pair is queried once per tick.
@@ -227,11 +275,40 @@ interface AiCar {
   neural?: { driver: NeuralDriver; state: NeuralCarState; tel: Telemetry };
   /** Residual neural AI: classic driver with net lateral offset and pace (neural stays unset). */
   residual?: { net: ResidualNet; state: NeuralCarState; tel: Telemetry };
+  /** Racecraft + lane planner (task 262); absent on the classicTraffic path. */
+  craft?: AiCraft;
   progress: TrackProgress;
   steering: CarSpec['steering'];
   flipS: number;
   windowS: number;
   markDist: number;
+}
+
+/** Per-AI racecraft state, preallocated in create (no per-tick allocation). */
+interface AiCraft {
+  craft: Racecraft;
+  planner: LanePlanner;
+  neighbours: Neighbour[];
+  bias: PlanBias;
+  plan: PlanOutput;
+  targetD: number;
+  /** targetD as an offset from the racing line at replan time; held between replans so a line swing does not drag the car off its lane. */
+  targetOff: number;
+  speedCap: number | null;
+}
+
+/** Track-wide racecraft data shared by every car (task 262). */
+interface CraftTrack {
+  corridor: TrackCorridor;
+  views: CarView[];
+  viewsByCar: CarView[][];
+  stops: StopTracker[];
+  look: CorridorSample;
+  /** Absolute d each car steers toward; the gap gate reads it so two cars cannot both close on one lane. */
+  lanes: Float64Array;
+  /** Measured offset of each car from the racing line at its own s: the gate works in offset space, which a line swing does not distort. */
+  offs: Float64Array;
+  tmp: CorridorSample;
 }
 
 // One Rapier world with a car per grid slot (task 093). The player is index 0 and
@@ -339,6 +416,10 @@ export class RaceGame {
   // Traffic caution of the AI being wired this tick (task 273).
   private nearTraffic = false;
   private aheadSpeedCap: number | null = null;
+  /** Racecraft track data (task 262); null on the classicTraffic path. */
+  private craftTrack: CraftTrack | null = null;
+  /** Ticks since go; the racecraft replan schedule (task 262). */
+  private aiTick = 0;
 
   private constructor(
     track: TrackDataV2,
@@ -552,6 +633,35 @@ export class RaceGame {
       muLat: limits.muLat * AI_GRIP_MARGIN,
       muLong: limits.muLong * AI_GRIP_MARGIN,
     });
+    // Racecraft wiring (task 262): one corridor and per-car frenet views; classicTraffic keeps the old path.
+    let craftTrack: CraftTrack | null = null;
+    if (config.classicTraffic !== true) {
+      const corridor = buildCorridor(track, line, speeds);
+      const halfLen = spec.chassis.halfExtents.z;
+      const halfWid = spec.chassis.halfExtents.x;
+      const views: CarView[] = [];
+      const stops: StopTracker[] = [];
+      for (let i = 0; i < count; i++) {
+        views.push({ s: 0, d: 0, v: 0, halfLen, halfWid, stopped: false, offTrack: false });
+        stops.push(new StopTracker());
+      }
+      const viewsByCar: CarView[][] = [];
+      for (let i = 0; i < count; i++) {
+        const others: CarView[] = [];
+        for (let j = 0; j < count; j++) if (j !== i) others.push(views[j]);
+        viewsByCar.push(others);
+      }
+      craftTrack = {
+        corridor,
+        views,
+        viewsByCar,
+        stops,
+        look: { halfLeft: 0, halfRight: 0, lineD: 0, profileV: 0, curv: 0 },
+        lanes: new Float64Array(count),
+        offs: new Float64Array(count),
+        tmp: { halfLeft: 0, halfRight: 0, lineD: 0, profileV: 0, curv: 0 },
+      };
+    }
     // Neural AI (opt-in): one feature extractor per track, one driver per car; missing model falls back to classic.
     let neuralFeatures: NeuralFeatures | null = null;
     let residualNet: ((w: Float64Array, phase: number) => ResidualNet) | null = null;
@@ -617,6 +727,20 @@ export class RaceGame {
         windowS: -1,
         markDist: 0,
       };
+      if (craftTrack !== null) {
+        const neighbours: Neighbour[] = [];
+        for (let j = 0; j < count - 1; j++) neighbours.push({ car: craftTrack.views[0], gap: 0 });
+        car.craft = {
+          craft: new Racecraft(craftTrack.corridor, RACECRAFT_AGGRESSION[config.difficulty]),
+          planner: new LanePlanner(craftTrack.corridor, RACECRAFT_PLANNER_PARAMS),
+          neighbours,
+          bias: { preferD: null, preferWeight: 0, speedCap: null },
+          plan: { targetD: 0, speedCap: null, blocked: false },
+          targetD: 0,
+          targetOff: 0,
+          speedCap: null,
+        };
+      }
       if (neuralFeatures && neuralWeights) {
         const others: NeuralCarState['others'][number][] = [];
         for (let j = 0; j < count; j++) {
@@ -650,6 +774,7 @@ export class RaceGame {
           driver.setPedalGains(RESIDUAL_THROTTLE_KP, RESIDUAL_BRAKE_KB);
         }
         else car.neural = { driver: new NeuralDriver(neuralWeights, neuralFeatures, AI_DECISION_STAGGER ? k + 1 : 0), state, tel };
+        if (car.residual) car.craft = undefined; // residual nets keep the classic traffic path
       }
       ais.push(car);
       observations.push(
@@ -713,6 +838,19 @@ export class RaceGame {
     game.gridPos.set(gridPos);
     game.playerCompound = options?.compound ?? 'medium';
     game.aiCompound = tune?.compound ?? 'medium';
+    if (craftTrack !== null) {
+      game.craftTrack = craftTrack;
+      game.refreshViews(false);
+      for (let i = 0; i < game.count; i++) craftTrack.lanes[i] = craftTrack.offs[i];
+      for (let k = 0; k < aiCount; k++) {
+        const c = game.ais[k].craft;
+        if (c === undefined) continue;
+        const v = craftTrack.views[k + 1];
+        c.targetD = v.d;
+        c.targetOff = v.d - corridorAt(craftTrack.corridor, v.s, craftTrack.look).lineD;
+      }
+      game.primeScenarioOffsets();
+    }
     return game;
   }
 
@@ -796,59 +934,63 @@ export class RaceGame {
           obs.z = s.position.z;
           obs.yaw = Math.atan2(-fx, -fz);
           obs.speed = s.forwardSpeed;
-          const n = this.linePoints;
-          const ahead = (this.indices[i] + this.aheadIdx) % n;
-          const behind = (ahead + n - 1) % n;
-          const curvatureAhead = mengerCurvature(
-            pts[2 * behind], pts[2 * behind + 1],
-            pts[2 * ahead], pts[2 * ahead + 1],
-            pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
-          );
-          // The follow cap pins the AI to the leader's speed, which would hide the
-          // leader from the blocker test (closing speed); pass as if still closing.
-          this.updateTrafficCaution(i);
-          const selfState = this.followSelf;
-          selfState.distance = this.traffic[i].distance;
-          selfState.lateral = this.traffic[i].lateral;
-          selfState.speed =
-            this.aheadSpeedCap === null
-              ? this.traffic[i].speed
-              : Math.max(this.traffic[i].speed, this.aheadSpeedCap + 1);
-          const decision = trafficDecision(
-            selfState,
-            this.othersByCar[i],
-            this.lapLength,
-            this.halfWidth,
-            offsets[ahead],
-            curvatureAhead,
-            this.halfLeft[ahead],
-            this.halfRight[ahead],
-            this.decision,
-          );
-          // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
-          const dmgScale =
-            ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
-          if (ai.residual) {
-            // The net replaces the traffic offset and scales pace (no difficulty jitter, as trained).
-            if (ai.residual.net.due()) this.fillNeuralState(k, ai.residual.state, ai.residual.tel);
-            const r = ai.residual.net.decide(ai.residual.state);
-            ai.driver.setLateralOffset(r.offset);
-            ai.driver.setSpeedScale(r.scale * dmgScale);
+          if (ai.craft !== undefined) {
+            this.driveRacecraft(k, ai);
           } else {
-            ai.driver.setLateralOffset(decision.offset + this.lapperPush[i]);
-            ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
+            const n = this.linePoints;
+            const ahead = (this.indices[i] + this.aheadIdx) % n;
+            const behind = (ahead + n - 1) % n;
+            const curvatureAhead = mengerCurvature(
+              pts[2 * behind], pts[2 * behind + 1],
+              pts[2 * ahead], pts[2 * ahead + 1],
+              pts[2 * ((ahead + 1) % n)], pts[2 * ((ahead + 1) % n) + 1],
+            );
+            // The follow cap pins the AI to the leader's speed, which would hide the
+            // leader from the blocker test (closing speed); pass as if still closing.
+            this.updateTrafficCaution(i);
+            const selfState = this.followSelf;
+            selfState.distance = this.traffic[i].distance;
+            selfState.lateral = this.traffic[i].lateral;
+            selfState.speed =
+              this.aheadSpeedCap === null
+                ? this.traffic[i].speed
+                : Math.max(this.traffic[i].speed, this.aheadSpeedCap + 1);
+            const decision = trafficDecision(
+              selfState,
+              this.othersByCar[i],
+              this.lapLength,
+              this.halfWidth,
+              offsets[ahead],
+              curvatureAhead,
+              this.halfLeft[ahead],
+              this.halfRight[ahead],
+              this.decision,
+            );
+            // Damaged AI lifts off: full mode only, since visual mode has no performance effects.
+            const dmgScale =
+              ai.vehicle.damageMode === 'full' ? damageSpeedScale(ai.vehicle.damage) : 1;
+            if (ai.residual) {
+              // The net replaces the traffic offset and scales pace (no difficulty jitter, as trained).
+              if (ai.residual.net.due()) this.fillNeuralState(k, ai.residual.state, ai.residual.tel);
+              const r = ai.residual.net.decide(ai.residual.state);
+              ai.driver.setLateralOffset(r.offset);
+              ai.driver.setSpeedScale(r.scale * dmgScale);
+            } else {
+              ai.driver.setLateralOffset(decision.offset + this.lapperPush[i]);
+              ai.driver.setSpeedScale(ai.baseSpeedScale * dmgScale);
+            }
+            this.updateTrafficCaution(i);
+            ai.driver.setTrafficNear(this.nearTraffic);
+            // A car owed a position must be free to pass its debtor, so it ignores follow/traffic caps.
+            const owedPos = this.owedMask[i] === 1;
+            ai.driver.setFollowCap(owedPos ? null : this.aheadSpeedCap);
+            const st = ai.steering;
+            ai.driver.setMaxSteerAngle(
+              st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / st.fullSpeed),
+            );
+            this.applyRulesReaction(i, ai.driver, owedPos ? null : decision.speedCap);
+            ai.driver.update(obs, FIXED_DT, this.aiCmd);
           }
-          this.updateTrafficCaution(i);
-          ai.driver.setTrafficNear(this.nearTraffic);
-          // A car owed a position must be free to pass its debtor, so it ignores follow/traffic caps.
-          const owedPos = this.owedMask[i] === 1;
-          ai.driver.setFollowCap(owedPos ? null : this.aheadSpeedCap);
-          const st = ai.steering;
-          ai.driver.setMaxSteerAngle(
-            st.maxAngleLow + (st.maxAngleHigh - st.maxAngleLow) * Math.min(1, Math.abs(obs.speed) / st.fullSpeed),
-          );
-          this.applyRulesReaction(i, ai.driver, owedPos ? null : decision.speedCap);
-          ai.driver.update(obs, FIXED_DT, this.aiCmd);
         }
         if (ai.neural) {
           this.keepOnTrack(i, NEURAL_EDGE_BAND_M);
@@ -873,6 +1015,10 @@ export class RaceGame {
     this.debris.step(FIXED_DT, this.carPos);
     this.refreshProgress();
     if (!before) {
+      this.refreshViews(true);
+      // The lights-out tick itself plans nothing (scenarios have no lights).
+      if (this.scenarioMode || this.aiTick > 0) this.replanRacecraft();
+      this.aiTick++;
       this.updateContacts();
     }
     this.updateAiDynamics();
@@ -1202,6 +1348,222 @@ export class RaceGame {
       t.lateral = sample.lateral;
       t.speed = s.forwardSpeed;
     }
+  }
+
+  // A scenario start off the racing line: snap each driver's path offset to the spawn
+  // lateral (one oversized-dt update) so the car does not first steer to the line.
+  private primeScenarioOffsets(): void {
+    const ct = this.craftTrack;
+    if (ct === null || !this.scenarioMode) return;
+    for (let k = 0; k < this.ais.length; k++) {
+      const i = k + 1;
+      const ai = this.ais[k];
+      if (ai.craft === undefined || ai.neural !== undefined || ai.residual !== undefined) continue;
+      const s = this.current[i];
+      const q = s.rotation;
+      const obs = this.observations[k];
+      const fx = -2 * (q.w * q.y + q.x * q.z);
+      const fz = -1 + 2 * (q.x * q.x + q.y * q.y);
+      obs.x = s.position.x;
+      obs.z = s.position.z;
+      obs.yaw = Math.atan2(-fx, -fz);
+      obs.speed = s.forwardSpeed;
+      corridorAt(ct.corridor, ct.views[i].s, ct.look);
+      ai.driver.setLateralOffset(ct.views[i].d - ct.look.lineD);
+      ai.driver.update(obs, RACECRAFT_PRIME_DT, this.aiCmd);
+    }
+  }
+
+  // Frenet views of every car after refreshProgress (post-go only ticks the StopTracker).
+  private refreshViews(afterGo: boolean): void {
+    const ct = this.craftTrack;
+    if (ct === null) return;
+    for (let i = 0; i < this.count; i++) {
+      const t = this.traffic[i];
+      const v = ct.views[i];
+      v.s = t.distance;
+      v.d = t.lateral;
+      v.v = t.speed;
+      v.stopped = afterGo ? ct.stops[i].update(t.speed, FIXED_DT, true) : false;
+      v.offTrack = isOffTrack(ct.corridor, v.s, v.d);
+      ct.offs[i] = v.d - corridorAt(ct.corridor, v.s, ct.tmp).lineD;
+      if (!this.racecraftDrives(i)) ct.lanes[i] = ct.offs[i];
+    }
+  }
+
+  // True when racecraft sets this car's lane each tick; every other car is where it is.
+  private racecraftDrives(i: number): boolean {
+    if (i === 0 || this.craftTrack === null) return false;
+    const ai = this.ais[i - 1];
+    return (
+      ai.craft !== undefined &&
+      ai.neural === undefined &&
+      ai.residual === undefined &&
+      this.stopped[i] !== 1 &&
+      !this.frozen[i]
+    );
+  }
+
+  // Replan each driving AI on a 12-tick cadence staggered by AI index (task 262).
+  // aiTick is the 0-based tick index since go at plan time, so (tick + k) % 12 === 0.
+  private replanRacecraft(): void {
+    const ct = this.craftTrack;
+    if (ct === null) return;
+    for (let k = 0; k < this.ais.length; k++) {
+      const i = k + 1;
+      if (this.stopped[i] === 1 || this.frozen[i]) continue;
+      const ai = this.ais[k];
+      const craft = ai.craft;
+      if (craft === undefined || ai.neural !== undefined) continue;
+      if ((this.aiTick + k) % RACECRAFT_PLAN_TICKS !== 0) continue;
+      const view = ct.views[i];
+      const n = collectNeighbours(view, ct.viewsByCar[i], ct.corridor.lapLength, craft.neighbours);
+      craft.craft.update(view, craft.neighbours, RACECRAFT_PLAN_DT, craft.bias, n);
+      // A near-standstill car must still plan to dodge a car stopped ahead: plan as if rolling.
+      const vReal = view.v;
+      if (vReal < RACECRAFT_PLAN_V_MIN) view.v = RACECRAFT_PLAN_V_MIN;
+      craft.planner.plan(view, craft.neighbours, craft.bias, craft.plan, n);
+      view.v = vReal;
+      craft.targetD = craft.plan.targetD;
+      // Offset from the line at the planner's own sample point; candidate quantisation
+      // below half a step is noise: a car alone, or unbiased with a near-line plan, stays on the line.
+      const vPlan = vReal < RACECRAFT_PLAN_V_MIN ? RACECRAFT_PLAN_V_MIN : vReal;
+      const lineAt = corridorAt(ct.corridor, view.s + (vPlan * RACECRAFT_PLANNER_PARAMS.horizon) / 2, ct.look).lineD;
+      let off = craft.plan.targetD - lineAt;
+      if (n === 0 || (!craft.plan.blocked && craft.bias.preferD === null && Math.abs(off) < RACECRAFT_SNAP_M)) off = 0;
+      craft.targetOff = off;
+      craft.speedCap = craft.plan.speedCap;
+    }
+  }
+
+  // A stopped car ahead caps to its speed (0), which would freeze a car that is already
+  // laterally clear and still has to roll past: allow a distance-based creep instead.
+  private creepCap(i: number): void {
+    const self = this.traffic[i];
+    const others = this.othersByCar[i];
+    let best = Infinity;
+    for (let j = 0; j < others.length; j++) {
+      const o = others[j];
+      if (o.speed >= RACECRAFT_CREEP_BELOW_MS || Math.abs(o.lateral - self.lateral) > NEAR_LATERAL_M) continue;
+      const gap = this.wrapGap(o.distance - self.distance);
+      if (gap > 0 && gap < NEAR_AHEAD_M && gap < best) best = gap;
+    }
+    if (best === Infinity) return;
+    const room = best - RACECRAFT_CREEP_STOP_M;
+    this.aheadSpeedCap = RACECRAFT_CREEP_MS + Math.sqrt(2 * RACECRAFT_CREEP_DECEL * (room > 0 ? room : 0));
+  }
+
+  private racecraftLookahead(v: number): number {
+    return Math.min(RACECRAFT_LA_MAX, Math.max(RACECRAFT_LA_MIN, v * RACECRAFT_LA_T));
+  }
+
+  // Racecraft drive (task 262): hold the last targetD/speedCap between replans and
+  // steer as an offset from the racing-line lateral at the car's own s.
+  private driveRacecraft(k: number, car: AiCar): void {
+    const ct = this.craftTrack;
+    const craft = car.craft;
+    if (ct === null || craft === undefined) return;
+    const i = k + 1;
+    const view = ct.views[i];
+    corridorAt(ct.corridor, view.s + this.racecraftLookahead(view.v), ct.look);
+    this.updateTrafficCaution(i);
+    if (this.aheadSpeedCap !== null && this.aheadSpeedCap < RACECRAFT_CREEP_BELOW_MS) this.creepCap(i);
+    const dmgScale = car.vehicle.damageMode === 'full' ? damageSpeedScale(car.vehicle.damage) : 1;
+    // targetD is an absolute lane; the driver offsets the racing line at the car's s.
+    const raceLat = this.racecraftGapOffset(ct, i, craft.targetOff);
+    car.driver.setLateralOffset(raceLat + this.lapperPush[i]);
+    car.driver.setSpeedScale(car.baseSpeedScale * dmgScale);
+    // A car owed a position must be free to pass its debtor, so it ignores follow/traffic caps.
+    const owedPos = this.owedMask[i] === 1;
+    car.driver.setFollowCap(owedPos ? null : this.aheadSpeedCap);
+    car.driver.setTrafficNear(this.nearTraffic);
+    const st = car.steering;
+    car.driver.setMaxSteerAngle(
+      st.maxAngleLow +
+        (st.maxAngleHigh - st.maxAngleLow) *
+          Math.min(1, Math.abs(this.current[i].forwardSpeed) / st.fullSpeed),
+    );
+    this.applyRulesReaction(i, car.driver, owedPos ? null : craft.speedCap);
+    car.driver.update(this.observations[k], FIXED_DT, this.aiCmd);
+  }
+
+  // Side-by-side gap gate (task 262): the applied offset must keep
+  // RACECRAFT_SIDE_GAP_M of lateral room from any car alongside or closing on it.
+  // Keeps the plan offset when it is clear, else the current one, else the nearest
+  // clear lane; with nowhere to go the move is dropped (the follow cap holds the queue).
+  private racecraftGapOffset(ct: CraftTrack, i: number, planOff: number): number {
+    const self = ct.views[i];
+    const ld = ct.look.lineD;
+    const lo = Math.max(-RACECRAFT_OFF_MAX, -ct.look.halfLeft + self.halfWid + 0.3 - ld);
+    const hi = Math.min(RACECRAFT_OFF_MAX, ct.look.halfRight - self.halfWid - 0.3 - ld);
+    let t0 = planOff;
+    if (t0 < lo) t0 = lo;
+    else if (t0 > hi) t0 = hi;
+    if (this.racecraftGapOk(ct, i, t0)) {
+      ct.lanes[i] = t0;
+      return t0;
+    }
+    // Hold the offset already committed, not the current one: re-aiming at the
+    // measured offset every tick would ratchet the car onto whatever the line does.
+    let hold = ct.lanes[i];
+    if (hold < lo) hold = lo;
+    else if (hold > hi) hold = hi;
+    if (this.racecraftGapOk(ct, i, hold)) {
+      ct.lanes[i] = hold;
+      return hold;
+    }
+    let best = 0;
+    let bestDist = Infinity;
+    for (let j = 0; j < this.count; j++) {
+      const o = ct.views[j];
+      if (j === i || !this.racecraftSideWindow(self, o)) continue;
+      const lane = ct.lanes[j];
+      const od = ct.offs[j];
+      const a = od < lane ? od : lane;
+      const b = od > lane ? od : lane;
+      for (let side = -1; side <= 1; side += 2) {
+        const cand = (side < 0 ? a : b) + side * RACECRAFT_SIDE_GAP_M;
+        if (cand < lo || cand > hi) continue;
+        if (!this.racecraftGapOk(ct, i, cand)) continue;
+        const dist = cand > t0 ? cand - t0 : t0 - cand;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = cand;
+        }
+      }
+    }
+    if (bestDist < Infinity) {
+      ct.lanes[i] = best;
+      return best;
+    }
+    // No gap: drop the attack/defend offset.
+    ct.lanes[i] = hold;
+    return hold;
+  }
+
+  // Car o is alongside self now or will be within one lateral move at the closing speed.
+  private racecraftSideWindow(self: CarView, o: CarView): boolean {
+    const gap = this.wrapGap(o.s - self.s);
+    const long = self.halfLen + o.halfLen;
+    if (gap > -long && gap < long) return true;
+    const vRel = Math.max(0, Math.max(self.v, RACECRAFT_SIDE_V_MIN) - (o.stopped ? 0 : o.v));
+    return gap > 0 && gap < long + RACECRAFT_SIDE_LONG_M + vRel * RACECRAFT_SIDE_LAT_T;
+  }
+
+  // Target d keeps the side gap from the whole lane a side-window car occupies or is moving into.
+  private racecraftGapOk(ct: CraftTrack, i: number, target: number): boolean {
+    const self = ct.views[i];
+    for (let j = 0; j < this.count; j++) {
+      if (j === i) continue;
+      const o = ct.views[j];
+      if (!this.racecraftSideWindow(self, o)) continue;
+      const lane = ct.lanes[j];
+      const od = ct.offs[j];
+      const a = (od < lane ? od : lane) - RACECRAFT_SIDE_GAP_M;
+      const b = (od > lane ? od : lane) + RACECRAFT_SIDE_GAP_M;
+      if (target > a && target < b) return false;
+    }
+    return true;
   }
 
   // Per pair, one chassis contact query serves two consumers: the contact count (pair close in
