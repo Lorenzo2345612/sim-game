@@ -173,10 +173,27 @@ const RACECRAFT_PLANNER_PARAMS = { lateralTime: 3.5, horizon: 4 };
 const RACECRAFT_PRIME_DT = 10;
 // Side-by-side clearance (262): an applied offset must keep this lateral gap from a
 // car alongside or about to be; with no room the move is dropped (classic follow cap).
-const RACECRAFT_SIDE_GAP_M = 2.5; // car width + margin
+const RACECRAFT_SIDE_GAP_M = 2.5;
+const RACECRAFT_YIELD_D_M = 3; // m, lateral spacing below which the rear car of a level pair drops back
+const RACECRAFT_YIELD_DV = 6; // m/s below the other car
+const RACECRAFT_CURV_GAP_K = 150; // m per 1/m: cars lag a swinging line, so the gap grows with curvature
+const RACECRAFT_CURV_GAP_MAX = 2; // m
+const RACECRAFT_STOP_GAP_M = 2.5; // a stopped car does not move into the pass // car width + margin
 const RACECRAFT_SIDE_LONG_M = 2.0; // extra along-s beyond the chassis overlap
 const RACECRAFT_SIDE_LAT_T = 1.2; // lane-planner lateral move time (s)
 const RACECRAFT_SIDE_V_MIN = 10; // closing-speed floor: room to leave from a standstill
+
+// True when moving from `now` to `target` lands inside, or crosses, the lane band [lo, hi]
+// of another car widened by the side gap (task 262).
+function bandBlocks(now: number, target: number, lo: number, hi: number, gap: number, alongside: boolean): boolean {
+  const a = lo - gap;
+  const b = hi + gap;
+  if (target > a && target < b) return true;
+  if (!alongside) return false;
+  if (now <= a && target >= b) return true;
+  if (now >= b && target <= a) return true;
+  return now > a && now < b && (now < (a + b) / 2 ? target > now : target < now);
+}
 
 // contactPair callback: a named module function keeps the tick loop allocation-free.
 // One probe fills both flags so a pair is queried once per tick.
@@ -1432,7 +1449,8 @@ export class RaceGame {
       let off = craft.plan.targetD - lineAt;
       if (n === 0 || (!craft.plan.blocked && craft.bias.preferD === null && Math.abs(off) < RACECRAFT_SNAP_M)) off = 0;
       craft.targetOff = off;
-      craft.speedCap = craft.plan.speedCap;
+      // Rejoin's 12 m/s cap protects traffic; with nobody in range it only lengthens a grass excursion.
+      craft.speedCap = n === 0 ? null : craft.plan.speedCap;
     }
   }
 
@@ -1475,7 +1493,10 @@ export class RaceGame {
     car.driver.setSpeedScale(car.baseSpeedScale * dmgScale);
     // A car owed a position must be free to pass its debtor, so it ignores follow/traffic caps.
     const owedPos = this.owedMask[i] === 1;
-    car.driver.setFollowCap(owedPos ? null : this.aheadSpeedCap);
+    let followCap = this.aheadSpeedCap;
+    const yieldCap = owedPos ? null : this.racecraftYieldCap(ct, i);
+    if (yieldCap !== null && (followCap === null || yieldCap < followCap)) followCap = yieldCap;
+    car.driver.setFollowCap(owedPos ? null : followCap);
     car.driver.setTrafficNear(this.nearTraffic);
     const st = car.steering;
     car.driver.setMaxSteerAngle(
@@ -1522,7 +1543,7 @@ export class RaceGame {
       const a = od < lane ? od : lane;
       const b = od > lane ? od : lane;
       for (let side = -1; side <= 1; side += 2) {
-        const cand = (side < 0 ? a : b) + side * RACECRAFT_SIDE_GAP_M;
+        const cand = (side < 0 ? a : b) + side * this.racecraftGap(ct, o);
         if (cand < lo || cand > hi) continue;
         if (!this.racecraftGapOk(ct, i, cand)) continue;
         const dist = cand > t0 ? cand - t0 : t0 - cand;
@@ -1539,6 +1560,33 @@ export class RaceGame {
     // No gap: drop the attack/defend offset.
     ct.lanes[i] = hold;
     return hold;
+  }
+
+  // Car i is level with a moving car and too close laterally, and is the one behind (or lower
+  // index on a tie): it drops back by capping below that car's speed until the lanes part.
+  private racecraftYieldCap(ct: CraftTrack, i: number): number | null {
+    const self = ct.views[i];
+    let cap: number | null = null;
+    for (let j = 0; j < this.count; j++) {
+      if (j === i || this.frozen[j]) continue;
+      const o = ct.views[j];
+      if (o.stopped) continue;
+      const rel = this.wrapGap(o.s - self.s);
+      const reach = self.halfLen + o.halfLen;
+      if (rel <= -reach || rel >= reach) continue;
+      const dd = o.d - self.d;
+      if ((dd < 0 ? -dd : dd) >= RACECRAFT_YIELD_D_M) continue;
+      if (rel < 0 || (rel === 0 && j > i)) continue;
+      const c = o.v - RACECRAFT_YIELD_DV;
+      if (cap === null || c < cap) cap = c > 0 ? c : 0;
+    }
+    return cap;
+  }
+
+  private racecraftGap(ct: CraftTrack, o: CarView): number {
+    if (o.stopped) return RACECRAFT_STOP_GAP_M;
+    const extra = Math.abs(ct.look.curv) * RACECRAFT_CURV_GAP_K;
+    return RACECRAFT_SIDE_GAP_M + (extra < RACECRAFT_CURV_GAP_MAX ? extra : RACECRAFT_CURV_GAP_MAX);
   }
 
   // Car o is alongside self now or will be within one lateral move at the closing speed.
@@ -1559,9 +1607,16 @@ export class RaceGame {
       if (!this.racecraftSideWindow(self, o)) continue;
       const lane = ct.lanes[j];
       const od = ct.offs[j];
-      const a = (od < lane ? od : lane) - RACECRAFT_SIDE_GAP_M;
-      const b = (od > lane ? od : lane) + RACECRAFT_SIDE_GAP_M;
-      if (target > a && target < b) return false;
+      const gap = this.racecraftGap(ct, o);
+      const rel = this.wrapGap(o.s - self.s);
+      const reach = self.halfLen + o.halfLen;
+      const alongside = rel > -reach && rel < reach;
+      if (bandBlocks(ct.offs[i], target, od < lane ? od : lane, od > lane ? od : lane, gap, alongside)) return false;
+      // The same test in raw d: a swinging line staggers cars that are level in offset space.
+      const dLine = self.d - ct.offs[i];
+      const oLine = o.d - od;
+      const e = oLine + lane;
+      if (alongside && bandBlocks(self.d, dLine + target, o.d < e ? o.d : e, o.d > e ? o.d : e, gap, alongside)) return false;
     }
     return true;
   }
